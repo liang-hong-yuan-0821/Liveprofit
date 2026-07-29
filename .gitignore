@@ -1,0 +1,79 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+
+# ===== 虚拟环境 =====
+venv/
+.venv/
+env/
+.env
+*.env.local
+!.env.example
+
+# ===== PyCharm =====
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ===== VS Code =====
+.vscode/
+
+# ===== 其他 IDE =====
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+.project
+.pydevproject
+.settings/
+.classpath
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+*.ipynb
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ===== YoHo 运行时数据 =====
+chroma_db/
+results/
+eval_results/
+data/tushare/
+data/cache/
+logs/
+*.log
+
+# ===== 配置（含密钥，勿提交） =====
+a.bash
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== 测试 =====
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ===== 其他 =====
+*.bak
+*.tmp
+*.csv
+*.xlsx
+!requirements.txt
+*.pkl

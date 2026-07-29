@@ -1,0 +1,110 @@
+version: '3.8'
+
+# YoHo 存储基础设施
+# YoHo 直接在本机运行，docker-compose 仅提供 MongoDB + Redis 服务
+
+services:
+  # MongoDB 数据库服务
+  mongodb:
+    image: mongo:4.4
+    container_name: yoho-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: yoho123
+      MONGO_INITDB_DATABASE: yoho
+      TZ: "Asia/Shanghai"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - yoho-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: yoho-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    environment:
+      TZ: "Asia/Shanghai"
+    command: redis-server --appendonly yes --requirepass yoho123
+    volumes:
+      - redis_data:/data
+    networks:
+      - yoho-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "yoho123", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Redis Commander 管理界面（可选）
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: yoho-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:yoho123
+    networks:
+      - yoho-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - management
+
+  # Mongo Express 管理界面（可选）
+  mongo-express:
+    image: mongo-express:latest
+    container_name: yoho-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: yoho123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:yoho123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: yoho123
+    networks:
+      - yoho-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    profiles:
+      - management
+
+volumes:
+  mongodb_data:
+    driver: local
+    name: yoho_mongodb_data
+  redis_data:
+    driver: local
+    name: yoho_redis_data
+
+networks:
+  yoho-network:
+    driver: bridge
+    name: yoho-network

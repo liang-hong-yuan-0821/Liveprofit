@@ -19,18 +19,14 @@ class Propagator:
     def __init__(self, max_recur_limit=100):
         self.max_recur_limit = max_recur_limit
 
-    @trace_call(show_params=["company_name", "trade_date"])
-    def create_initial_state(self, company_name: str, trade_date: str) -> Dict[str, Any]:
-        """创建 Agent 图的初始状态"""
+    @trace_call(show_params=["trade_date"])
+    def create_initial_state(self, trade_date: str) -> Dict[str, Any]:
+        """创建编排图的初始状态（自顶向下：市场 → 板块 → 个股）"""
         from langchain_core.messages import HumanMessage
 
-        analysis_request = (
-            f"请对股票 {company_name} 进行全面分析，交易日期为 {trade_date}。"
-        )
-
         return {
-            "messages": [HumanMessage(content=analysis_request)],
-            "company_of_interest": company_name,
+            "messages": [HumanMessage(content=f"开始交易分析，交易日期为 {trade_date}。")],
+            "company_of_interest": "",
             "trade_date": str(trade_date),
             "investment_debate_state": InvestDebateState(
                 {"history": "", "current_response": "", "count": 0}

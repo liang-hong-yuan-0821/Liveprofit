@@ -15,7 +15,7 @@ from AI.utils.call_trace import trace_call, trace_step
 @trace_call(show_params=["debug", "config"])
 def _create_graph(config):
     """创建 TradingAgentsGraph 实例"""
-    return TradingAgentsGraph(debug=True, config=config)
+    return TradingAgentsGraph(selectedLayer=['market'], debug=True, config=config)
 
 
 def _load_env_file():
@@ -41,7 +41,9 @@ def main():
 
     # 示例：分析平安银行
     trace_step("开始分析", company="000001.SZ", trade_date="2024-12-20")
-    state, decision = ta.propagate("000001.SZ", "2024-12-20")
+    init_state = ta.propagator.create_initial_state("2024-12-20")
+    init_state["company_of_interest"] = "000001.SZ"
+    state, decision = ta.propagate(init_state)
     trace_step("分析完成", action=decision.get("action"),
                target_price=decision.get("target_price"),
                confidence=decision.get("confidence"))

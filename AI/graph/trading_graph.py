@@ -2,12 +2,12 @@
 YoHo 交易图编排器 (简化版)
 整个多智能体交易分析系统的主编排器。
 
-三层 Subgraph 架构：
+三层 Subgraph 架构（自顶向下）：
   Market Layer → Sector Layer → Stock Layer → END
 
 从 TradingAgents-CN 大幅简化：
 - LLM 初始化：仅两个 ChatOpenAI 实例（quick + deep）
-- 三层子图各自独立编译，顶层仅负责串联
+- 三层子图各自独立编译，编排图仅负责串联
 - 移除：create_llm_by_provider、_create_provider_pair
 - 移除：所有 LLM 提供商特定初始化代码
 - 移除：性能计时和指标报告
@@ -16,6 +16,7 @@ YoHo 交易图编排器 (简化版)
 import os
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
@@ -36,6 +37,7 @@ from AI.utils.call_trace import trace_call, trace_step
 from .propagation import Propagator
 from .reflection import Reflector
 from .signal_processing import SignalProcessor
+from AI.utils.llm_callbacks import LLMCallbackHandler, ToolCallbackHandler
 
 logger = logging.getLogger(__name__)
 
@@ -45,29 +47,32 @@ class TradingAgentsGraph:
 
     def __init__(
         self,
-        selected_analysts=None,
+        selectedLayer=None,
         debug=False,
         config: Dict[str, Any] = None,
     ):
         """
         Args:
-            selected_analysts: 选择的分析师列表，默认全部。
-                              市场层 = "market"，板块层 = "sector"，
-                              个股层 = "stock_tech", "social", "news", "fundamentals"
+            selectedLayer: 选择的分析层，默认全部。
+                          "market" = 市场层，"sector" = 板块层，"stock" = 个股层
             debug: 是否开启调试模式
             config: 配置字典，为 None 时从环境变量加载
         """
-        if selected_analysts is None:
-            selected_analysts = ["market", "sector", "social", "news",
-                                 "fundamentals", "stock_tech"]
+        if selectedLayer is None:
+            selectedLayer = ["market", "sector", "stock"]
 
+        self.selectedLayer = selectedLayer
         self.debug = debug
         self.config = config or load_config()
 
         set_config(self.config)
         trace_step("TradingAgentsGraph 初始化", debug=debug,
-                   analysts=selected_analysts,
+                   layers=selectedLayer,
                    memory=self.config.get("memory_enabled"))
+
+        # ---- 日志回调（LLM 初始化之前创建） ----
+        self.llm_handler = LLMCallbackHandler()
+        self.tool_handler = ToolCallbackHandler()
 
         # ---- LLM 初始化 (仅 ChatOpenAI) ----
         api_key = self.config.get("api_key", "")
@@ -93,6 +98,7 @@ class TradingAgentsGraph:
             temperature=quick_temp,
             max_tokens=max_tokens,
             timeout=180,
+            callbacks=[self.llm_handler],
         )
 
         self.deep_thinking_llm = ChatOpenAI(
@@ -102,6 +108,7 @@ class TradingAgentsGraph:
             temperature=deep_temp,
             max_tokens=max_tokens * 2,
             timeout=300,
+            callbacks=[self.llm_handler],
         )
 
         # ---- Toolkit ----
@@ -140,18 +147,18 @@ class TradingAgentsGraph:
         self.ticker = None
         self.log_states_dict = {}
 
-        # 编译顶层图
-        self.graph = self._build_top_graph(selected_analysts)
-        trace_step("顶层图编译完成")
+        # 编译编排图
+        self.graph = self._build_graph()
+        trace_step("编排图编译完成")
 
-    # ==================== 顶层图构建 ====================
+    # ==================== 编排图构建 ====================
 
-    def _build_top_graph(self, selected_analysts):
-        """构建顶层编排图：Market Layer → Sector Layer → Stock Layer → END"""
+    def _build_graph(self):
+        """构建编排图（自顶向下）：Market Layer → Sector Layer → Stock Layer → END"""
         workflow = StateGraph(AgentState)
 
-        has_market = "market" in selected_analysts
-        has_sector = "sector" in selected_analysts
+        has_market = "market" in self.selectedLayer
+        has_sector = "sector" in self.selectedLayer
 
         # Market Layer 子图
         if has_market:
@@ -159,7 +166,7 @@ class TradingAgentsGraph:
                 self.quick_thinking_llm, self.toolkit
             ).build()
             workflow.add_node("Market Layer", market_subgraph)
-            logger.info("[顶层图] 已添加 Market Layer 子图")
+            logger.info("[编排图] 已添加 Market Layer 子图")
 
         # Sector Layer 子图
         if has_sector:
@@ -167,7 +174,7 @@ class TradingAgentsGraph:
                 self.quick_thinking_llm, self.toolkit
             ).build()
             workflow.add_node("Sector Layer", sector_subgraph)
-            logger.info("[顶层图] 已添加 Sector Layer 子图")
+            logger.info("[编排图] 已添加 Sector Layer 子图")
 
         # Stock Layer 子图（个股层）
         stock_subgraph = StockLayerGraph(
@@ -181,9 +188,9 @@ class TradingAgentsGraph:
             self.risk_manager_memory,
             self.conditional_logic,
             self.config,
-        ).build(selected_analysts)
+        ).build()
         workflow.add_node("Stock Layer", stock_subgraph)
-        logger.info("[顶层图] 已添加 Stock Layer 子图")
+        logger.info("[编排图] 已添加 Stock Layer 子图")
 
         # ---- 连线 ----
         first_node = None
@@ -215,33 +222,45 @@ class TradingAgentsGraph:
         if has_sector:
             layer_names.append("Sector")
         layer_names.append("Stock")
-        logger.info(f"[顶层图] 编译完成: {' → '.join(layer_names)} → END")
+        logger.info(f"[编排图] 编译完成: {' → '.join(layer_names)} → END")
 
         return workflow.compile()
 
     # ==================== 运行时 ====================
 
-    def propagate(self, company_name, trade_date, progress_callback=None):
-        """运行交易分析图
+    def propagate(self, init_state, progress_callback=None):
+        """运行交易分析图（自顶向下：市场 → 板块 → 个股）
 
         Args:
-            company_name: 股票代码
-            trade_date: 分析日期 (YYYY-MM-DD)
+            init_state: 初始状态字典，需包含 company_of_interest、trade_date 等字段
             progress_callback: 可选的进度回调函数
 
         Returns:
             (final_state, decision_dict)
         """
+        company_name = init_state.get("company_of_interest", "")
+        trade_date = init_state.get("trade_date", "")
         self.ticker = company_name
+
+        # ---- 本次运行的日志目录 ----
+        run_ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        log_dir = Path(f"logs/{run_ts}")
+        self.llm_handler.set_log_dir(log_dir)
+        self.tool_handler.set_log_dir(log_dir)
+        logger.info(f"日志目录: {log_dir.resolve()}")
+
         trace_step("propagate 入口", company=company_name, trade_date=trade_date,
                    callback=bool(progress_callback))
         logger.info(f"开始分析: {company_name} @ {trade_date}")
 
-        # 初始化状态
-        init_state = self.propagator.create_initial_state(company_name, trade_date)
         args = self.propagator.get_graph_args(
             use_progress_callback=bool(progress_callback)
         )
+        # 将日志回调合并进图配置，覆盖 LLM + 工具调用
+        existing_callbacks = args.get("config", {}).get("callbacks", [])
+        args.setdefault("config", {})["callbacks"] = existing_callbacks + [
+            self.llm_handler, self.tool_handler
+        ]
         trace_step("初始状态就绪", stream_mode=args.get("stream_mode"),
                    recursion_limit=args.get("config", {}).get("recursion_limit"))
 
@@ -284,13 +303,14 @@ class TradingAgentsGraph:
 
         self.curr_state = final_state
         self._log_state(trade_date, final_state)
+        self._write_reports(final_state, log_dir)
         trace_step("图执行完成", nodes_visited=len([k for k in final_state.keys()
                      if not k.startswith('__')]))
         trace_step("开始信号处理", stock=company_name)
 
         # 处理决策信号
         decision = self.process_signal(
-            final_state["final_trade_decision"], company_name
+            final_state["final_trade_decision"]
         )
         trace_step("决策提取完成", action=decision.get("action"),
                    price=decision.get("target_price"), conf=decision.get("confidence"))
@@ -356,6 +376,42 @@ class TradingAgentsGraph:
         except Exception as e:
             logger.warning(f"状态日志保存失败: {e}")
 
+    def _write_reports(self, final_state: dict, log_dir: Path) -> None:
+        """将各层分析报告写入独立 Markdown 文件"""
+        report_dir = log_dir / "reports"
+        report_dir.mkdir(parents=True, exist_ok=True)
+
+        reports = [
+            # (序号, 文件名, state key)
+            ("01", "market_international_news", "international_news_report"),
+            ("02", "market_us_news", "us_news_report"),
+            ("03", "market_us_tech", "us_tech_report"),
+            ("04", "market_kr_news", "kr_news_report"),
+            ("05", "market_kr_tech", "kr_tech_report"),
+            ("06", "market_cn_news", "cn_news_report"),
+            ("07", "market_cn_tech", "cn_tech_report"),
+            ("08", "sector_news", "sector_news_report"),
+            ("09", "sector_tech", "sector_tech_report"),
+            ("10", "stock_tech", "stock_tech_report"),
+            ("11", "sentiment", "sentiment_report"),
+            ("12", "stock_news", "news_report"),
+            ("13", "fundamentals", "fundamentals_report"),
+            ("14", "investment_plan", "investment_plan"),
+            ("15", "trader_plan", "trader_investment_plan"),
+            ("16", "final_decision", "final_trade_decision"),
+        ]
+
+        for seq, name, key in reports:
+            content = final_state.get(key, "")
+            if content:
+                fpath = report_dir / f"{seq}_{name}.md"
+                fpath.write_text(str(content), encoding="utf-8")
+                logger.info(f"报告已写入: {fpath}")
+            else:
+                logger.debug(f"报告为空，跳过: {seq}_{name}")
+
+        logger.info(f"全部报告已写入: {report_dir.resolve()}")
+
     def reflect_and_remember(self, returns_losses):
         """基于实际收益进行反思并更新记忆"""
         logger.info(f"开始反思: 收益={returns_losses}")
@@ -375,6 +431,6 @@ class TradingAgentsGraph:
             self.curr_state, returns_losses, self.risk_manager_memory
         )
 
-    def process_signal(self, full_signal, stock_symbol=None):
+    def process_signal(self, full_signal):
         """处理信号以提取核心决策"""
-        return self.signal_processor.process_signal(full_signal, stock_symbol)
+        return self.signal_processor.process_signal(full_signal)

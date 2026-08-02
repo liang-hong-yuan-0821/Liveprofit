@@ -248,12 +248,17 @@ class AKShareProvider(BaseStockDataProvider):
             return f"获取 {name} 数据失败: {e}"
 
     def _fetch_global_index(self, ak_key: str, start: str, end: str):
-        """根据键名调用不同的 akshare 函数获取全球指数（多接口回退）"""
-        # 美股指数 — 优先使用新浪财经接口
+        """根据键名调用不同的 akshare 函数获取全球指数（多接口回退）
+
+        注意：index_us_stock_sina / index_global_hist_em 不接受 start_date/end_date，
+        调用后由 get_global_index 通过 tail() 截取所需天数。
+        """
+        # 美股指数 — 优先使用新浪财经接口（仅接受 symbol）
         if ak_key in ("nasdaq", "nasdaq_100"):
             try:
-                return ak.index_us_stock_sina(symbol=f".{ak_key.upper() if ak_key != 'nasdaq' else 'IXIC'}",
-                                              start_date=start, end_date=end)
+                return ak.index_us_stock_sina(
+                    symbol=f".{ak_key.upper() if ak_key != 'nasdaq' else 'IXIC'}"
+                )
             except Exception:
                 pass
             # 回退：使用东方财富美股历史接口
@@ -266,16 +271,16 @@ class AKShareProvider(BaseStockDataProvider):
                 pass
 
         if ak_key == "spx":
-            return ak.index_us_stock_sina(symbol=".INX", start_date=start, end_date=end)
+            return ak.index_us_stock_sina(symbol=".INX")
 
         if ak_key == "dji":
-            return ak.index_us_stock_sina(symbol=".DJI", start_date=start, end_date=end)
+            return ak.index_us_stock_sina(symbol=".DJI")
 
         if ak_key == "sox":
-            return ak.index_us_stock_sina(symbol=".SOX", start_date=start, end_date=end)
+            return ak.index_us_stock_sina(symbol=".SOX")
 
         if ak_key == "djussc":
-            return ak.index_us_stock_sina(symbol=".DJUSSC", start_date=start, end_date=end)
+            return ak.index_us_stock_sina(symbol=".DJUSSC")
 
         # 韩国指数
         if ak_key == "kospi":
@@ -283,7 +288,7 @@ class AKShareProvider(BaseStockDataProvider):
         if ak_key == "kosdaq":
             return ak.stock_zh_index_daily_em(symbol="KQ11")
 
-        # A股科技指数
+        # A股科技指数（东方财富接口，偶发连接中断，外层有 try/except 兜底）
         if ak_key == "star50":
             return ak.stock_zh_index_daily_em(symbol="sh000688")
         if ak_key == "chinext":
@@ -293,8 +298,8 @@ class AKShareProvider(BaseStockDataProvider):
         if ak_key == "csi_ai":
             return ak.stock_zh_index_daily_em(symbol="sh931071")
 
-        # 通用回退：东方财富全球指数历史
-        return ak.index_global_hist_em(symbol=ak_key, start_date=start, end_date=end)
+        # 通用回退：东方财富全球指数历史（仅接受 symbol）
+        return ak.index_global_hist_em(symbol=ak_key)
 
     def get_all_tech_indices(self, days: int = 10) -> str:
         """获取所有科技指数数据"""
@@ -306,32 +311,32 @@ class AKShareProvider(BaseStockDataProvider):
         return "\n".join(results)
 
 
-# ==================== AI 产业链概念板块 ====================
-
-AI_INDUSTRY_CHAIN = {
-    "存储芯片": "memory_chip",
-    "半导体": "semiconductor",
-    "光模块": "optical_module",
-    "AI服务器": "ai_server",
-    "先进封装": "advanced_packaging",
-    "算力": "computing_power",
-    "AI应用": "ai_application",
-    "机器人": "robotics",
-    "智能汽车": "smart_vehicle",
-}
-
-# A股概念板块代码映射
-A_SHARE_CONCEPT_MAP = {
-    "存储芯片": "BK1037",
-    "半导体": "BK1036",
-    "光模块": "BK1098",
-    "AI服务器": "BK1136",
-    "先进封装": "BK1177",
-    "算力": "BK1139",
-    "AI应用": "BK1163",
-    "机器人": "BK0883",
-    "智能汽车": "BK0981",
-}
+    # ==================== AI 产业链概念板块 ====================
+    
+    AI_INDUSTRY_CHAIN = {
+        "存储芯片": "memory_chip",
+        "半导体": "semiconductor",
+        "光模块": "optical_module",
+        "AI服务器": "ai_server",
+        "先进封装": "advanced_packaging",
+        "算力": "computing_power",
+        "AI应用": "ai_application",
+        "机器人": "robotics",
+        "智能汽车": "smart_vehicle",
+    }
+    
+    # A股概念板块代码映射
+    A_SHARE_CONCEPT_MAP = {
+        "存储芯片": "BK1037",
+        "半导体": "BK1036",
+        "光模块": "BK1098",
+        "AI服务器": "BK1136",
+        "先进封装": "BK1177",
+        "算力": "BK1139",
+        "AI应用": "BK1163",
+        "机器人": "BK0883",
+        "智能汽车": "BK0981",
+    }
 
     # ==================== 市场层新增方法 ====================
 
@@ -340,14 +345,17 @@ A_SHARE_CONCEPT_MAP = {
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装，无法获取宏观新闻。"
         try:
-            df = ak.stock_telegraph_cls()
+            df = ak.stock_info_global_cls()
             if df is None or df.empty:
                 return "暂无财联社电报数据。"
             recent = df.head(50)
             lines = ["# 全球宏观财经快讯（财联社电报）\n"]
             for _, row in recent.iterrows():
-                title = row.get("title", row.get("content", ""))
-                ctime = row.get("ctime", "")
+                # 兼容不同版本的列名
+                title = (row.get("标题") or row.get("title")
+                      or row.get("content") or str(row.iloc[0]) if len(row) > 0 else "")
+                ctime = (row.get("发布时间") or row.get("发布日期")
+                      or row.get("ctime") or row.get("datetime") or "")
                 lines.append(f"- [{ctime}] {title}")
             return "\n".join(lines)
         except Exception as e:
@@ -423,15 +431,18 @@ A_SHARE_CONCEPT_MAP = {
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
         lines = ["# 大宗商品与汇率概览\n"]
-        # 原油
-        try:
-            wti = ak.futures_foreign_hist(symbol="CL00Y")
-            if wti is not None and not wti.empty:
-                latest = wti.iloc[-1]
-                lines.append(f"## WTI 原油期货")
-                lines.append(f"- 最新价: {latest.get('收盘价', latest.iloc[-1])}")
-        except Exception as e:
-            lines.append(f"- 原油: 获取失败 ({e})")
+        # 原油（多符号回退）
+        for sym, label in [("CL00Y", "WTI 原油"), ("B00Y", "布伦特原油")]:
+            try:
+                crude = ak.futures_foreign_hist(symbol=sym)
+                if crude is not None and not crude.empty:
+                    latest = crude.iloc[-1]
+                    lines.append(f"## {label}期货")
+                    close_val = (latest.get('收盘价', None) or latest.get('close', None)
+                              or (latest.iloc[-1] if len(latest) > 0 else "N/A"))
+                    lines.append(f"- 最新价: {close_val}")
+            except Exception as e:
+                lines.append(f"- {label}: 获取失败 ({e})")
         # 黄金
         try:
             gold = ak.spot_hist_sge(symbol="Au99.99")
@@ -457,20 +468,36 @@ A_SHARE_CONCEPT_MAP = {
         return "\n".join(lines)
 
     def get_us_economic_calendar(self, curr_date: str) -> str:
-        """获取美国经济数据发布日历（从 news_economic_baidu 过滤）"""
+        """获取美国经济数据发布日历
+
+        优先使用 news_economic_baidu，403 时回退到静态参考信息。
+        """
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
+
+        # 静态参考：美国关键经济数据发布日期规律
+        fallback = (
+            "# 美国经济数据发布日历（静态参考）\n"
+            "- 非农就业: 每月第一个周五\n"
+            "- CPI: 每月中旬（10-15日）\n"
+            "- PPI: 每月中旬（CPI 前后1-2天）\n"
+            "- GDP (初值): 每季度末月 25-30 日\n"
+            "- FOMC 利率决议: https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm\n"
+            "- 零售销售: 每月中旬\n"
+            "- 密歇根消费者信心: 每月第二个周五\n"
+        )
+
         try:
             df = ak.news_economic_baidu(date=curr_date.replace("-", ""))
             if df is None or df.empty:
-                return "暂无美国经济日历数据。"
+                return "暂无美国经济日历数据。\n\n" + fallback
             # 按地区过滤美国
             if "地区" in df.columns:
                 us_data = df[df["地区"].str.contains("美国", na=False)]
             else:
                 us_data = df.head(20)
             if us_data.empty:
-                return "暂无美国经济数据发布。"
+                return "暂无美国经济数据发布。\n\n" + fallback
             lines = ["# 美国经济数据发布日历\n"]
             for _, row in us_data.iterrows():
                 lines.append(f"- {row.get('日期', 'N/A')} | {row.get('事件', row.get('指标', 'N/A'))} | "
@@ -478,27 +505,45 @@ A_SHARE_CONCEPT_MAP = {
                              f"前值: {row.get('前值', 'N/A')}")
             return "\n".join(lines)
         except Exception as e:
-            logger.warning(f"获取美国经济日历失败: {e}")
-            return f"获取美国经济日历失败: {e}"
+            logger.warning(f"获取美国经济日历失败，使用静态参考: {e}")
+            return fallback
 
     def get_vix_index(self) -> str:
-        """获取 VIX 恐慌指数"""
+        """获取 VIX 恐慌指数（多接口回退）"""
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
+        from datetime import datetime, timedelta
+        end = datetime.now().strftime("%Y%m%d")
+        start = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
+
+        df = None
+        # 方案 1: index_investing_global（investing.com VIX 数据）
         try:
-            from datetime import datetime, timedelta
-            end = datetime.now().strftime("%Y%m%d")
-            start = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
-            df = ak.index_vix(start_date=start, end_date=end)
-            if df is None or df.empty:
-                return "暂无 VIX 数据。"
+            df = ak.index_investing_global(
+                country="美国", index_name="VIX恐慌指数",
+                start_date=start, end_date=end,
+            )
+        except Exception:
+            pass
+
+        # 方案 2: 尝试旧函数名
+        if df is None or df.empty:
+            try:
+                df = ak.index_vix(start_date=start, end_date=end)
+            except Exception:
+                pass
+
+        if df is None or df.empty:
+            return "暂无 VIX 数据（所有数据源均失败）。\n参考: VIX 通常在 10-30 区间，>20 表示担忧上升，>30 表示恐慌。"
+        try:
             latest = df.iloc[-1]
             lines = ["# VIX 恐慌指数\n"]
-            lines.append(f"- 最新值: {latest.get('收盘', latest.iloc[-1])}")
+            close_val = (latest.get('收盘', None) or latest.get('close', None)
+                      or latest.iloc[-1] if len(latest) > 0 else None)
+            lines.append(f"- 最新值: {close_val}")
             lines.append(f"- 日期: {latest.get('日期', latest.name)}")
-            # 简单判断水位
             try:
-                val = float(latest.get('收盘', 0))
+                val = float(close_val) if close_val is not None else 0
                 if val < 15:
                     lines.append("- 水位: 低（市场平静）")
                 elif val < 20:
@@ -511,8 +556,8 @@ A_SHARE_CONCEPT_MAP = {
                 pass
             return "\n".join(lines)
         except Exception as e:
-            logger.warning(f"获取 VIX 失败: {e}")
-            return f"获取 VIX 失败: {e}"
+            logger.warning(f"解析 VIX 数据失败: {e}")
+            return f"VIX 数据解析失败: {e}"
 
     def get_us_index_data(self, days: int = 20) -> str:
         """获取美股三大指数日线"""
@@ -524,7 +569,10 @@ A_SHARE_CONCEPT_MAP = {
         lines = ["# 美股三大指数\n"]
         for symbol, name in [(".INX", "标普500"), (".IXIC", "纳斯达克"), (".DJI", "道琼斯")]:
             try:
-                df = ak.index_us_stock_sina(symbol=symbol, start_date=start, end_date=end)
+                df = ak.index_us_stock_sina(symbol=symbol)
+                if df is not None and not df.empty:
+                    # index_us_stock_sina 不接受日期参数，直接用 tail 取最近 N 条
+                    df = df.tail(days)
                 if df is not None and not df.empty:
                     latest = df.iloc[-1]
                     lines.append(f"## {name}")
@@ -705,7 +753,7 @@ def get_concept_board_data(concept_name: str, days: int = 10) -> str:
     if not AKSHARE_AVAILABLE:
         return "AKShare 未安装。"
 
-    code = A_SHARE_CONCEPT_MAP.get(concept_name)
+    code = AKShareProvider.A_SHARE_CONCEPT_MAP.get(concept_name)
     if not code:
         return f"未知概念板块: {concept_name}"
 
@@ -732,7 +780,7 @@ def get_concept_board_data(concept_name: str, days: int = 10) -> str:
 def get_all_concept_boards(days: int = 10) -> str:
     """获取所有 AI 产业链概念板块数据"""
     results = []
-    for name in AI_INDUSTRY_CHAIN:
+    for name in AKShareProvider.AI_INDUSTRY_CHAIN:
         data = get_concept_board_data(name, days)
         results.append(data)
         results.append("")

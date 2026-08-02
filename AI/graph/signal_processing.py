@@ -20,8 +20,8 @@ class SignalProcessor:
     def __init__(self, quick_thinking_llm):
         self.quick_thinking_llm = quick_thinking_llm
 
-    @trace_call(show_params=["stock_symbol"], show_result=True)
-    def process_signal(self, full_signal: str, stock_symbol: str = None) -> dict:
+    @trace_call(show_result=True)
+    def process_signal(self, full_signal: str) -> dict:
         """
         从完整交易信号中提取结构化决策信息
 
@@ -39,7 +39,7 @@ class SignalProcessor:
         currency = "人民币"
         currency_symbol = "¥"
 
-        logger.info(f"[信号处理] 股票={stock_symbol}, 货币={currency}")
+        logger.info(f"[信号处理] 货币={currency}")
 
         messages = [
             (

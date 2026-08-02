@@ -18,7 +18,7 @@ def create_safe_debator(llm):
         current_risky_response = risk_debate_state.get("current_risky_response", "")
         current_neutral_response = risk_debate_state.get("current_neutral_response", "")
 
-        market_report = state["market_report"]
+        market_report = state.get("stock_tech_report", "")
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]

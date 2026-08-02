@@ -8,6 +8,7 @@ import logging
 from typing import Dict, Any
 
 from AI.agents.utils.agent_states import InvestDebateState, RiskDebateState
+from AI.utils.call_trace import trace_call
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class Propagator:
     def __init__(self, max_recur_limit=100):
         self.max_recur_limit = max_recur_limit
 
+    @trace_call(show_params=["company_name", "trade_date"])
     def create_initial_state(self, company_name: str, trade_date: str) -> Dict[str, Any]:
         """创建 Agent 图的初始状态"""
         from langchain_core.messages import HumanMessage
@@ -42,13 +44,25 @@ class Propagator:
                     "count": 0,
                 }
             ),
-            "market_report": "",
+            # 市场层报告（宏观）
+            "international_news_report": "",
+            "us_news_report": "",
+            "us_tech_report": "",
+            "kr_news_report": "",
+            "kr_tech_report": "",
+            "cn_news_report": "",
+            "cn_tech_report": "",
+            # 板块层报告
+            "sector_news_report": "",
+            "sector_tech_report": "",
+            # 个股层报告
+            "stock_tech_report": "",
             "fundamentals_report": "",
             "sentiment_report": "",
             "news_report": "",
-            "tech_market_report": "",
         }
 
+    @trace_call(show_params=["use_progress_callback"], show_result=True)
     def get_graph_args(self, use_progress_callback: bool = False) -> Dict[str, Any]:
         """获取图调用参数"""
         stream_mode = "updates" if use_progress_callback else "values"

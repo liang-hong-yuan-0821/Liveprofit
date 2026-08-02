@@ -34,12 +34,14 @@ from AI.agents import (
     create_risky_debator,
     create_safe_debator,
     create_social_media_analyst,
-    create_tech_market_analyst,
     create_trader,
 )
 from AI.agents.utils.agent_states import AgentState
 from AI.agents.utils.agent_utils import Toolkit
 from AI.graph.conditional_logic import ConditionalLogic
+from AI.marketAgents.market_layer_graph import MarketLayerGraph
+from AI.sectorAgents.sector_layer_graph import SectorLayerGraph
+from AI.utils.call_trace import trace_call, trace_step
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +75,7 @@ class GraphSetup:
         self.conditional_logic = conditional_logic
         self.config = config or {}
 
+    @trace_call(show_params=["selected_analysts"])
     def setup_graph(self, selected_analysts=None):
         """设置并编译 Agent 工作流图
 
@@ -80,22 +83,43 @@ class GraphSetup:
             selected_analysts: 选择的分析师类型列表，默认全部
         """
         if selected_analysts is None:
-            selected_analysts = ["market", "social", "news", "fundamentals", "tech"]
+            selected_analysts = ["market", "sector", "stock_tech", "social", "news", "fundamentals"]
 
         if len(selected_analysts) == 0:
             raise ValueError("至少需要选择一个分析师！")
+
+        # 旧 key 迁移：忽略已废弃的 "tech"
+        if "tech" in selected_analysts:
+            import warnings
+            warnings.warn("'tech' (tech_market_analyst) 已废弃——全球指数已合并到市场层，AI产业链归属板块层。请从 selected_analysts 中移除 'tech'。")
+            selected_analysts = [a for a in selected_analysts if a != "tech"]
 
         # ---- 创建分析师节点 ----
         analyst_nodes = {}
         delete_nodes = {}
         tool_nodes = {}
 
+        # Market Layer Subgraph — 如果 "market" 在列表中，编译子图作为节点
+        market_subgraph = None
         if "market" in selected_analysts:
-            analyst_nodes["market"] = create_market_analyst(
+            market_subgraph = MarketLayerGraph(
+                self.quick_thinking_llm, self.toolkit
+            ).build()
+
+        # Sector Layer Subgraph — 如果 "sector" 在列表中，编译子图作为节点
+        sector_subgraph = None
+        if "sector" in selected_analysts:
+            sector_subgraph = SectorLayerGraph(
+                self.quick_thinking_llm, self.toolkit
+            ).build()
+
+        if "stock_tech" in selected_analysts:
+            analyst_nodes["stock_tech"] = create_market_analyst(
                 self.quick_thinking_llm, self.toolkit
             )
-            delete_nodes["market"] = create_msg_delete()
-            tool_nodes["market"] = self.tool_nodes["market"]
+            delete_nodes["stock_tech"] = create_msg_delete()
+            tool_nodes["stock_tech"] = self.tool_nodes.get("stock_tech",
+                self.tool_nodes.get("market", ToolNode([])))
 
         if "social" in selected_analysts:
             analyst_nodes["social"] = create_social_media_analyst(
@@ -119,12 +143,7 @@ class GraphSetup:
             delete_nodes["fundamentals"] = create_msg_delete()
             tool_nodes["fundamentals"] = self.tool_nodes["fundamentals"]
 
-        if "tech" in selected_analysts:
-            analyst_nodes["tech"] = create_tech_market_analyst(
-                self.quick_thinking_llm, self.toolkit
-            )
-            delete_nodes["tech"] = create_msg_delete()
-            tool_nodes["tech"] = self.tool_nodes.get("tech", ToolNode([]))
+        # "tech" key 已废弃（见上方 selected_analysts 处理中的 warn）
 
         # ---- 创建研究员和经理节点 ----
         bull_researcher_node = create_bull_researcher(
@@ -147,14 +166,31 @@ class GraphSetup:
         )
 
         # ---- 构建工作流 ----
+        trace_step("构建 LangGraph 工作流",
+                   analysts=selected_analysts,
+                   debate_rounds=self.conditional_logic.max_debate_rounds,
+                   risk_rounds=self.conditional_logic.max_risk_discuss_rounds)
         workflow = StateGraph(AgentState)
+
+        # Node label 映射（处理多词 key）
+        ANALYST_LABELS = {
+            "stock_tech": "Stock Tech", "social": "Social",
+            "news": "News", "fundamentals": "Fundamentals",
+        }
 
         # 添加分析师节点
         for analyst_type, node in analyst_nodes.items():
-            cap = analyst_type.capitalize()
-            workflow.add_node(f"{cap} Analyst", node)
-            workflow.add_node(f"Msg Clear {cap}", delete_nodes[analyst_type])
+            label = ANALYST_LABELS.get(analyst_type, analyst_type.capitalize())
+            workflow.add_node(f"{label} Analyst", node)
+            workflow.add_node(f"Msg Clear {label}", delete_nodes[analyst_type])
             workflow.add_node(f"tools_{analyst_type}", tool_nodes[analyst_type])
+
+        # 添加 Market Layer 子图节点
+        if market_subgraph is not None:
+            workflow.add_node("Market Layer", market_subgraph)
+
+        if sector_subgraph is not None:
+            workflow.add_node("Sector Layer", sector_subgraph)
 
         # 添加其他节点
         workflow.add_node("Bull Researcher", bull_researcher_node)
@@ -167,17 +203,47 @@ class GraphSetup:
         workflow.add_node("Risk Judge", risk_manager_node)
 
         # ---- 定义边 ----
-        first_analyst = selected_analysts[0]
-        workflow.add_edge(START, f"{first_analyst.capitalize()} Analyst")
+        # 仅保留个股级分析师用于连线（排除 market 和 sector 子图层 key）
+        stock_analysts = [a for a in selected_analysts if a not in ("market", "sector")]
 
-        # 连接分析师序列
-        for i, analyst_type in enumerate(selected_analysts):
-            current = f"{analyst_type.capitalize()} Analyst"
+        # 确定第一个图层节点（market / sector）
+        first_layer_node = None
+        last_layer_node = None
+
+        if market_subgraph is not None:
+            workflow.add_edge(START, "Market Layer")
+            first_layer_node = "Market Layer"
+            last_layer_node = "Market Layer"
+
+        if sector_subgraph is not None:
+            if last_layer_node is not None:
+                workflow.add_edge(last_layer_node, "Sector Layer")
+            else:
+                workflow.add_edge(START, "Sector Layer")
+                first_layer_node = "Sector Layer"
+            last_layer_node = "Sector Layer"
+
+        if last_layer_node is not None:
+            if stock_analysts:
+                first_label = ANALYST_LABELS.get(stock_analysts[0], stock_analysts[0].capitalize())
+                workflow.add_edge(last_layer_node, f"{first_label} Analyst")
+            else:
+                workflow.add_edge(last_layer_node, "Bull Researcher")
+        else:
+            if stock_analysts:
+                first = stock_analysts[0]
+                first_label = ANALYST_LABELS.get(first, first.capitalize())
+                workflow.add_edge(START, f"{first_label} Analyst")
+
+        # 连接股票级分析师序列
+        for i, analyst_type in enumerate(stock_analysts):
+            label = ANALYST_LABELS.get(analyst_type, analyst_type.capitalize())
+            current = f"{label} Analyst"
             current_tools = f"tools_{analyst_type}"
-            current_clear = f"Msg Clear {analyst_type.capitalize()}"
+            current_clear = f"Msg Clear {label}"
 
-            if analyst_type in ("social", "tech"):
-                # 社交媒体和科技分析师无工具调用循环，直接清除
+            if analyst_type in ("social", "stock_tech"):
+                # 无工具调用循环，直接清除
                 workflow.add_edge(current, current_clear)
             else:
                 workflow.add_conditional_edges(
@@ -187,9 +253,9 @@ class GraphSetup:
                 )
                 workflow.add_edge(current_tools, current)
 
-            if i < len(selected_analysts) - 1:
-                next_analyst = f"{selected_analysts[i+1].capitalize()} Analyst"
-                workflow.add_edge(current_clear, next_analyst)
+            if i < len(stock_analysts) - 1:
+                next_label = ANALYST_LABELS.get(stock_analysts[i+1], stock_analysts[i+1].capitalize())
+                workflow.add_edge(current_clear, f"{next_label} Analyst")
             else:
                 workflow.add_edge(current_clear, "Bull Researcher")
 

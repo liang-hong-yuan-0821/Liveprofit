@@ -23,6 +23,7 @@ from AI.agents import Toolkit
 from AI.agents.utils.memory import FinancialSituationMemory
 from AI.dataflows.interface import set_config
 from AI.default_config import load_config
+from AI.utils.call_trace import trace_call, trace_step
 
 from .conditional_logic import ConditionalLogic
 from .setup import GraphSetup
@@ -49,12 +50,14 @@ class TradingAgentsGraph:
             config: 配置字典，为 None 时从环境变量加载
         """
         if selected_analysts is None:
-            selected_analysts = ["market", "social", "news", "fundamentals", "tech"]
+            selected_analysts = ["market", "sector", "social", "news", "fundamentals", "stock_tech"]
 
         self.debug = debug
         self.config = config or load_config()
 
         set_config(self.config)
+        trace_step("TradingAgentsGraph 初始化", debug=debug,
+                   analysts=selected_analysts, memory=self.config.get("memory_enabled"))
 
         # ---- LLM 初始化 (仅 ChatOpenAI) ----
         api_key = self.config.get("api_key", "")
@@ -132,9 +135,11 @@ class TradingAgentsGraph:
             self.config,
         )
 
+        # Propagator：创建 LangGraph 初始状态 + 图调用参数（递归上限、流模式）
         self.propagator = Propagator(
             max_recur_limit=self.config.get("max_recur_limit", 100)
         )
+        # Reflector：交易结算后让 LLM 复盘决策（正确/错误原因 + 改进方案），结果写入记忆系统
         self.reflector = Reflector(self.quick_thinking_llm)
         self.signal_processor = SignalProcessor(self.quick_thinking_llm)
 
@@ -145,23 +150,18 @@ class TradingAgentsGraph:
 
         # 编译图
         self.graph = self.graph_setup.setup_graph(selected_analysts)
-        logger.info("LangGraph 工作流编译完成")
+        trace_step("图编译完成", analysts_count=len(selected_analysts))
 
     def _create_tool_nodes(self) -> Dict[str, ToolNode]:
         """创建各分析师的工具节点"""
         return {
-            "market": ToolNode([
+            "stock_tech": ToolNode([
                 self.toolkit.get_stock_market_data_unified,
                 self.toolkit.get_stockstats_indicators_report,
             ]),
             "social": ToolNode([self.toolkit.get_china_market_overview]),
             "news": ToolNode([self.toolkit.get_stock_news_unified]),
             "fundamentals": ToolNode([self.toolkit.get_stock_fundamentals_unified]),
-            "tech": ToolNode([
-                self.toolkit.get_global_tech_indices,
-                self.toolkit.get_ai_industry_chain,
-                self.toolkit.get_tech_correlation_analysis,
-            ]),
         }
 
     def propagate(self, company_name, trade_date, progress_callback=None):
@@ -176,6 +176,8 @@ class TradingAgentsGraph:
             (final_state, decision_dict)
         """
         self.ticker = company_name
+        trace_step("propagate 入口", company=company_name, trade_date=trade_date,
+                   callback=bool(progress_callback))
         logger.info(f"开始分析: {company_name} @ {trade_date}")
 
         # 初始化状态
@@ -183,6 +185,8 @@ class TradingAgentsGraph:
         args = self.propagator.get_graph_args(
             use_progress_callback=bool(progress_callback)
         )
+        trace_step("初始状态就绪", stream_mode=args.get("stream_mode"),
+                   recursion_limit=args.get("config", {}).get("recursion_limit"))
 
         # 运行图
         final_state = None
@@ -225,11 +229,16 @@ class TradingAgentsGraph:
 
         self.curr_state = final_state
         self._log_state(trade_date, final_state)
+        trace_step("图执行完成", nodes_visited=len([k for k in final_state.keys()
+                     if not k.startswith('__')]))
+        trace_step("开始信号处理", stock=company_name)
 
         # 处理决策信号
         decision = self.process_signal(
             final_state["final_trade_decision"], company_name
         )
+        trace_step("决策提取完成", action=decision.get("action"),
+                   price=decision.get("target_price"), conf=decision.get("confidence"))
 
         return final_state, decision
 
@@ -249,11 +258,21 @@ class TradingAgentsGraph:
                 return
 
             node_map = {
-                "Market Analyst": "市场分析中...",
+                "Market Layer": "市场层分析中...",
+                "Sector Layer": "板块层分析中...",
+                "Sector News Analyst": "板块新闻分析中...",
+                "Sector Tech Analyst": "板块技术分析中...",
+                "Stock Tech Analyst": "个股技术分析中...",
                 "Fundamentals Analyst": "基本面分析中...",
                 "News Analyst": "新闻分析中...",
                 "Social Analyst": "情绪分析中...",
-                "Tech Analyst": "全球科技指数分析中...",
+                "International News Analyst": "国际新闻分析中...",
+                "US News Analyst": "美国新闻分析中...",
+                "US Tech Analyst": "美国技术分析中...",
+                "KR News Analyst": "韩国新闻分析中...",
+                "KR Tech Analyst": "韩国技术分析中...",
+                "CN News Analyst": "中国新闻分析中...",
+                "CN Tech Analyst": "中国技术分析中...",
                 "Bull Researcher": "看涨研究辩论中...",
                 "Bear Researcher": "看跌研究辩论中...",
                 "Research Manager": "生成投资计划中...",
@@ -276,11 +295,17 @@ class TradingAgentsGraph:
             self.log_states_dict[str(trade_date)] = {
                 "company": final_state.get("company_of_interest", ""),
                 "date": final_state.get("trade_date", ""),
-                "market_report": final_state.get("market_report", ""),
+                "international_news_report": final_state.get("international_news_report", ""),
+                "us_news_report": final_state.get("us_news_report", ""),
+                "us_tech_report": final_state.get("us_tech_report", ""),
+                "kr_news_report": final_state.get("kr_news_report", ""),
+                "kr_tech_report": final_state.get("kr_tech_report", ""),
+                "cn_news_report": final_state.get("cn_news_report", ""),
+                "cn_tech_report": final_state.get("cn_tech_report", ""),
+                "stock_tech_report": final_state.get("stock_tech_report", ""),
                 "sentiment_report": final_state.get("sentiment_report", ""),
                 "news_report": final_state.get("news_report", ""),
                 "fundamentals_report": final_state.get("fundamentals_report", ""),
-                "tech_market_report": final_state.get("tech_market_report", ""),
                 "investment_plan": final_state.get("investment_plan", ""),
                 "trader_plan": final_state.get("trader_investment_plan", ""),
                 "final_decision": final_state.get("final_trade_decision", ""),

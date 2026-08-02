@@ -32,7 +32,9 @@ START
 ### 1. 安装依赖
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
+# 或使用 uv（更快）
+uv pip install -e .
 ```
 
 ### 2. 配置
@@ -162,7 +164,7 @@ YoHo
 YoHo/
 ├── README.md
 ├── a.bash                      # 配置文件 (source 此文件)
-├── requirements.txt            # Python 依赖
+├── pyproject.toml              # Python 项目配置与依赖
 ├── main.py                     # 入口
 ├── Dockerfile                  # Docker 镜像
 ├── docker-compose.yml          # Docker 服务编排 (MongoDB + Redis + YoHo)

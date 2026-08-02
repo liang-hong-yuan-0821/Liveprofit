@@ -1,0 +1,23 @@
+[
+  {"date": "2026-01-29", "bank": "美联储", "event": "FOMC利率决议", "decision": "维持4.25-4.50%不变"},
+  {"date": "2026-01-30", "bank": "欧央行", "event": "利率决议", "decision": "降息25bp至2.75%"},
+  {"date": "2026-01-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "1年期3.10%，5年期3.60%"},
+  {"date": "2026-02-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "1年期3.10%，5年期3.60%"},
+  {"date": "2026-03-19", "bank": "美联储", "event": "FOMC利率决议", "decision": "维持不变"},
+  {"date": "2026-03-06", "bank": "欧央行", "event": "利率决议", "decision": "降息25bp至2.50%"},
+  {"date": "2026-03-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "待公布"},
+  {"date": "2026-04-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "待公布"},
+  {"date": "2026-04-17", "bank": "欧央行", "event": "利率决议", "decision": "待公布"},
+  {"date": "2026-05-07", "bank": "美联储", "event": "FOMC利率决议", "decision": "待公布"},
+  {"date": "2026-05-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "待公布"},
+  {"date": "2026-06-05", "bank": "欧央行", "event": "利率决议", "decision": "待公布"},
+  {"date": "2026-06-17", "bank": "美联储", "event": "FOMC利率决议（含点阵图）", "decision": "待公布"},
+  {"date": "2026-06-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "待公布"},
+  {"date": "2026-07-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "待公布"},
+  {"date": "2026-07-23", "bank": "欧央行", "event": "利率决议", "decision": "待公布"},
+  {"date": "2026-08-20", "bank": "中国人民银行", "event": "LPR报价", "decision": "待公布"},
+  {"date": "2026-09-17", "bank": "美联储", "event": "FOMC利率决议（含点阵图）", "decision": "待公布"},
+  {"date": "2026-09-10", "bank": "欧央行", "event": "利率决议", "decision": "待公布"},
+  {"date": "2026-11-05", "bank": "美联储", "event": "FOMC利率决议", "decision": "待公布"},
+  {"date": "2026-12-17", "bank": "美联储", "event": "FOMC利率决议（含点阵图）", "decision": "待公布"}
+]

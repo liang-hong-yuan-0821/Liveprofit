@@ -1,6 +1,7 @@
 """
 YoHo 文件缓存系统
 参考 TradingAgents-CN，基于文件的缓存，按市场类型组织。
+使用 JSON 文件存储，MD5 哈希键名，支持 TTL 过期。
 """
 
 import os
@@ -28,7 +29,7 @@ class StockDataCache:
             os.makedirs(os.path.join(self.cache_dir, sub), exist_ok=True)
 
     def _get_cache_key(self, *args) -> str:
-        """生成缓存键"""
+        """生成缓存键（MD5 前16位）"""
         raw = "|".join(str(a) for a in args)
         return hashlib.md5(raw.encode()).hexdigest()[:16]
 
@@ -51,19 +52,20 @@ class StockDataCache:
         return None
 
     def _is_cache_valid(self, cached_at: str, ttl_seconds: int) -> bool:
-        """检查缓存是否有效"""
+        """检查缓存是否在有效期内"""
         try:
             cached_time = datetime.fromisoformat(cached_at)
             return (datetime.now() - cached_time).total_seconds() < ttl_seconds
         except Exception:
             return False
 
-    # ---- 行情数据 ----
+    # ---- 行情 ----
 
     def save_stock_data(self, symbol: str, data: str, start_date: str = "",
                         end_date: str = "", data_source: str = "") -> bool:
         """保存股票行情数据"""
         try:
+            # 生成缓存键（含日期范围，避免不同查询复用同一缓存）
             key = self._get_cache_key(symbol, data_source, start_date, end_date)
             path = self._get_cache_path("china_stocks", key)
             with open(path, "w", encoding="utf-8") as f:
@@ -80,13 +82,14 @@ class StockDataCache:
 
     def load_stock_data(self, symbol: str, data_source: str = "",
                         start_date: str = "", end_date: str = "") -> Optional[str]:
-        """加载股票行情数据"""
+        """加载股票行情数据（TTL: 1小时）"""
         key = self._get_cache_key(symbol, data_source, start_date, end_date)
         path = self._get_cache_path("china_stocks", key)
         if os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     doc = json.load(f)
+                # TTL = 3600s (1小时)
                 if self._is_cache_valid(doc.get("created_at", ""), 3600):
                     return doc.get("data")
             except Exception:
@@ -96,6 +99,7 @@ class StockDataCache:
     # ---- 新闻 ----
 
     def save_news_data(self, symbol: str, data: str, data_source: str = "") -> bool:
+        """保存新闻数据"""
         try:
             key = self._get_cache_key(symbol, data_source)
             path = self._get_cache_path("china_news", key)
@@ -107,12 +111,14 @@ class StockDataCache:
             return False
 
     def load_news_data(self, symbol: str, data_source: str = "") -> Optional[str]:
+        """加载新闻数据（TTL: 4小时）"""
         key = self._get_cache_key(symbol, data_source)
         path = self._get_cache_path("china_news", key)
         if os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     doc = json.load(f)
+                # TTL = 14400s (4小时)
                 if self._is_cache_valid(doc.get("created_at", ""), 14400):
                     return doc.get("data")
             except Exception:
@@ -122,6 +128,7 @@ class StockDataCache:
     # ---- 基本面 ----
 
     def save_fundamentals_data(self, symbol: str, data: str, data_source: str = "") -> bool:
+        """保存基本面数据"""
         try:
             key = self._get_cache_key(symbol, data_source)
             path = self._get_cache_path("china_fundamentals", key)
@@ -133,12 +140,14 @@ class StockDataCache:
             return False
 
     def load_fundamentals_data(self, symbol: str, data_source: str = "") -> Optional[str]:
+        """加载基本面数据（TTL: 12小时）"""
         key = self._get_cache_key(symbol, data_source)
         path = self._get_cache_path("china_fundamentals", key)
         if os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     doc = json.load(f)
+                # TTL = 43200s (12小时)
                 if self._is_cache_valid(doc.get("created_at", ""), 43200):
                     return doc.get("data")
             except Exception:
@@ -148,7 +157,7 @@ class StockDataCache:
     # ---- 清理 ----
 
     def clear_old_cache(self, max_age_days: int = 30):
-        """清理过期缓存"""
+        """清理过期缓存（按文件修改时间判断）"""
         cutoff = datetime.now() - timedelta(days=max_age_days)
         for category in ["china_stocks", "china_news", "china_fundamentals", "metadata"]:
             cat_dir = os.path.join(self.cache_dir, category)

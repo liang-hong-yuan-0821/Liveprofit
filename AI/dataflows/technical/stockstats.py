@@ -1,6 +1,7 @@
 """
 YoHo 技术指标计算 (简化版)
 使用 tushare 数据 + stockstats 计算技术指标，不再依赖 yfinance。
+支持指标：SMA、RSI、MACD、布林带、成交量等。
 """
 
 import logging
@@ -42,14 +43,13 @@ class StockstatsUtils:
         start_dt = curr_dt - pd.DateOffset(days=lookback_days)
         start_date = start_dt.strftime("%Y-%m-%d")
 
-        # 从 Tushare 获取行情数据
+        # 从数据层获取行情数据
         raw_text = get_china_stock_data(symbol, start_date, curr_date)
         if not raw_text or raw_text.startswith("Tushare") or raw_text.startswith("获取"):
             logger.warning(f"无法获取 {symbol} 的行情数据用于技术指标计算")
             return "N/A: 无法获取行情数据"
 
-        # tushare 输出格式解析
-        # 构建 OHLCV DataFrame
+        # 解析 Tushare 文本输出，构建 OHLCV DataFrame
         rows = []
         for line in raw_text.strip().split("\n"):
             parts = line.strip().split()
@@ -78,6 +78,7 @@ class StockstatsUtils:
         df = df.sort_values("date")
 
         try:
+            # 用 stockstats 包装 DataFrame，访问指标名触发计算
             stock = wrap(df)
             stock[indicator]  # 触发 stockstats 计算指标
             matching = stock[stock["date"].dt.strftime("%Y-%m-%d") == curr_date]
@@ -105,6 +106,7 @@ class StockstatsUtils:
         Returns:
             格式化的技术指标报告文本
         """
+        # 常用技术指标列表
         indicators = [
             "close_5_sma", "close_10_sma", "close_20_sma", "close_50_sma",
             "close_200_sma",
@@ -114,6 +116,7 @@ class StockstatsUtils:
             "volume_delta",
         ]
 
+        # 逐个计算指标并汇总
         results = []
         for ind in indicators:
             val = StockstatsUtils.get_stock_stats(

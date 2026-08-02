@@ -1,6 +1,7 @@
 """
 YoHo 自适应缓存系统
 根据可用后端自动选择：Redis > MongoDB > File
+使用 pickle 序列化，支持任意 Python 对象。
 """
 
 import os
@@ -30,9 +31,9 @@ class AdaptiveCacheSystem:
     def __init__(self):
         self._redis = None
         self._mongo_db = None
-        self._backend = "file"
+        self._backend = "file"  # 默认文件后端
 
-        # 检测 Redis
+        # 检测 Redis — 最高优先级
         if REDIS_AVAILABLE:
             try:
                 uri = os.getenv("REDIS_CONNECTION_STRING") or os.getenv(
@@ -45,7 +46,7 @@ class AdaptiveCacheSystem:
             except Exception:
                 pass
 
-        # 检测 MongoDB
+        # 检测 MongoDB — 次优先级
         if self._backend != "redis" and PYMONGO_AVAILABLE:
             try:
                 uri = os.getenv("MONGODB_CONNECTION_STRING", f"mongodb://localhost:27017")
@@ -57,6 +58,7 @@ class AdaptiveCacheSystem:
             except Exception:
                 pass
 
+        # 兜底：文件后端
         if self._backend == "file":
             logger.info("AdaptiveCache: 使用文件后端")
 
@@ -65,24 +67,28 @@ class AdaptiveCacheSystem:
         os.makedirs(self._file_dir, exist_ok=True)
 
     def _get_ttl(self, data_type: str) -> int:
+        """获取数据类型对应的 TTL"""
         ttls = {"stock": 3600, "news": 14400, "fundamentals": 43200}
         return ttls.get(data_type, 3600)
 
     def save_data(self, key: str, data, data_type: str = "stock") -> bool:
+        """保存数据到当前后端"""
         ttl = self._get_ttl(data_type)
         try:
             if self._backend == "redis" and self._redis:
+                # Redis：pickle 序列化后写入，带 TTL
                 pickled = pickle.dumps(data)
                 self._redis.setex(f"yoho:{key}", ttl, pickled)
                 return True
             elif self._backend == "mongodb" and self._mongo_db:
+                # MongoDB：pickle 序列化后以 hex 编码存储
                 doc = {"_id": key, "data": pickle.dumps(data).hex(),
                        "data_type": data_type,
                        "expires_at": datetime.utcnow() + timedelta(seconds=ttl)}
                 self._mongo_db.cache.replace_one({"_id": key}, doc, upsert=True)
                 return True
             else:
-                # 文件回退
+                # 文件回退：pickle 二进制文件 + 过期时间
                 path = os.path.join(self._file_dir, f"{key}.pkl")
                 with open(path, "wb") as f:
                     pickle.dump({"data": data, "expires_at": datetime.now() + timedelta(seconds=ttl)}, f)
@@ -92,6 +98,7 @@ class AdaptiveCacheSystem:
             return False
 
     def load_data(self, key: str, data_type: str = "stock") -> Optional[any]:
+        """从当前后端加载数据"""
         try:
             if self._backend == "redis" and self._redis:
                 pickled = self._redis.get(f"yoho:{key}")
@@ -100,8 +107,10 @@ class AdaptiveCacheSystem:
             elif self._backend == "mongodb" and self._mongo_db:
                 doc = self._mongo_db.cache.find_one({"_id": key})
                 if doc and doc.get("expires_at", datetime.min) > datetime.utcnow():
+                    # 从 hex 解码 pickle 数据
                     return pickle.loads(bytes.fromhex(doc["data"]))
             else:
+                # 文件回退
                 path = os.path.join(self._file_dir, f"{key}.pkl")
                 if os.path.exists(path):
                     with open(path, "rb") as f:
@@ -113,4 +122,5 @@ class AdaptiveCacheSystem:
         return None
 
     def get_backend(self) -> str:
+        """获取当前使用的后端名称"""
         return self._backend

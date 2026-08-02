@@ -19,7 +19,7 @@ def create_bear_researcher(llm, memory):
         bear_history = investment_debate_state.get("bear_history", "")
         current_response = investment_debate_state.get("current_response", "")
 
-        market_report = state["market_report"]
+        market_report = state.get("stock_tech_report", "")
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]

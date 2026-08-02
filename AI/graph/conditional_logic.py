@@ -7,6 +7,7 @@ YoHo 条件逻辑 (简化版)
 import logging
 
 from AI.agents.utils.agent_states import AgentState
+from AI.utils.call_trace import trace_step
 
 logger = logging.getLogger(__name__)
 
@@ -30,21 +31,24 @@ class ConditionalLogic:
         report = state.get(report_key, "")
 
         if tool_call_count >= max_tool_calls:
-            logger.warning(f"[条件] {report_key}: 达到最大工具调用次数，强制结束")
+            trace_step(f"[路由] {report_key} 工具调用达上限", count=tool_call_count, route=clear_node)
             return clear_node
 
         if report and len(report) > 100:
+            trace_step(f"[路由] {report_key} 报告已就绪", report_len=len(report), route=clear_node)
             return clear_node
 
         if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+            trace_step(f"[路由] {report_key} 需要调用工具", route=tools_node)
             return tools_node
 
+        trace_step(f"[路由] {report_key} 完成", route=clear_node)
         return clear_node
 
-    def should_continue_market(self, state: AgentState) -> str:
+    def should_continue_stock_tech(self, state: AgentState) -> str:
         return self._check_analyst_continue(
-            state, "market_report", "market_tool_call_count",
-            "Msg Clear Market", "tools_market"
+            state, "stock_tech_report", "stock_tech_tool_call_count",
+            "Msg Clear Stock Tech", "tools_stock_tech"
         )
 
     def should_continue_social(self, state: AgentState) -> str:
@@ -76,13 +80,15 @@ class ConditionalLogic:
         logger.info(f"[辩论控制] 发言次数: {current_count}/{max_count}")
 
         if current_count >= max_count:
-            logger.info("[辩论控制] 达到最大次数 -> Research Manager")
+            trace_step("[路由] 辩论达到最大轮次", count=current_count, next="Research Manager")
             return "Research Manager"
 
         next_speaker = (
             "Bear Researcher" if current_speaker.startswith("Bull")
             else "Bull Researcher"
         )
+        trace_step("[路由] 辩论继续", count=current_count, current=current_speaker[:20],
+                   next=next_speaker)
         return next_speaker
 
     # ==================== 风险分析条件 ====================
@@ -96,11 +102,14 @@ class ConditionalLogic:
         logger.info(f"[风险控制] 发言次数: {current_count}/{max_count}")
 
         if current_count >= max_count:
-            logger.info("[风险控制] 达到最大次数 -> Risk Judge")
+            trace_step("[路由] 风险讨论达到最大轮次", count=current_count, next="Risk Judge")
             return "Risk Judge"
 
         if latest_speaker.startswith("Risky"):
+            trace_step("[路由] 风险讨论继续", count=current_count, current="Risky", next="Safe Analyst")
             return "Safe Analyst"
         elif latest_speaker.startswith("Safe"):
+            trace_step("[路由] 风险讨论继续", count=current_count, current="Safe", next="Neutral Analyst")
             return "Neutral Analyst"
+        trace_step("[路由] 风险讨论继续", count=current_count, current="Neutral", next="Risky Analyst")
         return "Risky Analyst"

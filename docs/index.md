@@ -1,0 +1,187 @@
+# Liveprofit（YoHo）多智能体架构重构技术方案
+
+## 市场 — 板块 — 个股三维度分析
+
+> **AI 速览**：市场层（独立子图，7 个 Agent）已实现，板块层（独立子图，2 个 Agent）已实现。
+>
+> **状态**：市场层 ✅ 板块层 ✅ 个股层持续更新
+>
+> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/dataflows/`、`AI/graph/`
+
+---
+
+## 目标
+
+在现有以"个股"为中心的分析师体系之上，新增"市场（宏观 + 国际 + 各国技术面）"与"板块（全市场行业/概念强度对比）"两个维度的分析师，形成**自顶向下的三层分析金字塔**，为后续研究员辩论、风险评估、交易决策提供更完整的多维度依据。
+
+---
+
+## 文档导航
+
+| 文档 | 类型 | 内容 |
+|------|------|------|
+| [市场层](市场层.md) | 主干架构 | 市场层架构定义（已实现 ✅） |
+| [板块层](板块层.md) | 主干架构 | 板块层架构定义（已实现 ✅） |
+| [个股层](个股层.md) | 主干架构 | 个股层架构定义（持续更新） |
+| [plans/](plans/) | 施工方案 | 单次重构/新功能的临时方案（实施完归档） |
+
+> **约定**：主干文档随项目持续演进；`plans/` 下的方案文档实施完成后整合进主干并删除。
+
+---
+
+## 一、现状诊断
+
+Liveprofit（YoHo）现有 12 个 Agent，全部锚定在"个股"维度：
+
+| 层级 | 现有 Agent | 问题 |
+|------|------------|------|
+| **分析师** | 个股技术面 / 基本面 / 新闻 / 情绪，均以 ticker 为中心 | 没有独立的"大盘环境"判断，`get_china_market_overview` 只是个股技术分析师可选小工具，未形成独立报告 |
+| **板块** | `tech_market_analyst` 已删除 | 全市场行业/概念板块的横向强弱对比、轮动排名，完全空白 |
+| **研究/辩论/风控/交易** | 读取 4 份个股报告 + 7 份市场层宏观报告 | 已注入市场层上下文 |
+| **历史类比** | 国际新闻分析中内嵌历史案例检索 | 通过静态 JSON 关键词匹配实现，不依赖外部 API |
+
+### 改造方向
+
+要形成"**市场 → 板块 → 个股**"自顶向下分析框架，需要：
+
+- **分析师层**：市场层已实现（7 个 Agent + 独立子图），板块层待实现
+- **下游消费**：辩论、经理、风控已注入市场层上下文（`build_market_layer_context()`）
+- **数据层**：已补齐 14 个新数据函数 + 5 个占位函数
+
+---
+
+## 二、总体设计：三层金字塔架构
+
+### 设计原则
+
+**新增不改旧**：
+
+- 市场层作为独立编译的 LangGraph 子图，插入到个股层之前
+- 各层输出各自独立的 report 字段，不影响现有个股分析师的内部逻辑
+- 下游节点（研究员/经理/风控）做增量式 prompt 扩展，把新报告作为附加上下文纳入即可
+- **向后兼容**：找不到字段时可为空字符串
+
+### 三层 Subgraph 架构概览
+
+```
+顶层 Graph（个股维度）
+├── Subgraph: 市场层（★ 已实现）    ← 独立编译，共享 state
+│   ├── Layer 0: 国际新闻分析 (Global)
+│   │   └── 宏观事件 + 历史案例类比
+│   └── Layer 1: 各国市场分析（可扩展）
+│       ├── US: 新闻分析 + 技术分析
+│       ├── KR: 新闻分析 + 技术分析
+│       └── CN: 新闻分析 + 技术分析 ★ 主战场
+├── Subgraph: 板块层（★ 已实现）    ← 独立编译，共享 state
+│   ├── 板块新闻分析 — 行业排名 + 资金流向 + 板块轮动
+│   └── 板块技术分析 — 全行业技术扫描 + AI专题深挖 + 风格验证
+└── 个股层 + 辩论 + 风控
+    ├── Social → News → Fundamentals → Stock Tech（个股分析师序列）
+    ├── Bull ↔ Bear Debate → Research Manager
+    └── Trader → Risk → END
+```
+
+### 市场层子图内部
+
+市场层是独立编译的子图（`AI/marketAgents/market_layer_graph.py`），父图通过 `add_node("Market Layer", subgraph)` 将其作为一个节点使用。子图内部按地域维度组织，串行执行 7 个 Agent：
+
+| 层级 | Agent | 输出字段 | 工具循环 |
+|------|-------|----------|:---:|
+| Layer 0 | 国际新闻分析 | `international_news_report` | ✅ |
+| US | 美国新闻分析 | `us_news_report` | ✅ |
+| US | 美国技术分析 | `us_tech_report` | — |
+| KR | 韩国新闻分析 | `kr_news_report` | ✅ |
+| KR | 韩国技术分析 | `kr_tech_report` | — |
+| CN ★ | 中国新闻分析 | `cn_news_report` | ✅ |
+| CN ★ | 中国技术分析 | `cn_tech_report` | — |
+
+> 所有市场层 Agent 不依赖 `company_of_interest`，仅使用 `trade_date`。
+> 新增国家：在 `market_layer_graph.py` 的 `COUNTRIES` 中加一行 + 写两个 Analyst 文件即可。
+
+### 数据流
+
+```
+START
+  → Market Layer (subgraph)     ← 一个节点，内部封装 7 个 Analyst
+  → Sector Layer (subgraph)     ← 一个节点，内部封装 2 个 Analyst
+  → [个股层: Stock Tech → Social → News → Fundamentals]
+  → Bull ↔ Bear Debate → Research Manager → Trader → Risk → END
+```
+
+> 子图触发条件：`selected_analysts` 中包含 `"market"` 时运行（默认包含），不含时跳过。
+> 子图与父图共享同一个 `AgentState`，子图写入市场层 7 个 report 字段，个股层直接读取。
+
+---
+
+## 三、State 字段汇总
+
+### 市场层产出（7 个 report + 7 个 tool_call_count）
+
+| 字段 | 写入者 |
+|------|--------|
+| `international_news_report` | 国际新闻分析师 |
+| `us_news_report` | 美国新闻分析师 |
+| `us_tech_report` | 美国技术分析师 |
+| `kr_news_report` | 韩国新闻分析师 |
+| `kr_tech_report` | 韩国技术分析师 |
+| `cn_news_report` | 中国新闻分析师 |
+| `cn_tech_report` | 中国技术分析师 |
+| `*_tool_call_count`（7 个） | 对应 Analyst |
+
+### 板块层产出（2 个 report + 2 个 tool_call_count）
+
+| 字段 | 写入者 |
+|------|--------|
+| `sector_news_report` | 板块新闻分析师 |
+| `sector_tech_report` | 板块技术分析师 |
+| `sector_news_tool_call_count` | 板块新闻分析师 |
+| `sector_tech_tool_call_count` | 板块技术分析师 |
+
+> 板块层产出**不注入个股层决策节点**，写入 State 后保持独立。
+
+### 个股层产出（4 个）
+
+| 字段 | 写入者 | 说明 |
+|------|--------|------|
+| `stock_tech_report` | 个股技术分析师 | 原名 `market_report`，2026-08 重命名 |
+| `news_report` | 新闻分析师 | |
+| `sentiment_report` | 情绪分析师 | |
+| `fundamentals_report` | 基本面分析师 | |
+
+---
+
+## 四、下游消费
+
+### 市场层上下文注入
+
+市场层 7 份报告通过 `build_market_layer_context(state)` 组装为统一上下文文本，注入到个股层的 9 个下游节点：
+
+- 研究员：`bull_researcher`、`bear_researcher`
+- 辩论：`aggresive_debator`、`conservative_debator`、`neutral_debator`
+- 决策：`research_manager`
+- 风控：`risk_manager`
+- 交易：`trader`
+- 反思：`reflection`
+
+所有下游节点统一使用 `state.get("field_name", "")` 兜底写法，确保未跑市场层时不会 KeyError。
+
+### 数据源覆盖
+
+| 层级 | 实现 | 占位 | 说明 |
+|------|------|------|------|
+| 市场层 | 14 函数 | 5 函数 | US/KR 部分数据暂无免费源 |
+| 板块层 | 5 函数 | 1 函数 | 行业数据/资金流向/技术筛选/alpha排名/概念热度；政策新闻占位 |
+
+---
+
+## 五、板块层（已实现 ✅）
+
+板块层作为三层金字塔的第二层，位于市场层之后、个股层之前。详见 [板块层](板块层.md) 和 [施工方案](plans/板块层技术方案.md)。
+
+已实现内容：
+- **SectorLayerGraph** — 独立编译的 LangGraph 子图（`AI/sectorAgents/sector_layer_graph.py`）
+- **板块新闻分析** — 全行业涨跌排名 + 资金流向 + 概念热度 + 轮动判断
+- **板块技术分析** — 全行业技术状态矩阵（行业板块指数K线）+ AI/科技产业链专题深挖 + 风格因子验证
+- **数据层** — 5 个新增实现函数 + 1 个占位 + 2 个已有工具复用（AI产业链 + 科技相关性）
+- **图谱集成** — 父图通过 `add_node("Sector Layer", subgraph)` 集成，默认开启，顺序为 `Market → Sector → Stock Tech`
+- **独立性** — 板块层产出不传入个股层决策节点，写入 State 后保持独立

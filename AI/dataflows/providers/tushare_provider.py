@@ -44,7 +44,7 @@ class TushareProvider(BaseStockDataProvider):
             try:
                 ts.set_token(token)
                 self.api = ts.pro_api()
-                # 快速连接测试
+                # 快速连接测试：查询1条上市股票验证 Token 有效性
                 test = self.api.stock_basic(list_status="L", limit=1)
                 if test is not None and not test.empty:
                     self.connected = True
@@ -61,8 +61,10 @@ class TushareProvider(BaseStockDataProvider):
         code = code.strip().upper()
         if "." in code:
             return code
+        # 6/9 开头 → 上海交易所
         if code.startswith("6") or code.startswith("9"):
             return f"{code}.SH"
+        # 0/3/2 开头 → 深圳交易所
         if code.startswith("0") or code.startswith("3") or code.startswith("2"):
             return f"{code}.SZ"
         return code
@@ -162,7 +164,7 @@ class TushareProvider(BaseStockDataProvider):
         else:
             report_year = datetime.now().year
 
-        # 查询最近两个报告期
+        # 查询最近两个完整财年
         for year in [report_year - 1, report_year]:
             try:
                 # 财务指标
@@ -236,8 +238,9 @@ class TushareProvider(BaseStockDataProvider):
             return "Tushare 未连接，无法获取新闻数据。"
 
         code = self._normalize_code(code)
+
+        # 第一回退链：major_news（需要高级权限）→ disclosure（公告）→ 提示信息
         try:
-            # 尝试使用 Tushare 新闻接口
             df = self.api.major_news(
                 ts_code=code,
                 start_date=self._normalize_date(start_date),
@@ -298,6 +301,7 @@ class TushareProvider(BaseStockDataProvider):
         codes = [c.strip() for c in index_codes.split(",")]
         all_parts = []
 
+        # 逐个获取指数数据
         for code in codes:
             try:
                 df = self.api.index_daily(

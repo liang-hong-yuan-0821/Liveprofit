@@ -11,7 +11,7 @@ from AI.agents.analysts.market_analyst import create_market_analyst
 from AI.agents.analysts.fundamentals_analyst import create_fundamentals_analyst
 from AI.agents.analysts.news_analyst import create_news_analyst
 from AI.agents.analysts.social_media_analyst import create_social_media_analyst
-from AI.agents.analysts.tech_market_analyst import create_tech_market_analyst
+# create_tech_market_analyst 已删除——全球指数→marketAgents (us_tech/kr_tech), AI产业链→板块层
 
 from AI.agents.researchers.bull_researcher import create_bull_researcher
 from AI.agents.researchers.bear_researcher import create_bear_researcher
@@ -39,7 +39,6 @@ __all__ = [
     "create_fundamentals_analyst",
     "create_news_analyst",
     "create_social_media_analyst",
-    "create_tech_market_analyst",
     # 研究员
     "create_bull_researcher",
     "create_bear_researcher",

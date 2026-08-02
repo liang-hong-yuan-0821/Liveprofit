@@ -7,6 +7,8 @@ YoHo 反思器 (简化版)
 import logging
 from typing import Dict, Any
 
+from AI.utils.call_trace import trace_call, trace_step
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +44,7 @@ class Reflector:
     def _extract_current_situation(self, current_state: Dict[str, Any]) -> str:
         """从状态中提取当前市场情境"""
         return (
-            f"{current_state['market_report']}\n\n"
+            f"{current_state.get('stock_tech_report', '')}\n\n"
             f"{current_state['sentiment_report']}\n\n"
             f"{current_state['news_report']}\n\n"
             f"{current_state['fundamentals_report']}"
@@ -61,19 +63,23 @@ class Reflector:
         ]
         return self.quick_thinking_llm.invoke(messages).content
 
+    @trace_call(show_params=["returns_losses"])
     def reflect_bull_researcher(self, current_state, returns_losses, memory):
         if memory is None:
             return
         situation = self._extract_current_situation(current_state)
         bull_debate = current_state["investment_debate_state"]["bull_history"]
+        trace_step("反思 Bull Researcher", returns=returns_losses, debate_len=len(bull_debate))
         result = self._reflect_on_component(bull_debate, situation, returns_losses)
         memory.add_situations([(situation, result)])
 
+    @trace_call(show_params=["returns_losses"])
     def reflect_bear_researcher(self, current_state, returns_losses, memory):
         if memory is None:
             return
         situation = self._extract_current_situation(current_state)
         bear_debate = current_state["investment_debate_state"]["bear_history"]
+        trace_step("反思 Bear Researcher", returns=returns_losses, debate_len=len(bear_debate))
         result = self._reflect_on_component(bear_debate, situation, returns_losses)
         memory.add_situations([(situation, result)])
 

@@ -9,6 +9,8 @@ import json
 import logging
 import re
 
+from AI.utils.call_trace import trace_call, trace_step
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,6 +20,7 @@ class SignalProcessor:
     def __init__(self, quick_thinking_llm):
         self.quick_thinking_llm = quick_thinking_llm
 
+    @trace_call(show_params=["stock_symbol"], show_result=True)
     def process_signal(self, full_signal: str, stock_symbol: str = None) -> dict:
         """
         从完整交易信号中提取结构化决策信息

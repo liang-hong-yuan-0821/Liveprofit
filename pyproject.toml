@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yoho"
+version = "0.1.0"
+description = "YoHo - 多智能体股票交易分析系统，基于 LangGraph 编排多个 LLM 智能体协作分析 A 股市场"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # AI/LLM 框架
+    "langgraph>=0.4.0",
+    "langchain-openai>=0.3.0",
+    "langchain-core>=0.3.0",
+
+    # 金融数据源
+    "tushare>=1.4.0",
+    "akshare>=1.17.0",
+    "stockstats>=0.4.1",
+
+    # 向量数据库
+    "chromadb>=0.6.0",
+
+    # 数据处理
+    "pandas>=2.2.0",
+    "python-dateutil>=2.9.0",
+
+    # 数据库和缓存
+    "pymongo>=4.0.0",
+    "redis>=6.2.0",
+
+    # 工具
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+yoho = "main:main"
+
+[tool.setuptools.packages.find]
+include = ["AI*"]
+exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*"]

@@ -1,6 +1,7 @@
 """
 YoHo 数据库缓存管理器 (MongoDB + Redis)
 参考 TradingAgents-CN，双后端缓存，Redis 优先读取。
+Redis 作为热缓存层（低延迟），MongoDB 作为持久层（高可用）。
 """
 
 import os
@@ -32,6 +33,7 @@ class DatabaseCacheManager:
         self._redis = None
         self._mongo_db = None
 
+        # 构建连接 URI（环境变量 > 默认值）
         mongo_uri = os.getenv("MONGODB_CONNECTION_STRING") or os.getenv(
             "TRADINGAGENTS_MONGODB_URL"
         ) or f"mongodb://{os.getenv('MONGODB_HOST', 'localhost')}:{os.getenv('MONGODB_PORT', '27017')}/{os.getenv('MONGODB_DATABASE', 'yoho')}"
@@ -43,6 +45,7 @@ class DatabaseCacheManager:
         self._mongo_available = False
         self._redis_available = False
 
+        # 连接 MongoDB
         if PYMONGO_AVAILABLE:
             try:
                 client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
@@ -55,6 +58,7 @@ class DatabaseCacheManager:
             except Exception as e:
                 logger.warning(f"DatabaseCacheManager: MongoDB 不可用: {e}")
 
+        # 连接 Redis
         if REDIS_AVAILABLE:
             try:
                 self._redis = redis_lib.from_url(redis_uri, socket_connect_timeout=3)
@@ -65,7 +69,7 @@ class DatabaseCacheManager:
                 logger.warning(f"DatabaseCacheManager: Redis 不可用: {e}")
 
     def _ensure_indexes(self):
-        """创建 MongoDB 索引"""
+        """创建 MongoDB 索引，加速 symbol + data_source 查询"""
         if not self._mongo_db:
             return
         try:
@@ -80,6 +84,7 @@ class DatabaseCacheManager:
             logger.warning(f"索引创建失败: {e}")
 
     def _hash_key(self, *parts) -> str:
+        """生成哈希键（MD5 前16位）"""
         raw = "|".join(str(p) for p in parts)
         return hashlib.md5(raw.encode()).hexdigest()[:16]
 
@@ -87,19 +92,20 @@ class DatabaseCacheManager:
 
     def save_stock_data(self, symbol: str, data: str, start_date: str = "",
                         end_date: str = "", data_source: str = "") -> bool:
+        """保存行情数据：先写 Redis，再写 MongoDB"""
         key = f"stock:{symbol}:{self._hash_key(start_date, end_date, data_source)}"
         doc = {
             "symbol": symbol, "data": data, "data_source": data_source,
             "start_date": start_date, "end_date": end_date,
             "created_at": datetime.utcnow(),
         }
-        # Redis (6h TTL)
+        # Redis (6h TTL) — 热缓存
         if self._redis_available:
             try:
                 self._redis.setex(key, 21600, json.dumps(doc, ensure_ascii=False))
             except Exception:
                 pass
-        # MongoDB
+        # MongoDB — 持久层
         if self._mongo_available:
             try:
                 self._mongo_db.stock_data.replace_one(
@@ -110,8 +116,9 @@ class DatabaseCacheManager:
 
     def load_stock_data(self, symbol: str, data_source: str = "",
                         start_date: str = "", end_date: str = "") -> Optional[str]:
+        """加载行情数据：Redis 优先，MongoDB 回退并回填 Redis"""
         key = f"stock:{symbol}:{self._hash_key(start_date, end_date, data_source)}"
-        # Redis 优先
+        # 第一层：Redis 热缓存
         if self._redis_available:
             try:
                 raw = self._redis.get(key)
@@ -120,12 +127,12 @@ class DatabaseCacheManager:
                     return doc.get("data")
             except Exception:
                 pass
-        # MongoDB 回退
+        # 第二层：MongoDB 持久层
         if self._mongo_available:
             try:
                 doc = self._mongo_db.stock_data.find_one({"_id": key})
                 if doc:
-                    # 回填 Redis
+                    # 回填 Redis，恢复热缓存
                     if self._redis_available:
                         try:
                             doc.pop("_id", None)
@@ -140,9 +147,11 @@ class DatabaseCacheManager:
     # ---- 新闻 ----
 
     def save_news_data(self, symbol: str, data: str, data_source: str = "") -> bool:
+        """保存新闻数据：Redis + MongoDB 双写"""
         key = f"news:{symbol}:{data_source}"
         doc = {"symbol": symbol, "data": data, "data_source": data_source,
                "created_at": datetime.utcnow()}
+        # Redis (24h TTL)
         if self._redis_available:
             try:
                 self._redis.setex(key, 86400, json.dumps(doc, ensure_ascii=False))
@@ -156,7 +165,9 @@ class DatabaseCacheManager:
         return True
 
     def load_news_data(self, symbol: str, data_source: str = "") -> Optional[str]:
+        """加载新闻数据：Redis 优先，MongoDB 回退"""
         key = f"news:{symbol}:{data_source}"
+        # Redis 优先
         if self._redis_available:
             try:
                 raw = self._redis.get(key)
@@ -164,6 +175,7 @@ class DatabaseCacheManager:
                     return json.loads(raw).get("data")
             except Exception:
                 pass
+        # MongoDB 回退
         if self._mongo_available:
             try:
                 doc = self._mongo_db.news_data.find_one({"_id": key})
@@ -176,9 +188,11 @@ class DatabaseCacheManager:
     # ---- 基本面 ----
 
     def save_fundamentals_data(self, symbol: str, data: str, data_source: str = "") -> bool:
+        """保存基本面数据：Redis + MongoDB 双写"""
         key = f"fina:{symbol}:{data_source}"
         doc = {"symbol": symbol, "data": data, "data_source": data_source,
                "created_at": datetime.utcnow()}
+        # Redis (24h TTL)
         if self._redis_available:
             try:
                 self._redis.setex(key, 86400, json.dumps(doc, ensure_ascii=False))
@@ -193,6 +207,7 @@ class DatabaseCacheManager:
         return True
 
     def load_fundamentals_data(self, symbol: str, data_source: str = "") -> Optional[str]:
+        """加载基本面数据：Redis 优先，MongoDB 回退"""
         key = f"fina:{symbol}:{data_source}"
         if self._redis_available:
             try:
@@ -211,5 +226,6 @@ class DatabaseCacheManager:
         return None
 
     def close(self):
+        """关闭连接"""
         if self._redis:
             self._redis.close()

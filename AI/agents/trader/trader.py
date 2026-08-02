@@ -20,7 +20,7 @@ def create_trader(llm, memory):
         instrument_context = build_instrument_context(ticker)
         investment_plan = state["investment_plan"]
 
-        market_report = state["market_report"]
+        market_report = state.get("stock_tech_report", "")
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]

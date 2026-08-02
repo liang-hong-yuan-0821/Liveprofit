@@ -32,7 +32,7 @@ def create_market_analyst(llm, toolkit):
 
         # 工具绑定
         tools = [toolkit.get_stock_market_data_unified]
-        tool_call_count = state.get("market_tool_call_count", 0)
+        tool_call_count = state.get("stock_tech_tool_call_count", 0)
 
         # 构建提示词
         prompt = ChatPromptTemplate.from_messages([
@@ -86,8 +86,8 @@ def create_market_analyst(llm, toolkit):
             logger.info(f"[市场分析师] 直接生成报告，长度: {len(report)}")
             return {
                 "messages": [result],
-                "market_report": report,
-                "market_tool_call_count": tool_call_count + 1,
+                "stock_tech_report": report,
+                "stock_tech_tool_call_count": tool_call_count + 1,
             }
 
         # 有工具调用 — 执行工具并生成分析报告
@@ -150,15 +150,15 @@ def create_market_analyst(llm, toolkit):
 
             return {
                 "messages": [result] + tool_messages + [final_result],
-                "market_report": report,
-                "market_tool_call_count": tool_call_count + 1,
+                "stock_tech_report": report,
+                "stock_tech_tool_call_count": tool_call_count + 1,
             }
         except Exception as e:
             logger.error(f"[市场分析师] 工具执行失败: {e}")
             return {
                 "messages": [result],
-                "market_report": f"分析生成失败: {e}",
-                "market_tool_call_count": tool_call_count + 1,
+                "stock_tech_report": f"分析生成失败: {e}",
+                "stock_tech_tool_call_count": tool_call_count + 1,
             }
 
     return market_analyst_node

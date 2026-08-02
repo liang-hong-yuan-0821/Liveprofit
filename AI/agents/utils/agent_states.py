@@ -41,15 +41,40 @@ class AgentState(MessagesState):
 
     sender: Annotated[str, "发送消息的 Agent"]
 
-    # 分析师报告
-    market_report: Annotated[str, "市场分析师报告"]
+    # 市场层（宏观）报告 — Layer 0 + Layer 1
+    international_news_report: Annotated[str, "国际新闻分析师报告"]  # Layer 0
+    us_news_report: Annotated[str, "美国新闻分析师报告"]
+    us_tech_report: Annotated[str, "美国技术分析师报告"]
+    kr_news_report: Annotated[str, "韩国新闻分析师报告"]
+    kr_tech_report: Annotated[str, "韩国技术分析师报告"]
+    cn_news_report: Annotated[str, "中国新闻分析师报告"]
+    cn_tech_report: Annotated[str, "中国技术分析师报告"]
+
+    # 个股层分析师报告
+    stock_tech_report: Annotated[str, "个股技术面分析师报告"]  # 原名 market_report
     sentiment_report: Annotated[str, "社交媒体分析师报告"]
     news_report: Annotated[str, "新闻分析师报告"]
     fundamentals_report: Annotated[str, "基本面分析师报告"]
-    tech_market_report: Annotated[str, "科技市场分析师报告"]
 
-    # 死循环防护：工具调用计数器
-    market_tool_call_count: Annotated[int, "市场分析师工具调用计数"]
+    # 板块层报告
+    sector_news_report: Annotated[str, "板块新闻分析师报告（行业排名+资金流向+轮动判断）"]
+    sector_tech_report: Annotated[str, "板块技术分析师报告（全行业技术扫描+AI专题+风格验证）"]
+
+    # 市场层工具调用计数器
+    international_news_tool_call_count: Annotated[int, "国际新闻分析师工具调用计数"]
+    us_news_tool_call_count: Annotated[int, "美国新闻分析师工具调用计数"]
+    us_tech_tool_call_count: Annotated[int, "美国技术分析师工具调用计数"]
+    kr_news_tool_call_count: Annotated[int, "韩国新闻分析师工具调用计数"]
+    kr_tech_tool_call_count: Annotated[int, "韩国技术分析师工具调用计数"]
+    cn_news_tool_call_count: Annotated[int, "中国新闻分析师工具调用计数"]
+    cn_tech_tool_call_count: Annotated[int, "中国技术分析师工具调用计数"]
+
+    # 板块层工具调用计数器
+    sector_news_tool_call_count: Annotated[int, "板块新闻分析师工具调用计数"]
+    sector_tech_tool_call_count: Annotated[int, "板块技术分析师工具调用计数"]
+
+    # 个股层工具调用计数器
+    stock_tech_tool_call_count: Annotated[int, "个股技术分析师工具调用计数"]
     news_tool_call_count: Annotated[int, "新闻分析师工具调用计数"]
     sentiment_tool_call_count: Annotated[int, "社交媒体分析师工具调用计数"]
     fundamentals_tool_call_count: Annotated[int, "基本面分析师工具调用计数"]

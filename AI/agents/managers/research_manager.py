@@ -19,7 +19,7 @@ def create_research_manager(llm, memory):
         instrument_context = build_instrument_context(ticker)
         history = state["investment_debate_state"].get("history", "")
 
-        market_report = state["market_report"]
+        market_report = state.get("stock_tech_report", "")
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]

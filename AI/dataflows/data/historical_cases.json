@@ -1,0 +1,112 @@
+[
+  {
+    "case_id": "FED-2022-07",
+    "date": "2022-07-27",
+    "event_type": "central_bank_rate_hike",
+    "event_desc": "美联储加息75bp，鲍威尔鹰派表态",
+    "transmission_chain": "加息 → 美元走强 → 人民币贬值 → 北向资金流出",
+    "affected_sectors": ["科技成长股利空", "高股息防御受益", "出口型企业受益"],
+    "market_impact": "A股低开高走，创业板弱于上证",
+    "systemic_risk": "low"
+  },
+  {
+    "case_id": "FED-2022-09",
+    "date": "2022-09-21",
+    "event_type": "central_bank_rate_hike",
+    "event_desc": "美联储连续第三次加息75bp，点阵图鹰派超预期",
+    "transmission_chain": "超预期紧缩 → 全球风险资产抛售 → 美元指数突破114 → 新兴市场资金外流",
+    "affected_sectors": ["成长股全面承压", "黄金避险失效", "能源相对抗跌"],
+    "market_impact": "全球股市暴跌，A股跌破3000点关口",
+    "systemic_risk": "medium"
+  },
+  {
+    "case_id": "CHINA-CRASH-2015",
+    "date": "2015-06-12",
+    "event_type": "market_crash",
+    "event_desc": "A股股灾——上证从5178点暴跌，杠杆牛市破裂，千股跌停",
+    "transmission_chain": "去杠杆 → 融资盘强平 → 流动性枯竭 → 千股跌停 → 国家队救市",
+    "affected_sectors": ["全市场普跌", "券商重灾区（大量融资盘）", "银行抗跌（救市主力买入）"],
+    "market_impact": "上证三个月内腰斩至2850点，大量散户爆仓",
+    "systemic_risk": "high"
+  },
+  {
+    "case_id": "BREXIT-2016-06",
+    "date": "2016-06-24",
+    "event_type": "geopolitical_event",
+    "event_desc": "英国脱欧公投通过，全球金融市场巨震",
+    "transmission_chain": "脱欧 → 英镑暴跌 → 避险情绪飙升 → 黄金大涨 → 全球股市暴跌 → A股相对抗跌（封闭市场优势）",
+    "affected_sectors": ["黄金避险受益", "出口欧盟企业利空", "A股整体影响有限"],
+    "market_impact": "A股当日跌1.3%后V型反弹，相比全球跌幅最小",
+    "systemic_risk": "medium"
+  },
+  {
+    "case_id": "TRADE-WAR-2018",
+    "date": "2018-03-22",
+    "event_type": "trade_war",
+    "event_desc": "美国宣布对中国500亿美元商品加征关税，中美贸易战正式爆发",
+    "transmission_chain": "关税 → 出口预期恶化 → 人民币贬值 → A股持续下跌 → 科技股首当其冲",
+    "affected_sectors": ["半导体/科技股利空（芯片禁运）", "农业利好（国产替代）", "稀土利好（反制手段）"],
+    "market_impact": "A股全年下跌约25%，上证跌破2500点",
+    "systemic_risk": "high"
+  },
+  {
+    "case_id": "COVID-2020-01",
+    "date": "2020-01-23",
+    "event_type": "pandemic",
+    "event_desc": "武汉封城，新冠疫情爆发为全球大流行",
+    "transmission_chain": "疫情 → 经济活动停滞 → 全球股市暴跌 → 美联储无限QE → 流动性泛滥 → V型反弹",
+    "affected_sectors": ["医药/口罩/检测暴利", "在线办公/教育红利", "航空/旅游/餐饮重创", "原油暴跌（需求崩塌）"],
+    "market_impact": "春节后A股暴跌8%，随后在全球放水中走出两年牛市",
+    "systemic_risk": "high"
+  },
+  {
+    "case_id": "RUSSIA-UKRAINE-2022",
+    "date": "2022-02-24",
+    "event_type": "geopolitical_conflict",
+    "event_desc": "俄乌冲突全面爆发，全球能源和粮食供应链受冲击",
+    "transmission_chain": "战争 → 原油/天然气价格飙升 → 输入性通胀 → 欧美加速加息 → 全球风险偏好骤降",
+    "affected_sectors": ["油气/煤炭利好（资源价格上涨）", "军工利好（军费预期）", "航空利空（油价成本）", "化肥/粮食利好（供应缺口）"],
+    "market_impact": "A股先跌后涨，资源股领涨全年",
+    "systemic_risk": "medium"
+  },
+  {
+    "case_id": "CHINA-ZERO-COVID-EXIT-2022-11",
+    "date": "2022-11-11",
+    "event_type": "policy_shift",
+    "event_desc": "中国发布'二十条'优化防疫措施，实质开启放开进程",
+    "transmission_chain": "放开预期 → 消费复苏预期 → 人民币升值 → 北向资金大举流入 → A股反弹",
+    "affected_sectors": ["消费/旅游/餐饮利好", "医药/疫苗利好", "之前被压制的成长股反弹"],
+    "market_impact": "A股三个月反弹约15%，港股反弹超50%",
+    "systemic_risk": "low"
+  },
+  {
+    "case_id": "IPO-AGRICULTURAL-BANK-2010",
+    "date": "2010-07-15",
+    "event_type": "large_ipo",
+    "event_desc": "农业银行A股IPO，融资685亿元，当时为全球最大IPO",
+    "transmission_chain": "超级大盘IPO → 冻结巨额打新资金 → 二级市场流动性短期抽血 → 上市后机构配售抛压",
+    "affected_sectors": ["银行板块（稀释效应）", "全市场短期资金面偏紧"],
+    "market_impact": "打新冻结资金约5000亿，市场短期失血明显；上市后破发",
+    "systemic_risk": "low"
+  },
+  {
+    "case_id": "CHINA-STIMULUS-2024-09",
+    "date": "2024-09-24",
+    "event_type": "policy_stimulus",
+    "event_desc": "中国人民银行、证监会、金融监管总局联合发布会，宣布降准50bp+降息20bp+创设互换便利和股票回购增持再贷款",
+    "transmission_chain": "超预期政策组合拳 → 流动性大幅宽松 → 市场情绪逆转 → 增量资金入市",
+    "affected_sectors": ["券商利好（市场活跃度提升）", "高股息利好（回购增持）", "地产利好（存量房贷利率下调）", "全市场风险偏好提升"],
+    "market_impact": "上证一周涨超12%，两市成交额从5000亿暴增至2.6万亿",
+    "systemic_risk": "low"
+  },
+  {
+    "case_id": "AI-DEEPSEEK-2025-01",
+    "date": "2025-01-27",
+    "event_type": "tech_disruption",
+    "event_desc": "DeepSeek发布开源推理模型R1，性能比肩OpenAI o1但训练成本仅为1/30，引发全球AI股重估",
+    "transmission_chain": "低成本AI → 算力需求叙事动摇 → 英伟达单日暴跌17% → 从硬件炒作转向应用落地 → A股AI应用概念爆发",
+    "affected_sectors": ["美股芯片/硬件利空（算力估值重估）", "A股AI应用/软件利好", "国产替代逻辑强化"],
+    "market_impact": "英伟达创纪录单日市值蒸发约6000亿美元；A股AI板块分化：硬件承压、应用大涨",
+    "systemic_risk": "medium"
+  }
+]

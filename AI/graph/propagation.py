@@ -7,7 +7,7 @@ YoHo 状态传播器 (简化版)
 import logging
 from typing import Dict, Any
 
-from AI.agents.utils.agent_states import InvestDebateState, RiskDebateState
+from AI.stockAgents.utils.agent_states import InvestDebateState, RiskDebateState
 from AI.utils.call_trace import trace_call
 
 logger = logging.getLogger(__name__)

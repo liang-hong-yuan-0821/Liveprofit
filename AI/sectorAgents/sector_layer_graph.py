@@ -9,8 +9,8 @@ import logging
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import ToolNode
 
-from AI.agents.utils.agent_states import AgentState
-from AI.agents.utils.agent_utils import create_msg_delete
+from AI.stockAgents.utils.agent_states import AgentState
+from AI.stockAgents.utils.agent_utils import create_msg_delete
 from AI.sectorAgents.analysts.sector_news_analyst import create_sector_news_analyst
 from AI.sectorAgents.analysts.sector_tech_analyst import create_sector_tech_analyst
 

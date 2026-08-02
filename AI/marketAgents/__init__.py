@@ -8,6 +8,7 @@
 不依赖 ticker，仅使用 trade_date。
 """
 
+from AI.marketAgents.market_layer_graph import MarketLayerGraph
 from AI.marketAgents.analysts.international_news_analyst import create_international_news_analyst
 from AI.marketAgents.analysts.us_news_analyst import create_us_news_analyst
 from AI.marketAgents.analysts.us_tech_analyst import create_us_tech_analyst
@@ -17,6 +18,7 @@ from AI.marketAgents.analysts.cn_news_analyst import create_cn_news_analyst
 from AI.marketAgents.analysts.cn_tech_analyst import create_cn_tech_analyst
 
 __all__ = [
+    "MarketLayerGraph",
     "create_international_news_analyst",
     "create_us_news_analyst",
     "create_us_tech_analyst",

@@ -8,7 +8,7 @@ YoHo 交易员 (简化版)
 import functools
 import logging
 
-from AI.agents.utils.instrument_utils import build_instrument_context
+from AI.stockAgents.utils.instrument_utils import build_instrument_context
 
 logger = logging.getLogger(__name__)
 

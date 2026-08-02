@@ -7,7 +7,7 @@ YoHo 研究经理 (简化版)
 
 import logging
 
-from AI.agents.utils.instrument_utils import build_instrument_context
+from AI.stockAgents.utils.instrument_utils import build_instrument_context
 
 logger = logging.getLogger(__name__)
 

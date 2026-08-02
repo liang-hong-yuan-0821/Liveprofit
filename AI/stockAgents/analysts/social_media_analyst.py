@@ -8,7 +8,7 @@ YoHo 社交媒体/情绪分析师 (简化版)
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from AI.agents.utils.instrument_utils import build_instrument_context
+from AI.stockAgents.utils.instrument_utils import build_instrument_context
 
 logger = logging.getLogger(__name__)
 

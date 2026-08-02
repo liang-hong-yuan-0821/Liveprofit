@@ -2,12 +2,15 @@
 YoHo 交易图编排器 (简化版)
 整个多智能体交易分析系统的主编排器。
 
+三层 Subgraph 架构：
+  Market Layer → Sector Layer → Stock Layer → END
+
 从 TradingAgents-CN 大幅简化：
 - LLM 初始化：仅两个 ChatOpenAI 实例（quick + deep）
+- 三层子图各自独立编译，顶层仅负责串联
 - 移除：create_llm_by_provider、_create_provider_pair
 - 移除：所有 LLM 提供商特定初始化代码
 - 移除：性能计时和指标报告
-- 简化：工具节点仅包含 Tushare 工具
 """
 
 import os
@@ -17,16 +20,19 @@ from pathlib import Path
 from typing import Dict, Any
 
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import ToolNode
+from langgraph.graph import StateGraph, END, START
 
-from AI.agents import Toolkit
-from AI.agents.utils.memory import FinancialSituationMemory
+from AI.stockAgents import Toolkit
+from AI.stockAgents.utils.agent_states import AgentState
+from AI.stockAgents.utils.memory import FinancialSituationMemory
+from AI.stockAgents.conditional_logic import ConditionalLogic
+from AI.stockAgents.stock_layer_graph import StockLayerGraph
+from AI.marketAgents.market_layer_graph import MarketLayerGraph
+from AI.sectorAgents.sector_layer_graph import SectorLayerGraph
 from AI.dataflows.interface import set_config
 from AI.default_config import load_config
 from AI.utils.call_trace import trace_call, trace_step
 
-from .conditional_logic import ConditionalLogic
-from .setup import GraphSetup
 from .propagation import Propagator
 from .reflection import Reflector
 from .signal_processing import SignalProcessor
@@ -45,19 +51,23 @@ class TradingAgentsGraph:
     ):
         """
         Args:
-            selected_analysts: 选择的分析师列表，默认全部
+            selected_analysts: 选择的分析师列表，默认全部。
+                              市场层 = "market"，板块层 = "sector"，
+                              个股层 = "stock_tech", "social", "news", "fundamentals"
             debug: 是否开启调试模式
             config: 配置字典，为 None 时从环境变量加载
         """
         if selected_analysts is None:
-            selected_analysts = ["market", "sector", "social", "news", "fundamentals", "stock_tech"]
+            selected_analysts = ["market", "sector", "social", "news",
+                                 "fundamentals", "stock_tech"]
 
         self.debug = debug
         self.config = config or load_config()
 
         set_config(self.config)
         trace_step("TradingAgentsGraph 初始化", debug=debug,
-                   analysts=selected_analysts, memory=self.config.get("memory_enabled"))
+                   analysts=selected_analysts,
+                   memory=self.config.get("memory_enabled"))
 
         # ---- LLM 初始化 (仅 ChatOpenAI) ----
         api_key = self.config.get("api_key", "")
@@ -112,34 +122,16 @@ class TradingAgentsGraph:
             self.invest_judge_memory = None
             self.risk_manager_memory = None
 
-        # ---- 工具节点 ----
-        self.tool_nodes = self._create_tool_nodes()
-
-        # ---- 组件初始化 ----
+        # ---- 路由逻辑 ----
         self.conditional_logic = ConditionalLogic(
             max_debate_rounds=self.config.get("max_debate_rounds", 1),
             max_risk_discuss_rounds=self.config.get("max_risk_discuss_rounds", 1),
         )
 
-        self.graph_setup = GraphSetup(
-            self.quick_thinking_llm,
-            self.deep_thinking_llm,
-            self.toolkit,
-            self.tool_nodes,
-            self.bull_memory,
-            self.bear_memory,
-            self.trader_memory,
-            self.invest_judge_memory,
-            self.risk_manager_memory,
-            self.conditional_logic,
-            self.config,
-        )
-
-        # Propagator：创建 LangGraph 初始状态 + 图调用参数（递归上限、流模式）
+        # ---- 执行组件 ----
         self.propagator = Propagator(
             max_recur_limit=self.config.get("max_recur_limit", 100)
         )
-        # Reflector：交易结算后让 LLM 复盘决策（正确/错误原因 + 改进方案），结果写入记忆系统
         self.reflector = Reflector(self.quick_thinking_llm)
         self.signal_processor = SignalProcessor(self.quick_thinking_llm)
 
@@ -148,21 +140,86 @@ class TradingAgentsGraph:
         self.ticker = None
         self.log_states_dict = {}
 
-        # 编译图
-        self.graph = self.graph_setup.setup_graph(selected_analysts)
-        trace_step("图编译完成", analysts_count=len(selected_analysts))
+        # 编译顶层图
+        self.graph = self._build_top_graph(selected_analysts)
+        trace_step("顶层图编译完成")
 
-    def _create_tool_nodes(self) -> Dict[str, ToolNode]:
-        """创建各分析师的工具节点"""
-        return {
-            "stock_tech": ToolNode([
-                self.toolkit.get_stock_market_data_unified,
-                self.toolkit.get_stockstats_indicators_report,
-            ]),
-            "social": ToolNode([self.toolkit.get_china_market_overview]),
-            "news": ToolNode([self.toolkit.get_stock_news_unified]),
-            "fundamentals": ToolNode([self.toolkit.get_stock_fundamentals_unified]),
-        }
+    # ==================== 顶层图构建 ====================
+
+    def _build_top_graph(self, selected_analysts):
+        """构建顶层编排图：Market Layer → Sector Layer → Stock Layer → END"""
+        workflow = StateGraph(AgentState)
+
+        has_market = "market" in selected_analysts
+        has_sector = "sector" in selected_analysts
+
+        # Market Layer 子图
+        if has_market:
+            market_subgraph = MarketLayerGraph(
+                self.quick_thinking_llm, self.toolkit
+            ).build()
+            workflow.add_node("Market Layer", market_subgraph)
+            logger.info("[顶层图] 已添加 Market Layer 子图")
+
+        # Sector Layer 子图
+        if has_sector:
+            sector_subgraph = SectorLayerGraph(
+                self.quick_thinking_llm, self.toolkit
+            ).build()
+            workflow.add_node("Sector Layer", sector_subgraph)
+            logger.info("[顶层图] 已添加 Sector Layer 子图")
+
+        # Stock Layer 子图（个股层）
+        stock_subgraph = StockLayerGraph(
+            self.quick_thinking_llm,
+            self.deep_thinking_llm,
+            self.toolkit,
+            self.bull_memory,
+            self.bear_memory,
+            self.trader_memory,
+            self.invest_judge_memory,
+            self.risk_manager_memory,
+            self.conditional_logic,
+            self.config,
+        ).build(selected_analysts)
+        workflow.add_node("Stock Layer", stock_subgraph)
+        logger.info("[顶层图] 已添加 Stock Layer 子图")
+
+        # ---- 连线 ----
+        first_node = None
+        prev_node = None
+
+        if has_market:
+            first_node = "Market Layer"
+            prev_node = "Market Layer"
+
+        if has_sector:
+            if prev_node is None:
+                first_node = "Sector Layer"
+            else:
+                workflow.add_edge(prev_node, "Sector Layer")
+            prev_node = "Sector Layer"
+
+        if first_node is None:
+            first_node = "Stock Layer"
+
+        if prev_node is not None:
+            workflow.add_edge(prev_node, "Stock Layer")
+
+        workflow.add_edge(START, first_node)
+        workflow.add_edge("Stock Layer", END)
+
+        layer_names = []
+        if has_market:
+            layer_names.append("Market")
+        if has_sector:
+            layer_names.append("Sector")
+        layer_names.append("Stock")
+        logger.info(f"[顶层图] 编译完成: {' → '.join(layer_names)} → END")
+
+        return workflow.compile()
+
+    # ==================== 运行时 ====================
 
     def propagate(self, company_name, trade_date, progress_callback=None):
         """运行交易分析图
@@ -193,7 +250,6 @@ class TradingAgentsGraph:
         if self.debug:
             trace = []
             for chunk in self.graph.stream(init_state, **args):
-                # 发送进度更新
                 if progress_callback and args.get("stream_mode") == "updates":
                     self._send_progress(chunk, progress_callback)
                     if final_state is None:
@@ -214,7 +270,6 @@ class TradingAgentsGraph:
             if trace:
                 final_state = trace[-1]
         else:
-            # 简单 invoke 模式
             if progress_callback:
                 final_state = None
                 for chunk in self.graph.stream(init_state, **args):
@@ -243,7 +298,7 @@ class TradingAgentsGraph:
         return final_state, decision
 
     def _send_progress(self, chunk, callback):
-        """发送进度更新"""
+        """发送进度更新（仅三层子图级别）"""
         try:
             if not isinstance(chunk, dict):
                 return
@@ -260,27 +315,7 @@ class TradingAgentsGraph:
             node_map = {
                 "Market Layer": "市场层分析中...",
                 "Sector Layer": "板块层分析中...",
-                "Sector News Analyst": "板块新闻分析中...",
-                "Sector Tech Analyst": "板块技术分析中...",
-                "Stock Tech Analyst": "个股技术分析中...",
-                "Fundamentals Analyst": "基本面分析中...",
-                "News Analyst": "新闻分析中...",
-                "Social Analyst": "情绪分析中...",
-                "International News Analyst": "国际新闻分析中...",
-                "US News Analyst": "美国新闻分析中...",
-                "US Tech Analyst": "美国技术分析中...",
-                "KR News Analyst": "韩国新闻分析中...",
-                "KR Tech Analyst": "韩国技术分析中...",
-                "CN News Analyst": "中国新闻分析中...",
-                "CN Tech Analyst": "中国技术分析中...",
-                "Bull Researcher": "看涨研究辩论中...",
-                "Bear Researcher": "看跌研究辩论中...",
-                "Research Manager": "生成投资计划中...",
-                "Trader": "交易决策中...",
-                "Risky Analyst": "激进风险评估中...",
-                "Safe Analyst": "保守风险评估中...",
-                "Neutral Analyst": "中性风险评估中...",
-                "Risk Judge": "最终风险评估中...",
+                "Stock Layer": "个股层分析中...",
             }
 
             message = node_map.get(node_name)

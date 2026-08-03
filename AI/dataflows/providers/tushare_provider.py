@@ -1,9 +1,12 @@
 """
-YoHo Tushare 数据提供器 (简化版)
-- 仅同步调用
-- Token 仅从环境变量 TUSHARE_TOKEN 读取
-- 无 MongoDB 回退
-- 无异步方法
+YoHo Tushare 数据提供器
+与 AKShareProvider 接口完全对齐，支持无缝切换。
+Tushare 无法提供的数据（如全球宏观新闻）返回明确占位信息。
+
+接口约定（详见 CLAUDE.md）：
+- 每个方法签名与 AKShareProvider 一致
+- 返回类型统一为 str（格式化文本）
+- 不可用时返回 "数据不可用: <原因>"，不抛异常
 """
 
 import os
@@ -18,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 try:
     import tushare as ts
-
     TUSHARE_AVAILABLE = True
 except ImportError:
     TUSHARE_AVAILABLE = False
@@ -26,7 +28,53 @@ except ImportError:
 
 
 class TushareProvider(BaseStockDataProvider):
-    """Tushare 数据提供器"""
+    """Tushare 数据提供器（接口与 AKShareProvider 对齐）"""
+
+    # ==================== 类属性（与 AKShareProvider 一致） ====================
+
+    # 全球科技指数映射：key -> (display_name, tushare_code)
+    # Tushare 仅支持 A 股指数，海外指数不可用
+    GLOBAL_TECH_INDICES = {
+        "SPX":     ("标普500", "spx"),
+        "DJI":     ("道琼斯", "dji"),
+        "NASDAQ":  ("纳斯达克", "nasdaq"),
+        "NDX":     ("纳斯达克100", "nasdaq_100"),
+        "SOX":     ("费城半导体", "sox"),
+        "DJUSSC":  ("美国半导体", "djussc"),
+        "KOSPI":   ("韩国KOSPI", "kospi"),
+        "KOSDAQ":  ("韩国KOSDAQ", "kosdaq"),
+        "KRX_SEMI":("韩国半导体", "krx_semi"),
+        "STAR50":  ("科创50", "star50"),
+        "CHINEXT": ("创业板指", "chinext"),
+        "CSI_SEMI":("中华半导体", "csi_semi"),
+        "CSI_AI":  ("人工智能", "csi_ai"),
+    }
+
+    AI_INDUSTRY_CHAIN = {
+        "存储芯片": "memory_chip",
+        "半导体": "semiconductor",
+        "光模块": "optical_module",
+        "AI服务器": "ai_server",
+        "先进封装": "advanced_packaging",
+        "算力": "computing_power",
+        "AI应用": "ai_application",
+        "机器人": "robotics",
+        "智能汽车": "smart_vehicle",
+    }
+
+    A_SHARE_CONCEPT_MAP = {
+        "存储芯片": "BK1037",
+        "半导体": "BK1036",
+        "光模块": "BK1098",
+        "AI服务器": "BK1136",
+        "先进封装": "BK1177",
+        "算力": "BK1139",
+        "AI应用": "BK1163",
+        "机器人": "BK0883",
+        "智能汽车": "BK0981",
+    }
+
+    # ==================== 初始化 ====================
 
     def __init__(self):
         super().__init__("Tushare")
@@ -34,62 +82,43 @@ class TushareProvider(BaseStockDataProvider):
         self._connect()
 
     def _connect(self):
-        """连接到 Tushare API"""
         if not TUSHARE_AVAILABLE:
-            logger.error("❌ Tushare 库未安装，请运行: pip install tushare")
+            logger.error("Tushare 库未安装，请运行: pip install tushare")
             return
-
         token = os.getenv("TUSHARE_TOKEN", "")
         if token and token != "your-tushare-token":
             try:
                 ts.set_token(token)
                 self.api = ts.pro_api()
-                # 快速连接测试：查询1条上市股票验证 Token 有效性
                 test = self.api.stock_basic(list_status="L", limit=1)
                 if test is not None and not test.empty:
                     self.connected = True
-                    logger.info("✅ Tushare 连接成功")
+                    logger.info("Tushare 连接成功")
                 else:
-                    logger.warning("⚠️ Tushare 连接测试失败")
+                    logger.warning("Tushare 连接测试失败")
             except Exception as e:
-                logger.error(f"❌ Tushare 连接失败: {e}")
+                logger.error(f"Tushare 连接失败: {e}")
         else:
-            logger.warning("⚠️ Tushare Token 未配置，请在 a.bash 中设置 TUSHARE_TOKEN")
+            logger.warning("Tushare Token 未配置，请在 .env 中设置 TUSHARE_TOKEN")
 
     def _normalize_code(self, code: str) -> str:
-        """标准化股票代码：确保带有 .SZ 或 .SH 后缀"""
         code = code.strip().upper()
         if "." in code:
             return code
-        # 6/9 开头 → 上海交易所
         if code.startswith("6") or code.startswith("9"):
             return f"{code}.SH"
-        # 0/3/2 开头 → 深圳交易所
         if code.startswith("0") or code.startswith("3") or code.startswith("2"):
             return f"{code}.SZ"
         return code
 
     def _normalize_date(self, date_str: str) -> str:
-        """标准化日期格式: YYYY-MM-DD -> YYYYMMDD"""
         return date_str.replace("-", "")
 
-    # ==================== 市场行情数据 ====================
+    # ==================== 股票行情 ====================
 
     def get_stock_data(self, code: str, start_date: str, end_date: str) -> str:
-        """
-        获取股票日线行情数据
-
-        Args:
-            code: 股票代码 (如 000001.SZ 或 000001)
-            start_date: 开始日期 YYYY-MM-DD
-            end_date: 结束日期 YYYY-MM-DD
-
-        Returns:
-            格式化的行情数据文本
-        """
         if not self.connected:
-            return "Tushare 未连接。请在 a.bash 中配置有效的 TUSHARE_TOKEN。"
-
+            return "Tushare 未连接。请在 .env 中配置有效的 TUSHARE_TOKEN。"
         code = self._normalize_code(code)
         try:
             df = self.api.daily(
@@ -98,32 +127,21 @@ class TushareProvider(BaseStockDataProvider):
                 end_date=self._normalize_date(end_date),
             )
             if df is not None and not df.empty:
-                # 按日期排序
                 df = df.sort_values("trade_date", ascending=True)
                 columns_order = [
                     "trade_date", "open", "high", "low", "close",
                     "vol", "amount", "pct_chg", "pre_close", "change"
                 ]
-                available_cols = [c for c in columns_order if c in df.columns]
-                return df[available_cols].to_string(index=False)
+                available = [c for c in columns_order if c in df.columns]
+                return df[available].to_string(index=False)
             return f"未获取到 {code} 在 {start_date} 至 {end_date} 期间的行情数据。"
         except Exception as e:
             logger.error(f"获取行情数据失败 [{code}]: {e}")
             return f"获取行情数据失败: {e}"
 
     def get_stock_info(self, code: str) -> dict:
-        """
-        获取股票基本信息
-
-        Args:
-            code: 股票代码
-
-        Returns:
-            包含 name, industry, area 等字段的字典
-        """
         if not self.connected:
             return {"name": f"股票{code}"}
-
         code = self._normalize_code(code)
         try:
             df = self.api.stock_basic(ts_code=code)
@@ -139,107 +157,43 @@ class TushareProvider(BaseStockDataProvider):
             logger.error(f"获取股票信息失败 [{code}]: {e}")
         return {"name": f"股票{code}"}
 
-    # ==================== 基本面数据 ====================
+    # ==================== 基本面 ====================
 
     def get_fundamentals(self, code: str, curr_date: str = None) -> str:
-        """
-        获取股票财务指标数据
-
-        Args:
-            code: 股票代码
-            curr_date: 当前分析日期，用于确定查询哪个报告期
-
-        Returns:
-            格式化的财务数据文本
-        """
         if not self.connected:
             return "Tushare 未连接，无法获取基本面数据。"
-
         code = self._normalize_code(code)
         parts = []
-
-        # 确定查询年份
-        if curr_date:
-            report_year = int(curr_date[:4])
-        else:
-            report_year = datetime.now().year
-
-        # 查询最近两个完整财年
+        report_year = int(curr_date[:4]) if curr_date else datetime.now().year
         for year in [report_year - 1, report_year]:
             try:
-                # 财务指标
-                indicators = self.api.fina_indicator(
-                    ts_code=code,
-                    period=f"{year}1231",
-                    fields="end_date,roa,roe,grossprofit_margin,netprofit_margin,debt_to_assets,current_ratio,quick_ratio,eps,diluted_eps,bps",
-                )
-                if indicators is not None and not indicators.empty:
-                    parts.append(f"--- {year}年 财务指标 ---")
-                    parts.append(indicators.to_string(index=False))
-
-                # 利润表
-                income = self.api.income(
-                    ts_code=code,
-                    period=f"{year}1231",
-                    fields="end_date,revenue,total_revenue,oper_income,oper_cost,operate_profit,total_profit,n_income,undist_profit,diluted_eps,basic_eps",
-                    limit=1,
-                )
-                if income is not None and not income.empty:
-                    parts.append(f"--- {year}年 利润表 ---")
-                    parts.append(income.to_string(index=False))
-
-                # 资产负债表
-                balance = self.api.balancesheet(
-                    ts_code=code,
-                    period=f"{year}1231",
-                    fields="end_date,total_assets,total_liab,total_hldr_eqy_exc_min_int,undist_profit,cap_rese,surplus_rese",
-                    limit=1,
-                )
-                if balance is not None and not balance.empty:
-                    parts.append(f"--- {year}年 资产负债表 ---")
-                    parts.append(balance.to_string(index=False))
-
-                # 现金流量表
-                cashflow = self.api.cashflow(
-                    ts_code=code,
-                    period=f"{year}1231",
-                    fields="end_date,n_cashflow_act,n_cashflow_inv_act,n_cashflow_fin_act,cash_and_equivalents",
-                    limit=1,
-                )
-                if cashflow is not None and not cashflow.empty:
-                    parts.append(f"--- {year}年 现金流量表 ---")
-                    parts.append(cashflow.to_string(index=False))
+                for label, fn, fields in [
+                    ("财务指标", self.api.fina_indicator,
+                     "end_date,roa,roe,grossprofit_margin,netprofit_margin,debt_to_assets,current_ratio,quick_ratio,eps,diluted_eps,bps"),
+                    ("利润表", self.api.income,
+                     "end_date,revenue,total_revenue,oper_income,oper_cost,operate_profit,total_profit,n_income,undist_profit,diluted_eps,basic_eps"),
+                    ("资产负债表", self.api.balancesheet,
+                     "end_date,total_assets,total_liab,total_hldr_eqy_exc_min_int,undist_profit,cap_rese,surplus_rese"),
+                    ("现金流量表", self.api.cashflow,
+                     "end_date,n_cashflow_act,n_cashflow_inv_act,n_cashflow_fin_act,cash_and_equivalents"),
+                ]:
+                    try:
+                        df = fn(ts_code=code, period=f"{year}1231", fields=fields, limit=1)
+                        if df is not None and not df.empty:
+                            parts.append(f"--- {year}年 {label} ---")
+                            parts.append(df.to_string(index=False))
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.warning(f"获取 {year} 年财务数据失败: {e}")
-                continue
+        return "\n\n".join(parts) if parts else f"未获取到 {code} 的财务数据。"
 
-        if not parts:
-            return f"未获取到 {code} 的财务数据。"
-
-        return "\n\n".join(parts)
-
-    # ==================== 新闻数据 ====================
+    # ==================== 新闻 ====================
 
     def get_news(self, code: str, start_date: str, end_date: str) -> str:
-        """
-        获取股票相关新闻
-
-        注意：Tushare 新闻 API 需要高级权限。如果不可用，返回提示信息。
-
-        Args:
-            code: 股票代码
-            start_date: 开始日期
-            end_date: 结束日期
-
-        Returns:
-            新闻数据文本
-        """
         if not self.connected:
-            return "Tushare 未连接，无法获取新闻数据。"
-
+            return "Tushare 未连接。"
         code = self._normalize_code(code)
-
-        # 第一回退链：major_news（需要高级权限）→ disclosure（公告）→ 提示信息
         try:
             df = self.api.major_news(
                 ts_code=code,
@@ -247,61 +201,34 @@ class TushareProvider(BaseStockDataProvider):
                 end_date=self._normalize_date(end_date),
             )
             if df is not None and not df.empty:
-                news_lines = []
+                lines = []
                 for _, row in df.iterrows():
-                    title = row.get("title", "")
-                    content = row.get("content", "")
-                    pub_date = row.get("pub_time", row.get("ann_date", ""))
-                    news_lines.append(f"[{pub_date}] {title}\n{content}\n")
-                return "\n".join(news_lines)
+                    lines.append(f"[{row.get('pub_time', row.get('ann_date', ''))}] "
+                                 f"{row.get('title', '')}\n{row.get('content', '')}\n")
+                return "\n".join(lines)
         except AttributeError:
-            logger.info("Tushare 账号不支持 major_news API，尝试其他新闻接口")
+            logger.info("Tushare 账号不支持 major_news API")
         except Exception as e:
-            logger.warning(f"获取新闻失败 (major_news): {e}")
-
+            logger.warning(f"获取新闻失败: {e}")
+        # 回退：公告
         try:
-            # 回退到公告接口
-            df = self.api.disclosure(
-                ts_code=code,
-                start_date=self._normalize_date(start_date),
-                end_date=self._normalize_date(end_date),
-                limit=20,
-            )
+            df = self.api.disclosure(ts_code=code,
+                                     start_date=self._normalize_date(start_date),
+                                     end_date=self._normalize_date(end_date), limit=20)
             if df is not None and not df.empty:
-                news_lines = []
-                for _, row in df.iterrows():
-                    title = row.get("title", "")
-                    ann_date = row.get("ann_date", "")
-                    news_lines.append(f"[{ann_date}] 公告: {title}")
-                return "\n".join(news_lines)
-        except AttributeError:
+                return "\n".join(f"[{r.get('ann_date', '')}] 公告: {r.get('title', '')}"
+                                 for _, r in df.iterrows())
+        except Exception:
             pass
-        except Exception as e:
-            logger.warning(f"获取公告失败: {e}")
+        return f"当前 Tushare 账号不支持新闻接口，无法获取 {code} 的相关新闻。"
 
-        return f"当前 Tushare 账号不支持新闻/公告接口，无法获取 {code} 的相关新闻。请升级 Tushare Pro 权限。"
-
-    # ==================== 大盘数据 ====================
+    # ==================== 大盘指数 ====================
 
     def get_index_data(self, index_codes: str, start_date: str, end_date: str) -> str:
-        """
-        获取指数行情数据 (如上证综指、深证成指、创业板指)
-
-        Args:
-            index_codes: 指数代码，逗号分隔 (如 "000001.SH,399001.SZ")
-            start_date: 开始日期
-            end_date: 结束日期
-
-        Returns:
-            格式化的指数数据文本
-        """
         if not self.connected:
-            return "Tushare 未连接，无法获取大盘数据。"
-
+            return "Tushare 未连接。"
         codes = [c.strip() for c in index_codes.split(",")]
         all_parts = []
-
-        # 逐个获取指数数据
         for code in codes:
             try:
                 df = self.api.index_daily(
@@ -312,36 +239,18 @@ class TushareProvider(BaseStockDataProvider):
                 )
                 if df is not None and not df.empty:
                     df = df.sort_values("trade_date", ascending=False)
-                    col_order = ["trade_date", "open", "high", "low", "close", "vol", "pct_chg"]
-                    available = [c for c in col_order if c in df.columns]
-                    all_parts.append(
-                        f"--- 指数 {code} ---\n"
-                        f"{df[available].head(5).to_string(index=False)}"
-                    )
+                    cols = ["trade_date", "open", "high", "low", "close", "vol", "pct_chg"]
+                    available = [c for c in cols if c in df.columns]
+                    all_parts.append(f"--- 指数 {code} ---\n{df[available].head(5).to_string(index=False)}")
             except Exception as e:
                 logger.warning(f"获取指数 {code} 数据失败: {e}")
+        return "\n\n".join(all_parts) if all_parts else "未获取到指数数据。"
 
-        if not all_parts:
-            return "未获取到指数数据。"
-
-        return "\n\n".join(all_parts)
-
-    # ==================== 市值数据 ====================
+    # ==================== 每日指标 ====================
 
     def get_daily_basic(self, code: str, trade_date: str) -> str:
-        """
-        获取每日指标 (PE, PB, 换手率, 总市值等)
-
-        Args:
-            code: 股票代码
-            trade_date: 交易日期 YYYY-MM-DD
-
-        Returns:
-            格式化的每日指标文本
-        """
         if not self.connected:
             return "Tushare 未连接。"
-
         code = self._normalize_code(code)
         try:
             df = self.api.daily_basic(
@@ -349,9 +258,179 @@ class TushareProvider(BaseStockDataProvider):
                 trade_date=self._normalize_date(trade_date),
                 fields="ts_code,trade_date,turnover_rate,volume_ratio,pe,pb,total_mv,circ_mv",
             )
-            if df is not None and not df.empty:
-                return df.to_string(index=False)
-            return f"未获取到 {code} 在 {trade_date} 的每日指标。"
+            return df.to_string(index=False) if df is not None and not df.empty \
+                else f"未获取到 {code} 在 {trade_date} 的每日指标。"
         except Exception as e:
             logger.error(f"获取每日指标失败 [{code}]: {e}")
             return f"获取每日指标失败: {e}"
+
+    # ==================== 全球指数（占位） ====================
+
+    def get_global_index(self, index_key: str, days: int = 10) -> str:
+        """获取全球指数（Tushare 仅支持 A 股指数，海外指数不可用）"""
+        if index_key in ("STAR50", "CHINEXT", "CSI_SEMI", "CSI_AI"):
+            return self._get_a_index(index_key, days)
+        name, _ = self.GLOBAL_TECH_INDICES.get(index_key, (index_key, index_key))
+        return f"数据不可用：Tushare 不支持海外指数 {name}。"
+
+    def _get_a_index(self, index_key: str, days: int = 10) -> str:
+        """获取 A 股指数的简化实现"""
+        tscode_map = {
+            "STAR50": "000688.SH",
+            "CHINEXT": "399006.SZ",
+            "CSI_SEMI": "990001.SH",
+            "CSI_AI": "931071.SH",
+        }
+        ts_code = tscode_map.get(index_key)
+        if not ts_code or not self.connected:
+            return f"数据不可用：无法获取 {index_key} 数据。"
+        try:
+            end = datetime.now().strftime("%Y%m%d")
+            start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d")
+            df = self.api.index_daily(ts_code=ts_code, start_date=start, end_date=end)
+            if df is not None and not df.empty:
+                name, _ = self.GLOBAL_TECH_INDICES.get(index_key, (index_key, ""))
+                df = df.tail(days)
+                return f"## {name} ({index_key})\n最近 {len(df)} 个交易日数据:\n{df.to_string(index=False)}"
+            return f"未获取到 {name} 数据。"
+        except Exception as e:
+            return f"获取 {index_key} 数据失败: {e}"
+
+    def _fetch_global_index(self, ak_key: str, start: str, end: str):  # noqa: ARG002
+        """内部方法（Tushare 不支持，返回 None）"""
+        return None
+
+    def get_all_tech_indices(self, days: int = 10) -> str:
+        results = []
+        for key in self.GLOBAL_TECH_INDICES:
+            data = self.get_global_index(key, days)
+            results.append(data)
+            results.append("")
+        return "\n".join(results)
+
+    # ==================== 市场层 — 宏观 ====================
+
+    def get_central_bank_calendar(self, curr_date: str) -> str:
+        if not self.connected:
+            return "数据不可用：Tushare 未连接。"
+        lines = ["# 主要央行利率参考（Tushare）\n"]
+        try:
+            df = self.api.shibor_lpr(date=self._normalize_date(curr_date))
+            if df is not None and not df.empty:
+                lines.append("## LPR 报价\n" + df.to_string(index=False))
+        except Exception:
+            lines.append("- LPR 数据: 获取失败")
+        return "\n".join(lines) if len(lines) > 1 else self._not_supported("央行利率数据")
+
+    # ==================== 市场层 — A 股资金 ====================
+
+    def get_ipo_calendar(self, curr_date: str) -> str:
+        """IPO 日历（Tushare new_share API）"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            df = self.api.new_share(start_date=(datetime.now() - timedelta(days=90)).strftime("%Y%m%d"),
+                                    end_date=datetime.now().strftime("%Y%m%d"))
+            if df is not None and not df.empty:
+                lines = ["# IPO 新股发行日历（Tushare）\n"]
+                for _, row in df.iterrows():
+                    lines.append(f"- {row.get('name', 'N/A')} | 申购日: {row.get('online_date', 'N/A')} | "
+                                 f"上市日: {row.get('list_date', 'N/A')} | "
+                                 f"发行价: {row.get('price', 'N/A')} | PE: {row.get('pe', 'N/A')}")
+                return "\n".join(lines)
+            return "暂无近期 IPO 数据。"
+        except Exception as e:
+            return f"获取 IPO 日历失败: {e}"
+
+    def get_share_unlock_calendar(self, curr_date: str) -> str:
+        """限售股解禁日历（Tushare share_float API）"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            df = self.api.share_float(
+                start_date=self._normalize_date(curr_date),
+                end_date=(datetime.now() + timedelta(days=30)).strftime("%Y%m%d"),
+            )
+            if df is not None and not df.empty:
+                lines = ["# 限售股解禁日历（Tushare）\n"]
+                for _, row in df.head(30).iterrows():
+                    lines.append(f"- {row.get('ts_code', 'N/A')} | {row.get('float_date', 'N/A')} | "
+                                 f"解禁数量: {row.get('float_share', 'N/A')}万股 | "
+                                 f"占总股本: {row.get('float_ratio', 'N/A')}%")
+                return "\n".join(lines)
+            return "暂无近期限售股解禁数据。"
+        except Exception as e:
+            return f"获取解禁日历失败: {e}"
+
+    def get_margin_trading_balance(self, curr_date: str) -> str:
+        """融资融券余额（Tushare margin API）"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            df = self.api.margin(trade_date=self._normalize_date(curr_date))
+            if df is not None and not df.empty:
+                lines = ["# 融资融券交易汇总（Tushare）\n"]
+                total_rz = df["rzye"].sum() if "rzye" in df.columns else 0
+                total_rq = df["rqye"].sum() if "rqye" in df.columns else 0
+                lines.append(f"- 融资余额: {total_rz:.2f} 亿元")
+                lines.append(f"- 融券余额: {total_rq:.2f} 亿元")
+                lines.append(f"- 数据日期: {curr_date}")
+                return "\n".join(lines)
+            return "暂无融资融券数据。"
+        except Exception as e:
+            return f"获取融资融券数据失败: {e}"
+
+    def get_market_breadth(self, curr_date: str) -> str:
+        """市场宽度（涨跌家数统计）—— Tushare daily_basic 聚合"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            df = self.api.daily_basic(trade_date=self._normalize_date(curr_date),
+                                      fields="ts_code,pct_chg")
+            if df is not None and not df.empty:
+                up = (df["pct_chg"] > 0).sum()
+                down = (df["pct_chg"] < 0).sum()
+                flat = (df["pct_chg"] == 0).sum()
+                lines = ["# A 股市场宽度\n"]
+                lines.append(f"- 上涨: {up} 家")
+                lines.append(f"- 下跌: {down} 家")
+                lines.append(f"- 平盘: {flat} 家")
+                lines.append(f"- 统计日期: {curr_date}")
+                return "\n".join(lines)
+            return "暂无市场宽度数据。"
+        except Exception as e:
+            return f"获取市场宽度失败: {e}"
+
+    def get_market_fund_flow(self, curr_date: str) -> str:
+        """市场资金流向（Tushare moneyflow API）"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            df = self.api.moneyflow(trade_date=self._normalize_date(curr_date))
+            if df is not None and not df.empty:
+                lines = ["# A 股资金流向（Tushare）\n"]
+                for col in ["buy_elg_vol", "sell_elg_vol", "net_mf_vol", "net_mf_amount"]:
+                    if col in df.columns:
+                        total = df[col].sum()
+                        lines.append(f"- {col}: {total:.2f}")
+                return "\n".join(lines)
+            return "暂无资金流向数据。"
+        except Exception as e:
+            return f"获取资金流向失败: {e}"
+
+    # ==================== 板块层 ====================
+
+    def get_sector_fund_flow_rank(self, days: int = 5) -> str:
+        """行业资金流向排名（Tushare moneyflow 聚合）"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            end = datetime.now().strftime("%Y%m%d")
+            start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d")
+            df = self.api.moneyflow_hsgt(start_date=start, end_date=end)
+            if df is not None and not df.empty:
+                df = df.tail(days)
+                return f"# 沪深港通资金流向\n{df.to_string(index=False)}"
+            return "暂无行业资金流向数据。"
+        except Exception as e:
+            return f"获取行业资金流向失败: {e}"

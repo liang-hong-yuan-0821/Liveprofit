@@ -70,6 +70,25 @@ docs/
 
 > 中小改动不需要 code review。
 
+### Data Provider 接口约定
+
+**接口契约以 `BaseStockDataProvider` 基类为准**（[base_provider.py](AI/dataflows/providers/base_provider.py)）。
+所有 Provider（AKShare、Tushare、未来新增）继承该基类。
+
+**设计原则：**
+- 基类定义完整接口 + 默认"不支持"返回 → 子类按需覆写
+- `interface.py` 通过 `hasattr(prov, 'method_name')` 动态检测可用方法
+- 新增数据能力时，**先在基类加方法签名 → 再在 AKShare/Tushare 分别覆写**
+
+**强制规则：**
+
+1. **新增方法必须先加到基类** `BaseStockDataProvider`，提供默认 `_not_supported()` 返回
+2. **AKShareProvider 和 TushareProvider 同步覆写**，签名完全一致（参数名、默认值、返回类型）
+3. **无法提供数据时**，不覆写基类方法即可（自动返回 `"数据不可用：{provider_name} 不支持 <功能>。"`）
+4. **仅 `get_stock_data` 和 `get_stock_info` 为抽象方法**（`@abstractmethod`），子类必须实现
+5. **返回格式统一为 `str`**（格式化 Markdown），仅 `get_stock_info` 返回 `dict`
+6. **类属性** `GLOBAL_TECH_INDICES`、`AI_INDUSTRY_CHAIN`、`A_SHARE_CONCEPT_MAP` 在基类中定义为空 `dict`，子类覆写
+
 ### 三方依赖能力评估
 
 - **技术方案文档必须包含三方依赖能力评估**：逐项确认方案所依赖的第三方库（AKShare、LangGraph、LangChain 等）是否有足够能力实现诉求

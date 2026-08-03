@@ -2,19 +2,26 @@
 LLM / 工具调用追踪器
 通过 LangChain BaseCallbackHandler 拦截 ChatOpenAI 和工具调用。
 
-文件结构（按 LangGraph 节点名组织）：
+文件结构（按 layer → 节点名组织）：
   logs/{时间戳}/
-    ├── 001_{NodeName}/
-    │   ├── req.md              # 完整 prompt（Markdown）
-    │   ├── res.md              # 完整 response content（Markdown）
-    │   ├── meta.json           # model, run_id, tool_calls
-    │   └── tools/
-    │       ├── 001_{tool}/
-    │       │   ├── req.json
-    │       │   └── res.txt
+    ├── market/
+    │   ├── 001_International_News_Analyst/
+    │   │   ├── req.md
+    │   │   ├── res.md
+    │   │   ├── meta.json
+    │   │   └── tools/
+    │   │       ├── 001_{tool}/
+    │   │       │   ├── req.json
+    │   │       │   └── res.txt
+    │   │       └── ...
+    │   └── 002_US_News_Analyst/
     │       └── ...
-    ├── 002_{NodeName}/
-    │   └── ...
+    ├── sector/
+    │   └── 001_Sector_News_Analyst/
+    │       └── ...
+    ├── stock/
+    │   └── 001_Stock_Tech_Analyst/
+    │       └── ...
     └── reports/
         └── ...
 
@@ -60,6 +67,35 @@ def _extract_model(serialized: Dict[str, Any]) -> str:
     return kwargs.get("model", "") or kwargs.get("model_name", "") or "unknown"
 
 
+# 节点名 → 所属层 映射
+_NODE_LAYER = {
+    # ---- Market Layer ----
+    "International News Analyst": "market",
+    "US News Analyst": "market",
+    "US Tech Analyst": "market",
+    "KR News Analyst": "market",
+    "KR Tech Analyst": "market",
+    "CN News Analyst": "market",
+    "CN Tech Analyst": "market",
+    # ---- Sector Layer ----
+    "Sector News Analyst": "sector",
+    "Sector Tech Analyst": "sector",
+    # ---- Stock Layer ----
+    "Stock Tech Analyst": "stock",
+    "Social Analyst": "stock",
+    "News Analyst": "stock",
+    "Fundamentals Analyst": "stock",
+    "Bull Researcher": "stock",
+    "Bear Researcher": "stock",
+    "Research Manager": "stock",
+    "Trader": "stock",
+    "Risky Analyst": "stock",
+    "Safe Analyst": "stock",
+    "Neutral Analyst": "stock",
+    "Risk Judge": "stock",
+}
+
+
 def _extract_node(metadata: Optional[Dict[str, Any]]) -> str:
     if not metadata:
         return "unknown"
@@ -70,6 +106,11 @@ def _extract_node(metadata: Optional[Dict[str, Any]]) -> str:
         if "node" in k.lower():
             return str(metadata[k])
     return "unknown"
+
+
+def _node_layer(node: str) -> str:
+    """根据节点名确定所属 layer"""
+    return _NODE_LAYER.get(node, "unknown")
 
 
 class _RunState:
@@ -122,8 +163,9 @@ class LLMCallbackHandler(BaseCallbackHandler):
     ) -> None:
         model = _extract_model(serialized)
         node = _extract_node(metadata)
+        layer = _node_layer(node)
         seq = _run.next_llm()
-        dir_name = f"{seq:03d}_{_sanitize(node)}"
+        dir_name = f"{layer}/{seq:03d}_{_sanitize(node)}"
         _run.last_llm_dir = dir_name
         rid = str(run_id) if run_id else None
         if rid:
@@ -221,9 +263,10 @@ class ToolCallbackHandler(BaseCallbackHandler):
     ) -> None:
         tool_name = serialized.get("name", "unknown")
         node = _extract_node(metadata)
-        # 如果有 node metadata，用当前 LLM 序号 + 节点名构造目录
+        # 优先用 metadata 中的节点名 + layer，否则回退到上一次 LLM 调用的目录
         if node != "unknown" and _run.llm_seq > 0:
-            parent_dir = f"{_run.llm_seq:03d}_{_sanitize(node)}"
+            layer = _node_layer(node)
+            parent_dir = f"{layer}/{_run.llm_seq:03d}_{_sanitize(node)}"
         else:
             parent_dir = _run.last_llm_dir or "unknown"
         tool_seq = _run.next_tool(parent_dir)

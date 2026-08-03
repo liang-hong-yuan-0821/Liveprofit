@@ -219,14 +219,21 @@ def analyze_tech_correlation(days: int = 10) -> str:
         except Exception:
             continue
 
-    # 第二步：拉取 A 股概念板块数据
+    # 第二步：拉取 A 股概念板块数据（连续 2 个失败则终止）
     from .providers.akshare_provider import get_concept_board_data
+    concept_failures = 0
     for concept_name in prov.A_SHARE_CONCEPT_MAP:
         try:
             board_data = get_concept_board_data(concept_name, days)
             hist_data[concept_name] = board_data
+            if "失败" in str(board_data):
+                concept_failures += 1
+            else:
+                concept_failures = 0
         except Exception:
-            continue
+            concept_failures += 1
+        if concept_failures >= 2:
+            break
 
     # 第三步：拉取格式化文本数据，用于趋势预测
     for key in prov.GLOBAL_TECH_INDICES:

@@ -6,6 +6,7 @@ YoHo AKShare 数据提供器 (简化版)
 
 import logging
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 import pandas as pd
 
@@ -13,12 +14,30 @@ from .base_provider import BaseStockDataProvider
 
 logger = logging.getLogger(__name__)
 
+# 东方财富 API 偶发连接中断，单次调用超时上限（秒）
+_AKSHARE_TIMEOUT = 15
+
 try:
     import akshare as ak
     AKSHARE_AVAILABLE = True
 except ImportError:
     AKSHARE_AVAILABLE = False
     ak = None
+
+
+def _call_with_timeout(fn, timeout=_AKSHARE_TIMEOUT, *args, **kwargs):
+    """在线程池中执行 fn，超时则抛 TimeoutError"""
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(fn, *args, **kwargs)
+        return future.result(timeout=timeout)
+
+
+def _try_call(fn, *args, timeout=_AKSHARE_TIMEOUT, **kwargs):
+    """尝试调用 AKShare 函数，超时或异常返回 None"""
+    try:
+        return _call_with_timeout(fn, timeout, *args, **kwargs)
+    except Exception:
+        return None
 
 
 class AKShareProvider(BaseStockDataProvider):
@@ -758,12 +777,14 @@ def get_concept_board_data(concept_name: str, days: int = 10) -> str:
         return f"未知概念板块: {concept_name}"
 
     try:
-        # 获取概念板块历史行情
-        df = ak.stock_board_concept_hist_em(
-            symbol=concept_name,
-            period="daily",
-            start_date=(datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d"),
-            end_date=datetime.now().strftime("%Y%m%d"),
+        df = _call_with_timeout(
+            lambda: ak.stock_board_concept_hist_em(
+                symbol=concept_name,
+                period="daily",
+                start_date=(datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d"),
+                end_date=datetime.now().strftime("%Y%m%d"),
+            ),
+            timeout=_AKSHARE_TIMEOUT,
         )
         if df is not None and not df.empty:
             df = df.tail(days)
@@ -778,12 +799,23 @@ def get_concept_board_data(concept_name: str, days: int = 10) -> str:
 
 
 def get_all_concept_boards(days: int = 10) -> str:
-    """获取所有 AI 产业链概念板块数据"""
+    """获取所有 AI 产业链概念板块数据（连续 2 个失败则终止剩余请求）"""
     results = []
-    for name in AKShareProvider.AI_INDUSTRY_CHAIN:
+    consecutive_failures = 0
+    total = len(AKShareProvider.AI_INDUSTRY_CHAIN)
+    for i, name in enumerate(AKShareProvider.AI_INDUSTRY_CHAIN):
         data = get_concept_board_data(name, days)
         results.append(data)
         results.append("")
+        if "失败" in data:
+            consecutive_failures += 1
+        else:
+            consecutive_failures = 0
+        if consecutive_failures >= 2:
+            skipped = total - i - 1
+            if skipped > 0:
+                results.append(f"（连续失败，跳过剩余 {skipped} 个板块）")
+            break
     return "\n".join(results)
 
 
@@ -798,12 +830,11 @@ def get_industry_sectors_performance(days: int = 10) -> str:
     if not AKSHARE_AVAILABLE:
         return "AKShare 未安装，无法获取行业板块数据。"
 
-    results = []
     try:
         # 获取所有行业板块名称列表
-        industry_df = ak.stock_board_industry_name_em()
+        industry_df = _try_call(ak.stock_board_industry_name_em)
         if industry_df is None or industry_df.empty:
-            return "未获取到行业板块列表。"
+            return "未获取到行业板块列表（API 不可用）。"
 
         # 提取板块名称（申万一级行业通常在前列）
         industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
@@ -815,18 +846,21 @@ def get_industry_sectors_performance(days: int = 10) -> str:
         start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
 
         performance_list = []
+        consecutive_failures = 0
         for name in industry_names:
             try:
-                df = ak.stock_board_industry_hist_em(
-                    symbol=name,
-                    start_date=start_date,
-                    end_date=end_date,
-                    period="daily",
-                    adjust="",
+                df = _call_with_timeout(
+                    lambda n=name: ak.stock_board_industry_hist_em(
+                        symbol=n,
+                        start_date=start_date,
+                        end_date=end_date,
+                        period="daily",
+                        adjust="",
+                    ),
+                    timeout=_AKSHARE_TIMEOUT,
                 )
                 if df is not None and not df.empty and len(df) >= 2:
                     df = df.tail(days + 1)
-                    # 自动探测收盘价列
                     close_col = _detect_close_column(df)
                     if close_col:
                         first_close = float(df[close_col].iloc[0])
@@ -834,7 +868,13 @@ def get_industry_sectors_performance(days: int = 10) -> str:
                         if first_close > 0:
                             pct_change = (last_close - first_close) / first_close * 100
                             performance_list.append((name, pct_change, last_close, len(df)))
+                    consecutive_failures = 0
+                else:
+                    consecutive_failures += 1
             except Exception:
+                consecutive_failures += 1
+                if consecutive_failures >= 3:
+                    break
                 continue
 
         if not performance_list:
@@ -976,9 +1016,9 @@ def get_sector_technical_screening(days: int = 60) -> str:
         return "AKShare 未安装，无法获取行业板块数据。"
 
     try:
-        industry_df = ak.stock_board_industry_name_em()
+        industry_df = _try_call(ak.stock_board_industry_name_em)
         if industry_df is None or industry_df.empty:
-            return "未获取到行业板块列表。"
+            return "未获取到行业板块列表（API 不可用）。"
 
         industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
         if not industry_names:
@@ -988,17 +1028,25 @@ def get_sector_technical_screening(days: int = 60) -> str:
         start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
 
         screening_results = []
+        consecutive_failures = 0
         for name in industry_names:
             try:
-                df = ak.stock_board_industry_hist_em(
-                    symbol=name,
-                    start_date=start_date,
-                    end_date=end_date,
-                    period="daily",
-                    adjust="",
+                df = _call_with_timeout(
+                    lambda n=name: ak.stock_board_industry_hist_em(
+                        symbol=n,
+                        start_date=start_date,
+                        end_date=end_date,
+                        period="daily",
+                        adjust="",
+                    ),
+                    timeout=_AKSHARE_TIMEOUT,
                 )
                 if df is None or df.empty or len(df) < 20:
+                    consecutive_failures += 1
+                    if consecutive_failures >= 3:
+                        break
                     continue
+                consecutive_failures = 0
 
                 df = df.tail(days)
                 close_col = _detect_close_column(df)
@@ -1175,9 +1223,10 @@ def get_sector_relative_strength(days: int = 20) -> str:
 
         benchmark_pct = 0.0
         try:
-            # 直接使用上证综指日线作为基准（index_sh_a_hist 是项目已有用法）
-            sh_df = ak.index_sh_a_hist(symbol="000001", period="daily",
-                                       start_date=start_date, end_date=end_date)
+            sh_df = _try_call(
+                ak.index_sh_a_hist, symbol="000001", period="daily",
+                start_date=start_date, end_date=end_date,
+            )
             if sh_df is not None and not sh_df.empty and len(sh_df) >= 2:
                 sh_df = sh_df.tail(days + 1)
                 close_col = _detect_close_column(sh_df)
@@ -1190,21 +1239,25 @@ def get_sector_relative_strength(days: int = 20) -> str:
             pass
 
         # 获取全行业数据
-        industry_df = ak.stock_board_industry_name_em()
+        industry_df = _try_call(ak.stock_board_industry_name_em)
         if industry_df is None or industry_df.empty:
-            return "未获取到行业板块列表。"
+            return "未获取到行业板块列表（API 不可用）。"
 
         industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
 
         alpha_list = []
+        consecutive_failures = 0
         for name in industry_names:
             try:
-                df = ak.stock_board_industry_hist_em(
-                    symbol=name,
-                    start_date=start_date,
-                    end_date=end_date,
-                    period="daily",
-                    adjust="",
+                df = _call_with_timeout(
+                    lambda n=name: ak.stock_board_industry_hist_em(
+                        symbol=n,
+                        start_date=start_date,
+                        end_date=end_date,
+                        period="daily",
+                        adjust="",
+                    ),
+                    timeout=_AKSHARE_TIMEOUT,
                 )
                 if df is not None and not df.empty and len(df) >= 2:
                     df = df.tail(days + 1)
@@ -1216,7 +1269,13 @@ def get_sector_relative_strength(days: int = 20) -> str:
                             sector_pct = (last_close - first_close) / first_close * 100
                             alpha = sector_pct - benchmark_pct
                             alpha_list.append((name, sector_pct, alpha))
+                    consecutive_failures = 0
+                else:
+                    consecutive_failures += 1
             except Exception:
+                consecutive_failures += 1
+                if consecutive_failures >= 3:
+                    break
                 continue
 
         if not alpha_list:

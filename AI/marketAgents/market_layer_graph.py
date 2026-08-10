@@ -12,6 +12,7 @@ from langgraph.prebuilt import ToolNode
 
 from AI.stockAgents.utils.agent_states import AgentState
 from AI.stockAgents.utils.agent_utils import create_msg_delete
+from AI.marketAgents.analysts.international_event_extraction import create_international_event_extraction
 from AI.marketAgents.analysts.international_news_analyst import create_international_news_analyst
 from AI.marketAgents.analysts.us_news_analyst import create_us_news_analyst
 from AI.marketAgents.analysts.us_tech_analyst import create_us_tech_analyst
@@ -30,6 +31,7 @@ class MarketLayerGraph:
     COUNTRIES = ["us", "kr", "cn"]
 
     LABELS = {
+        "intl_event_extraction": "International Event Extraction",
         "intl_news": "International News",
         "us_news": "US News", "us_tech": "US Tech",
         "kr_news": "KR News", "kr_tech": "KR Tech",
@@ -39,11 +41,15 @@ class MarketLayerGraph:
     # 新闻类 = 工具循环，技术类 = 直接边
     LOOP_KEYS = {"intl_news", "us_news", "kr_news", "cn_news"}
 
-    # intl_news → international_news 字段名前缀映射
-    FIELD_PREFIX = {"intl_news": "international_news"}
+    # intl_event_extraction → international_event, intl_news → international_news
+    FIELD_PREFIX = {
+        "intl_event_extraction": "international_event",
+        "intl_news": "international_news",
+    }
 
     # 工厂函数映射
     FACTORY_MAP = {
+        "intl_event_extraction": create_international_event_extraction,
         "intl_news": create_international_news_analyst,
         "us_news": create_us_news_analyst,
         "us_tech": create_us_tech_analyst,
@@ -62,7 +68,7 @@ class MarketLayerGraph:
         """编译并返回市场层子图"""
         workflow = StateGraph(AgentState)
 
-        all_keys = ["intl_news"] + [
+        all_keys = ["intl_event_extraction", "intl_news"] + [
             f"{c}_{t}" for c in self.COUNTRIES for t in ("news", "tech")
         ]
 

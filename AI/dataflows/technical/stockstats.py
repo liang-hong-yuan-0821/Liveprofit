@@ -81,8 +81,18 @@ class StockstatsUtils:
             # 用 stockstats 包装 DataFrame，访问指标名触发计算
             stock = wrap(df)
             stock[indicator]  # 触发 stockstats 计算指标
-            matching = stock[stock["date"].dt.strftime("%Y-%m-%d") == curr_date]
-            if not matching.empty:
+
+            # 使用 <= 匹配：取 <= curr_date 的最新一行，而非精确匹配
+            # 这样在非交易日时自动回退到上一个交易日的数据
+            date_mask = stock["date"] <= pd.Timestamp(curr_date)
+            candidates = stock[date_mask]
+            if not candidates.empty:
+                matching = candidates.iloc[[-1]]  # 取最新一行
+                actual_date = matching["date"].dt.strftime("%Y-%m-%d").values[0]
+                if actual_date != curr_date:
+                    logger.info(
+                        f"Stockstats 日期校正: {curr_date} → {actual_date}"
+                    )
                 return matching[indicator].values[0]
             return "N/A: 非交易日 (周末或节假日)"
         except Exception as e:

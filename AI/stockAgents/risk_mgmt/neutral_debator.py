@@ -24,7 +24,13 @@ def create_neutral_debator(llm):
         fundamentals_report = state["fundamentals_report"]
         trader_decision = state["trader_investment_plan"]
 
+        from AI.stockAgents.utils.agent_utils import build_cross_layer_context
+        cross_ctx = build_cross_layer_context(state)
+
         prompt = f"""作为中性风险分析师，你的角色是提供平衡的视角，权衡交易员决策的潜在收益和风险。
+
+大盘与板块环境（来自市场层+板块层分析）：
+{cross_ctx}
 
 交易员决策：
 {trader_decision}

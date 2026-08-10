@@ -137,7 +137,7 @@ START
 | `sector_news_tool_call_count` | 板块新闻分析师 |
 | `sector_tech_tool_call_count` | 板块技术分析师 |
 
-> 板块层产出**不注入个股层决策节点**，写入 State 后保持独立。
+> 板块层产出通过**结构化字段**（`sector_shortlist`、`sector_tech_confirm`）注入个股层决策节点（2026-08 更新）。
 
 ### 个股层产出（4 个）
 

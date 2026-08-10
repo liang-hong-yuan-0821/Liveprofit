@@ -42,4 +42,9 @@ def load_config():
 
         # 日志
         "log_level": os.getenv("YOHO_LOG_LEVEL", "INFO"),
+
+        # 交易日历校正
+        "tushare_data_ready_hour": int(os.getenv("TUSHARE_DATA_READY_HOUR", "20")),
+        "trade_calendar_refresh_days": int(os.getenv("TRADE_CALENDAR_REFRESH_DAYS", "365")),
+        "trade_date_retry_steps": int(os.getenv("TRADE_DATE_RETRY_STEPS", "3")),
     }

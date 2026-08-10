@@ -40,3 +40,9 @@ yoho = "main:main"
 [tool.setuptools.packages.find]
 include = ["AI*"]
 exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

@@ -1,6 +1,6 @@
 """
 板块层子图编译器 (Sector Layer Subgraph)
-独立编译为 LangGraph CompiledGraph，封装 2 个板块层 Analyst。
+独立编译为 LangGraph CompiledGraph，封装 3 个板块层 Analyst。
 父图通过 add_node("Sector Layer", subgraph) 将其作为一个节点使用。
 
 可扩展：新增板块维度的 Analyst 只需在 ANALYSTS 中加 key + 写 Analyst 文件。
@@ -13,6 +13,7 @@ from AI.stockAgents.utils.agent_states import AgentState
 from AI.stockAgents.utils.agent_utils import create_msg_delete
 from AI.sectorAgents.analysts.sector_news_analyst import create_sector_news_analyst
 from AI.sectorAgents.analysts.sector_tech_analyst import create_sector_tech_analyst
+from AI.sectorAgents.analysts.sector_rotation_analyst import create_sector_rotation_analyst
 
 logger = logging.getLogger(__name__)
 
@@ -20,19 +21,21 @@ logger = logging.getLogger(__name__)
 class SectorLayerGraph:
     """板块层子图编译器"""
 
-    ANALYSTS = ["sector_news", "sector_tech"]
+    ANALYSTS = ["sector_news", "sector_tech", "sector_rotation"]
 
     LABELS = {
         "sector_news": "Sector News",
         "sector_tech": "Sector Tech",
+        "sector_rotation": "Sector Rotation",
     }
 
-    # 新闻类 = 工具循环，技术类 = 直接边
+    # 新闻类 = 工具循环，技术类 / 轮动预测 = 直接边
     LOOP_KEYS = {"sector_news"}
 
     FACTORY_MAP = {
         "sector_news": create_sector_news_analyst,
         "sector_tech": create_sector_tech_analyst,
+        "sector_rotation": create_sector_rotation_analyst,
     }
 
     def __init__(self, llm, toolkit, max_tool_calls=3):

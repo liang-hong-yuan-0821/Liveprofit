@@ -24,9 +24,15 @@ def create_risky_debator(llm):
         fundamentals_report = state["fundamentals_report"]
         trader_decision = state["trader_investment_plan"]
 
+        from AI.stockAgents.utils.agent_utils import build_cross_layer_context
+        cross_ctx = build_cross_layer_context(state)
+
         prompt = f"""作为激进风险分析师，你的职责是积极倡导高回报、高风险的投资机会，强调大胆策略和竞争优势。
 
 在评估交易员的决策时，请重点关注潜在的上涨空间、增长潜力和创新收益。
+
+大盘与板块环境（来自市场层+板块层分析）：
+{cross_ctx}
 
 交易员决策：
 {trader_decision}

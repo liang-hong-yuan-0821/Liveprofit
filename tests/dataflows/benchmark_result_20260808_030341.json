@@ -1,0 +1,109 @@
+{
+  "run_time": "2026-08-08",
+  "global_duration_s": 35.28,
+  "aborted": false,
+  "llm_quick_timeout_s": 180,
+  "llm_deep_timeout_s": 300,
+  "per_method_timeout_s": 120,
+  "results": [
+    {
+      "name": "get_stock_data",
+      "duration_s": 0.4,
+      "status": "OK",
+      "content_len": 2111,
+      "preview": "trade_date  open  high   low  close        vol       amount  pct_chg  pre_close  change\\n  20260701 10.05 10.18  9.99  10",
+      "risk": "低",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_stock_info",
+      "duration_s": 0.41,
+      "status": "OK",
+      "content_len": 73,
+      "preview": "{\"name\": \"平安银行\", \"industry\": \"银行\", \"area\": \"深圳\", \"list_date\": \"19910403\"}",
+      "risk": "低",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_fundamentals",
+      "duration_s": 3.6,
+      "status": "OK",
+      "content_len": 837,
+      "preview": "--- 2025年 财务指标 ---\\n\\nend_date  roa    roe grossprofit_margin  netprofit_margin  debt_to_assets current_ratio quick_ratio ",
+      "risk": "低",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_news",
+      "duration_s": 0.8,
+      "status": "OK",
+      "content_len": 42,
+      "preview": "当前 Tushare 账号不支持新闻接口，无法获取 000001.SZ 的相关新闻。",
+      "risk": "低",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_index_data",
+      "duration_s": 2.81,
+      "status": "OK",
+      "content_len": 3200,
+      "preview": "--- 指数 000001.SH ---\\ntrade_date      open      high       low     close         vol  pct_chg\\n  20260731 3833.5359 3847.0",
+      "risk": "低-中",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_daily_basic",
+      "duration_s": 0.4,
+      "status": "OK",
+      "content_len": 179,
+      "preview": "  ts_code trade_date  turnover_rate  volume_ratio     pe     pb     total_mv      circ_mv\\n000001.SZ   20260731         1",
+      "risk": "低",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_ipo_calendar",
+      "duration_s": 0.4,
+      "status": "OK",
+      "content_len": 1458,
+      "preview": "# IPO 新股发行日历（Tushare）\\n\\n- 欣兴工具 | 申购日: N/A | 上市日: N/A | 发行价: 0.0 | PE: 0.0\\n- 长鑫科技 | 申购日: N/A | 上市日: N/A | 发行价: 0.0 | PE: 0",
+      "risk": "低",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_market_breadth",
+      "duration_s": 0.42,
+      "status": "OK",
+      "content_len": 53,
+      "preview": "获取市场宽度失败: 2 columns passed, passed data had 1 columns",
+      "risk": "中",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_industry_sector_performance",
+      "duration_s": 12.8,
+      "status": "OK",
+      "content_len": 1604,
+      "preview": "# 全行业板块涨跌排名（近 10 日）\\n\\n共覆盖 31 个申万一级行业\\n\\n| 排名 | 行业 | 涨跌幅(%) | 最新收盘价 | 数据天数 |\\n|------|------|-----------|------------|-------",
+      "risk": "高",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_concept_board_heat_rank",
+      "duration_s": 0.4,
+      "status": "OK",
+      "content_len": 11,
+      "preview": "未获取到概念板块列表。",
+      "risk": "极高",
+      "verdict": "OK"
+    },
+    {
+      "name": "get_sector_technical_screening",
+      "duration_s": 12.83,
+      "status": "OK",
+      "content_len": 1438,
+      "preview": "# 全行业技术状态矩阵（近 60 日，数据源：Tushare 申万指数）\\n\\n| 行业 | 均线排列 | RSI | MACD | 量比 | 收盘价 |\\n|------|----------|-----|------|------|-----",
+      "risk": "高",
+      "verdict": "OK"
+    }
+  ]
+}

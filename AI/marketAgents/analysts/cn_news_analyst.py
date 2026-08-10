@@ -6,7 +6,7 @@ IPO 抽血、限售解禁抛压、期指交割日效应、两融余额、季节�
 
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import ToolMessage, HumanMessage
+from AI.dataflows import interface as dataflow
 
 logger = logging.getLogger(__name__)
 
@@ -15,28 +15,38 @@ def create_cn_news_analyst(llm, toolkit):
 
     def node(state):
         current_date = state["trade_date"]
+        requested_date = state.get("requested_trade_date", current_date)
+        date_correction = state.get("date_correction", "")
         logger.info(f"[中国新闻分析] 开始分析 @ {current_date}")
 
-        tools = [
-            toolkit.get_ipo_calendar,
-            toolkit.get_share_unlock_calendar,
-            toolkit.get_futures_expiry_calendar,
-            toolkit.get_margin_trading_balance,
-        ]
         count = state.get("cn_news_tool_call_count", 0)
+
+        # 构建日期说明
+        if date_correction:
+            date_line = (
+                f"分析日期：{current_date}\n"
+                f"⚠️ 原始请求 {requested_date}，校正为 {current_date}（{date_correction}）。"
+                f"请在报告中如实标注实际数据日期。\n"
+            )
+        else:
+            date_line = f"分析日期：{current_date}\n"
+
+        # 直接调用 dataflows 函数获取数据（使用纯日期，不做拼接）
+        ipo_calendar = dataflow.get_ipo_calendar(current_date)
+        share_unlock = dataflow.get_share_unlock_calendar(current_date)
+        futures_expiry = dataflow.get_futures_expiry_calendar(current_date)
+        margin_balance = dataflow.get_margin_trading_balance(current_date)
 
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                "你是一位专注 A 股市场微观结构的分析师，聚焦资金日历事件对短期资金面的影响。\n\n"
-                "分析日期：{current_date}\n"
-                "可用工具：{tool_names}\n\n"
-                "工作流程：\n"
-                "1. 调用 get_ipo_calendar 获取近期新股申购/上市日历\n"
-                "2. 调用 get_share_unlock_calendar 获取限售股解禁日历\n"
-                "3. 调用 get_futures_expiry_calendar 获取期指/期权交割日\n"
-                "4. 调用 get_margin_trading_balance 获取两融余额变化\n"
-                "5. 综合评估短期资金压力\n\n"
+                "你是一位专注 A 股市场微观结构的分析师，聚焦资金日历事件对三个时间级别资金面的影响。\n\n"
+                + date_line + "\n"
+                "## 已获取的数据\n\n"
+                "### IPO日历\n{ipo_calendar}\n\n"
+                "### 限售股解禁日历\n{share_unlock}\n\n"
+                "### 期指/期权交割日\n{futures_expiry}\n\n"
+                "### 两融余额\n{margin_balance}\n\n"
                 "分析要点：\n"
                 "- 大盘 IPO/新股上市 → 打新资金抽血/虹吸效应，标注大市值新股\n"
                 "- 限售股解禁 → 潜在抛压来源，标注解禁市值规模\n"
@@ -44,79 +54,85 @@ def create_cn_news_analyst(llm, toolkit):
                 "- 两融余额变化 → 杠杆资金松紧信号\n"
                 "- 季节效应 → 季末排名调仓冲击、长假前避险效应\n"
                 "- 数据不可用时如实标注，不编造\n\n"
-                "输出格式：\n"
+                "三时间级别分析框架：\n\n"
+                "短线日历（未来 1-5 交易日）：\n"
+                "- 近 5 日 IPO 抽血强度（大市值新股数量）\n"
+                "- 近 5 日限售股解禁抛压（解禁市值规模）\n"
+                "- 期货/期权交割日临近程度\n"
+                "- 两融余额异动（单日大增/大减）\n"
+                "- 短线风险评级（高/中/低）+ 关键时点清单\n\n"
+                "波段日历（未来 1-4 周 ≈ 20 交易日）：\n"
+                "- 解禁高峰窗口（集中解禁期）\n"
+                "- 季报/年报披露窗口（业绩雷/惊喜）\n"
+                "- 重大政策会议/事件窗口\n"
+                "- 季末调仓冲击\n"
+                "- 波段风险评级（高/中/低）+ 关键窗口清单\n\n"
+                "长线日历（未来 1-3 月 ≈ 60 交易日）：\n"
+                "- 宏观数据发布窗口（CPI/PMI/社融等）\n"
+                "- 流动性政策预期（降准/降息窗口）\n"
+                "- 年报季/分红季\n"
+                "- 长线风险评级（高/中/低）+ 关键窗口清单\n\n"
+                "每个级别输出：事件密度（高/中/低）+ 资金面压力评分（1-5）\n\n"
+                "输出格式（结论前置）：\n"
                 "# 中国市场新闻分析报告\n\n"
-                "## 一、资金日历事件\n"
-                "（近期 IPO 申购/上市、限售解禁、交割日临近提示）\n\n"
-                "## 二、杠杆资金状况\n"
-                "（两融余额变化趋势、杠杆率水位）\n\n"
-                "## 三、季节性/事件性效应\n"
-                "（季末调仓、长假效应）\n\n"
-                "## 四、短期资金面结论\n"
-                "（资金压力判断 + 波动率放大提示）\n"
+                "## 〇、事件日历速览（结论块 — 向下游传递）\n"
+                "```\n"
+                "短线(5日): 风险<高/中/低> 资金压力<1-5分> 关键时点: [清单]\n"
+                "波段(20日): 风险<高/中/低> 资金压力<1-5分> 关键窗口: [清单]\n"
+                "长线(60日): 风险<高/中/低> 资金压力<1-5分> 关键窗口: [清单]\n"
+                "```\n\n"
+                "## 一、短线资金日历（1-5 交易日）\n"
+                "（IPO/解禁/交割日/两融异动的短线压力分析）\n\n"
+                "## 二、波段资金日历（1-4 周）\n"
+                "（解禁高峰/季报窗口/政策事件/季末效应的波段影响）\n\n"
+                "## 三、长线资金日历（1-3 月）\n"
+                "（宏观数据发布/流动性政策/年报季的长线展望）\n\n"
+                "## 四、杠杆资金状况\n"
+                "（两融余额变化趋势、杠杆率水位）\n"
                 "请使用中文。"
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 
-        tool_names = [getattr(t, 'name', getattr(t, '__name__', str(t))) for t in tools]
-        prompt = prompt.partial(tool_names=", ".join(tool_names), current_date=current_date)
-        chain = prompt | llm.bind_tools(tools)
-        result = chain.invoke({"messages": state["messages"]})
+        prompt = prompt.partial(
+            ipo_calendar=ipo_calendar,
+            share_unlock=share_unlock,
+            futures_expiry=futures_expiry,
+            margin_balance=margin_balance,
+        )
+        result = llm.invoke(prompt.format_messages(messages=state["messages"]))
+        report = result.content
+        calendar = _extract_event_calendar(report)
 
-        if len(result.tool_calls) == 0:
-            report = result.content
-            logger.info(f"[中国新闻分析] 报告完成，长度: {len(report)}")
-            return {
-                "messages": [result],
-                "cn_news_report": report,
-                "cn_news_tool_call_count": count + 1,
-            }
-
-        logger.info(f"[中国新闻分析] 执行 {len(result.tool_calls)} 个工具调用")
-        try:
-            tool_messages = _exec_tools(tools, result.tool_calls)
-            analysis_prompt = (
-                "请基于以上数据生成中国市场新闻分析报告（资金日历与微观结构）。\n\n"
-                "# 中国市场新闻分析报告\n"
-                "## 一、资金日历事件\n"
-                "## 二、杠杆资金状况\n"
-                "## 三、季节性/事件性效应\n"
-                "## 四、短期资金面结论\n\n"
-                "请使用中文。数据不可用时如实标注。"
-            )
-            messages = state["messages"] + [result] + tool_messages + [HumanMessage(content=analysis_prompt)]
-            final_result = llm.invoke(messages)
-            report = final_result.content
-            logger.info(f"[中国新闻分析] 报告完成，长度: {len(report)}")
-            return {
-                "messages": [result] + tool_messages + [final_result],
-                "cn_news_report": report,
-                "cn_news_tool_call_count": count + 1,
-            }
-        except Exception as e:
-            logger.error(f"[中国新闻分析] 失败: {e}")
-            return {
-                "messages": [result],
-                "cn_news_report": f"分析生成失败: {e}",
-                "cn_news_tool_call_count": count + 1,
-            }
+        logger.info(f"[中国新闻分析] 报告完成，长度: {len(report)}")
+        return {
+            "messages": [result],
+            "cn_news_report": report,
+            "market_event_calendar": calendar,
+            "cn_news_tool_call_count": count + 1,
+        }
 
     return node
 
 
-def _exec_tools(tools, tool_calls):
-    msgs = []
-    for tc in tool_calls:
-        tname, targs, tid = tc.get("name"), tc.get("args", {}), tc.get("id")
-        for t in tools:
-            if getattr(t, 'name', getattr(t, '__name__', '')) == tname:
-                try:
-                    res = t.invoke(targs)
-                except Exception as e:
-                    res = f"工具执行失败: {e}"
-                msgs.append(ToolMessage(content=str(res), tool_call_id=tid))
-                break
-        else:
-            msgs.append(ToolMessage(content=f"未找到工具: {tname}", tool_call_id=tid))
-    return msgs
+def _extract_event_calendar(report: str) -> str:
+    """从完整报告中提取事件日历速览结构化文本"""
+    if not report or len(report) < 50:
+        return report or ""
+
+    import re
+    # 尝试提取 ``` 代码块内容
+    code_block = re.search(r'```\s*\n(.*?)\n```', report, re.DOTALL)
+    if code_block:
+        return code_block.group(1).strip()[:500]
+
+    # 尝试提取 ## 〇 段落
+    regime_section = re.search(
+        r'##\s*〇[、，\s]*事件日历速览.*?\n(.*?)(?=\n##\s|\Z)',
+        report, re.DOTALL
+    )
+    if regime_section:
+        return regime_section.group(1).strip()[:500]
+
+    # 兜底：返回报告前 500 字
+    return report[:500]

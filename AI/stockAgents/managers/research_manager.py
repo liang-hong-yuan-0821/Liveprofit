@@ -24,6 +24,9 @@ def create_research_manager(llm, memory):
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
 
+        from AI.stockAgents.utils.agent_utils import build_cross_layer_context
+        cross_ctx = build_cross_layer_context(state)
+
         curr_situation = (
             f"{market_report}\n\n{sentiment_report}\n\n"
             f"{news_report}\n\n{fundamentals_report}"
@@ -36,17 +39,39 @@ def create_research_manager(llm, memory):
                 if isinstance(rec, str):
                     past_memory_str += rec + "\n\n"
 
-        prompt = f"""作为投资组合经理和辩论主持人，你的职责是批判性地评估这轮辩论并做出明确决策：买入、卖出或持有。
+        prompt = f"""作为投资组合经理和辩论主持人，你的职责是批判性地评估这轮辩论并做出明确的三级别投资决策。
+
+大盘与板块环境（来自市场层+板块层分析）：
+{cross_ctx}
+
+板块归属校验要求：
+- 判断该个股所属行业是否在候选板块短名单中（"顺势/逆势/中性"）
+- 顺势股可提高仓位置信度，逆势股需更强的基本面证据才能看多
 
 简洁地总结双方的关键观点，重点关注最有说服力的证据。
 
-此外，为交易员制定详细的投资计划：
-- 明确建议：买入/持有/卖出
-- 理由：解释为什么这些论点导致你的结论
-- 战略行动：实施建议的具体步骤
-- 目标价格分析：提供具体的目标价格区间和价格目标
-  考虑：基本面估值、新闻影响、情绪驱动、技术支撑/阻力位
-  必须提供具体的目标价格——不要回复"无法确定"
+此外，为交易员制定三级别投资计划：
+
+一、短线计划（1-5 交易日）：
+- 短线建议：适合操作/观望/回避
+- 短线目标价位区间
+- 止损位
+- 关键催化剂（财报/事件/技术突破）
+
+二、波段计划（1-4 周）：
+- 波段建议：买入/持有/卖出（主判断）
+- 波段目标价位区间（必须提供具体价格）
+- 止损位
+- 核心逻辑（基本面+技术面+板块面）
+
+三、长线计划（3 月+）：
+- 长线建议：配置/减仓/观望
+- 长线估值判断（低估/合理/高估）
+- 长线风险提示
+
+级别嵌套约束：
+- 波段是主判断，短线在波段方向上操作
+- 长线决定仓位基调，波段决定进出时机
 
 历史反思（请吸取过去错误教训）：
 {past_memory_str}

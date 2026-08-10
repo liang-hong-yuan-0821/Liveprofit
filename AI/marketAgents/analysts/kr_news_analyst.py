@@ -6,7 +6,7 @@
 
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import ToolMessage, HumanMessage
+from AI.dataflows import interface as dataflow
 
 logger = logging.getLogger(__name__)
 
@@ -15,17 +15,34 @@ def create_kr_news_analyst(llm, toolkit):
 
     def node(state):
         current_date = state["trade_date"]
+        requested_date = state.get("requested_trade_date", current_date)
+        date_correction = state.get("date_correction", "")
         logger.info(f"[韩国新闻分析] 开始分析 @ {current_date}")
 
-        tools = [toolkit.get_kr_macro_news, toolkit.get_kr_export_data]
         count = state.get("kr_news_tool_call_count", 0)
+
+        # 构建日期说明
+        if date_correction:
+            date_line = (
+                f"分析日期：{current_date}\n"
+                f"⚠️ 原始请求 {requested_date}，校正为 {current_date}（{date_correction}）。"
+                f"请在报告中如实标注实际数据日期。\n"
+            )
+        else:
+            date_line = f"分析日期：{current_date}\n"
+
+        # 直接调用 dataflows 函数获取数据（使用纯日期，一期为占位实现）
+        macro_news = dataflow.get_kr_macro_news(current_date)
+        export_data = dataflow.get_kr_export_data(current_date)
 
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
                 "你是一位专注韩国市场的宏观分析师。\n\n"
-                "分析日期：{current_date}\n"
-                "可用工具：{tool_names}\n\n"
+                + date_line + "\n"
+                "## 已获取的数据\n\n"
+                "### 韩国财经要闻\n{macro_news}\n\n"
+                "### 韩国出口数据\n{export_data}\n\n"
                 "注意事项：\n"
                 "- 一期韩国数据源有限，工具可能返回'数据不可用'——此时请基于你的训练知识做方向性判断\n"
                 "- 关注韩国央行利率决议、半导体/汽车出口数据、三星/SK海力士等权重股动态\n"
@@ -42,57 +59,18 @@ def create_kr_news_analyst(llm, toolkit):
             MessagesPlaceholder(variable_name="messages"),
         ])
 
-        tool_names = [getattr(t, 'name', getattr(t, '__name__', str(t))) for t in tools]
-        prompt = prompt.partial(tool_names=", ".join(tool_names), current_date=current_date)
-        chain = prompt | llm.bind_tools(tools)
-        result = chain.invoke({"messages": state["messages"]})
+        prompt = prompt.partial(
+            macro_news=macro_news,
+            export_data=export_data,
+        )
+        result = llm.invoke(prompt.format_messages(messages=state["messages"]))
+        report = result.content
 
-        if len(result.tool_calls) == 0:
-            return {
-                "messages": [result],
-                "kr_news_report": result.content,
-                "kr_news_tool_call_count": count + 1,
-            }
-
-        try:
-            tool_messages = _exec_tools(tools, result.tool_calls)
-            analysis_prompt = (
-                "请基于以上数据生成韩国市场新闻分析报告。\n"
-                "# 韩国市场新闻分析报告\n"
-                "## 一、政策与央行动态\n## 二、出口与产业\n"
-                "## 三、权重股动态\n## 四、对KOSPI/KOSDAQ的影响判断\n"
-                "请使用中文。数据不可用时如实标注。"
-            )
-            messages = state["messages"] + [result] + tool_messages + [HumanMessage(content=analysis_prompt)]
-            final = llm.invoke(messages)
-            return {
-                "messages": [result] + tool_messages + [final],
-                "kr_news_report": final.content,
-                "kr_news_tool_call_count": count + 1,
-            }
-        except Exception as e:
-            logger.error(f"[韩国新闻分析] 失败: {e}")
-            return {
-                "messages": [result],
-                "kr_news_report": f"分析生成失败: {e}",
-                "kr_news_tool_call_count": count + 1,
-            }
+        logger.info(f"[韩国新闻分析] 报告完成，长度: {len(report)}")
+        return {
+            "messages": [result],
+            "kr_news_report": report,
+            "kr_news_tool_call_count": count + 1,
+        }
 
     return node
-
-
-def _exec_tools(tools, tool_calls):
-    msgs = []
-    for tc in tool_calls:
-        tname, targs, tid = tc.get("name"), tc.get("args", {}), tc.get("id")
-        for t in tools:
-            if getattr(t, 'name', getattr(t, '__name__', '')) == tname:
-                try:
-                    res = t.invoke(targs)
-                except Exception as e:
-                    res = f"工具执行失败: {e}"
-                msgs.append(ToolMessage(content=str(res), tool_call_id=tid))
-                break
-        else:
-            msgs.append(ToolMessage(content=f"未找到工具: {tname}", tool_call_id=tid))
-    return msgs

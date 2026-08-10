@@ -5,6 +5,9 @@
 # ============================================================
 set -e
 
+# 确保 Python 输出 UTF-8（避免 Windows 中文乱码）
+export PYTHONIOENCODING=utf-8
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 

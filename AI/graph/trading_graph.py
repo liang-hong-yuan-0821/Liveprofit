@@ -240,6 +240,29 @@ class TradingAgentsGraph:
         """
         company_name = init_state.get("company_of_interest", "")
         trade_date = init_state.get("trade_date", "")
+        raw_date = init_state.get("requested_trade_date", trade_date)
+        date_correction = init_state.get("date_correction", "")
+
+        # ---- 防御性日期校正（安全网） ----
+        # 如果上游 create_initial_state 未被调用（如 tests 直接构造 init_state），
+        # 在此做兜底校正，确保 state 中的 trade_date 始终是有效数据日期。
+        if not date_correction and trade_date:
+            try:
+                from AI.dataflows.utils.trading_calendar import get_available_trade_date
+                corrected = get_available_trade_date(trade_date)
+                if corrected != trade_date:
+                    raw_date = trade_date
+                    date_correction = f"{trade_date} → {corrected}"
+                    trade_date = corrected
+                    init_state["trade_date"] = corrected
+                    init_state["requested_trade_date"] = raw_date
+                    init_state["date_correction"] = date_correction
+                    logger.warning(
+                        f"[propagate 防御校正] {raw_date} → {trade_date}"
+                    )
+            except Exception as e:
+                logger.debug(f"propagate 防御校正跳过: {e}")
+
         self.ticker = company_name
 
         # ---- 本次运行的日志目录 ----
@@ -250,8 +273,12 @@ class TradingAgentsGraph:
         logger.info(f"日志目录: {log_dir.resolve()}")
 
         trace_step("propagate 入口", company=company_name, trade_date=trade_date,
+                   raw_date=raw_date, correction=date_correction,
                    callback=bool(progress_callback))
-        logger.info(f"开始分析: {company_name} @ {trade_date}")
+        if date_correction:
+            logger.info(f"开始分析: {company_name} @ {trade_date}（原始请求 {raw_date}）")
+        else:
+            logger.info(f"开始分析: {company_name} @ {trade_date}")
 
         args = self.propagator.get_graph_args(
             use_progress_callback=bool(progress_callback)
@@ -350,6 +377,8 @@ class TradingAgentsGraph:
             self.log_states_dict[str(trade_date)] = {
                 "company": final_state.get("company_of_interest", ""),
                 "date": final_state.get("trade_date", ""),
+                "requested_date": final_state.get("requested_trade_date", ""),
+                "date_correction": final_state.get("date_correction", ""),
                 "international_news_report": final_state.get("international_news_report", ""),
                 "us_news_report": final_state.get("us_news_report", ""),
                 "us_tech_report": final_state.get("us_tech_report", ""),
@@ -357,7 +386,14 @@ class TradingAgentsGraph:
                 "kr_tech_report": final_state.get("kr_tech_report", ""),
                 "cn_news_report": final_state.get("cn_news_report", ""),
                 "cn_tech_report": final_state.get("cn_tech_report", ""),
-                "stock_tech_report": final_state.get("stock_tech_report", ""),
+                "market_regime": final_state.get("market_regime", ""),
+                "market_event_calendar": final_state.get("market_event_calendar", ""),
+                "sector_news_report": final_state.get("sector_news_report", ""),
+                "sector_tech_report": final_state.get("sector_tech_report", ""),
+                "sector_shortlist": final_state.get("sector_shortlist", ""),
+                "sector_tech_confirm": final_state.get("sector_tech_confirm", ""),
+                "rotation_prediction_report": final_state.get("rotation_prediction_report", ""),
+                "rotation_top_picks": final_state.get("rotation_top_picks", ""),
                 "sentiment_report": final_state.get("sentiment_report", ""),
                 "news_report": final_state.get("news_report", ""),
                 "fundamentals_report": final_state.get("fundamentals_report", ""),
@@ -392,6 +428,12 @@ class TradingAgentsGraph:
             ("07", "market_cn_tech", "cn_tech_report"),
             ("08", "sector_news", "sector_news_report"),
             ("09", "sector_tech", "sector_tech_report"),
+            ("09a", "market_regime", "market_regime"),
+            ("09b", "market_event_calendar", "market_event_calendar"),
+            ("09c", "sector_shortlist", "sector_shortlist"),
+            ("09d", "sector_tech_confirm", "sector_tech_confirm"),
+            ("09e", "sector_rotation", "rotation_prediction_report"),
+            ("09f", "sector_rotation_top_picks", "rotation_top_picks"),
             ("10", "stock_tech", "stock_tech_report"),
             ("11", "sentiment", "sentiment_report"),
             ("12", "stock_news", "news_report"),

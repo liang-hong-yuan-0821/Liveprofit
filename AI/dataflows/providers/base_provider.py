@@ -134,3 +134,43 @@ class BaseStockDataProvider(ABC):
     def get_sector_fund_flow_rank(self, days: int = 5) -> str:
         """获取行业资金流向排名"""
         return self._not_supported("行业资金流向")
+
+    # ==================== 板块层 — 概念/行业数据 ====================
+
+    def get_concept_board(self, concept_name: str, days: int = 10) -> str:
+        """获取单个 A 股概念板块行情数据 → Markdown 表格"""
+        return self._not_supported("概念板块数据")
+
+    def get_all_concept_boards(self, days: int = 10) -> str:
+        """获取 AI 产业链全部概念板块数据（连续 2 个失败则终止剩余请求）"""
+        return self._not_supported("概念板块汇总")
+
+    def get_industry_sector_performance(self, days: int = 10) -> str:
+        """获取全行业板块涨跌排名（TOP/BOTTOM）"""
+        return self._not_supported("行业板块表现")
+
+    def get_concept_board_heat_rank(self, days: int = 10) -> str:
+        """获取热门概念板块热度排名（涨幅+成交额综合排序）"""
+        return self._not_supported("板块热度排名")
+
+    def get_sector_technical_screening(self, days: int = 60) -> str:
+        """逐行业技术指标矩阵（均线排列/RSI/MACD/量比）"""
+        return self._not_supported("行业技术筛选")
+
+    def get_sector_relative_strength(self, days: int = 20) -> str:
+        """各行业相对大盘 alpha 排名"""
+        return self._not_supported("行业相对强度")
+
+    def get_concept_rotation_ranking(self, days: int = 5, top_n: int = 10) -> str:
+        """获取近 N 个交易日题材板块轮动矩阵（Tushare 打板专题数据）。
+        含逐日热度排名、涨停家数、连板家数/高度，
+        用于识别持续主线/新晋异动/退潮规律。
+        仅 Tushare 数据源支持（AKShare 无对等的打板专题数据接口）。
+        """
+        return self._not_supported("题材板块轮动矩阵（仅 Tushare 支持 limit_cpt_list）")
+
+    # ==================== 每日指标 ====================
+
+    def get_daily_basic(self, code: str, trade_date: str) -> str:
+        """获取个股每日基础指标（PE/PB/市值/换手率等）"""
+        return self._not_supported("每日指标")

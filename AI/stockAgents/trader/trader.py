@@ -25,6 +25,9 @@ def create_trader(llm, memory):
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
 
+        from AI.stockAgents.utils.agent_utils import build_cross_layer_context
+        cross_ctx = build_cross_layer_context(state)
+
         from AI.utils.stock_utils import StockUtils
         market_info = StockUtils.get_market_info(ticker)
         currency = market_info["currency_name"]
@@ -57,14 +60,24 @@ def create_trader(llm, memory):
         messages = [
             {
                 "role": "system",
-                "content": f"""你是一位专业的交易员，负责分析市场数据并做出投资决策。
+                "content": f"""你是一位专业的交易员，负责分析市场数据并做出三级别交易决策。
 
 当前分析的股票：{ticker}，使用货币：{currency}（{currency_symbol}）
 {instrument_context}
 
+大盘与板块环境（来自市场层+板块层分析）：
+{cross_ctx}
+
+板块归属校验要求：
+- 确认 {ticker} 所属行业是否在候选板块短名单中
+- 顺势股 → 止损可稍宽（波段级别）；逆势股 → 止损收紧
+
 严格要求：
-- 提供明确的买入、持有或卖出建议
-- 必须提供具体的目标价位，不允许设置为null或空值
+- 提供三级别建议（短线/波段/长线），波段为主判断
+- 必须提供具体的目标价位和止损位：
+  * 短线目标价 + 止损位（建议 -3%~-5%）
+  * 波段目标价 + 止损位（建议 -8%~-12%）
+  * 长线目标价区间
 - 提供置信度（0-1之间）和风险评分（0-1之间）
 - 所有价格使用 {currency_symbol}
 
@@ -72,7 +85,7 @@ def create_trader(llm, memory):
 - 基于基本面分析中的估值数据（P/E、P/B等）
 - 参考技术分析的支撑位和阻力位
 - 考虑行业平均估值水平
-- 结合市场情绪和新闻影响
+- 结合市场情绪和板块主线判断
 
 请用中文撰写分析内容，并以'最终交易建议: **买入/持有/卖出**'结束你的回应。
 

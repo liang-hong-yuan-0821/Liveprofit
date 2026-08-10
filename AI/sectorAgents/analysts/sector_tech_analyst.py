@@ -3,11 +3,10 @@
 逐行业做技术面体检，分析对象是行业板块指数的日K线。
 覆盖 A 股所有申万一级行业（约30个），对每条行业K线做均线/趋势/量价分析，
 输出全行业技术状态矩阵。对科技行业做AI产业链专题深挖。
-直接边模式（无工具循环），在节点内完成工具调用+分析。
 """
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import ToolMessage, HumanMessage
+from AI.dataflows import interface as dataflow
 
 logger = logging.getLogger(__name__)
 
@@ -20,161 +19,170 @@ def create_sector_tech_analyst(llm, toolkit):
 
         # 组装市场层上下文摘要 + 板块新闻分析结论
         sector_ctx = _build_sector_market_context(state)
-        news_report = state.get("sector_news_report", "")
-        if news_report and len(news_report) > 20:
-            sector_ctx += f"\n\n## 板块新闻分析结论（供技术面交叉验证）\n{news_report[:1000]}"
+        # 优先消费结构化短名单（完整），完整报告作为补充
+        shortlist = state.get("sector_shortlist", "")
+        if shortlist and len(shortlist) > 10:
+            sector_ctx += f"\n\n## 候选板块短名单（完整 — 需逐一做技术确认）\n{shortlist}"
+        else:
+            news_report = state.get("sector_news_report", "")
+            if news_report and len(news_report) > 20:
+                sector_ctx += f"\n\n## 板块新闻分析结论（参考）\n{news_report[:1000]}"
 
-        tools = [
-            toolkit.get_industry_sector_performance,
-            toolkit.get_sector_technical_screening,
-            toolkit.get_sector_relative_strength,
-            toolkit.get_ai_industry_chain,
-            toolkit.get_tech_correlation_analysis,
-        ]
         count = state.get("sector_tech_tool_call_count", 0)
+
+        # 直接调用 dataflows 函数获取数据（全部调用，LLM自行判断哪些行业适用AI产业链数据）
+        horizon = dataflow.get_sector_horizon_screening(days=120)
+        industry_perf = dataflow.get_industry_sector_performance(days=20)
+        tech_screening = dataflow.get_sector_technical_screening(days=60)
+        rel_strength = dataflow.get_sector_relative_strength(days=20)
+        ai_chain = dataflow.get_all_concept_boards(days=10)
+        tech_corr = dataflow.analyze_tech_correlation(days=10)
 
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                "你是一位资深 A 股板块技术分析师，负责逐行业做技术面体检。\n"
+                "你是一位资深 A 股板块技术分析师，负责逐行业做技术面体检，"
+                "并产出三时间级别的技术确认结论。\n"
                 "你的分析对象是行业板块指数的日K线（OHLCV），不是个股K线。\n\n"
-                "分析日期：{current_date}\n"
-                "可用工具：{tool_names}\n\n"
-                "背景上下文（来自市场层宏观分析）：\n"
+                "分析日期：{current_date}\n\n"
+                "背景上下文（来自市场层宏观分析 + 板块层新闻分析）：\n"
                 "{sector_market_context}\n\n"
-                "工作流程：\n"
-                "1. 调用 get_industry_sector_performance(days=20) 获取全行业近期涨跌数据\n"
-                "2. 调用 get_sector_technical_screening(days=60) 获取全行业技术状态矩阵\n"
-                "   （每行=一个行业，含均线排列、RSI、MACD、量比等指标的多空状态）\n"
-                "3. 调用 get_sector_relative_strength(days=20) 获取各行业 alpha 排名\n"
-                "4. 对科技相关行业，调用 get_ai_industry_chain 和 get_tech_correlation_analysis\n"
-                "   做产业链级别的专题深挖（不要重复调用）\n\n"
+                "## 已获取的数据\n\n"
+                "### 全行业 日/周/月 三级趋势矩阵（120日）\n{horizon}\n\n"
+                "### 全行业近期涨跌数据（20日）\n{industry_perf}\n\n"
+                "### 日线技术状态矩阵（60日）\n{tech_screening}\n\n"
+                "### 行业 Alpha 排名（20日）\n{rel_strength}\n\n"
+                "### AI 产业链数据\n{ai_chain}\n\n"
+                "### 科技相关性分析\n{tech_corr}\n\n"
                 "分析维度（按优先级排列）：\n\n"
-                "A. 全行业技术状态总览\n"
+                "A. ★ 多级别共振判定（核心新增）\n"
+                "  - 基于 get_sector_horizon_screening 的三级趋势矩阵\n"
+                "  - 三线共振上行（日/周/月均多头）= ★★★ 强板块\n"
+                "  - 二线偏强（日+周多头）= ★★ 偏强\n"
+                "  - 仅日线多头 = ★ 偏弱（可能只是短线反弹）\n"
+                "  - 空头排列 = 弱势\n\n"
+                "B. ★ 候选板块技术确认（核心新增）\n"
+                "  - 对上下文中的'候选板块短名单'（sector_shortlist）逐一做技术确认\n"
+                "  - 短线候选：确认日线信号（量比/突破/RSI）+ 短期风险\n"
+                "  - 波段主线：确认日线+周线趋势共振 + 量价配合 + 主力资金方向\n"
+                "  - 长线配置：确认周线+月线趋势 + 估值水位 + 距高点回撤\n"
+                "  - 每个板块输出：确认 / 存疑 / 否认 + 技术依据\n\n"
+                "C. 全行业技术状态总览\n"
                 "  - 技术面强势的行业有哪些？（均线多头排列 + RSI > 50 + MACD 金叉）\n"
                 "  - 技术面弱势的行业有哪些？（均线空头排列 + RSI < 50 + MACD 死叉）\n"
                 "  - 哪些行业出现异动信号？（放量突破/高位背离/底部放量企稳）\n\n"
-                "B. 重点行业深度分析\n"
-                "  - 领涨行业：趋势是否健康？量价配合如何？是否有背离风险？\n"
+                "D. 重点行业深度分析\n"
+                "  - 领涨行业：趋势是否健康？量价配合如何？多级别是否共振？\n"
                 "  - 领跌行业：是否出现底部企稳信号？还是下跌中继？\n"
                 "  - 行业 alpha 排名：哪些行业真正跑赢大盘（持续正 alpha）？\n\n"
-                "C. 板块轮动技术验证\n"
-                "  - 对新闻分析识别的'主线板块'，用技术面做确认\n"
-                "  - 趋势不背离 + 量价配合 = 主线健康\n"
-                "  - 高位放量滞涨/顶背离 = 主线可能见顶\n\n"
-                "D. 风格因子技术验证\n"
-                "  - 结合市场层的风格判断，验证板块层面的技术信号是否一致\n"
-                "  - 如果市场层判断'大盘价值占优'但小盘成长板块也在放量走强 → 可能是风格切换前兆\n\n"
-                "E. AI/科技产业链专题（科技行业深挖）\n"
-                "  - AI产业链内部轮动：当前热点在哪个环节（存储芯片/半导体/光模块/AI服务器/算力/AI应用）？\n"
+                "E. 风格因子 + AI/科技专题\n"
+                "  - 风格因子技术验证：板块层面的技术信号是否与市场层风格判断一致\n"
+                "  - AI产业链内部轮动：当前热点在哪个环节？传导是否有效？\n"
                 "  - 美股科技→韩股科技→A股科技板块的传导有效性\n"
-                "  - 产业链是否存在传导断裂或局部过热信号？\n\n"
+                "  - 对科技相关行业重点使用 AI 产业链和相关性分析数据\n\n"
                 "注意事项：\n"
                 "- 数据不可用时标注'数据暂不可用（需 AKShare 数据源）'\n"
                 "- 技术指标只是辅助工具，不构成投资建议\n"
-                "- 行业数量多（约30个），请做归纳总结而非逐行业罗列\n\n"
-                "输出格式：\n"
+                "- 行业数量多（约30个），请做归纳总结而非逐行业罗列\n"
+                "- 候选板块技术确认是核心交付物，务必逐一覆盖\n\n"
+                "输出格式（结论前置）：\n"
                 "# 板块技术分析报告\n\n"
-                "## 一、全行业技术状态总览\n"
-                "（技术面强势行业 / 技术面弱势行业 / 异动信号行业，用表格呈现）\n\n"
-                "## 二、重点行业深度分析\n"
+                "## 〇、候选板块技术确认（结论块 — 向下游传递）\n"
+                "（对 sector_shortlist 中的每个候选板块给出技术确认结论，格式如下）\n"
+                "```\n"
+                "确认板块: [板块名, 多级别趋势(日/周/月), 量价判断, 风险信号]\n"
+                "存疑板块: [板块名, 疑点, 需观察信号]\n"
+                "否认板块: [板块名, 技术面不支持的理由]\n"
+                "```\n\n"
+                "## 一、多级别共振矩阵\n"
+                "（全行业 日/周/月 三级趋势表，标注共振强度 ★/★★/★★★）\n\n"
+                "## 二、全行业技术状态总览\n"
+                "（技术面强势行业 / 技术面弱势行业 / 异动信号行业）\n\n"
+                "## 三、重点行业深度分析\n"
                 "（领涨行业技术健康度 + 领跌行业底部信号 + alpha排名验证）\n\n"
-                "## 三、板块轮动技术验证\n"
-                "（主线板块技术面确认 + 风险信号扫描）\n\n"
-                "## 四、风格因子技术验证\n"
-                "（大小盘/成长价值的技术信号是否与市场层判断一致）\n\n"
-                "## 五、AI/科技产业链专题\n"
-                "（产业链轮动位置 + 全球科技传导有效性 + 风险提示）\n\n"
+                "## 四、板块轮动技术详细验证\n"
+                "（主线板块技术面确认 + 风险信号扫描 + 轮动位置判断）\n\n"
+                "## 五、风格因子 + AI/科技产业链\n"
+                "（风格一致性 + 产业链轮动位置 + 全球科技传导 + 风险提示）\n\n"
                 "请使用中文。"
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 
-        tool_names = [getattr(t, 'name', getattr(t, '__name__', str(t))) for t in tools]
         prompt = prompt.partial(
-            tool_names=", ".join(tool_names),
             current_date=current_date,
             sector_market_context=sector_ctx,
+            horizon=horizon,
+            industry_perf=industry_perf,
+            tech_screening=tech_screening,
+            rel_strength=rel_strength,
+            ai_chain=ai_chain,
+            tech_corr=tech_corr,
         )
-        chain = prompt | llm.bind_tools(tools)
-        result = chain.invoke({"messages": state["messages"]})
+        result = llm.invoke(prompt.format_messages(messages=state["messages"]))
+        report = result.content
+        confirm = _extract_sector_tech_confirm(report)
 
-        if len(result.tool_calls) == 0:
-            report = result.content
-            logger.info(f"[板块技术分析] 报告完成，长度: {len(report)}")
-            return {
-                "messages": [result],
-                "sector_tech_report": report,
-                "sector_tech_tool_call_count": count + 1,
-            }
-
-        logger.info(f"[板块技术分析] 执行 {len(result.tool_calls)} 个工具调用")
-        try:
-            tool_messages = _exec_tools(tools, result.tool_calls)
-            analysis_prompt = (
-                "请基于以上数据生成板块技术分析报告（全行业技术扫描+AI专题+风格验证）。\n\n"
-                "# 板块技术分析报告\n\n"
-                "## 一、全行业技术状态总览\n"
-                "（技术面强势行业 / 技术面弱势行业 / 异动信号行业，用表格呈现）\n\n"
-                "## 二、重点行业深度分析\n"
-                "（领涨行业技术健康度 + 领跌行业底部信号 + alpha排名验证）\n\n"
-                "## 三、板块轮动技术验证\n"
-                "（主线板块技术面确认 + 风险信号扫描）\n\n"
-                "## 四、风格因子技术验证\n"
-                "（大小盘/成长价值的技术信号是否与市场层判断一致）\n\n"
-                "## 五、AI/科技产业链专题\n"
-                "（产业链轮动位置 + 全球科技传导有效性 + 风险提示）\n\n"
-                "请使用中文。数据不可用时如实标注。"
-            )
-            messages = state["messages"] + [result] + tool_messages + [HumanMessage(content=analysis_prompt)]
-            final_result = llm.invoke(messages)
-            report = final_result.content
-            logger.info(f"[板块技术分析] 报告完成，长度: {len(report)}")
-            return {
-                "messages": [result] + tool_messages + [final_result],
-                "sector_tech_report": report,
-                "sector_tech_tool_call_count": count + 1,
-            }
-        except Exception as e:
-            logger.error(f"[板块技术分析] 失败: {e}")
-            return {
-                "messages": [result],
-                "sector_tech_report": f"分析生成失败: {e}",
-                "sector_tech_tool_call_count": count + 1,
-            }
+        logger.info(f"[板块技术分析] 报告完成，长度: {len(report)}")
+        return {
+            "messages": [result],
+            "sector_tech_report": report,
+            "sector_tech_confirm": confirm,
+            "sector_tech_tool_call_count": count + 1,
+        }
 
     return node
 
 
 def _build_sector_market_context(state) -> str:
-    """组装市场层中与板块分析相关的上下文摘要"""
+    """组装市场层中与板块分析相关的上下文摘要
+
+    优先消费完整结构化字段（market_regime + market_event_calendar），
+    避免截断丢失关键结论。完整报告作为补充参考。
+    """
     parts = []
+
+    # 优先：结构化结论字段（完整，不截断）
+    market_regime = state.get("market_regime", "")
+    event_calendar = state.get("market_event_calendar", "")
+    if market_regime and len(market_regime) > 10:
+        parts.append(f"## 大盘环境判定（完整）\n{market_regime}")
+    if event_calendar and len(event_calendar) > 10:
+        parts.append(f"## 资金日历（完整）\n{event_calendar}")
+
+    # 补充：完整报告的前段（参考用）
     cn_tech = state.get("cn_tech_report", "")
     cn_news = state.get("cn_news_report", "")
     intl_news = state.get("international_news_report", "")
 
-    if cn_tech and len(cn_tech) > 20:
-        parts.append(f"## 大盘环境\n{cn_tech[:800]}")
-    if cn_news and len(cn_news) > 20:
-        parts.append(f"## 资金日历\n{cn_news[:500]}")
+    if not market_regime and cn_tech and len(cn_tech) > 20:
+        parts.append(f"## 大盘环境（参考）\n{cn_tech[:800]}")
+    if not event_calendar and cn_news and len(cn_news) > 20:
+        parts.append(f"## 资金日历（参考）\n{cn_news[:500]}")
     if intl_news and len(intl_news) > 20:
         parts.append(f"## 国际宏观\n{intl_news[:500]}")
 
     return "\n\n".join(parts) if parts else "（市场层数据暂不可用）"
 
 
-def _exec_tools(tools, tool_calls):
-    msgs = []
-    for tc in tool_calls:
-        tname, targs, tid = tc.get("name"), tc.get("args", {}), tc.get("id")
-        for t in tools:
-            if getattr(t, 'name', getattr(t, '__name__', '')) == tname:
-                try:
-                    res = t.invoke(targs)
-                except Exception as e:
-                    res = f"工具执行失败: {e}"
-                msgs.append(ToolMessage(content=str(res), tool_call_id=tid))
-                break
-        else:
-            msgs.append(ToolMessage(content=f"未找到工具: {tname}", tool_call_id=tid))
-    return msgs
+def _extract_sector_tech_confirm(report: str) -> str:
+    """从完整报告中提取候选板块技术确认结构化文本"""
+    if not report or len(report) < 50:
+        return report or ""
+
+    import re
+    # 尝试提取 ``` 代码块内容
+    code_block = re.search(r'```\s*\n(.*?)\n```', report, re.DOTALL)
+    if code_block:
+        return code_block.group(1).strip()[:800]
+
+    # 尝试提取 ## 〇 段落
+    confirm_section = re.search(
+        r'##\s*〇[、，\s]*候选板块技术确认.*?\n(.*?)(?=\n##\s|\Z)',
+        report, re.DOTALL
+    )
+    if confirm_section:
+        return confirm_section.group(1).strip()[:800]
+
+    # 兜底：返回报告前 800 字
+    return report[:800]

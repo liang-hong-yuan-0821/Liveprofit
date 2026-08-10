@@ -37,12 +37,15 @@ class RiskDebateState(TypedDict):
 # 主状态
 class AgentState(MessagesState):
     company_of_interest: Annotated[str, "待分析的股票"]
-    trade_date: Annotated[str, "分析日期"]
+    trade_date: Annotated[str, "分析日期（校正后的有效数据日期）"]
+    requested_trade_date: Annotated[str, "原始请求日期（校正前，用于透明度标注）"]
+    date_correction: Annotated[str, "日期校正说明（如 '2026-08-08(周六,非交易日)→2026-08-07'），空字符串表示无需校正"]
 
     sender: Annotated[str, "发送消息的 Agent"]
 
     # 市场层（宏观）报告 — Layer 0 + Layer 1
-    international_news_report: Annotated[str, "国际新闻分析师报告"]  # Layer 0
+    international_event_report: Annotated[str, "国际事件提取分析师报告"]  # Layer 0a — 事件识别+历史案例
+    international_news_report: Annotated[str, "国际新闻影响分析师报告"]  # Layer 0b — 影响分析
     us_news_report: Annotated[str, "美国新闻分析师报告"]
     us_tech_report: Annotated[str, "美国技术分析师报告"]
     kr_news_report: Annotated[str, "韩国新闻分析师报告"]
@@ -60,8 +63,17 @@ class AgentState(MessagesState):
     sector_news_report: Annotated[str, "板块新闻分析师报告（行业排名+资金流向+轮动判断）"]
     sector_tech_report: Annotated[str, "板块技术分析师报告（全行业技术扫描+AI专题+风格验证）"]
 
+    # 市场层结构化结论字段（下游消费用，不截断）
+    market_regime: Annotated[str, "三级别市场环境判定（短线/波段/长线）— CN Tech 产出"]
+    market_event_calendar: Annotated[str, "三级别事件日历（短线/波段/长线）— CN News 产出"]
+
+    # 板块层结构化结论字段（下游消费用，不截断）
+    sector_shortlist: Annotated[str, "三级别候选板块短名单（短线候选/波段主线/长线配置）— Sector News 产出"]
+    sector_tech_confirm: Annotated[str, "候选板块技术确认结论（确认/存疑/否认）— Sector Tech 产出"]
+
     # 市场层工具调用计数器
-    international_news_tool_call_count: Annotated[int, "国际新闻分析师工具调用计数"]
+    international_event_tool_call_count: Annotated[int, "国际事件提取分析师工具调用计数"]
+    international_news_tool_call_count: Annotated[int, "国际新闻影响分析师工具调用计数"]
     us_news_tool_call_count: Annotated[int, "美国新闻分析师工具调用计数"]
     us_tech_tool_call_count: Annotated[int, "美国技术分析师工具调用计数"]
     kr_news_tool_call_count: Annotated[int, "韩国新闻分析师工具调用计数"]
@@ -72,6 +84,11 @@ class AgentState(MessagesState):
     # 板块层工具调用计数器
     sector_news_tool_call_count: Annotated[int, "板块新闻分析师工具调用计数"]
     sector_tech_tool_call_count: Annotated[int, "板块技术分析师工具调用计数"]
+
+    # 板块层 — 轮动预测
+    rotation_prediction_report: Annotated[str, "板块轮动预测报告（主线+新热点+退潮+明日预测）"]
+    rotation_top_picks: Annotated[str, "轮动预测速览结构化文本（供下游展示）"]
+    rotation_tool_call_count: Annotated[int, "板块轮动预测工具调用计数"]
 
     # 个股层工具调用计数器
     stock_tech_tool_call_count: Annotated[int, "个股技术分析师工具调用计数"]

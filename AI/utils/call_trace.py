@@ -146,7 +146,7 @@ def trace_state(state: dict, title: str = "状态快照", keys: list = None):
         keys = [
             "company_of_interest", "trade_date",
             "international_news_report", "cn_news_report", "cn_tech_report",
-            "sector_news_report", "sector_tech_report",
+            "sector_news_report", "sector_tech_report", "rotation_prediction_report",
             "stock_tech_report", "sentiment_report", "news_report",
             "fundamentals_report",
             "trader_investment_plan", "final_trade_decision",

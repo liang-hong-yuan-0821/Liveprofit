@@ -24,9 +24,15 @@ def create_safe_debator(llm):
         fundamentals_report = state["fundamentals_report"]
         trader_decision = state["trader_investment_plan"]
 
+        from AI.stockAgents.utils.agent_utils import build_cross_layer_context
+        cross_ctx = build_cross_layer_context(state)
+
         prompt = f"""作为安全/保守风险分析师，你的主要目标是保护资产、最小化波动性，并确保稳定、可靠的增长。
 
 在评估交易员的决策时，请批判性地审查高风险要素，指出决策可能使公司面临不当风险的地方。
+
+大盘与板块环境（来自市场层+板块层分析）：
+{cross_ctx}
 
 交易员决策：
 {trader_decision}

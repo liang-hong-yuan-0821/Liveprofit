@@ -24,6 +24,9 @@ def create_bull_researcher(llm, memory):
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
 
+        from AI.stockAgents.utils.agent_utils import build_cross_layer_context
+        cross_ctx = build_cross_layer_context(state)
+
         from AI.utils.stock_utils import StockUtils
         market_info = StockUtils.get_market_info(ticker)
         company_name = _get_company_name(ticker)
@@ -53,6 +56,14 @@ def create_bull_researcher(llm, memory):
 - 竞争优势：独特产品、强势品牌、市场地位
 - 积极指标：财务健康、行业趋势、正面消息
 - 反驳看跌观点：用数据和推理回应看跌担忧
+
+大盘与板块环境（来自市场层+板块层分析）：
+{cross_ctx}
+
+板块归属校验要求：
+- 请根据个股基本面报告中的行业信息，判断该股所属行业
+- 对照上述候选板块短名单，判断该股是"顺势"（行业在候选名单中）、"逆势"（行业在下跌名单中）还是"中性"
+- 在论证开头明确标注板块归属结论
 
 可用资源：
 市场研究报告：{market_report}

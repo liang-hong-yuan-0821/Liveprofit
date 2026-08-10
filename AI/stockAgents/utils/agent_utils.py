@@ -109,12 +109,24 @@ class Toolkit:
     @tool
     def get_china_market_overview(
         curr_date: Annotated[str, "当前日期 YYYY-mm-dd"],
+        days: Annotated[int, "回看天数，默认7；长周期分析建议传120"] = 7,
     ) -> str:
         """
         获取 A 股市场概况（上证综指、深证成指、创业板指等主要指数行情）。
-        用于了解整体市场环境和趋势。
+        用于了解整体市场环境和趋势。days 参数控制回看天数。
         """
-        return dataflow.get_china_market_overview(curr_date)
+        return dataflow.get_china_market_overview(curr_date, days=days)
+
+    @staticmethod
+    @tool
+    def get_stock_industry(
+        ticker: Annotated[str, "股票代码，如 000001.SZ"],
+    ) -> str:
+        """
+        获取个股所属行业信息。
+        用于板块归属校验：判断个股所在行业是否在候选板块短名单中。
+        """
+        return dataflow.get_china_stock_info(ticker)
 
     # ==================== 全球科技指数工具 ====================
 
@@ -226,6 +238,19 @@ class Toolkit:
         当前无免费行业政策聚合接口，Agent 应靠 LLM 训练知识做方向性判断。
         """
         return dataflow.get_industry_policy_news(curr_date)
+
+    @staticmethod
+    @tool
+    def get_sector_horizon_screening(
+        days: Annotated[int, "回看天数，默认120（约半年日线，覆盖周线/月线重采样）"] = 120,
+    ) -> str:
+        """
+        获取全行业多周期技术矩阵（日/周/月三级趋势）。
+        基于日线数据重采样计算周线和月线趋势状态，
+        输出每行业的日线/周线/月线趋势 + 多级别共振判定（★★★/★★/★）。
+        用于判断行业在不同时间周期上的趋势一致性。
+        """
+        return dataflow.get_sector_horizon_screening(days)
 
     # ==================== 市场层 — Global 工具 ====================
 
@@ -446,7 +471,10 @@ class Toolkit:
 # ==================== 市场层上下文组装 ====================
 
 def build_market_layer_context(state) -> str:
-    """组装市场层 7 份宏观报告，供下游节点增量注入（空字段安全）"""
+    """组装市场层 7 份宏观报告，供下游节点增量注入（空字段安全）
+
+    已弃用：推荐使用 build_cross_layer_context()，它注入完整的结构化字段而非截断报告。
+    """
     parts = []
     for key, label in (
         ("international_news_report", "国际金融市场新闻"),
@@ -460,4 +488,25 @@ def build_market_layer_context(state) -> str:
         val = state.get(key, "")
         if val and len(val) > 20:
             parts.append(f"## {label}\n{val}")
+    return "\n\n".join(parts) if parts else ""
+
+
+def build_cross_layer_context(state) -> str:
+    """组装 市场层结论 + 板块层结论 的紧凑上下文（完整注入，不截断）
+
+    这是"市场→板块→个股"流水线的核心组装函数。
+    所有下游决策节点通过此函数获取跨层上下文。
+
+    返回：
+        格式化的多段落上下文文本；如果所有字段为空则返回空串。
+    """
+    parts = []
+    if state.get("market_regime") and len(state["market_regime"]) > 10:
+        parts.append(f"## 大盘环境判定（市场层）\n{state['market_regime']}")
+    if state.get("market_event_calendar") and len(state["market_event_calendar"]) > 10:
+        parts.append(f"## 资金日历（市场层）\n{state['market_event_calendar']}")
+    if state.get("sector_shortlist") and len(state["sector_shortlist"]) > 10:
+        parts.append(f"## 候选板块短名单（板块层）\n{state['sector_shortlist']}")
+    if state.get("sector_tech_confirm") and len(state["sector_tech_confirm"]) > 10:
+        parts.append(f"## 候选板块技术确认（板块层）\n{state['sector_tech_confirm']}")
     return "\n\n".join(parts) if parts else ""

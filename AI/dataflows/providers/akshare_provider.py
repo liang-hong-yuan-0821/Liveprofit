@@ -26,10 +26,17 @@ except ImportError:
 
 
 def _call_with_timeout(fn, timeout=_AKSHARE_TIMEOUT, *args, **kwargs):
-    """在线程池中执行 fn，超时则抛 TimeoutError"""
-    with ThreadPoolExecutor(max_workers=1) as pool:
+    """在线程池中执行 fn，超时则抛 TimeoutError。
+
+    注意：不能使用 with ThreadPoolExecutor，因为 __exit__ 会调用
+    shutdown(wait=True)，导致超时后主线程仍被 hang 住的工作线程阻塞。
+    """
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
         future = pool.submit(fn, *args, **kwargs)
         return future.result(timeout=timeout)
+    finally:
+        pool.shutdown(wait=False)
 
 
 def _try_call(fn, *args, timeout=_AKSHARE_TIMEOUT, **kwargs):
@@ -38,6 +45,84 @@ def _try_call(fn, *args, timeout=_AKSHARE_TIMEOUT, **kwargs):
         return _call_with_timeout(fn, timeout, *args, **kwargs)
     except Exception:
         return None
+
+
+def _extract_date_from_row(row, df=None) -> str:
+    """从 DataFrame 行中尝试提取日期字段。
+
+    尝试常见日期列名：日期、date、trade_date、时间、report_date 等。
+    也尝试从行索引中提取。
+    """
+    date_columns = ["日期", "date", "trade_date", "时间", "report_date", "通知日期", "变动日期"]
+
+    # 先从列名匹配
+    if hasattr(row, 'get'):
+        for col in date_columns:
+            val = row.get(col)
+            if val is not None:
+                s = str(val).strip()
+                if len(s) >= 8:
+                    return _normalize_date_str(s)
+
+    # 尝试行名（index）
+    row_name = str(row.name) if hasattr(row, 'name') and row.name is not None else ""
+    if len(row_name) >= 8:
+        normalized = _normalize_date_str(row_name)
+        if normalized:
+            return normalized
+
+    # 从 DataFrame 列中模糊搜索
+    if df is not None:
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if any(kw in col_lower for kw in ["date", "日期", "time", "时间"]):
+                val = row.get(col) if hasattr(row, 'get') else row[col]
+                if val is not None:
+                    s = str(val).strip()
+                    if len(s) >= 8:
+                        return _normalize_date_str(s)
+
+    return ""
+
+
+def _normalize_date_str(s: str) -> str:
+    """将日期字符串标准化为 YYYY-MM-DD 格式。"""
+    s = s.strip()
+    # 已经是 YYYY-MM-DD
+    if len(s) == 10 and s[4] == "-" and s[7] == "-":
+        return s
+    # YYYYMMDD
+    if len(s) == 8 and s.isdigit():
+        return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+    # YYYY/MM/DD
+    if len(s) == 10 and s[4] == "/" and s[7] == "/":
+        return s.replace("/", "-")
+    # 带时间戳的
+    if len(s) >= 10:
+        clean = s[:10].replace("/", "-")
+        if clean[4] == "-" and clean[7] == "-":
+            return clean
+    return ""
+
+
+def _format_date_note(data_date: str, requested_date: str = "") -> str:
+    """生成统一的日期标注行。
+
+    Args:
+        data_date: 实际数据日期 (YYYY-MM-DD)
+        requested_date: 请求日期 (YYYY-MM-DD)，可选
+
+    Returns:
+        标注文本，如 `> ⚠️ 数据日期: 2026-08-07（请求日期为 2026-08-08 时请留意）`
+    """
+    if not data_date:
+        return ""
+    if requested_date and data_date != requested_date:
+        return (
+            f"> ⚠️ 数据日期: {data_date}"
+            f"（请求日期为 {requested_date}，数据可能滞后一个交易日）"
+        )
+    return f"> 数据日期: {data_date}"
 
 
 class AKShareProvider(BaseStockDataProvider):
@@ -659,7 +744,10 @@ class AKShareProvider(BaseStockDataProvider):
             return f"获取解禁日历失败: {e}"
 
     def get_margin_trading_balance(self, curr_date: str) -> str:
-        """获取两融余额（沪市+深市）"""
+        """获取两融余额（沪市+深市）
+
+        注意：本接口取最新一行快照，不按 curr_date 过滤。
+        """
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
         lines = ["# 融资融券余额\n"]
@@ -668,7 +756,11 @@ class AKShareProvider(BaseStockDataProvider):
             sse = ak.stock_margin_sse()
             if sse is not None and not sse.empty:
                 latest = sse.iloc[-1]
+                data_date = _extract_date_from_row(latest, sse)
+                date_note = _format_date_note(data_date, curr_date)
                 lines.append(f"## 沪市")
+                if date_note:
+                    lines.append(date_note)
                 lines.append(f"- 融资余额: {latest.get('融资余额', 'N/A')}")
                 lines.append(f"- 融券余额: {latest.get('融券余额', 'N/A')}")
         except Exception as e:
@@ -687,7 +779,11 @@ class AKShareProvider(BaseStockDataProvider):
         return "\n".join(lines)
 
     def get_market_breadth(self, curr_date: str) -> str:
-        """获取市场宽度（涨跌家数、涨跌停统计）"""
+        """获取市场宽度（涨跌家数、涨跌停统计）
+
+        注意：本接口取最新一行快照，不按 curr_date 过滤。
+        如果请求日期非交易日，返回的实际是上一交易日数据。
+        """
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
         try:
@@ -695,7 +791,12 @@ class AKShareProvider(BaseStockDataProvider):
             if df is None or df.empty:
                 return "暂无市场宽度数据。"
             latest = df.iloc[-1]
+            # 尝试提取实际数据日期
+            data_date = _extract_date_from_row(latest, df)
+            date_note = _format_date_note(data_date, curr_date)
             lines = ["# 市场宽度（情绪温度计）\n"]
+            if date_note:
+                lines.append(date_note + "\n")
             lines.append(f"- 上涨家数: {latest.get('上涨家数', 'N/A')}")
             lines.append(f"- 下跌家数: {latest.get('下跌家数', 'N/A')}")
             lines.append(f"- 涨停家数: {latest.get('涨停家数', 'N/A')}")
@@ -717,7 +818,10 @@ class AKShareProvider(BaseStockDataProvider):
             return f"获取市场宽度失败: {e}"
 
     def get_market_fund_flow(self, curr_date: str) -> str:
-        """获取北向资金 + 主力资金流向"""
+        """获取北向资金 + 主力资金流向
+
+        注意：本接口取最新一行快照，不按 curr_date 过滤。
+        """
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
         lines = ["# 资金流向\n"]
@@ -726,8 +830,12 @@ class AKShareProvider(BaseStockDataProvider):
             north = ak.stock_hsgt_fund_flow_summary_em()
             if north is not None and not north.empty:
                 latest = north.iloc[-1]
+                data_date = _extract_date_from_row(latest, north)
+                date_note = _format_date_note(data_date, curr_date)
                 lines.append("## 北向资金（沪股通+深股通）")
-                lines.append(f"- 日期: {latest.get('日期', latest.name)}")
+                if date_note:
+                    lines.append(date_note)
+                lines.append(f"- 日期: {data_date or latest.get('日期', latest.name)}")
                 lines.append(f"- 当日净流入: {latest.get('当日净流入', 'N/A')}")
                 lines.append(f"- 当月累计净流入: {latest.get('当月累计净流入', 'N/A')}")
                 lines.append("\n> ⚠️ 注意：自 2024-08-16 起，北向资金不再披露盘中实时数据，仅披露日终汇总。")
@@ -766,564 +874,618 @@ class AKShareProvider(BaseStockDataProvider):
             logger.warning(f"获取行业资金流向失败: {e}")
             return f"获取行业资金流向失败: {e}"
 
+    def get_concept_board(self, concept_name: str, days: int = 10) -> str:
+        """获取 A 股概念板块数据"""
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装。"
 
-def get_concept_board_data(concept_name: str, days: int = 10) -> str:
-    """获取 A 股概念板块数据"""
-    if not AKSHARE_AVAILABLE:
-        return "AKShare 未安装。"
+        code = self.A_SHARE_CONCEPT_MAP.get(concept_name)
+        if not code:
+            return f"未知概念板块: {concept_name}"
 
-    code = AKShareProvider.A_SHARE_CONCEPT_MAP.get(concept_name)
-    if not code:
-        return f"未知概念板块: {concept_name}"
-
-    try:
-        df = _call_with_timeout(
-            lambda: ak.stock_board_concept_hist_em(
-                symbol=concept_name,
-                period="daily",
-                start_date=(datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d"),
-                end_date=datetime.now().strftime("%Y%m%d"),
-            ),
-            timeout=_AKSHARE_TIMEOUT,
-        )
-        if df is not None and not df.empty:
-            df = df.tail(days)
-            return (
-                f"## A股概念板块: {concept_name}\n"
-                f"{df.to_string(index=False)}"
-            )
-        return f"未获取到 {concept_name} 板块数据。"
-    except Exception as e:
-        logger.warning(f"获取概念板块失败 [{concept_name}]: {e}")
-        return f"获取 {concept_name} 板块数据失败: {e}"
-
-
-def get_all_concept_boards(days: int = 10) -> str:
-    """获取所有 AI 产业链概念板块数据（连续 2 个失败则终止剩余请求）"""
-    results = []
-    consecutive_failures = 0
-    total = len(AKShareProvider.AI_INDUSTRY_CHAIN)
-    for i, name in enumerate(AKShareProvider.AI_INDUSTRY_CHAIN):
-        data = get_concept_board_data(name, days)
-        results.append(data)
-        results.append("")
-        if "失败" in data:
-            consecutive_failures += 1
-        else:
-            consecutive_failures = 0
-        if consecutive_failures >= 2:
-            skipped = total - i - 1
-            if skipped > 0:
-                results.append(f"（连续失败，跳过剩余 {skipped} 个板块）")
-            break
-    return "\n".join(results)
-
-
-# ==================== 板块层 — 行业板块 ====================
-
-
-def get_industry_sectors_performance(days: int = 10) -> str:
-    """
-    获取全行业（申万一级+二级）涨跌排名。
-    遍历所有行业板块指数，计算近 N 日涨跌幅并排序。
-    """
-    if not AKSHARE_AVAILABLE:
-        return "AKShare 未安装，无法获取行业板块数据。"
-
-    try:
-        # 获取所有行业板块名称列表
-        industry_df = _try_call(ak.stock_board_industry_name_em)
-        if industry_df is None or industry_df.empty:
-            return "未获取到行业板块列表（API 不可用）。"
-
-        # 提取板块名称（申万一级行业通常在前列）
-        industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
-
-        if not industry_names:
-            return "行业板块列表为空。"
-
-        end_date = datetime.now().strftime("%Y%m%d")
-        start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
-
-        performance_list = []
-        consecutive_failures = 0
-        for name in industry_names:
-            try:
-                df = _call_with_timeout(
-                    lambda n=name: ak.stock_board_industry_hist_em(
-                        symbol=n,
-                        start_date=start_date,
-                        end_date=end_date,
-                        period="daily",
-                        adjust="",
-                    ),
-                    timeout=_AKSHARE_TIMEOUT,
-                )
-                if df is not None and not df.empty and len(df) >= 2:
-                    df = df.tail(days + 1)
-                    close_col = _detect_close_column(df)
-                    if close_col:
-                        first_close = float(df[close_col].iloc[0])
-                        last_close = float(df[close_col].iloc[-1])
-                        if first_close > 0:
-                            pct_change = (last_close - first_close) / first_close * 100
-                            performance_list.append((name, pct_change, last_close, len(df)))
-                    consecutive_failures = 0
-                else:
-                    consecutive_failures += 1
-            except Exception:
-                consecutive_failures += 1
-                if consecutive_failures >= 3:
-                    break
-                continue
-
-        if not performance_list:
-            return "未获取到任何行业板块数据。"
-
-        # 按涨跌幅排序
-        performance_list.sort(key=lambda x: x[1], reverse=True)
-
-        lines = [f"# 全行业板块涨跌排名（近 {days} 日）\n"]
-        lines.append(f"共覆盖 {len(performance_list)} 个行业板块\n")
-        lines.append("| 排名 | 行业 | 涨跌幅(%) | 最新收盘价 | 数据天数 |")
-        lines.append("|------|------|-----------|------------|----------|")
-        for i, (name, pct, price, ndays) in enumerate(performance_list, 1):
-            lines.append(f"| {i} | {name} | {pct:+.2f}% | {price:.2f} | {ndays} |")
-
-        # TOP5 / BOTTOM5 标注
-        lines.append(f"\n## 领涨 TOP5")
-        for i, (name, pct, price, _) in enumerate(performance_list[:5], 1):
-            lines.append(f"  {i}. {name}: {pct:+.2f}%（收盘 {price:.2f}）")
-        lines.append(f"\n## 领跌 BOTTOM5")
-        for i, (name, pct, price, _) in enumerate(performance_list[-5:], 1):
-            lines.append(f"  {i}. {name}: {pct:+.2f}%（收盘 {price:.2f}）")
-
-        return "\n".join(lines)
-    except Exception as e:
-        logger.warning(f"获取行业板块排名失败: {e}")
-        return f"获取行业板块排名失败: {e}"
-
-
-def _detect_close_column(df) -> str:
-    """自动探测 DataFrame 中的收盘价列名"""
-    for col in df.columns:
-        col_lower = str(col).lower()
-        if col_lower in ("close", "收盘", "收盘价", "closing price"):
-            return col
-    # 回退：取可能的数值列
-    for col in df.columns:
-        col_lower = str(col).lower()
-        if "收盘" in col_lower or "close" in col_lower:
-            return col
-    return None
-
-
-def get_concept_board_heat_rank(days: int = 10) -> str:
-    """
-    获取热门概念板块热度排名（涨幅+成交额综合排序）。
-    遍历所有概念板块，按综合热度排序。
-    """
-    if not AKSHARE_AVAILABLE:
-        return "AKShare 未安装，无法获取概念板块数据。"
-
-    try:
-        # 获取概念板块名称列表
-        concept_df = ak.stock_board_concept_name_em()
-        if concept_df is None or concept_df.empty:
-            return "未获取到概念板块列表。"
-
-        concept_names = concept_df.iloc[:, 0].tolist() if len(concept_df.columns) > 0 else []
-        if not concept_names:
-            return "概念板块列表为空。"
-
-        end_date = datetime.now().strftime("%Y%m%d")
-        start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
-
-        heat_list = []
-        for name in concept_names:
-            try:
-                df = ak.stock_board_concept_hist_em(
-                    symbol=name,
+        try:
+            df = _call_with_timeout(
+                lambda: ak.stock_board_concept_hist_em(
+                    symbol=concept_name,
                     period="daily",
-                    start_date=start_date,
-                    end_date=end_date,
+                    start_date=(datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d"),
+                    end_date=datetime.now().strftime("%Y%m%d"),
+                ),
+                timeout=_AKSHARE_TIMEOUT,
+            )
+            if df is not None and not df.empty:
+                df = df.tail(days)
+                return (
+                    f"## A股概念板块: {concept_name}\n"
+                    f"{df.to_string(index=False)}"
                 )
-                if df is not None and not df.empty and len(df) >= 2:
-                    df = df.tail(days + 1)
-                    close_col = _detect_close_column(df)
-                    volume_col = _detect_volume_column(df)
-                    if close_col:
-                        first_close = float(df[close_col].iloc[0])
-                        last_close = float(df[close_col].iloc[-1])
-                        if first_close > 0:
-                            pct_change = (last_close - first_close) / first_close * 100
-                            # 计算成交额变化
-                            vol_change = 0
-                            if volume_col:
-                                recent_vol = float(df[volume_col].iloc[-days:].mean()) if len(df) >= days else float(df[volume_col].mean())
-                                older_vol = float(df[volume_col].iloc[:-days].mean()) if len(df) > days else recent_vol
-                                if older_vol > 0:
-                                    vol_change = (recent_vol - older_vol) / older_vol * 100
-                            # 综合热度 = 涨跌幅权重0.6 + 成交额变化权重0.4
-                            heat_score = pct_change * 0.6 + vol_change * 0.4
-                            heat_list.append((name, pct_change, vol_change, heat_score))
-            except Exception:
-                continue
-
-        if not heat_list:
-            return "未获取到任何概念板块数据。"
-
-        # 按综合热度排序
-        heat_list.sort(key=lambda x: x[3], reverse=True)
-
-        lines = [f"# 概念板块热度排名（近 {days} 日）\n"]
-        lines.append(f"共覆盖 {len(heat_list)} 个概念板块\n")
-        lines.append("| 排名 | 概念板块 | 涨跌幅(%) | 成交额变化(%) | 综合热度 |")
-        lines.append("|------|----------|-----------|---------------|----------|")
-        for i, (name, pct, vol_chg, heat) in enumerate(heat_list[:30], 1):  # 只展示TOP30
-            lines.append(f"| {i} | {name} | {pct:+.2f}% | {vol_chg:+.1f}% | {heat:+.1f} |")
-
-        lines.append(f"\n## 热度 TOP10")
-        for i, (name, pct, vol_chg, heat) in enumerate(heat_list[:10], 1):
-            lines.append(f"  {i}. {name}: 涨幅 {pct:+.2f}%, 量变 {vol_chg:+.1f}%, 热度 {heat:+.1f}")
-
-        return "\n".join(lines)
-    except Exception as e:
-        logger.warning(f"获取概念板块热度失败: {e}")
-        return f"获取概念板块热度失败: {e}"
+            return f"未获取到 {concept_name} 板块数据。"
+        except Exception as e:
+            logger.warning(f"获取概念板块失败 [{concept_name}]: {e}")
+            return f"获取 {concept_name} 板块数据失败: {e}"
 
 
-def _detect_volume_column(df) -> str:
-    """自动探测 DataFrame 中的成交量/成交额列名"""
-    for col in df.columns:
-        col_lower = str(col).lower()
-        if col_lower in ("volume", "vol", "成交量", "成交额", "amount"):
-            return col
-    for col in df.columns:
-        col_lower = str(col).lower()
-        if "成交" in col_lower or "volume" in col_lower or "amount" in col_lower:
-            return col
-    return None
-
-
-def get_sector_technical_screening(days: int = 60) -> str:
-    """
-    逐行业计算技术指标（均线排列、RSI、MACD、量比），
-    输出全行业技术状态矩阵。
-    纯计算函数，不依赖额外 API。
-    """
-    if not AKSHARE_AVAILABLE:
-        return "AKShare 未安装，无法获取行业板块数据。"
-
-    try:
-        industry_df = _try_call(ak.stock_board_industry_name_em)
-        if industry_df is None or industry_df.empty:
-            return "未获取到行业板块列表（API 不可用）。"
-
-        industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
-        if not industry_names:
-            return "行业板块列表为空。"
-
-        end_date = datetime.now().strftime("%Y%m%d")
-        start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
-
-        screening_results = []
+    def get_all_concept_boards(self, days: int = 10) -> str:
+        """获取所有 AI 产业链概念板块数据（连续 2 个失败则终止剩余请求）"""
+        results = []
         consecutive_failures = 0
-        for name in industry_names:
-            try:
-                df = _call_with_timeout(
-                    lambda n=name: ak.stock_board_industry_hist_em(
-                        symbol=n,
-                        start_date=start_date,
-                        end_date=end_date,
-                        period="daily",
-                        adjust="",
-                    ),
-                    timeout=_AKSHARE_TIMEOUT,
-                )
-                if df is None or df.empty or len(df) < 20:
+        total = len(self.AI_INDUSTRY_CHAIN)
+        for i, name in enumerate(self.AI_INDUSTRY_CHAIN):
+            data = self.get_concept_board(name, days)
+            results.append(data)
+            results.append("")
+            if "失败" in data:
+                consecutive_failures += 1
+            else:
+                consecutive_failures = 0
+            if consecutive_failures >= 2:
+                skipped = total - i - 1
+                if skipped > 0:
+                    results.append(f"（连续失败，跳过剩余 {skipped} 个板块）")
+                break
+        return "\n".join(results)
+
+
+    # ==================== 板块层 — 行业板块 ====================
+
+
+    def get_industry_sector_performance(self, days: int = 10) -> str:
+        """
+        获取全行业（申万一级+二级）涨跌排名。
+        遍历所有行业板块指数，计算近 N 日涨跌幅并排序。
+        """
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取行业板块数据。"
+
+        try:
+            # 获取所有行业板块名称列表
+            industry_df = _try_call(ak.stock_board_industry_name_em)
+            if industry_df is None or industry_df.empty:
+                return "未获取到行业板块列表（API 不可用）。"
+
+            # 提取板块名称（申万一级行业通常在前列）
+            industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
+
+            if not industry_names:
+                return "行业板块列表为空。"
+
+            end_date = datetime.now().strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
+
+            performance_list = []
+            consecutive_failures = 0
+            for name in industry_names:
+                try:
+                    df = _call_with_timeout(
+                        lambda n=name: ak.stock_board_industry_hist_em(
+                            symbol=n,
+                            start_date=start_date,
+                            end_date=end_date,
+                            period="daily",
+                            adjust="",
+                        ),
+                        timeout=_AKSHARE_TIMEOUT,
+                    )
+                    if df is not None and not df.empty and len(df) >= 2:
+                        df = df.tail(days + 1)
+                        close_col = _detect_close_column(df)
+                        if close_col:
+                            first_close = float(df[close_col].iloc[0])
+                            last_close = float(df[close_col].iloc[-1])
+                            if first_close > 0:
+                                pct_change = (last_close - first_close) / first_close * 100
+                                performance_list.append((name, pct_change, last_close, len(df)))
+                        consecutive_failures = 0
+                    else:
+                        consecutive_failures += 1
+                except Exception:
                     consecutive_failures += 1
                     if consecutive_failures >= 3:
                         break
                     continue
-                consecutive_failures = 0
 
-                df = df.tail(days)
-                close_col = _detect_close_column(df)
-                if not close_col:
-                    continue
+            if not performance_list:
+                return "未获取到任何行业板块数据。"
 
-                closes = df[close_col].astype(float)
-                last_close = float(closes.iloc[-1])
+            # 按涨跌幅排序
+            performance_list.sort(key=lambda x: x[1], reverse=True)
 
-                # 均线计算
-                ma5 = float(closes.tail(5).mean()) if len(closes) >= 5 else last_close
-                ma10 = float(closes.tail(10).mean()) if len(closes) >= 10 else last_close
-                ma20 = float(closes.tail(20).mean()) if len(closes) >= 20 else last_close
-                ma60 = float(closes.tail(60).mean()) if len(closes) >= 60 else last_close
+            lines = [f"# 全行业板块涨跌排名（近 {days} 日）\n"]
+            lines.append(f"共覆盖 {len(performance_list)} 个行业板块\n")
+            lines.append("| 排名 | 行业 | 涨跌幅(%) | 最新收盘价 | 数据天数 |")
+            lines.append("|------|------|-----------|------------|----------|")
+            for i, (name, pct, price, ndays) in enumerate(performance_list, 1):
+                lines.append(f"| {i} | {name} | {pct:+.2f}% | {price:.2f} | {ndays} |")
 
-                # 均线排列判断
-                if last_close > ma5 > ma10 > ma20 > ma60:
-                    ma_status = "多头排列"
-                elif last_close < ma5 < ma10 < ma20 < ma60:
-                    ma_status = "空头排列"
-                elif last_close > ma5 and last_close > ma20:
-                    ma_status = "短期偏多"
-                elif last_close < ma5 and last_close < ma20:
-                    ma_status = "短期偏空"
-                else:
-                    ma_status = "震荡"
+            # TOP5 / BOTTOM5 标注
+            lines.append(f"\n## 领涨 TOP5")
+            for i, (name, pct, price, _) in enumerate(performance_list[:5], 1):
+                lines.append(f"  {i}. {name}: {pct:+.2f}%（收盘 {price:.2f}）")
+            lines.append(f"\n## 领跌 BOTTOM5")
+            for i, (name, pct, price, _) in enumerate(performance_list[-5:], 1):
+                lines.append(f"  {i}. {name}: {pct:+.2f}%（收盘 {price:.2f}）")
 
-                # RSI(14) 简化计算
-                rsi = _calc_rsi(closes, 14)
-
-                # MACD 简化计算
-                macd_signal = _calc_macd_signal(closes)
-
-                # 量比（5日均量 vs 20日均量）
-                vol_col = _detect_volume_column(df)
-                volume_ratio = 1.0
-                if vol_col:
-                    vols = df[vol_col].astype(float)
-                    vol_5 = float(vols.tail(5).mean())
-                    vol_20 = float(vols.tail(20).mean()) if len(vols) >= 20 else vol_5
-                    volume_ratio = vol_5 / vol_20 if vol_20 > 0 else 1.0
-
-                # 综合技术状态
-                if ma_status == "多头排列" and rsi > 50 and macd_signal == "金叉" and volume_ratio > 1.1:
-                    tech_status = "强势"
-                elif ma_status == "空头排列" and rsi < 50 and macd_signal == "死叉":
-                    tech_status = "弱势"
-                elif ma_status in ("多头排列", "短期偏多") and rsi > 50:
-                    tech_status = "偏强"
-                elif ma_status in ("空头排列", "短期偏空") and rsi < 50:
-                    tech_status = "偏弱"
-                else:
-                    tech_status = "中性"
-
-                # 异动检测
-                alert = ""
-                if volume_ratio > 1.5 and last_close > ma20:
-                    alert = "放量突破"
-                elif volume_ratio > 1.5 and last_close < ma20:
-                    alert = "放量下跌"
-                elif rsi > 80:
-                    alert = "超买"
-                elif rsi < 20:
-                    alert = "超卖"
-
-                screening_results.append({
-                    "name": name,
-                    "close": last_close,
-                    "ma_status": ma_status,
-                    "rsi": rsi,
-                    "macd": macd_signal,
-                    "vol_ratio": volume_ratio,
-                    "tech_status": tech_status,
-                    "alert": alert,
-                })
-            except Exception:
-                continue
-
-        if not screening_results:
-            return "未获取到任何行业技术数据。"
-
-        # 按技术状态分组排序
-        status_order = {"强势": 0, "偏强": 1, "中性": 2, "偏弱": 3, "弱势": 4}
-        screening_results.sort(key=lambda x: status_order.get(x["tech_status"], 2))
-
-        lines = [f"# 全行业技术状态矩阵（近 {days} 日）\n"]
-        lines.append(f"共分析 {len(screening_results)} 个行业板块\n")
-        lines.append("| 行业 | 收盘价 | 均线状态 | RSI | MACD | 量比 | 综合状态 | 异动 |")
-        lines.append("|------|--------|----------|-----|------|------|----------|------|")
-        for r in screening_results:
-            alert_mark = f"⚠️ {r['alert']}" if r["alert"] else ""
-            lines.append(
-                f"| {r['name']} | {r['close']:.2f} | {r['ma_status']} | "
-                f"{r['rsi']:.0f} | {r['macd']} | {r['vol_ratio']:.2f} | "
-                f"{r['tech_status']} | {alert_mark} |"
-            )
-
-        # 汇总统计
-        strong = sum(1 for r in screening_results if r["tech_status"] == "强势")
-        weak = sum(1 for r in screening_results if r["tech_status"] == "弱势")
-        biased_strong = sum(1 for r in screening_results if r["tech_status"] == "偏强")
-        biased_weak = sum(1 for r in screening_results if r["tech_status"] == "偏弱")
-        neutral = sum(1 for r in screening_results if r["tech_status"] == "中性")
-        alerts = [r for r in screening_results if r["alert"]]
-
-        lines.append(f"\n## 统计摘要")
-        lines.append(f"- 强势: {strong} | 偏强: {biased_strong} | 中性: {neutral} | 偏弱: {biased_weak} | 弱势: {weak}")
-        if alerts:
-            lines.append(f"\n## ⚠️ 异动信号（共 {len(alerts)} 个）")
-            for r in alerts:
-                lines.append(f"  - {r['name']}: {r['alert']}（状态: {r['tech_status']}）")
-
-        return "\n".join(lines)
-    except Exception as e:
-        logger.warning(f"行业技术筛选失败: {e}")
-        return f"行业技术筛选失败: {e}"
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning(f"获取行业板块排名失败: {e}")
+            return f"获取行业板块排名失败: {e}"
 
 
-def _calc_rsi(closes, period=14):
-    """简化 RSI 计算"""
-    try:
-        if len(closes) < period + 1:
-            return 50.0
-        deltas = closes.diff()
-        gains = deltas.clip(lower=0)
-        losses = (-deltas).clip(lower=0)
-        avg_gain = float(gains.tail(period).mean())
-        avg_loss = float(losses.tail(period).mean())
-        if avg_loss == 0:
-            return 100.0
-        rs = avg_gain / avg_loss
-        return float(100 - 100 / (1 + rs))
-    except Exception:
-        return 50.0
+    @staticmethod
+    def _detect_close_column(df) -> str:
+        """自动探测 DataFrame 中的收盘价列名"""
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if col_lower in ("close", "收盘", "收盘价", "closing price"):
+                return col
+        # 回退：取可能的数值列
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if "收盘" in col_lower or "close" in col_lower:
+                return col
+        return None
 
 
-def _calc_macd_signal(closes, fast=12, slow=26, signal=9):
-    """简化 MACD 信号判断"""
-    try:
-        if len(closes) < slow + signal:
-            return "数据不足"
-        ema_fast = closes.ewm(span=fast, adjust=False).mean()
-        ema_slow = closes.ewm(span=slow, adjust=False).mean()
-        macd_line = ema_fast - ema_slow
-        signal_line = macd_line.ewm(span=signal, adjust=False).mean()
-        last_macd = float(macd_line.iloc[-1])
-        last_signal = float(signal_line.iloc[-1])
-        prev_macd = float(macd_line.iloc[-2])
-        prev_signal = float(signal_line.iloc[-2])
-        if last_macd > last_signal and prev_macd <= prev_signal:
-            return "金叉"
-        elif last_macd < last_signal and prev_macd >= prev_signal:
-            return "死叉"
-        elif last_macd > last_signal:
-            return "多头"
-        else:
-            return "空头"
-    except Exception:
-        return "计算失败"
+    def get_concept_board_heat_rank(self, days: int = 10) -> str:
+        """
+        获取热门概念板块热度排名（涨幅+成交额综合排序）。
+        遍历所有概念板块，按综合热度排序。
+        """
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取概念板块数据。"
 
-
-def get_sector_relative_strength(days: int = 20) -> str:
-    """
-    计算各行业相对大盘（上证综指）的 alpha 排名。
-    复用行业数据 + 上证综指作为基准。
-    """
-    if not AKSHARE_AVAILABLE:
-        return "AKShare 未安装，无法获取行业板块数据。"
-
-    try:
-        # 获取上证综指基准数据
-        end_date = datetime.now().strftime("%Y%m%d")
-        start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
-
-        benchmark_pct = 0.0
         try:
-            sh_df = _try_call(
-                ak.index_sh_a_hist, symbol="000001", period="daily",
-                start_date=start_date, end_date=end_date,
-            )
-            if sh_df is not None and not sh_df.empty and len(sh_df) >= 2:
-                sh_df = sh_df.tail(days + 1)
-                close_col = _detect_close_column(sh_df)
-                if close_col:
-                    first = float(sh_df[close_col].iloc[0])
-                    last = float(sh_df[close_col].iloc[-1])
-                    if first > 0:
-                        benchmark_pct = (last - first) / first * 100
-        except Exception:
-            pass
+            # 获取概念板块名称列表
+            concept_df = ak.stock_board_concept_name_em()
+            if concept_df is None or concept_df.empty:
+                return "未获取到概念板块列表。"
 
-        # 获取全行业数据
-        industry_df = _try_call(ak.stock_board_industry_name_em)
-        if industry_df is None or industry_df.empty:
-            return "未获取到行业板块列表（API 不可用）。"
+            concept_names = concept_df.iloc[:, 0].tolist() if len(concept_df.columns) > 0 else []
+            if not concept_names:
+                return "概念板块列表为空。"
 
-        industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
+            end_date = datetime.now().strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
 
-        alpha_list = []
-        consecutive_failures = 0
-        for name in industry_names:
-            try:
-                df = _call_with_timeout(
-                    lambda n=name: ak.stock_board_industry_hist_em(
-                        symbol=n,
+            heat_list = []
+            for name in concept_names:
+                try:
+                    df = ak.stock_board_concept_hist_em(
+                        symbol=name,
+                        period="daily",
                         start_date=start_date,
                         end_date=end_date,
-                        period="daily",
-                        adjust="",
-                    ),
-                    timeout=_AKSHARE_TIMEOUT,
-                )
-                if df is not None and not df.empty and len(df) >= 2:
-                    df = df.tail(days + 1)
-                    close_col = _detect_close_column(df)
-                    if close_col:
-                        first_close = float(df[close_col].iloc[0])
-                        last_close = float(df[close_col].iloc[-1])
-                        if first_close > 0:
-                            sector_pct = (last_close - first_close) / first_close * 100
-                            alpha = sector_pct - benchmark_pct
-                            alpha_list.append((name, sector_pct, alpha))
-                    consecutive_failures = 0
-                else:
+                    )
+                    if df is not None and not df.empty and len(df) >= 2:
+                        df = df.tail(days + 1)
+                        close_col = _detect_close_column(df)
+                        volume_col = _detect_volume_column(df)
+                        if close_col:
+                            first_close = float(df[close_col].iloc[0])
+                            last_close = float(df[close_col].iloc[-1])
+                            if first_close > 0:
+                                pct_change = (last_close - first_close) / first_close * 100
+                                # 计算成交额变化
+                                vol_change = 0
+                                if volume_col:
+                                    recent_vol = float(df[volume_col].iloc[-days:].mean()) if len(df) >= days else float(df[volume_col].mean())
+                                    older_vol = float(df[volume_col].iloc[:-days].mean()) if len(df) > days else recent_vol
+                                    if older_vol > 0:
+                                        vol_change = (recent_vol - older_vol) / older_vol * 100
+                                # 综合热度 = 涨跌幅权重0.6 + 成交额变化权重0.4
+                                heat_score = pct_change * 0.6 + vol_change * 0.4
+                                heat_list.append((name, pct_change, vol_change, heat_score))
+                except Exception:
+                    continue
+
+            if not heat_list:
+                return "未获取到任何概念板块数据。"
+
+            # 按综合热度排序
+            heat_list.sort(key=lambda x: x[3], reverse=True)
+
+            lines = [f"# 概念板块热度排名（近 {days} 日）\n"]
+            lines.append(f"共覆盖 {len(heat_list)} 个概念板块\n")
+            lines.append("| 排名 | 概念板块 | 涨跌幅(%) | 成交额变化(%) | 综合热度 |")
+            lines.append("|------|----------|-----------|---------------|----------|")
+            for i, (name, pct, vol_chg, heat) in enumerate(heat_list[:30], 1):  # 只展示TOP30
+                lines.append(f"| {i} | {name} | {pct:+.2f}% | {vol_chg:+.1f}% | {heat:+.1f} |")
+
+            lines.append(f"\n## 热度 TOP10")
+            for i, (name, pct, vol_chg, heat) in enumerate(heat_list[:10], 1):
+                lines.append(f"  {i}. {name}: 涨幅 {pct:+.2f}%, 量变 {vol_chg:+.1f}%, 热度 {heat:+.1f}")
+
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning(f"获取概念板块热度失败: {e}")
+            return f"获取概念板块热度失败: {e}"
+
+
+    @staticmethod
+    def _detect_volume_column(df) -> str:
+        """自动探测 DataFrame 中的成交量/成交额列名"""
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if col_lower in ("volume", "vol", "成交量", "成交额", "amount"):
+                return col
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if "成交" in col_lower or "volume" in col_lower or "amount" in col_lower:
+                return col
+        return None
+
+
+    def _get_industry_daily_dataframes(self, days: int = 120) -> dict:
+        """返回各行业板块的日线 DataFrame 字典 {行业名: DataFrame}
+
+        供 interface 层组合函数（如 get_sector_horizon_screening）做多周期重采样。
+        返回空 dict 表示数据不可用。
+        """
+        if not AKSHARE_AVAILABLE:
+            return {}
+        try:
+            industry_df = _try_call(ak.stock_board_industry_name_em)
+            if industry_df is None or industry_df.empty:
+                return {}
+            industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
+            if not industry_names:
+                return {}
+
+            end_date = datetime.now().strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=days * 2)).strftime("%Y%m%d")
+
+            result = {}
+            consecutive_failures = 0
+            for name in industry_names:
+                try:
+                    df = _call_with_timeout(
+                        lambda n=name: ak.stock_board_industry_hist_em(
+                            symbol=n, start_date=start_date, end_date=end_date,
+                            period="daily", adjust="",
+                        ),
+                        timeout=_AKSHARE_TIMEOUT,
+                    )
+                    if df is not None and not df.empty and len(df) >= 20:
+                        # 标准化列名：日期→date, 收盘→close
+                        col_map = {}
+                        for col in df.columns:
+                            cl = str(col).strip()
+                            if cl in ('日期', 'date', 'trade_date'):
+                                col_map[col] = 'date'
+                            elif cl in ('收盘', 'close'):
+                                col_map[col] = 'close'
+                        if col_map:
+                            df = df.rename(columns=col_map)
+                            result[name] = df[['date', 'close']].copy()
+                        consecutive_failures = 0
+                    else:
+                        consecutive_failures += 1
+                        if consecutive_failures >= 3:
+                            break
+                except Exception:
                     consecutive_failures += 1
+                    if consecutive_failures >= 3:
+                        break
+            return result
+        except Exception:
+            return {}
+
+    def get_sector_technical_screening(self, days: int = 60) -> str:
+        """
+        逐行业计算技术指标（均线排列、RSI、MACD、量比），
+        输出全行业技术状态矩阵。
+        纯计算函数，不依赖额外 API。
+        """
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取行业板块数据。"
+
+        try:
+            industry_df = _try_call(ak.stock_board_industry_name_em)
+            if industry_df is None or industry_df.empty:
+                return "未获取到行业板块列表（API 不可用）。"
+
+            industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
+            if not industry_names:
+                return "行业板块列表为空。"
+
+            end_date = datetime.now().strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
+
+            screening_results = []
+            consecutive_failures = 0
+            for name in industry_names:
+                try:
+                    df = _call_with_timeout(
+                        lambda n=name: ak.stock_board_industry_hist_em(
+                            symbol=n,
+                            start_date=start_date,
+                            end_date=end_date,
+                            period="daily",
+                            adjust="",
+                        ),
+                        timeout=_AKSHARE_TIMEOUT,
+                    )
+                    if df is None or df.empty or len(df) < 20:
+                        consecutive_failures += 1
+                        if consecutive_failures >= 3:
+                            break
+                        continue
+                    consecutive_failures = 0
+
+                    df = df.tail(days)
+                    close_col = _detect_close_column(df)
+                    if not close_col:
+                        continue
+
+                    closes = df[close_col].astype(float)
+                    last_close = float(closes.iloc[-1])
+
+                    # 均线计算
+                    ma5 = float(closes.tail(5).mean()) if len(closes) >= 5 else last_close
+                    ma10 = float(closes.tail(10).mean()) if len(closes) >= 10 else last_close
+                    ma20 = float(closes.tail(20).mean()) if len(closes) >= 20 else last_close
+                    ma60 = float(closes.tail(60).mean()) if len(closes) >= 60 else last_close
+
+                    # 均线排列判断
+                    if last_close > ma5 > ma10 > ma20 > ma60:
+                        ma_status = "多头排列"
+                    elif last_close < ma5 < ma10 < ma20 < ma60:
+                        ma_status = "空头排列"
+                    elif last_close > ma5 and last_close > ma20:
+                        ma_status = "短期偏多"
+                    elif last_close < ma5 and last_close < ma20:
+                        ma_status = "短期偏空"
+                    else:
+                        ma_status = "震荡"
+
+                    # RSI(14) 简化计算
+                    rsi = _calc_rsi(closes, 14)
+
+                    # MACD 简化计算
+                    macd_signal = _calc_macd_signal(closes)
+
+                    # 量比（5日均量 vs 20日均量）
+                    vol_col = _detect_volume_column(df)
+                    volume_ratio = 1.0
+                    if vol_col:
+                        vols = df[vol_col].astype(float)
+                        vol_5 = float(vols.tail(5).mean())
+                        vol_20 = float(vols.tail(20).mean()) if len(vols) >= 20 else vol_5
+                        volume_ratio = vol_5 / vol_20 if vol_20 > 0 else 1.0
+
+                    # 综合技术状态
+                    if ma_status == "多头排列" and rsi > 50 and macd_signal == "金叉" and volume_ratio > 1.1:
+                        tech_status = "强势"
+                    elif ma_status == "空头排列" and rsi < 50 and macd_signal == "死叉":
+                        tech_status = "弱势"
+                    elif ma_status in ("多头排列", "短期偏多") and rsi > 50:
+                        tech_status = "偏强"
+                    elif ma_status in ("空头排列", "短期偏空") and rsi < 50:
+                        tech_status = "偏弱"
+                    else:
+                        tech_status = "中性"
+
+                    # 异动检测
+                    alert = ""
+                    if volume_ratio > 1.5 and last_close > ma20:
+                        alert = "放量突破"
+                    elif volume_ratio > 1.5 and last_close < ma20:
+                        alert = "放量下跌"
+                    elif rsi > 80:
+                        alert = "超买"
+                    elif rsi < 20:
+                        alert = "超卖"
+
+                    screening_results.append({
+                        "name": name,
+                        "close": last_close,
+                        "ma_status": ma_status,
+                        "rsi": rsi,
+                        "macd": macd_signal,
+                        "vol_ratio": volume_ratio,
+                        "tech_status": tech_status,
+                        "alert": alert,
+                    })
+                except Exception:
+                    continue
+
+            if not screening_results:
+                return "未获取到任何行业技术数据。"
+
+            # 按技术状态分组排序
+            status_order = {"强势": 0, "偏强": 1, "中性": 2, "偏弱": 3, "弱势": 4}
+            screening_results.sort(key=lambda x: status_order.get(x["tech_status"], 2))
+
+            lines = [f"# 全行业技术状态矩阵（近 {days} 日）\n"]
+            lines.append(f"共分析 {len(screening_results)} 个行业板块\n")
+            lines.append("| 行业 | 收盘价 | 均线状态 | RSI | MACD | 量比 | 综合状态 | 异动 |")
+            lines.append("|------|--------|----------|-----|------|------|----------|------|")
+            for r in screening_results:
+                alert_mark = f"⚠️ {r['alert']}" if r["alert"] else ""
+                lines.append(
+                    f"| {r['name']} | {r['close']:.2f} | {r['ma_status']} | "
+                    f"{r['rsi']:.0f} | {r['macd']} | {r['vol_ratio']:.2f} | "
+                    f"{r['tech_status']} | {alert_mark} |"
+                )
+
+            # 汇总统计
+            strong = sum(1 for r in screening_results if r["tech_status"] == "强势")
+            weak = sum(1 for r in screening_results if r["tech_status"] == "弱势")
+            biased_strong = sum(1 for r in screening_results if r["tech_status"] == "偏强")
+            biased_weak = sum(1 for r in screening_results if r["tech_status"] == "偏弱")
+            neutral = sum(1 for r in screening_results if r["tech_status"] == "中性")
+            alerts = [r for r in screening_results if r["alert"]]
+
+            lines.append(f"\n## 统计摘要")
+            lines.append(f"- 强势: {strong} | 偏强: {biased_strong} | 中性: {neutral} | 偏弱: {biased_weak} | 弱势: {weak}")
+            if alerts:
+                lines.append(f"\n## ⚠️ 异动信号（共 {len(alerts)} 个）")
+                for r in alerts:
+                    lines.append(f"  - {r['name']}: {r['alert']}（状态: {r['tech_status']}）")
+
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning(f"行业技术筛选失败: {e}")
+            return f"行业技术筛选失败: {e}"
+
+
+    @staticmethod
+    def _calc_rsi(closes, period=14):
+        """简化 RSI 计算"""
+        try:
+            if len(closes) < period + 1:
+                return 50.0
+            deltas = closes.diff()
+            gains = deltas.clip(lower=0)
+            losses = (-deltas).clip(lower=0)
+            avg_gain = float(gains.tail(period).mean())
+            avg_loss = float(losses.tail(period).mean())
+            if avg_loss == 0:
+                return 100.0
+            rs = avg_gain / avg_loss
+            return float(100 - 100 / (1 + rs))
+        except Exception:
+            return 50.0
+
+
+    @staticmethod
+    def _calc_macd_signal(closes, fast=12, slow=26, signal=9):
+        """简化 MACD 信号判断"""
+        try:
+            if len(closes) < slow + signal:
+                return "数据不足"
+            ema_fast = closes.ewm(span=fast, adjust=False).mean()
+            ema_slow = closes.ewm(span=slow, adjust=False).mean()
+            macd_line = ema_fast - ema_slow
+            signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+            last_macd = float(macd_line.iloc[-1])
+            last_signal = float(signal_line.iloc[-1])
+            prev_macd = float(macd_line.iloc[-2])
+            prev_signal = float(signal_line.iloc[-2])
+            if last_macd > last_signal and prev_macd <= prev_signal:
+                return "金叉"
+            elif last_macd < last_signal and prev_macd >= prev_signal:
+                return "死叉"
+            elif last_macd > last_signal:
+                return "多头"
+            else:
+                return "空头"
+        except Exception:
+            return "计算失败"
+
+
+    def get_sector_relative_strength(self, days: int = 20) -> str:
+        """
+        计算各行业相对大盘（上证综指）的 alpha 排名。
+        复用行业数据 + 上证综指作为基准。
+        """
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取行业板块数据。"
+
+        try:
+            # 获取上证综指基准数据
+            end_date = datetime.now().strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
+
+            benchmark_pct = 0.0
+            try:
+                sh_df = _try_call(
+                    ak.index_sh_a_hist, symbol="000001", period="daily",
+                    start_date=start_date, end_date=end_date,
+                )
+                if sh_df is not None and not sh_df.empty and len(sh_df) >= 2:
+                    sh_df = sh_df.tail(days + 1)
+                    close_col = _detect_close_column(sh_df)
+                    if close_col:
+                        first = float(sh_df[close_col].iloc[0])
+                        last = float(sh_df[close_col].iloc[-1])
+                        if first > 0:
+                            benchmark_pct = (last - first) / first * 100
             except Exception:
-                consecutive_failures += 1
-                if consecutive_failures >= 3:
-                    break
-                continue
+                pass
 
-        if not alpha_list:
-            return "未获取到行业 alpha 数据。"
+            # 获取全行业数据
+            industry_df = _try_call(ak.stock_board_industry_name_em)
+            if industry_df is None or industry_df.empty:
+                return "未获取到行业板块列表（API 不可用）。"
 
-        alpha_list.sort(key=lambda x: x[2], reverse=True)
+            industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
 
-        lines = [f"# 行业相对强度排名（近 {days} 日）\n"]
-        lines.append(f"基准: 上证综指 {benchmark_pct:+.2f}%\n")
-        lines.append("| 排名 | 行业 | 行业涨幅(%) | Alpha(%) |")
-        lines.append("|------|------|-------------|----------|")
-        for i, (name, pct, alpha) in enumerate(alpha_list, 1):
-            lines.append(f"| {i} | {name} | {pct:+.2f}% | {alpha:+.2f}% |")
+            alpha_list = []
+            consecutive_failures = 0
+            for name in industry_names:
+                try:
+                    df = _call_with_timeout(
+                        lambda n=name: ak.stock_board_industry_hist_em(
+                            symbol=n,
+                            start_date=start_date,
+                            end_date=end_date,
+                            period="daily",
+                            adjust="",
+                        ),
+                        timeout=_AKSHARE_TIMEOUT,
+                    )
+                    if df is not None and not df.empty and len(df) >= 2:
+                        df = df.tail(days + 1)
+                        close_col = _detect_close_column(df)
+                        if close_col:
+                            first_close = float(df[close_col].iloc[0])
+                            last_close = float(df[close_col].iloc[-1])
+                            if first_close > 0:
+                                sector_pct = (last_close - first_close) / first_close * 100
+                                alpha = sector_pct - benchmark_pct
+                                alpha_list.append((name, sector_pct, alpha))
+                        consecutive_failures = 0
+                    else:
+                        consecutive_failures += 1
+                except Exception:
+                    consecutive_failures += 1
+                    if consecutive_failures >= 3:
+                        break
+                    continue
 
-        # 显著正/负 alpha
-        positive = [(n, a) for n, _, a in alpha_list if a > 3]
-        negative = [(n, a) for n, _, a in alpha_list if a < -3]
-        if positive:
-            lines.append(f"\n## 显著正 Alpha（> +3%）")
-            for n, a in positive:
-                lines.append(f"  - {n}: Alpha {a:+.2f}%")
-        if negative:
-            lines.append(f"\n## 显著负 Alpha（< -3%）")
-            for n, a in negative:
-                lines.append(f"  - {n}: Alpha {a:+.2f}%")
+            if not alpha_list:
+                return "未获取到行业 alpha 数据。"
 
-        return "\n".join(lines)
-    except Exception as e:
-        logger.warning(f"行业相对强度计算失败: {e}")
-        return f"行业相对强度计算失败: {e}"
+            alpha_list.sort(key=lambda x: x[2], reverse=True)
+
+            lines = [f"# 行业相对强度排名（近 {days} 日）\n"]
+            lines.append(f"基准: 上证综指 {benchmark_pct:+.2f}%\n")
+            lines.append("| 排名 | 行业 | 行业涨幅(%) | Alpha(%) |")
+            lines.append("|------|------|-------------|----------|")
+            for i, (name, pct, alpha) in enumerate(alpha_list, 1):
+                lines.append(f"| {i} | {name} | {pct:+.2f}% | {alpha:+.2f}% |")
+
+            # 显著正/负 alpha
+            positive = [(n, a) for n, _, a in alpha_list if a > 3]
+            negative = [(n, a) for n, _, a in alpha_list if a < -3]
+            if positive:
+                lines.append(f"\n## 显著正 Alpha（> +3%）")
+                for n, a in positive:
+                    lines.append(f"  - {n}: Alpha {a:+.2f}%")
+            if negative:
+                lines.append(f"\n## 显著负 Alpha（< -3%）")
+                for n, a in negative:
+                    lines.append(f"  - {n}: Alpha {a:+.2f}%")
+
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning(f"行业相对强度计算失败: {e}")
+            return f"行业相对强度计算失败: {e}"
 
 
 # ==================== 相关性分析 ====================
-
 def calculate_correlation(dataframes: dict, target_col: str = "close") -> str:
     """
     计算多个指数之间的收益率相关性矩阵
-
     Args:
         dataframes: {name: pd.DataFrame} 字典
         target_col: 用于计算相关性的列名
-
     Returns:
         格式化的相关性分析文本
     """
     if not dataframes or len(dataframes) < 2:
         return "数据不足，无法计算相关性。"
-
     # 构建价格矩阵
     price_matrix = pd.DataFrame()
     for name, df in dataframes.items():
@@ -1338,21 +1500,16 @@ def calculate_correlation(dataframes: dict, target_col: str = "close") -> str:
         # 未匹配到则尝试倒数第二列
         if close_col is None and len(df.columns) > 0:
             close_col = df.columns[-2] if len(df.columns) > 1 else df.columns[0]
-
         if close_col:
             series = pd.to_numeric(df[close_col], errors="coerce")
             price_matrix[name] = series.values[:10] if len(series) >= 10 else series.values
-
     if price_matrix.empty or len(price_matrix.columns) < 2:
         return "数据不足，无法计算相关性。"
-
     # 计算收益率，再求相关性矩阵
     returns = price_matrix.pct_change().dropna()
     if len(returns) < 3:
         return "数据点不足，无法计算相关性。"
-
     corr_matrix = returns.corr()
-
     lines = ["## 指数收益率相关性矩阵（基于最近10日）", ""]
     lines.append(corr_matrix.round(3).to_string())
     lines.append("")
@@ -1361,17 +1518,12 @@ def calculate_correlation(dataframes: dict, target_col: str = "close") -> str:
     lines.append("- 0.3 ~ 0.7: 中度相关")
     lines.append("- < 0.3: 弱相关")
     lines.append("- 负值: 负相关")
-
     return "\n".join(lines)
-
-
 def predict_tomorrow_trend(hist_data: dict) -> str:
     """
     基于近期数据的涨跌幅推测明日走势
-
     Args:
         hist_data: {name: str (格式化数据文本)} 字典
-
     Returns:
         预测分析文本
     """
@@ -1392,7 +1544,6 @@ def predict_tomorrow_trend(hist_data: dict) -> str:
                         pct_changes.append(val)
                 except ValueError:
                     continue
-
         if pct_changes:
             avg_pct = sum(pct_changes) / len(pct_changes)
             recent = pct_changes[-3:] if len(pct_changes) >= 3 else pct_changes
@@ -1401,21 +1552,17 @@ def predict_tomorrow_trend(hist_data: dict) -> str:
                 "recent_3d": [round(x, 3) for x in recent],
                 "momentum": "↑" if sum(recent) > 0 else "↓",
             }
-
     if not trends:
         return "数据不足，无法预测。"
-
     lines = ["## 明日走势预测分析", ""]
     lines.append("基于前10日数据的技术相关性分析：")
     lines.append("")
-
     for name, t in trends.items():
         mom = "看涨" if t["momentum"] == "↑" else "看跌"
         lines.append(
             f"- **{name}**: 10日均涨跌幅={t['avg_10d']}%, "
             f"近3日={t['recent_3d']}, 趋势={mom}"
         )
-
     # 综合判断：统计看涨/看跌的指数数量
     bullish = sum(1 for t in trends.values() if t["momentum"] == "↑")
     bearish = len(trends) - bullish
@@ -1429,8 +1576,6 @@ def predict_tomorrow_trend(hist_data: dict) -> str:
     else:
         lines.append("**综合判断**: 涨跌互现，市场方向不明朗。")
         lines.append("建议关注: 等待明确信号，短线观望。")
-
     lines.append("")
     lines.append("⚠️ 此预测基于历史数据的统计相关性，不构成投资建议。")
-
     return "\n".join(lines)

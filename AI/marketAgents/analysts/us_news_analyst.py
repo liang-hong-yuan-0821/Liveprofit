@@ -6,6 +6,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ def create_us_news_analyst(llm, toolkit):
         econ_calendar = dataflow.get_us_economic_calendar(current_date)
         vix_data = dataflow.get_vix_index()
 
+        output_format = load_output_format("market", "news_common")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -52,11 +55,7 @@ def create_us_news_analyst(llm, toolkit):
                 "- 数据不可用时标注'数据暂不可用，以下分析基于公开信息'\n\n"
                 "输出格式：\n"
                 "# 美国市场新闻分析报告\n\n"
-                "## 一、政策与宏观事件\n"
-                "## 二、经济数据解读\n"
-                "## 三、VIX与市场情绪\n"
-                "## 四、对美股及全球市场的影响判断\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

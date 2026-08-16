@@ -6,6 +6,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def create_kr_tech_analyst(llm, toolkit):
         tech_indices = dataflow.get_all_tech_indices(days=10)
         foreign_flow = dataflow.get_kr_foreign_flow(days=10)
 
+        output_format = load_output_format("market", "tech_common")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -49,13 +52,7 @@ def create_kr_tech_analyst(llm, toolkit):
                 "数据不可用时标注'数据暂不可用'\n\n"
                 "输出格式：\n"
                 "# 韩国市场技术分析报告\n\n"
-                "## 一、KOSPI\n"
-                "（趋势、均线、量能、RSI/MACD）\n"
-                "## 二、KOSDAQ\n"
-                "## 三、外资动向\n"
-                "## 四、与美股科技相关性\n"
-                "## 五、综合研判\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

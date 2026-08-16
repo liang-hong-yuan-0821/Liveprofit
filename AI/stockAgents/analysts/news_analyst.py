@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def create_news_analyst(llm, toolkit):
             start_date = "2020-01-01"
         news_data = dataflow.get_china_news(ticker, start_date, current_date)
 
+        output_format = load_output_format("stock", "news_analyst")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -45,11 +48,7 @@ def create_news_analyst(llm, toolkit):
                 "### 股票新闻数据\n{news_data}\n\n"
                 "注意：如果新闻数据不可用，请在报告中如实说明。\n\n"
                 "输出格式：\n"
-                "## 一、近期重要新闻\n"
-                "## 二、公告分析\n"
-                "## 三、新闻对股价影响评估\n"
-                "## 四、综合观点\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

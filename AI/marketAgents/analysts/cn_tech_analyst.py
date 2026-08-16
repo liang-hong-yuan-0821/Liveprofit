@@ -7,6 +7,7 @@ A 股大盘技术面全景分析：7 指数量价、市场宽度（情绪温度�
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ def create_cn_tech_analyst(llm, toolkit):
             )
         else:
             date_line = f"分析日期：{current_date}\n"
+
+        output_format = load_output_format("market", "cn_tech_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -87,29 +90,7 @@ def create_cn_tech_analyst(llm, toolkit):
                 "- 北向资金如果返回空，标注'北向资金日终汇总数据暂无'\n"
                 "- ⚠️ 分析基于公开数据，不构成投资建议\n\n"
                 "输出格式（结论前置）：\n"
-                "# 中国市场技术分析报告\n\n"
-                "## 〇、市场环境速览（结论块 — 向下游传递）\n"
-                "（先输出结构化摘要，格式如下）\n"
-                "```\n"
-                "市场状态标签: <结构性行情/普涨/普跌/缩量观望/系统性风险>\n"
-                "情绪周期位置: <冰点/修复/高潮/退潮>\n"
-                "三级别判定:\n"
-                "- 短线: <适合/谨慎/回避> 建议仓位<X成> — <一句话理由>\n"
-                "- 波段: <进攻/平衡/防御> 主线容纳性<是/否> — <一句话理由>\n"
-                "- 长线: <配置窗口/等待窗口> 风格方向<大盘/小盘>+<成长/价值> — <一句话理由>\n"
-                "数据缺失: <如实标注>\n"
-                "```\n\n"
-                "## 一、主要指数量价分析\n"
-                "（上证综指/深证成指/创业板指/科创50：趋势、均线、量能）\n\n"
-                "## 二、市场宽度（情绪温度计）\n"
-                "（涨跌家数比、涨停跌停统计、赚钱效应判断）\n\n"
-                "## 三、资金流向\n"
-                "（北向资金/主力资金；数据不可用时明确标注）\n\n"
-                "## 四、风格因子\n"
-                "（大盘 vs 小盘、成长 vs 价值偏向）\n\n"
-                "## 五、三级别环境详细判定\n"
-                "（短线/波段/长线各自的环境分析 + 级别嵌套约束说明）\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])
@@ -128,6 +109,7 @@ def create_cn_tech_analyst(llm, toolkit):
             "messages": [result],
             "cn_tech_report": report,
             "market_regime": regime,
+            "risk_gate": derive_risk_gate(regime),
             "cn_tech_tool_call_count": count + 1,
         }
 
@@ -155,3 +137,29 @@ def _extract_market_regime(report: str) -> str:
 
     # 兜底：返回报告前 800 字
     return report[:800]
+
+
+def derive_risk_gate(regime: str) -> str:
+    """从 market_regime 文本按规则派生机器可读熔断开关。
+
+    判定规则（对结论块模板标签的规则匹配）：
+    - block：市场状态标签 = 系统性风险，或 短线 = 回避
+    - caution：短线 = 谨慎，或 波段 = 防御
+    - normal：其余情况（含市场层未运行、提取失败——fail-open，宁漏勿错）
+    """
+    if not regime or len(regime) < 10:
+        return "normal"
+
+    import re
+    status_match = re.search(r"市场状态标签\s*[：:]\s*[<（(]?\s*(\S+)", regime)
+    status = status_match.group(1) if status_match else ""
+    short_match = re.search(r"短线\s*[：:]\s*[<（(]?\s*(\S+)", regime)
+    short_term = short_match.group(1) if short_match else ""
+    wave_match = re.search(r"波段\s*[：:]\s*[<（(]?\s*(\S+)", regime)
+    wave = wave_match.group(1) if wave_match else ""
+
+    if "系统性风险" in status or "回避" in short_term:
+        return "block"
+    if "谨慎" in short_term or "防御" in wave:
+        return "caution"
+    return "normal"

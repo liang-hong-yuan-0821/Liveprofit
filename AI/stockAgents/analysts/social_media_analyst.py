@@ -9,6 +9,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,8 @@ def create_social_media_analyst(llm, toolkit):
 
         company_name = _get_company_name(ticker)
 
+        output_format = load_output_format("stock", "social_media_analyst")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -40,11 +43,7 @@ def create_social_media_analyst(llm, toolkit):
                 "2. 分析成交量变化、涨跌幅、换手率等指标反映的市场情绪\n"
                 "3. 从新闻标题和内容中判断舆论倾向\n\n"
                 "输出格式：\n"
-                "## 一、市场情绪概况\n"
-                "## 二、投资者情绪分析\n"
-                "## 三、情绪驱动因素\n"
-                "## 四、情绪对股价的潜在影响\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

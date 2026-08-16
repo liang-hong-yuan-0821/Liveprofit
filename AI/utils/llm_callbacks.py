@@ -9,6 +9,7 @@ LLM / 工具调用追踪器
     │   │   ├── req.md
     │   │   ├── res.md
     │   │   ├── meta.json
+    │   │   ├── {dataprovider接口名}.json   ← dataprovider 调用日志（见 dataprovider_log.py）
     │   │   └── tools/
     │   │       ├── 001_{tool}/
     │   │       │   ├── req.json
@@ -70,6 +71,7 @@ def _extract_model(serialized: Dict[str, Any]) -> str:
 # 节点名 → 所属层 映射
 _NODE_LAYER = {
     # ---- Market Layer ----
+    "International Event Extraction Analyst": "market",
     "International News Analyst": "market",
     "US News Analyst": "market",
     "US Tech Analyst": "market",
@@ -80,6 +82,9 @@ _NODE_LAYER = {
     # ---- Sector Layer ----
     "Sector News Analyst": "sector",
     "Sector Tech Analyst": "sector",
+    "Sector Rotation Analyst": "sector",
+    # ---- Screening Layer（纯代码节点，无 LLM） ----
+    "Screening": "screening",
     # ---- Stock Layer ----
     "Stock Tech Analyst": "stock",
     "Social Analyst": "stock",

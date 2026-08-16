@@ -15,7 +15,7 @@ from AI.utils.call_trace import trace_call, trace_step
 @trace_call(show_params=["debug", "config"])
 def _create_graph(config):
     """创建 TradingAgentsGraph 实例"""
-    return TradingAgentsGraph(selectedLayer=['sector'], debug=True, config=config)
+    return TradingAgentsGraph(selectedLayer=['market'], debug=True, config=config)
 
 
 def _load_env_file():

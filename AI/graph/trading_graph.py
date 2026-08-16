@@ -30,6 +30,7 @@ from AI.stockAgents.conditional_logic import ConditionalLogic
 from AI.stockAgents.stock_layer_graph import StockLayerGraph
 from AI.marketAgents.market_layer_graph import MarketLayerGraph
 from AI.sectorAgents.sector_layer_graph import SectorLayerGraph
+from AI.screening.screening_node import make_screening_node
 from AI.dataflows.interface import set_config
 from AI.default_config import load_config
 from AI.utils.call_trace import trace_call, trace_step
@@ -38,6 +39,7 @@ from .propagation import Propagator
 from .reflection import Reflector
 from .signal_processing import SignalProcessor
 from AI.utils.llm_callbacks import LLMCallbackHandler, ToolCallbackHandler
+from AI.utils.dataprovider_log import track_node
 
 logger = logging.getLogger(__name__)
 
@@ -154,11 +156,18 @@ class TradingAgentsGraph:
     # ==================== 编排图构建 ====================
 
     def _build_graph(self):
-        """构建编排图（自顶向下）：Market Layer → Sector Layer → Stock Layer → END"""
+        """构建编排图（自顶向下）：Market Layer → Sector Layer → Stock Layer → END
+
+        全市场模式（selectedLayer 含 "screening"）：
+        Market Layer → Sector Layer → Screening → END，
+        个股逐票循环由 propagate() 层驱动（复用 self.stock_subgraph）。
+        """
         workflow = StateGraph(AgentState)
 
         has_market = "market" in self.selectedLayer
         has_sector = "sector" in self.selectedLayer
+        has_screening = "screening" in self.selectedLayer
+        has_stock = "stock" in self.selectedLayer
 
         # Market Layer 子图
         if has_market:
@@ -168,15 +177,17 @@ class TradingAgentsGraph:
             workflow.add_node("Market Layer", market_subgraph)
             logger.info("[编排图] 已添加 Market Layer 子图")
 
-        # Sector Layer 子图
+        # Sector Layer 子图（结构化清单提取仅全市场模式启用，单票模式行为与现状一致）
         if has_sector:
             sector_subgraph = SectorLayerGraph(
-                self.quick_thinking_llm, self.toolkit
+                self.quick_thinking_llm, self.toolkit,
+                enable_structured_list=has_screening,
             ).build()
             workflow.add_node("Sector Layer", sector_subgraph)
             logger.info("[编排图] 已添加 Sector Layer 子图")
 
-        # Stock Layer 子图（个股层）
+        # Stock Layer 子图（个股层）——编译后挂到 self 供 propagate 逐票循环复用；
+        # 单票模式仅显式选择 stock 层时挂进顶层图
         stock_subgraph = StockLayerGraph(
             self.quick_thinking_llm,
             self.deep_thinking_llm,
@@ -189,8 +200,11 @@ class TradingAgentsGraph:
             self.conditional_logic,
             self.config,
         ).build()
-        workflow.add_node("Stock Layer", stock_subgraph)
-        logger.info("[编排图] 已添加 Stock Layer 子图")
+        self.stock_subgraph = stock_subgraph
+        if has_stock and not has_screening:
+            # 全市场模式下 Stock Layer 不进顶层图（由 propagate 层循环 invoke）
+            workflow.add_node("Stock Layer", stock_subgraph)
+            logger.info("[编排图] 已添加 Stock Layer 子图")
 
         # ---- 连线 ----
         first_node = None
@@ -207,21 +221,43 @@ class TradingAgentsGraph:
                 workflow.add_edge(prev_node, "Sector Layer")
             prev_node = "Sector Layer"
 
-        if first_node is None:
-            first_node = "Stock Layer"
-
-        if prev_node is not None:
-            workflow.add_edge(prev_node, "Stock Layer")
+        if has_screening:
+            # 全市场模式：Screening 普通函数节点直接接 END
+            workflow.add_node(
+                "Screening",
+                track_node("Screening")(make_screening_node(self.config)),
+            )
+            if prev_node is not None:
+                workflow.add_edge(prev_node, "Screening")
+            else:
+                first_node = "Screening"
+            workflow.add_edge("Screening", END)
+            logger.info("[编排图] 已添加 Screening 节点（纯代码，无 LLM）")
+        elif has_stock:
+            # 个股层仅在显式选择时挂进顶层图
+            if prev_node is not None:
+                workflow.add_edge(prev_node, "Stock Layer")
+            else:
+                first_node = "Stock Layer"
+            workflow.add_edge("Stock Layer", END)
+        else:
+            # 仅市场/板块层：跳过个股层，直接收口到 END
+            if prev_node is not None:
+                workflow.add_edge(prev_node, END)
+            else:
+                raise ValueError("selectedLayer 未包含任何有效层")
 
         workflow.add_edge(START, first_node)
-        workflow.add_edge("Stock Layer", END)
 
         layer_names = []
         if has_market:
             layer_names.append("Market")
         if has_sector:
             layer_names.append("Sector")
-        layer_names.append("Stock")
+        if has_screening:
+            layer_names.append("Screening")
+        elif has_stock:
+            layer_names.append("Stock")
         logger.info(f"[编排图] 编译完成: {' → '.join(layer_names)} → END")
 
         return workflow.compile()
@@ -263,7 +299,7 @@ class TradingAgentsGraph:
             except Exception as e:
                 logger.debug(f"propagate 防御校正跳过: {e}")
 
-        self.ticker = company_name
+        self.ticker = company_name or "market_screening"
 
         # ---- 本次运行的日志目录 ----
         run_ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -331,14 +367,63 @@ class TradingAgentsGraph:
         self.curr_state = final_state
         self._log_state(trade_date, final_state)
         self._write_reports(final_state, log_dir)
+
+        # ---- 全市场模式：逐票循环个股层（一期顺序循环，复用同一编译子图） ----
+        if "screening" in self.selectedLayer:
+            from AI.graph.stock_loop import run_stock_loop
+            pool = final_state.get("candidate_stock_pool", [])
+            risk_gate = final_state.get("risk_gate", "normal")
+            if risk_gate == "block" or not pool:
+                if risk_gate == "block":
+                    logger.warning("[propagate] risk_gate=block，跳过选股买入流程")
+                final_state["stock_results"] = {}
+            else:
+                stock_results = run_stock_loop(
+                    self.stock_subgraph, final_state, pool,
+                    self.signal_processor.process_signal,
+                )
+                final_state["stock_results"] = stock_results
+
+            # 仓位管理层（纯代码收口，含 risk 计划）
+            if "position" in self.selectedLayer:
+                from AI.position.position_manager import (
+                    build_position_plan,
+                    build_risk_plan,
+                )
+                if risk_gate == "block" or not pool:
+                    final_state["final_position_plan"] = build_risk_plan(
+                        final_state, self.config
+                    )
+                else:
+                    final_state["final_position_plan"] = build_position_plan(
+                        final_state, self.config
+                    )
+                self._write_reports(final_state, log_dir)
+
+            trace_step("全市场模式循环完成",
+                       stocks=len(final_state.get("stock_results", {})))
+
         trace_step("图执行完成", nodes_visited=len([k for k in final_state.keys()
                      if not k.startswith('__')]))
         trace_step("开始信号处理", stock=company_name)
 
-        # 处理决策信号
-        decision = self.process_signal(
-            final_state["final_trade_decision"]
-        )
+        # 处理决策信号：
+        # - 单票模式：抽取 final_trade_decision（原路径不变）
+        # - 全市场模式：逐票决策已在 stock_results[code]["decision_json"]，
+        #   顶层态无 final_trade_decision → 返回语义明确的默认决策
+        if "screening" in self.selectedLayer:
+            decision = {
+                "action": "持有",
+                "target_price": None,
+                "stop_loss": None,
+                "confidence": 0.5,
+                "risk_score": 0.5,
+                "reasoning": "全市场模式：逐票决策见 stock_results",
+            }
+        else:
+            decision = self.process_signal(
+                final_state.get("final_trade_decision", "")
+            )
         trace_step("决策提取完成", action=decision.get("action"),
                    price=decision.get("target_price"), conf=decision.get("confidence"))
 
@@ -451,6 +536,24 @@ class TradingAgentsGraph:
                 logger.info(f"报告已写入: {fpath}")
             else:
                 logger.debug(f"报告为空，跳过: {seq}_{name}")
+
+        # 结构化 dict 字段落盘为 JSON（选股池/逐票结果/交易计划）
+        dict_reports = [
+            ("17", "candidate_stock_pool", "candidate_stock_pool"),
+            ("18", "stock_results", "stock_results"),
+            ("19", "final_position_plan", "final_position_plan"),
+        ]
+        for seq, name, key in dict_reports:
+            content = final_state.get(key)
+            if content:
+                fpath = report_dir / f"{seq}_{name}.json"
+                fpath.write_text(
+                    json.dumps(content, ensure_ascii=False, indent=2, default=str),
+                    encoding="utf-8",
+                )
+                logger.info(f"结构化结果已写入: {fpath}")
+            else:
+                logger.debug(f"结构化结果为空，跳过: {seq}_{name}")
 
         logger.info(f"全部报告已写入: {report_dir.resolve()}")
 

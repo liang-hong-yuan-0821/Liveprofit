@@ -41,6 +41,9 @@ yoho = "main:main"
 include = ["AI*"]
 exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*"]
 
+[tool.setuptools.package-data]
+"AI.templates" = ["*.md", "market/*.md", "sector/*.md", "stock/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

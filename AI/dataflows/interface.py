@@ -8,12 +8,16 @@ YoHo 数据接口层
 import os
 import logging
 
+from AI.utils.dataprovider_log import dataprovider_log
+
 logger = logging.getLogger(__name__)
 
 # 全局数据源选择
 _DATA_SOURCE = None
 _provider = None
 _cache = None
+# AKShare 独立实例（国际宏观类数据固定走 AKShare，不随 YOHO_DATA_SOURCE 切换）
+_akshare_provider = None
 
 
 def _correct_trade_date(curr_date: str, caller: str = "") -> str:
@@ -86,6 +90,22 @@ def _get_provider():
     return _provider
 
 
+def _get_akshare_provider():
+    """懒加载 AKShare 数据提供器（独立于 YOHO_DATA_SOURCE）。
+
+    国际宏观类数据（全球宏观新闻/央行日历/宏观指标/大宗商品与汇率）
+    Tushare 不提供，接口层固定路由到 AKShare。
+    """
+    global _akshare_provider
+    if _akshare_provider is None:
+        try:
+            from .providers.akshare_provider import AKShareProvider
+            _akshare_provider = AKShareProvider()
+        except Exception as e:
+            logger.warning(f"AKShare provider 初始化失败: {e}")
+    return _akshare_provider
+
+
 def set_config(config: dict):
     """设置配置（预留扩展点）"""
     pass
@@ -101,6 +121,7 @@ def switch_data_source(source: str):
 
 # ==================== 股票行情 ====================
 
+@dataprovider_log
 def get_china_stock_data(ticker: str, start_date: str, end_date: str) -> str:
     """获取A股日线行情（带缓存）"""
     # 先查缓存
@@ -121,6 +142,7 @@ def get_china_stock_data(ticker: str, start_date: str, end_date: str) -> str:
     return data
 
 
+@dataprovider_log
 def get_china_stock_info(ticker: str) -> str:
     """获取股票基本信息（公司名称、行业、地区、上市日期）"""
     info = _get_provider().get_stock_info(ticker)
@@ -135,6 +157,7 @@ def get_china_stock_info(ticker: str) -> str:
 
 # ==================== 基本面 ====================
 
+@dataprovider_log
 def get_china_fundamentals(ticker: str, curr_date: str = None) -> str:
     """获取基本面（带缓存）"""
     # 先查缓存
@@ -155,6 +178,7 @@ def get_china_fundamentals(ticker: str, curr_date: str = None) -> str:
 
 # ==================== 新闻 ====================
 
+@dataprovider_log
 def get_china_news(ticker: str, start_date: str, end_date: str) -> str:
     """获取新闻（带缓存）"""
     # 先查缓存
@@ -175,6 +199,7 @@ def get_china_news(ticker: str, start_date: str, end_date: str) -> str:
 
 # ==================== 大盘 ====================
 
+@dataprovider_log
 def get_china_market_overview(curr_date: str, days: int = 7) -> str:
     """获取七大指数近期走势（上证综指/深证成指/创业板指/科创50/上证50/中证1000/上证红利）
 
@@ -195,6 +220,7 @@ def get_china_market_overview(curr_date: str, days: int = 7) -> str:
     )
 
 
+@dataprovider_log
 def get_china_daily_basic(ticker: str, trade_date: str) -> str:
     """获取每日指标 (PE, PB, 换手率, 总市值等)"""
     prov = _get_provider()
@@ -205,6 +231,7 @@ def get_china_daily_basic(ticker: str, trade_date: str) -> str:
 
 # ==================== 全球科技指数 (AKShare) ====================
 
+@dataprovider_log
 def get_global_tech_index(index_key: str, days: int = 10) -> str:
     """获取全球科技指数数据"""
     prov = _get_provider()
@@ -213,6 +240,7 @@ def get_global_tech_index(index_key: str, days: int = 10) -> str:
     return "当前数据源不支持全球指数，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_all_tech_indices(days: int = 10) -> str:
     """获取所有全球科技指数"""
     prov = _get_provider()
@@ -221,6 +249,7 @@ def get_all_tech_indices(days: int = 10) -> str:
     return "当前数据源不支持全球指数，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_concept_board(concept_name: str, days: int = 10) -> str:
     """获取 A 股概念板块数据"""
     prov = _get_provider()
@@ -229,6 +258,7 @@ def get_concept_board(concept_name: str, days: int = 10) -> str:
     return "当前数据源不支持概念板块数据，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_all_concept_boards(days: int = 10) -> str:
     """获取所有 AI 产业链概念板块"""
     prov = _get_provider()
@@ -237,6 +267,7 @@ def get_all_concept_boards(days: int = 10) -> str:
     return "当前数据源不支持概念板块汇总，请切换到 akshare。"
 
 
+@dataprovider_log
 def analyze_tech_correlation(days: int = 10) -> str:
     """分析科技指数相关性并预测"""
     from .providers.akshare_provider import (
@@ -297,6 +328,7 @@ def analyze_tech_correlation(days: int = 10) -> str:
 # ==================== 板块层 — Sector 接口 ====================
 
 
+@dataprovider_log
 def get_industry_sector_performance(days: int = 10) -> str:
     """获取全行业板块涨跌排名"""
     prov = _get_provider()
@@ -305,6 +337,7 @@ def get_industry_sector_performance(days: int = 10) -> str:
     return "当前数据源不支持行业板块表现，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_sector_fund_flow(days: int = 5) -> str:
     """获取行业板块主力资金流向排名"""
     prov = _get_provider()
@@ -313,6 +346,7 @@ def get_sector_fund_flow(days: int = 5) -> str:
     return "当前数据源不支持行业资金流向，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_concept_board_heat(days: int = 10) -> str:
     """获取热门概念板块热度排名（涨幅+成交额综合排序）"""
     prov = _get_provider()
@@ -321,6 +355,37 @@ def get_concept_board_heat(days: int = 10) -> str:
     return "当前数据源不支持板块热度排名，请切换到 akshare。"
 
 
+# ==================== 板块层 — 选股层数据（东财概念体系） ====================
+
+
+@dataprovider_log
+def get_concept_board_names() -> str:
+    """获取东财概念板块全名单（每行一个概念名，供结构化清单过滤）"""
+    prov = _get_provider()
+    if hasattr(prov, 'get_concept_board_names'):
+        return prov.get_concept_board_names()
+    return "当前数据源不支持概念板块名单。"
+
+
+@dataprovider_log
+def get_sector_constituents(sector_name: str) -> str:
+    """获取东财概念板块当日成分股 → `代码|名称`（每行一条，6 位代码）"""
+    prov = _get_provider()
+    if hasattr(prov, 'get_sector_constituents'):
+        return prov.get_sector_constituents(sector_name)
+    return "当前数据源不支持板块成分股。"
+
+
+@dataprovider_log
+def get_stocks_performance_ranking(codes: list, days: int = 10) -> str:
+    """批量计算近 N 日涨跌幅 + 最新价/最新成交额（末行板块均值）"""
+    prov = _get_provider()
+    if hasattr(prov, 'get_stocks_performance_ranking'):
+        return prov.get_stocks_performance_ranking(codes, days)
+    return "当前数据源不支持个股涨幅排名。"
+
+
+@dataprovider_log
 def get_sector_technical_screening(days: int = 60) -> str:
     """逐行业计算技术指标，输出全行业技术状态矩阵"""
     prov = _get_provider()
@@ -329,6 +394,7 @@ def get_sector_technical_screening(days: int = 60) -> str:
     return "当前数据源不支持行业技术筛选，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_sector_relative_strength(days: int = 20) -> str:
     """各行业相对大盘的 alpha 排名"""
     prov = _get_provider()
@@ -337,6 +403,7 @@ def get_sector_relative_strength(days: int = 20) -> str:
     return "当前数据源不支持行业相对强度，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_concept_rotation_ranking(days: int = 5, top_n: int = 10) -> str:
     """获取近N个交易日题材板块轮动矩阵（Tushare 打板专题数据）。
 
@@ -350,12 +417,14 @@ def get_concept_rotation_ranking(days: int = 5, top_n: int = 10) -> str:
     return "当前数据源不支持板块轮动矩阵（仅 Tushare 支持 limit_cpt_list 接口）。"
 
 
+@dataprovider_log
 def get_industry_policy_news(curr_date: str) -> str:
     """近期产业政策/重大行业新闻（一期占位）"""
     # TODO: AKShare 无行业政策聚合新闻接口
     return "数据不可用：暂无行业政策新闻聚合数据源。"
 
 
+@dataprovider_log
 def get_sector_horizon_screening(days: int = 120) -> str:
     """多周期行业技术筛选：基于日线数据重采样，输出 日/周/月 三级趋势矩阵。
 
@@ -482,39 +551,46 @@ def get_sector_horizon_screening(days: int = 120) -> str:
 
 
 # ==================== 市场层 — Global 接口 ====================
+# Tushare 不提供国际宏观类数据，以下函数固定走 AKShare，
+# 与全局 YOHO_DATA_SOURCE 配置无关（其余接口仍按全局数据源路由）。
 
+@dataprovider_log
 def get_global_macro_news(curr_date: str) -> str:
     """获取全球宏观财经新闻（财联社电报）"""
-    prov = _get_provider()
-    if hasattr(prov, 'get_global_macro_news'):
+    prov = _get_akshare_provider()
+    if prov is not None and hasattr(prov, 'get_global_macro_news'):
         return prov.get_global_macro_news(curr_date)
-    return "当前数据源不支持全球宏观新闻，请切换到 akshare。"
+    return "数据不可用：AKShare 数据源不可用，无法获取全球宏观新闻。"
 
 
+@dataprovider_log
 def get_central_bank_calendar(curr_date: str) -> str:
     """获取主要央行利率决议日历"""
-    prov = _get_provider()
-    if hasattr(prov, 'get_central_bank_calendar'):
+    prov = _get_akshare_provider()
+    if prov is not None and hasattr(prov, 'get_central_bank_calendar'):
         return prov.get_central_bank_calendar(curr_date)
-    return "当前数据源不支持央行日历，请切换到 akshare。"
+    return "数据不可用：AKShare 数据源不可用，无法获取央行日历。"
 
 
+@dataprovider_log
 def get_macro_indicators(curr_date: str) -> str:
     """获取关键宏观经济指标最新值"""
-    prov = _get_provider()
-    if hasattr(prov, 'get_macro_indicators'):
+    prov = _get_akshare_provider()
+    if prov is not None and hasattr(prov, 'get_macro_indicators'):
         return prov.get_macro_indicators(curr_date)
-    return "当前数据源不支持宏观指标，请切换到 akshare。"
+    return "数据不可用：AKShare 数据源不可用，无法获取宏观指标。"
 
 
+@dataprovider_log
 def get_commodity_fx_overview(days: int = 10) -> str:
     """获取大宗商品+汇率概览"""
-    prov = _get_provider()
-    if hasattr(prov, 'get_commodity_fx_overview'):
+    prov = _get_akshare_provider()
+    if prov is not None and hasattr(prov, 'get_commodity_fx_overview'):
         return prov.get_commodity_fx_overview(days)
-    return "当前数据源不支持大宗商品数据，请切换到 akshare。"
+    return "数据不可用：AKShare 数据源不可用，无法获取大宗商品数据。"
 
 
+@dataprovider_log
 def get_event_calendar_history(events_desc: str) -> str:
     """检索历史案例日历表"""
     import json
@@ -564,12 +640,14 @@ def get_event_calendar_history(events_desc: str) -> str:
 
 # ==================== 市场层 — US 接口 ====================
 
+@dataprovider_log
 def get_us_macro_news(curr_date: str) -> str:
     """获取美国财经新闻（一期占位）"""
     # TODO: AKShare 美股聚合新闻接口
     return "数据不可用：暂无美股聚合新闻数据源。"
 
 
+@dataprovider_log
 def get_us_economic_calendar(curr_date: str) -> str:
     """获取美国经济数据发布日历"""
     prov = _get_provider()
@@ -578,6 +656,7 @@ def get_us_economic_calendar(curr_date: str) -> str:
     return "数据不可用：当前数据源不支持美国经济日历，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_vix_index() -> str:
     """获取 VIX 恐慌指数"""
     prov = _get_provider()
@@ -586,6 +665,7 @@ def get_vix_index() -> str:
     return "数据不可用：当前数据源不支持 VIX 指数，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_us_index_data(days: int = 20) -> str:
     """获取美股三大指数近期日线"""
     prov = _get_provider()
@@ -594,6 +674,7 @@ def get_us_index_data(days: int = 20) -> str:
     return "数据不可用：当前数据源不支持美股指数数据，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_us_sector_rotation(days: int = 20) -> str:
     """获取美股板块轮动数据（一期占位）"""
     # TODO: 无免费美股板块轮动数据源
@@ -602,18 +683,21 @@ def get_us_sector_rotation(days: int = 20) -> str:
 
 # ==================== 市场层 — KR 接口 ====================
 
+@dataprovider_log
 def get_kr_macro_news(curr_date: str) -> str:
     """获取韩国财经新闻（一期占位）"""
     # TODO: AKShare 无韩国新闻覆盖
     return "数据不可用：暂无韩国财经新闻数据源。"
 
 
+@dataprovider_log
 def get_kr_export_data(curr_date: str) -> str:
     """获取韩国出口数据（一期占位）"""
     # TODO: 无免费韩国出口数据接口
     return "数据不可用：暂无韩国出口数据源。"
 
 
+@dataprovider_log
 def get_kr_foreign_flow(days: int = 10) -> str:
     """获取韩国市场外资流向（一期占位）"""
     # TODO: 无免费韩国外资流向接口
@@ -622,6 +706,7 @@ def get_kr_foreign_flow(days: int = 10) -> str:
 
 # ==================== 市场层 — CN 接口 ====================
 
+@dataprovider_log
 def get_ipo_calendar(curr_date: str) -> str:
     """获取近期新股申购/上市日历"""
     prov = _get_provider()
@@ -630,6 +715,7 @@ def get_ipo_calendar(curr_date: str) -> str:
     return "当前数据源不支持 IPO 日历，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_share_unlock_calendar(curr_date: str) -> str:
     """获取限售股解禁日历"""
     prov = _get_provider()
@@ -638,6 +724,7 @@ def get_share_unlock_calendar(curr_date: str) -> str:
     return "当前数据源不支持解禁日历，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_futures_expiry_calendar(curr_date: str) -> str:
     """获取期指/期权交割日日历"""
     from datetime import datetime, timedelta
@@ -671,6 +758,7 @@ def get_futures_expiry_calendar(curr_date: str) -> str:
     return "\n".join(lines)
 
 
+@dataprovider_log
 def get_margin_trading_balance(curr_date: str) -> str:
     """获取两融余额变化"""
     prov = _get_provider()
@@ -679,6 +767,7 @@ def get_margin_trading_balance(curr_date: str) -> str:
     return "当前数据源不支持两融数据，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_market_breadth(curr_date: str) -> str:
     """获取市场宽度（涨跌家数、涨跌停统计）
 
@@ -691,6 +780,7 @@ def get_market_breadth(curr_date: str) -> str:
     return "当前数据源不支持市场宽度数据，请切换到 akshare。"
 
 
+@dataprovider_log
 def get_market_fund_flow(curr_date: str) -> str:
     """获取北向资金 + 主力资金流向
 

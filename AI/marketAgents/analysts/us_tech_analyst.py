@@ -6,6 +6,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def create_us_tech_analyst(llm, toolkit):
         index_data = dataflow.get_us_index_data(days=20)
         sector_rotation = dataflow.get_us_sector_rotation(days=20)
 
+        output_format = load_output_format("market", "tech_common")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -49,13 +52,7 @@ def create_us_tech_analyst(llm, toolkit):
                 "数据不可用时标注'数据暂不可用，以下分析基于公开信息'\n\n"
                 "输出格式：\n"
                 "# 美国市场技术分析报告\n\n"
-                "## 一、标普500\n"
-                "（趋势、均线、量能、RSI/MACD）\n"
-                "## 二、纳斯达克\n"
-                "## 三、道琼斯\n"
-                "## 四、板块与风格\n"
-                "## 五、综合研判\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

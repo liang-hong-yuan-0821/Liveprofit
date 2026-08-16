@@ -50,6 +50,7 @@ class SignalProcessor:
 {{
     "action": "买入/持有/卖出",
     "target_price": 数字({currency}价格，必须提供具体数值，不能为null),
+    "stop_loss": 数字({currency}价格，报告明确给出止损位时填写具体数值，否则为null),
     "confidence": 数字(0-1之间，默认0.7),
     "risk_score": 数字(0-1之间，默认0.5),
     "reasoning": "决策主要理由摘要"
@@ -58,7 +59,8 @@ class SignalProcessor:
 要求：
 1. action必须是"买入"、"持有"或"卖出"之一（不允许英文）
 2. target_price必须是具体的{currency}价格数字（{currency_symbol}）
-3. 所有内容使用中文""",
+3. stop_loss：报告给出止损位时填具体价格数字，否则为 null
+4. 所有内容使用中文""",
             ),
             ("human", full_signal),
         ]
@@ -88,9 +90,19 @@ class SignalProcessor:
                 if target_price is None:
                     target_price = self._extract_price_from_text(full_signal)
 
+                stop_loss = decision_data.get('stop_loss')
+                if stop_loss is not None and stop_loss != "null" and stop_loss != "":
+                    try:
+                        stop_loss = float(stop_loss)
+                    except (ValueError, TypeError):
+                        stop_loss = None
+                if stop_loss is None:
+                    stop_loss = self._extract_stop_loss_from_text(full_signal)
+
                 return {
                     'action': action,
                     'target_price': target_price,
+                    'stop_loss': stop_loss,
                     'confidence': float(decision_data.get('confidence', 0.7)),
                     'risk_score': float(decision_data.get('risk_score', 0.5)),
                     'reasoning': decision_data.get('reasoning', '基于综合分析的投资建议'),
@@ -119,6 +131,21 @@ class SignalProcessor:
                     continue
         return None
 
+    def _extract_stop_loss_from_text(self, text: str):
+        """从文本中提取止损价格"""
+        patterns = [
+            r'止损[价位]?[：:]?\s*[¥]?(\d+(?:\.\d+)?)',
+            r'跌破\s*[¥]?(\d+(?:\.\d+)?)\s*(?:元)?\s*(?:止损|离场)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text)
+            if match:
+                try:
+                    return float(match.group(1))
+                except ValueError:
+                    continue
+        return None
+
     def _extract_simple_decision(self, text: str) -> dict:
         """简单的决策提取备用方法"""
         action = '持有'
@@ -134,6 +161,7 @@ class SignalProcessor:
         return {
             'action': action,
             'target_price': target_price,
+            'stop_loss': self._extract_stop_loss_from_text(text),
             'confidence': 0.7,
             'risk_score': 0.5,
             'reasoning': '基于综合分析的投资建议',
@@ -143,6 +171,7 @@ class SignalProcessor:
         return {
             'action': '持有',
             'target_price': None,
+            'stop_loss': None,
             'confidence': 0.5,
             'risk_score': 0.5,
             'reasoning': '输入数据无效，默认持有建议',

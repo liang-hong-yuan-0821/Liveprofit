@@ -553,6 +553,141 @@ class TushareProvider(BaseStockDataProvider):
             logger.warning(f"获取申万行业分类失败: {e}")
         return {}
 
+    # ==================== 板块层 — 选股层数据（东财概念体系） ====================
+
+    # dc_index 概念板块快照按日缓存（名单接口 + 成分股接口 + 选股层多次调用只打一次代理）
+    _DC_CONCEPT_INDEX_CACHE = {"date": None, "df": None}
+
+    def _get_dc_concept_index(self):
+        """拉取最近一个有数据交易日的东财概念板块快照（dc_index idx_type=概念板块）。
+
+        代理不支持日期区间参数，且盘中/非交易日可能无数据 → 向前最多尝试 5 天。
+        当日成功结果按日缓存，跨天自动失效。
+        返回 DataFrame（含 name/ts_code/trade_date 等），失败返回 None。
+        """
+        if not self.connected:
+            return None
+        today = datetime.now().strftime("%Y%m%d")
+        cached = self._DC_CONCEPT_INDEX_CACHE
+        if cached["date"] == today and cached["df"] is not None:
+            return cached["df"]
+        for offset in range(5):
+            trade_date = (datetime.now() - timedelta(days=offset)).strftime("%Y%m%d")
+            try:
+                df = self._api_call(
+                    self.api.dc_index, trade_date=trade_date, idx_type="概念板块"
+                )
+            except Exception as e:
+                logger.warning("dc_index 调用异常: %s", e)
+                return None
+            if df is not None and not df.empty:
+                cached["date"] = today
+                cached["df"] = df
+                return df
+            logger.info("_get_dc_concept_index: dc_index trade_date=%s 返回空, 尝试前一天", trade_date)
+        return None
+
+    def get_concept_board_names(self) -> str:
+        """获取东财概念板块全名单（每行一个概念名，供结构化清单过滤）"""
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            df = self._get_dc_concept_index()
+            if df is None or df.empty or "name" not in df.columns:
+                return "未获取到东财概念板块名单。"
+            names = [str(n).strip() for n in df["name"].tolist() if str(n).strip()]
+            return "\n".join(names) if names else "东财概念板块名单为空。"
+        except Exception as e:
+            logger.warning(f"获取东财概念板块名单失败: {e}")
+            return f"获取东财概念板块名单失败: {e}"
+
+    def get_sector_constituents(self, sector_name: str) -> str:
+        """获取东财概念板块当日成分股（dc_member 快照）→ `代码|名称`
+
+        注意：dc_member 必须传 trade_date（不传返回历史累计成员），
+        trade_date 取自 dc_index 快照日期，保证 T-1 口径一致。
+        """
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            idx_df = self._get_dc_concept_index()
+            if idx_df is None or idx_df.empty:
+                return "未获取到东财概念板块名单。"
+            match = idx_df[idx_df["name"].astype(str) == str(sector_name).strip()]
+            if match.empty:
+                return f"未找到东财概念板块: {sector_name}"
+            ts_code = match.iloc[0]["ts_code"]
+            trade_date = match.iloc[0]["trade_date"]
+            mem = self._api_call(self.api.dc_member, ts_code=ts_code, trade_date=trade_date)
+            if mem is None or mem.empty:
+                return f"未获取到 {sector_name} 成分股数据。"
+            lines = []
+            for _, row in mem.iterrows():
+                code = str(row.get("con_code", "")).strip()
+                name = str(row.get("name", "")).strip()
+                if code and re.fullmatch(r"\d{6}", code):
+                    lines.append(f"{code}|{name}")
+            return "\n".join(lines) if lines else f"{sector_name} 成分股为空。"
+        except Exception as e:
+            logger.warning(f"获取板块成分股失败 [{sector_name}]: {e}")
+            return f"获取 {sector_name} 成分股失败: {e}"
+
+    def get_stocks_performance_ranking(self, codes: list, days: int = 10) -> str:
+        """批量计算近 N 日涨跌幅 + 最新价/最新成交额（末行板块均值）。
+
+        连续 3 只失败熔断，防止代理异常时拖垮整条流水线。
+        """
+        if not self.connected:
+            return "Tushare 未连接。"
+        try:
+            end = datetime.now().strftime("%Y%m%d")
+            start = (datetime.now() - timedelta(days=days * 4)).strftime("%Y%m%d")
+            rows = []
+            pcts = []
+            consecutive_failures = 0
+            for raw in codes:
+                code = self._normalize_code(str(raw).strip())
+                if not code:
+                    continue
+                try:
+                    df = self._api_call(
+                        self.api.daily, ts_code=code, start_date=start, end_date=end
+                    )
+                except Exception:
+                    df = None
+                if df is None or df.empty or len(df) < 2:
+                    consecutive_failures += 1
+                    logger.warning("get_stocks_performance_ranking: %s 无数据，连续失败 %d", code, consecutive_failures)
+                    if consecutive_failures >= 3:
+                        logger.warning("get_stocks_performance_ranking: 连续 3 只失败，熔断")
+                        break
+                    continue
+                try:
+                    df = df.sort_values("trade_date").tail(days + 1)
+                    first_close = float(df["close"].iloc[0])
+                    last_close = float(df["close"].iloc[-1])
+                    last_amount = float(df["amount"].iloc[-1]) if "amount" in df.columns else 0.0
+                    if first_close <= 0:
+                        continue
+                    pct = (last_close - first_close) / first_close * 100
+                    rows.append((code, pct, last_close, last_amount))
+                    pcts.append(pct)
+                    consecutive_failures = 0
+                except Exception:
+                    consecutive_failures += 1
+                    continue
+
+            if not rows:
+                return "未获取到任何个股涨幅数据。"
+            lines = [f"{code}|{pct:+.2f}|{close:.2f}|{amount:.0f}"
+                     for code, pct, close, amount in rows]
+            avg = sum(pcts) / len(pcts)
+            lines.append(f"板块均值|{avg:+.2f}")
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning(f"获取个股涨幅排名失败: {e}")
+            return f"获取个股涨幅排名失败: {e}"
+
     def get_concept_board(self, concept_name: str, days: int = 10) -> str:
         """获取单个 A 股概念板块行情数据（通过同花顺板块指数）"""
         if not self.connected:

@@ -6,11 +6,13 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
+from AI.sectorAgents.analysts.structured_list import extract_sector_structured_list
 
 logger = logging.getLogger(__name__)
 
 
-def create_sector_news_analyst(llm, toolkit):
+def create_sector_news_analyst(llm, toolkit, enable_structured_list=False):
 
     def node(state):
         current_date = state["trade_date"]
@@ -26,6 +28,8 @@ def create_sector_news_analyst(llm, toolkit):
         fund_flow = dataflow.get_sector_fund_flow(days=5)
         concept_heat = dataflow.get_concept_board_heat(days=10)
         policy_news = dataflow.get_industry_policy_news(current_date)
+
+        output_format = load_output_format("sector", "sector_news_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -63,26 +67,7 @@ def create_sector_news_analyst(llm, toolkit):
                 "风格验证：结合市场层的大盘风格判断，验证板块层面的风格一致性\n"
                 "- 数据不可用时如实标注，不编造\n\n"
                 "输出格式（结论前置）：\n"
-                "# 板块新闻分析报告\n\n"
-                "## 〇、候选板块速览（结论块 — 向下游传递）\n"
-                "（结构化短名单，格式如下）\n"
-                "```\n"
-                "主线状态: <有主线(名称)/快速轮动/无方向>\n"
-                "短线候选TOP3: [板块名, 逻辑, 操作提示, 风险, 置信度]\n"
-                "波段主线: [主线链, 持续性证据, 轮动位置, 上车条件]\n"
-                "长线配置: [板块名, 逻辑(政策/景气/估值), 关注级别]\n"
-                "```\n\n"
-                "## 一、行业涨跌排名\n"
-                "（申万一级行业近N日涨跌幅排序，标注领涨行业TOP5和领跌行业BOTTOM5）\n\n"
-                "## 二、资金流向\n"
-                "（行业主力资金净流入/流出排名，标注资金进攻方向）\n\n"
-                "## 三、概念板块热度\n"
-                "（热门概念板块涨幅/成交额变化/持续性判断）\n\n"
-                "## 四、三级别候选板块详细分析\n"
-                "（短线/波段/长线各自的候选板块+入选逻辑+操作提示+置信度）\n\n"
-                "## 五、风格一致性验证\n"
-                "（结合大盘风格判断，验证板块层面的风格是否一致）\n\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])
@@ -100,10 +85,13 @@ def create_sector_news_analyst(llm, toolkit):
         shortlist = _extract_sector_shortlist(report)
 
         logger.info(f"[板块新闻分析] 报告完成，长度: {len(report)}")
+        # 仅全市场模式启用结构化清单（单票模式保持行为与现状完全一致，不多打名单接口）
+        structured = extract_sector_structured_list(report) if enable_structured_list else []
         return {
             "messages": [result],
             "sector_news_report": report,
             "sector_shortlist": shortlist,
+            "sector_shortlist_structured": structured,
             "sector_news_tool_call_count": count + 1,
         }
 

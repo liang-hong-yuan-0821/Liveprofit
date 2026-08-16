@@ -86,9 +86,17 @@ class Propagator:
             # 市场层结构化结论字段
             "market_regime": "",
             "market_event_calendar": "",
+            "risk_gate": "normal",
             # 板块层结构化结论字段
             "sector_shortlist": "",
             "sector_tech_confirm": "",
+            "sector_shortlist_structured": [],
+            # 选股层
+            "candidate_stock_pool": [],
+            # 个股层循环
+            "stock_results": {},
+            # 仓位管理层
+            "final_position_plan": {},
             # 板块层 — 轮动预测
             "rotation_prediction_report": "",
             "rotation_top_picks": "",

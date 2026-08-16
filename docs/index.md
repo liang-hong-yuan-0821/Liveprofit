@@ -2,11 +2,11 @@
 
 ## 市场 — 板块 — 个股三维度分析
 
-> **AI 速览**：市场层（独立子图，7 个 Agent）已实现，板块层（独立子图，2 个 Agent）已实现。
+> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，个股层持续更新。
 >
-> **状态**：市场层 ✅ 板块层 ✅ 个股层持续更新
+> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 个股层持续更新
 >
-> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/dataflows/`、`AI/graph/`
+> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`、`AI/graph/`、`AI/templates/`
 
 ---
 
@@ -25,7 +25,7 @@
 | [个股层](个股层.md) | 主干架构 | 个股层架构定义（持续更新） |
 | [plans/](plans/) | 施工方案 | 单次重构/新功能的临时方案（实施完归档） |
 
-> **约定**：主干文档随项目持续演进；`plans/` 下的方案文档实施完成后整合进主干并删除。
+> **约定**：主干文档随项目持续演进；`plans/` 下的方案文档实施完成后整合进主干并归档 `done/`。
 
 ---
 
@@ -74,12 +74,19 @@ Liveprofit（YoHo）现有 12 个 Agent，全部锚定在"个股"维度：
 │       └── CN: 新闻分析 + 技术分析 ★ 主战场
 ├── Subgraph: 板块层（★ 已实现）    ← 独立编译，共享 state
 │   ├── 板块新闻分析 — 行业排名 + 资金流向 + 板块轮动
-│   └── 板块技术分析 — 全行业技术扫描 + AI专题深挖 + 风格验证
+│   ├── 板块技术分析 — 全行业技术扫描 + AI专题深挖 + 风格验证
+│   └── 板块轮动预测 — 打板题材逐日轮动 + 明日预测
+├── 选股层（★ 已实现）              ← 普通函数节点，纯代码，无 LLM（仅全市场模式）
+│   └── 东财概念成分股 → 近 N 日涨幅 → 超板块均值筛选 + 流动性过滤 → candidate_stock_pool
+├── 仓位管理层（★ 已实现）          ← 纯代码，无 LLM（仅全市场模式）
+│   └── 多票决策 + 总资金/持仓/仓位规则 → final_position_plan
 └── 个股层 + 辩论 + 风控
     ├── Social → News → Fundamentals → Stock Tech（个股分析师序列）
     ├── Bull ↔ Bear Debate → Research Manager
     └── Trader → Risk → END
 ```
+
+> 选股层/仓位管理层仅在**全市场模式**（`selectedLayer` 含 `"screening"`）启用；单票模式（默认）拓扑与行为不变。
 
 ### 市场层子图内部
 
@@ -139,6 +146,16 @@ START
 
 > 板块层产出通过**结构化字段**（`sector_shortlist`、`sector_tech_confirm`）注入个股层决策节点（2026-08 更新）。
 
+### 选股层/仓位管理层新增字段（2026-08 全市场模式）
+
+| 字段 | 写入者 |
+|------|--------|
+| `risk_gate` | CN Tech 分析师（市场层，规则派生 `normal`/`caution`/`block`，fail-open） |
+| `sector_shortlist_structured` | 板块层 News/Tech 分析师（经东财概念全名单过滤，仅全市场模式启用） |
+| `candidate_stock_pool` | 选股层 Screening 节点（纯代码） |
+| `stock_results` | propagate 层逐票循环（`code → {final_trade_decision, decision_json, ...}`） |
+| `final_position_plan` | 仓位管理层 Position Manager（纯代码） |
+
 ### 个股层产出（4 个）
 
 | 字段 | 写入者 | 说明 |
@@ -185,3 +202,15 @@ START
 - **数据层** — 5 个新增实现函数 + 1 个占位 + 2 个已有工具复用（AI产业链 + 科技相关性）
 - **图谱集成** — 父图通过 `add_node("Sector Layer", subgraph)` 集成，默认开启，顺序为 `Market → Sector → Stock Tech`
 - **独立性** — 板块层产出不传入个股层决策节点，写入 State 后保持独立
+
+---
+
+## 六、选股层与仓位管理层（已实现 ✅，纯代码层）
+
+四层金字塔的收口环节，均为**普通函数节点（纯 Python，无 LLM）**——"从数字里筛数字"和"按规则分配数字"是确定性运算，可回溯、可复现。仅在**全市场模式**（`selectedLayer` 含 `"screening"`）启用；单票模式行为与历史完全一致。
+
+- **选股层**（`AI/screening/`）：消费 `sector_shortlist_structured`（统一**东财概念**体系：Tushare `dc_index`+`dc_member`、AKShare `stock_board_concept_*_em`）→ 成分股 → 近 N 日涨幅 → 跑赢板块均值 + 流动性过滤 → `candidate_stock_pool`（默认上限 10 只）
+- **个股层循环**（`AI/graph/stock_loop.py`）：对候选池逐票 invoke 个股层子图（逐票态重置防污染），结果收进 `stock_results`
+- **仓位管理层**（`AI/position/`）：置信度加权/等权/凯利三种分配策略 + 单票/板块/总仓位上限裁剪 → `final_position_plan`（JSON 落盘 `logs/{ts}/reports/`）
+- **风险熔断**：市场层 `risk_gate` → `block` 只出风险提示计划、`caution` 目标仓位打 5 折
+- 详见归档方案：[done/选股层与仓位管理层技术方案.md](done/选股层与仓位管理层技术方案.md)

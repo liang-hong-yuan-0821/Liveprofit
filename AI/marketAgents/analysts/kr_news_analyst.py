@@ -7,6 +7,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ def create_kr_news_analyst(llm, toolkit):
         macro_news = dataflow.get_kr_macro_news(current_date)
         export_data = dataflow.get_kr_export_data(current_date)
 
+        output_format = load_output_format("market", "news_common")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -50,11 +53,7 @@ def create_kr_news_analyst(llm, toolkit):
                 "- 数据不可用时如实标注\n\n"
                 "输出格式：\n"
                 "# 韩国市场新闻分析报告\n\n"
-                "## 一、政策与央行动态\n"
-                "## 二、出口与产业\n"
-                "## 三、权重股动态\n"
-                "## 四、对KOSPI/KOSDAQ的影响判断\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

@@ -6,6 +6,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -82,46 +83,6 @@ _ROTATION_SYSTEM_PROMPT = """\
 3. 如果需要对同一方向做交叉验证（如 EM 的"ChatGPT概念"和 THS 的"ChatGPT"），
    在输出中**同时注明两个分类体系的名称**，并标注"跨体系比对，内涵可能不完全一致"
 4. 禁止自行推断"EM 的 X = THS 的 Y"——这会引入不可靠的对应关系
-
-## 输出格式（结论前置）
-
-# 板块轮动预测报告
-
-## 〇、轮动预测速览（结论块 — 结构化短名单）
-```
-预测日期: {current_date}
-明日主线预测: <板块名> | 置信度:<高/中/低> | 逻辑:<一句话>
-明日新晋热点预测: <板块名> | 置信度:<高/中/低> | 逻辑:<一句话>
-退潮预警: <板块名> | 原因:<一句话> | 风险等级:<高/中/低>
-蓄势关注: <板块名> | 排名变化趋势 | 关注逻辑:<一句话>
-大盘适配度: <有利/中性/不利> | <一句话理由>
-```
-
-## 一、逐日轮动矩阵回顾
-（简述过去5天的轮动格局，不重复贴原始数据表——原始表已在 rotation_matrix 中）
-
-## 二、主线持续性分析
-（持续主线板块的详细分析：涨停家数/连板高度趋势、产业链关联、持续性判断）
-
-## 三、新热点与蓄势板块
-（新晋异动板块的评估 + TOP N 外蓄势上升板块的关注逻辑）
-
-## 四、退潮预警
-（掉出榜单板块的退潮原因 + 龙头独立行情的高位股补跌风险警示）
-
-## 五、明日预测 TOP3-5
-（每个预测：板块名 + 置信度 + 逻辑链 + 风险提示 + 推翻条件）
-
-## 六、跨体系交叉验证（如有）
-（如 EM 体系下的板块新闻/技术结论与 THS 轮动矩阵方向一致/背离，标注差异）
-
-请使用中文。
-
-⚠️ **数据可用性规则**：如果上方的"题材板块逐日轮动矩阵"数据不可用（包含"Tushare 未连接"、"数据不可用"、"不支持"、"无打板专题数据"等提示），不要编造预测。此时仅输出：
-```
-(数据不可用，跳过板块轮动预测。原因见上方轮动矩阵数据。)
-```
-然后立即结束，不输出任何分析框架或预测结论。
 """
 
 
@@ -154,8 +115,10 @@ def create_sector_rotation_analyst(llm, toolkit):
                 "rotation_tool_call_count": count + 1,
             }
 
+        output_format = load_output_format("sector", "sector_rotation_analyst")
+
         prompt = ChatPromptTemplate.from_messages([
-            ("system", _ROTATION_SYSTEM_PROMPT),
+            ("system", _ROTATION_SYSTEM_PROMPT + "\n## 输出格式（结论前置）\n\n" + output_format + "\n"),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

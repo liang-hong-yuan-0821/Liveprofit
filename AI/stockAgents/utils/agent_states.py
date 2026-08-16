@@ -66,10 +66,21 @@ class AgentState(MessagesState):
     # 市场层结构化结论字段（下游消费用，不截断）
     market_regime: Annotated[str, "三级别市场环境判定（短线/波段/长线）— CN Tech 产出"]
     market_event_calendar: Annotated[str, "三级别事件日历（短线/波段/长线）— CN News 产出"]
+    risk_gate: Annotated[str, "市场层熔断开关（normal/caution/block）— CN Tech 规则派生"]
 
     # 板块层结构化结论字段（下游消费用，不截断）
     sector_shortlist: Annotated[str, "三级别候选板块短名单（短线候选/波段主线/长线配置）— Sector News 产出"]
     sector_tech_confirm: Annotated[str, "候选板块技术确认结论（确认/存疑/否认）— Sector Tech 产出"]
+    sector_shortlist_structured: Annotated[list, "候选板块名清单（东财概念体系，经全名单过滤）— 选股层机器消费"]
+
+    # 选股层（纯代码节点产出）
+    candidate_stock_pool: Annotated[list, "候选个股池（东财概念板块内跑赢均值的个股）— Screening 节点产出"]
+
+    # 个股层循环（全市场模式，propagate 层顺序循环产出）
+    stock_results: Annotated[dict, "逐票分析结果: code → {final_trade_decision, decision_json, ...}"]
+
+    # 仓位管理层（纯代码节点产出）
+    final_position_plan: Annotated[dict, "最终交易计划（逐票金额/股数 + 组合汇总）— Position Manager 产出"]
 
     # 市场层工具调用计数器
     international_event_tool_call_count: Annotated[int, "国际事件提取分析师工具调用计数"]

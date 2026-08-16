@@ -7,6 +7,7 @@
 
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def create_international_news_analyst(llm, toolkit):
         # 读取上游事件提取结果（含事件列表 + 历史案例）
         event_report = state.get("international_event_report", "（事件提取数据暂不可用）")
 
+        output_format = load_output_format("market", "international_news_analyst")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -50,16 +53,7 @@ def create_international_news_analyst(llm, toolkit):
                 "- 数据不可用时如实标注，不编造\n"
                 "- ⚠️ 宏观事件解读属于定性分析，应明确标注'基于公开信息的方向性判断，不构成投资建议'\n\n"
                 "输出格式（结论前置）：\n"
-                "# 国际金融市场新闻分析报告\n\n"
-                "## 〇、全球宏观速览\n"
-                "（3-5 句话概括当前全球宏观核心矛盾 + 风险偏好方向）\n"
-                "> 全球风险偏好: <进攻/中性/避险>\n\n"
-                "## 一、传导链条分析\n"
-                "（事件 → 中间变量 → 行业方向；含资金虹吸/跷跷板提示）\n\n"
-                "## 二、系统性风险评估\n"
-                "（流动性信号 / 风险等级 / 是否构成系统性风险）\n\n"
-                "## 三、市场状态标签与仓位基调\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,8 @@ def create_market_analyst(llm, toolkit):
         # 直接调用 dataflows 函数获取行情数据
         market_data = dataflow.get_china_stock_data(ticker, start_date, end_date)
 
+        output_format = load_output_format("stock", "market_analyst")
+
         # 构建提示词
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -52,11 +55,7 @@ def create_market_analyst(llm, toolkit):
                 "## 已获取的数据\n\n"
                 "### 股票行情数据（{start_date} ~ {end_date}）\n{market_data}\n\n"
                 "输出格式：\n"
-                "## 一、股票基本信息\n"
-                "## 二、技术指标分析（均线、MACD、RSI、布林带）\n"
-                "## 三、价格趋势分析\n"
-                "## 四、投资建议\n"
-                "请使用中文，基于真实数据进行分析。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

@@ -7,11 +7,16 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
+from AI.sectorAgents.analysts.structured_list import (
+    extract_sector_structured_list,
+    merge_sector_structured_lists,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def create_sector_tech_analyst(llm, toolkit):
+def create_sector_tech_analyst(llm, toolkit, enable_structured_list=False):
 
     def node(state):
         current_date = state["trade_date"]
@@ -37,6 +42,8 @@ def create_sector_tech_analyst(llm, toolkit):
         rel_strength = dataflow.get_sector_relative_strength(days=20)
         ai_chain = dataflow.get_all_concept_boards(days=10)
         tech_corr = dataflow.analyze_tech_correlation(days=10)
+
+        output_format = load_output_format("sector", "sector_tech_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -86,25 +93,7 @@ def create_sector_tech_analyst(llm, toolkit):
                 "- 行业数量多（约30个），请做归纳总结而非逐行业罗列\n"
                 "- 候选板块技术确认是核心交付物，务必逐一覆盖\n\n"
                 "输出格式（结论前置）：\n"
-                "# 板块技术分析报告\n\n"
-                "## 〇、候选板块技术确认（结论块 — 向下游传递）\n"
-                "（对 sector_shortlist 中的每个候选板块给出技术确认结论，格式如下）\n"
-                "```\n"
-                "确认板块: [板块名, 多级别趋势(日/周/月), 量价判断, 风险信号]\n"
-                "存疑板块: [板块名, 疑点, 需观察信号]\n"
-                "否认板块: [板块名, 技术面不支持的理由]\n"
-                "```\n\n"
-                "## 一、多级别共振矩阵\n"
-                "（全行业 日/周/月 三级趋势表，标注共振强度 ★/★★/★★★）\n\n"
-                "## 二、全行业技术状态总览\n"
-                "（技术面强势行业 / 技术面弱势行业 / 异动信号行业）\n\n"
-                "## 三、重点行业深度分析\n"
-                "（领涨行业技术健康度 + 领跌行业底部信号 + alpha排名验证）\n\n"
-                "## 四、板块轮动技术详细验证\n"
-                "（主线板块技术面确认 + 风险信号扫描 + 轮动位置判断）\n\n"
-                "## 五、风格因子 + AI/科技产业链\n"
-                "（风格一致性 + 产业链轮动位置 + 全球科技传导 + 风险提示）\n\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])
@@ -124,10 +113,16 @@ def create_sector_tech_analyst(llm, toolkit):
         confirm = _extract_sector_tech_confirm(report)
 
         logger.info(f"[板块技术分析] 报告完成，长度: {len(report)}")
+        # 仅全市场模式启用（单票模式行为与现状一致）；与 news 分析师的清单合并（news 先执行，本节点在其后）
+        structured = merge_sector_structured_lists(
+            state.get("sector_shortlist_structured", []),
+            extract_sector_structured_list(report) if enable_structured_list else [],
+        )
         return {
             "messages": [result],
             "sector_tech_report": report,
             "sector_tech_confirm": confirm,
+            "sector_shortlist_structured": structured,
             "sector_tech_tool_call_count": count + 1,
         }
 

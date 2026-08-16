@@ -5,6 +5,7 @@ YoHo AKShare 数据提供器 (简化版)
 """
 
 import logging
+import re
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
@@ -492,13 +493,13 @@ class AKShareProvider(BaseStockDataProvider):
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
         lines = ["# 关键宏观经济指标\n"]
-        # 中国 PMI
+        # 中国 PMI（月份倒序，最新在最前）
         try:
             pmi = ak.macro_china_pmi()
             if pmi is not None and not pmi.empty:
-                latest = pmi.iloc[-1]
+                latest = pmi.iloc[0]
                 lines.append(f"## 中国制造业 PMI")
-                lines.append(f"- 最新值: {latest.get('制造业-数值', 'N/A')} (发布日期: {latest.get('日期', 'N/A')})")
+                lines.append(f"- 最新值: {latest.get('制造业-指数', 'N/A')} ({latest.get('月份', 'N/A')})")
         except Exception as e:
             lines.append(f"- 中国 PMI: 获取失败 ({e})")
         # 中国社融
@@ -510,20 +511,23 @@ class AKShareProvider(BaseStockDataProvider):
                 lines.append(f"- 最新值: {latest.to_dict()}")
         except Exception:
             lines.append("- 中国社融: 获取失败")
-        # 美国 CPI
+        # 美国 CPI（akshare 1.18+ 拆分为 yoy/monthly，无 macro_usa_cpi）
+        # 末行常为待发布（现值 NaN），取最近一条有现值的数据
         try:
-            cpi = ak.macro_usa_cpi()
+            cpi = ak.macro_usa_cpi_yoy()
             if cpi is not None and not cpi.empty:
-                latest = cpi.iloc[-1]
+                valid = cpi.dropna(subset=["现值"]) if "现值" in cpi.columns else cpi
+                latest = valid.iloc[-1] if not valid.empty else cpi.iloc[-1]
                 lines.append(f"## 美国 CPI")
                 lines.append(f"- 最新值: {latest.to_dict()}")
         except Exception:
             lines.append("- 美国 CPI: 获取失败")
-        # 美国非农
+        # 美国非农（末行常为待发布（今值 NaN），取最近一条有今值的数据）
         try:
             nf = ak.macro_usa_non_farm()
             if nf is not None and not nf.empty:
-                latest = nf.iloc[-1]
+                valid = nf.dropna(subset=["今值"]) if "今值" in nf.columns else nf
+                latest = valid.iloc[-1] if not valid.empty else nf.iloc[-1]
                 lines.append(f"## 美国非农就业")
                 lines.append(f"- 最新值: {latest.to_dict()}")
         except Exception:
@@ -535,14 +539,19 @@ class AKShareProvider(BaseStockDataProvider):
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装。"
         lines = ["# 大宗商品与汇率概览\n"]
-        # 原油（多符号回退）
+        # 原油（多符号回退：sina 外盘期货失败时回退东财全球期货）
         for sym, label in [("CL00Y", "WTI 原油"), ("B00Y", "布伦特原油")]:
             try:
-                crude = ak.futures_foreign_hist(symbol=sym)
+                crude = None
+                try:
+                    crude = ak.futures_foreign_hist(symbol=sym)
+                except Exception:
+                    crude = ak.futures_global_hist_em(symbol=sym)
                 if crude is not None and not crude.empty:
                     latest = crude.iloc[-1]
                     lines.append(f"## {label}期货")
                     close_val = (latest.get('收盘价', None) or latest.get('close', None)
+                              or latest.get('收盘', None)
                               or (latest.iloc[-1] if len(latest) > 0 else "N/A"))
                     lines.append(f"- 最新价: {close_val}")
             except Exception as e:
@@ -556,19 +565,18 @@ class AKShareProvider(BaseStockDataProvider):
                 lines.append(f"- 最新价: {latest.get('close', latest.iloc[-1])}")
         except Exception:
             lines.append("- 黄金: 获取失败")
-        # 美元指数
+        # 美元汇率（akshare 1.18+ 移除 index_investing_global，改用中行牌价 USD/CNY）
         try:
             from datetime import datetime, timedelta
             end = datetime.now().strftime("%Y%m%d")
             start = (datetime.now() - timedelta(days=days)).strftime("%Y%m%d")
-            dxy = ak.index_investing_global(country="美国", index_name="美元指数",
-                                             start_date=start, end_date=end)
+            dxy = ak.currency_boc_sina(symbol="美元", start_date=start, end_date=end)
             if dxy is not None and not dxy.empty:
                 latest = dxy.iloc[-1]
-                lines.append(f"## 美元指数")
-                lines.append(f"- 最新价: {latest.get('收盘', latest.iloc[-1])}")
+                lines.append(f"## 美元汇率（USD/CNY 中行牌价）")
+                lines.append(f"- 最新价: {latest.get('中行汇买价', latest.iloc[-1])}")
         except Exception:
-            lines.append("- 美元指数: 获取失败")
+            lines.append("- 美元汇率: 获取失败")
         return "\n".join(lines)
 
     def get_us_economic_calendar(self, curr_date: str) -> str:
@@ -925,6 +933,117 @@ class AKShareProvider(BaseStockDataProvider):
                 break
         return "\n".join(results)
 
+
+    # ==================== 板块层 — 选股层数据（东财概念体系） ====================
+
+    def get_concept_board_names(self) -> str:
+        """获取东财概念板块全名单（每行一个概念名，供结构化清单过滤）"""
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取概念板块名单。"
+        try:
+            df = _try_call(ak.stock_board_concept_name_em)
+            if df is None or df.empty:
+                return "未获取到东财概念板块名单。"
+            # 列名防御：优先"板块名称"列，回退第一列
+            name_col = next((c for c in df.columns if "名称" in str(c)), df.columns[0])
+            names = [str(n).strip() for n in df[name_col].tolist() if str(n).strip()]
+            return "\n".join(names) if names else "东财概念板块名单为空。"
+        except Exception as e:
+            logger.warning(f"获取东财概念板块名单失败: {e}")
+            return f"获取东财概念板块名单失败: {e}"
+
+    def get_sector_constituents(self, sector_name: str) -> str:
+        """获取东财概念板块成分股（stock_board_concept_cons_em）→ `代码|名称`"""
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取板块成分股。"
+        try:
+            df = _try_call(ak.stock_board_concept_cons_em, symbol=sector_name)
+            if df is None or df.empty:
+                return f"未获取到 {sector_name} 成分股数据。"
+            # 列名防御：优先"代码"/"名称"列，缺失时整行扫描 6 位代码
+            code_col = next((c for c in df.columns if str(c) in ("代码", "股票代码")), None)
+            name_col = next((c for c in df.columns if str(c) in ("名称", "股票简称")), None)
+            lines = []
+            for _, row in df.iterrows():
+                if code_col is not None:
+                    code = str(row.get(code_col, "")).strip()
+                    name = str(row.get(name_col, "")).strip() if name_col is not None else ""
+                else:
+                    vals = [str(v).strip() for v in row.tolist()]
+                    code = next((v for v in vals if re.fullmatch(r"\d{6}", v)), "")
+                    name = ""
+                if code and re.fullmatch(r"\d{6}", code):
+                    lines.append(f"{code}|{name}")
+            return "\n".join(lines) if lines else f"{sector_name} 成分股为空。"
+        except Exception as e:
+            logger.warning(f"获取板块成分股失败 [{sector_name}]: {e}")
+            return f"获取 {sector_name} 成分股失败: {e}"
+
+    def get_stocks_performance_ranking(self, codes: list, days: int = 10) -> str:
+        """批量计算近 N 日涨跌幅 + 最新价/最新成交额（末行板块均值）。
+
+        连续 3 只失败熔断，防止数据源异常时拖垮整条流水线。
+        """
+        if not AKSHARE_AVAILABLE:
+            return "AKShare 未安装，无法获取个股涨幅数据。"
+        try:
+            end_date = datetime.now().strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=days * 4)).strftime("%Y%m%d")
+            rows = []
+            pcts = []
+            consecutive_failures = 0
+            for raw in codes:
+                code = self._normalize_code(str(raw).strip())
+                if not code:
+                    continue
+                # 不复权：last_close 必须是真实市场价（供金额→股数换算），与 Tushare daily 口径一致
+                df = _try_call(
+                    ak.stock_zh_a_hist,
+                    symbol=code,
+                    period="daily",
+                    start_date=start_date,
+                    end_date=end_date,
+                    adjust="",
+                )
+                if df is None or df.empty or len(df) < 2:
+                    consecutive_failures += 1
+                    logger.warning(
+                        "get_stocks_performance_ranking: %s 无数据，连续失败 %d",
+                        code, consecutive_failures,
+                    )
+                    if consecutive_failures >= 3:
+                        logger.warning("get_stocks_performance_ranking: 连续 3 只失败，熔断")
+                        break
+                    continue
+                try:
+                    close_col = self._detect_close_column(df)
+                    if close_col is None:
+                        raise ValueError("无收盘价列")
+                    amount_col = next((c for c in df.columns if "成交额" in str(c)), None)
+                    df = df.tail(days + 1)
+                    first_close = float(df[close_col].iloc[0])
+                    last_close = float(df[close_col].iloc[-1])
+                    last_amount = float(df[amount_col].iloc[-1]) if amount_col else 0.0
+                    if first_close <= 0:
+                        continue
+                    pct = (last_close - first_close) / first_close * 100
+                    rows.append((code, pct, last_close, last_amount))
+                    pcts.append(pct)
+                    consecutive_failures = 0
+                except Exception:
+                    consecutive_failures += 1
+                    continue
+
+            if not rows:
+                return "未获取到任何个股涨幅数据。"
+            lines = [f"{code}|{pct:+.2f}|{close:.2f}|{amount:.0f}"
+                     for code, pct, close, amount in rows]
+            avg = sum(pcts) / len(pcts)
+            lines.append(f"板块均值|{avg:+.2f}")
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning(f"获取个股涨幅排名失败: {e}")
+            return f"获取个股涨幅排名失败: {e}"
 
     # ==================== 板块层 — 行业板块 ====================
 

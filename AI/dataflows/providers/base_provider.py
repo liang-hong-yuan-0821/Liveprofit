@@ -169,6 +169,25 @@ class BaseStockDataProvider(ABC):
         """
         return self._not_supported("题材板块轮动矩阵（仅 Tushare 支持 limit_cpt_list）")
 
+    # ==================== 板块层 — 选股层数据（东财概念体系） ====================
+
+    def get_concept_board_names(self) -> str:
+        """获取东财概念板块全名单（每行一个概念名，供结构化清单过滤）"""
+        return self._not_supported("概念板块名单")
+
+    def get_sector_constituents(self, sector_name: str) -> str:
+        """获取东财概念板块当日成分股 → `代码|名称`（每行一条，6 位代码）"""
+        return self._not_supported("板块成分股")
+
+    def get_stocks_performance_ranking(self, codes: list, days: int = 10) -> str:
+        """批量计算近 N 日涨跌幅 + 最新价/最新成交额。
+
+        返回 `代码|近N日涨幅%|最新价|最新成交额`（每行一条），
+        末行为 `板块均值|X.XX`。名称由选股层从成分股行关联。
+        连续 3 只失败熔断。
+        """
+        return self._not_supported("个股涨幅排名")
+
     # ==================== 每日指标 ====================
 
     def get_daily_basic(self, code: str, trade_date: str) -> str:

@@ -7,6 +7,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ def create_fundamentals_analyst(llm, toolkit):
         # 直接调用 dataflows 函数获取财务数据
         fundamentals_data = dataflow.get_china_fundamentals(ticker, current_date)
 
+        output_format = load_output_format("stock", "fundamentals_analyst")
+
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -41,12 +44,7 @@ def create_fundamentals_analyst(llm, toolkit):
                 "## 已获取的数据\n\n"
                 "### 股票基本面数据\n{fundamentals_data}\n\n"
                 "输出格式：\n"
-                "## 一、财务指标概览（ROE、ROA、毛利率、EPS等）\n"
-                "## 二、盈利能力分析\n"
-                "## 三、资产负债分析\n"
-                "## 四、估值分析（PE、PB、PS等）\n"
-                "## 五、投资建议\n"
-                "请使用中文，基于真实数据进行分析。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

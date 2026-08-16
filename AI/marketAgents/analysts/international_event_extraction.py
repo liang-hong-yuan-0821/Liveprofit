@@ -9,6 +9,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,10 @@ def create_international_event_extraction(llm, toolkit):
         macro_indicators = dataflow.get_macro_indicators(current_date)
         commodity_fx = dataflow.get_commodity_fx_overview(days=10)
 
+        # 两次 LLM 调用各自的输出格式模板
+        fmt1 = load_output_format("market", "international_event_extraction")
+        fmt2 = load_output_format("market", "international_event_extraction_final")
+
         # 2. 第一次 LLM：识别重大事件
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -57,14 +62,7 @@ def create_international_event_extraction(llm, toolkit):
                 "3. 在报告末尾，输出一个【事件描述摘要】块，包含所有事件的简洁关键词描述"
                 "（用于检索相似历史案例，每行一个事件）\n\n"
                 "输出格式：\n"
-                "# 国际事件提取报告\n\n"
-                "## 一、已识别的重大事件\n"
-                "| 事件 | 类型 | 判断 | 影响方向 | 置信度 |\n\n"
-                "## 二、事件详细描述\n"
-                "（每个事件展开说明，包括事件背景和初步影响评估）\n\n"
-                "【事件描述摘要】\n"
-                "（所有事件的关键词描述，每行一个事件，用于历史案例检索）\n"
-                "请使用中文。数据不可用时如实标注，不编造。"
+                + fmt1
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])
@@ -88,16 +86,7 @@ def create_international_event_extraction(llm, toolkit):
             f"## 事件识别结果\n{event_identification}\n\n"
             f"## 历史案例检索结果\n{history_results}\n\n"
             "输出格式：\n"
-            "# 国际事件提取报告\n\n"
-            "## 〇、事件速览\n"
-            "（3-5 句话概括当前全球宏观核心矛盾 + 主要事件）\n\n"
-            "## 一、已识别的重大事件\n"
-            "| 事件 | 类型 | 判断 | 影响方向 | 置信度 |\n\n"
-            "## 二、历史案例类比\n"
-            "| 当前事件 | 最相似历史案例 | 相似度 | 当时市场反应 | 参考意义 |\n\n"
-            "## 三、事件影响方向初判\n"
-            "（每个事件的利好/利空/中性判断 + 传导链条方向）\n\n"
-            "请使用中文。数据不可用时如实标注。"
+            + fmt2
         )
         messages = state["messages"] + [result] + [HumanMessage(content=final_prompt)]
         final_result = llm.invoke(messages)

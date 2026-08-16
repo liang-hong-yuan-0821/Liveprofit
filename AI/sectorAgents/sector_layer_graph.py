@@ -5,12 +5,14 @@
 
 可扩展：新增板块维度的 Analyst 只需在 ANALYSTS 中加 key + 写 Analyst 文件。
 """
+import functools
 import logging
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import ToolNode
 
 from AI.stockAgents.utils.agent_states import AgentState
 from AI.stockAgents.utils.agent_utils import create_msg_delete
+from AI.utils.dataprovider_log import track_node
 from AI.sectorAgents.analysts.sector_news_analyst import create_sector_news_analyst
 from AI.sectorAgents.analysts.sector_tech_analyst import create_sector_tech_analyst
 from AI.sectorAgents.analysts.sector_rotation_analyst import create_sector_rotation_analyst
@@ -38,10 +40,12 @@ class SectorLayerGraph:
         "sector_rotation": create_sector_rotation_analyst,
     }
 
-    def __init__(self, llm, toolkit, max_tool_calls=3):
+    def __init__(self, llm, toolkit, max_tool_calls=3, enable_structured_list=False):
         self.llm = llm
         self.toolkit = toolkit
         self.max_tool_calls = max_tool_calls
+        # 仅全市场模式（selectedLayer 含 screening）启用结构化清单提取
+        self.enable_structured_list = enable_structured_list
 
     def build(self):
         """编译并返回板块层子图"""
@@ -50,9 +54,16 @@ class SectorLayerGraph:
         for key in self.ANALYSTS:
             label = self.LABELS[key]
             factory = self.FACTORY_MAP[key]
+            if key in ("sector_news", "sector_tech"):
+                factory = functools.partial(
+                    factory, enable_structured_list=self.enable_structured_list
+                )
 
             # Analyst 节点
-            workflow.add_node(f"{label} Analyst", factory(self.llm, self.toolkit))
+            workflow.add_node(
+                f"{label} Analyst",
+                track_node(f"{label} Analyst")(factory(self.llm, self.toolkit)),
+            )
             # Msg Clear 节点
             workflow.add_node(f"Msg Clear {label}", create_msg_delete())
 

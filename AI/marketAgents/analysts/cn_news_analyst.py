@@ -7,6 +7,7 @@ IPO 抽血、限售解禁抛压、期指交割日效应、两融余额、季节�
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.templates import load_output_format
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,8 @@ def create_cn_news_analyst(llm, toolkit):
         share_unlock = dataflow.get_share_unlock_calendar(current_date)
         futures_expiry = dataflow.get_futures_expiry_calendar(current_date)
         margin_balance = dataflow.get_margin_trading_balance(current_date)
+
+        output_format = load_output_format("market", "cn_news_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -74,22 +77,7 @@ def create_cn_news_analyst(llm, toolkit):
                 "- 长线风险评级（高/中/低）+ 关键窗口清单\n\n"
                 "每个级别输出：事件密度（高/中/低）+ 资金面压力评分（1-5）\n\n"
                 "输出格式（结论前置）：\n"
-                "# 中国市场新闻分析报告\n\n"
-                "## 〇、事件日历速览（结论块 — 向下游传递）\n"
-                "```\n"
-                "短线(5日): 风险<高/中/低> 资金压力<1-5分> 关键时点: [清单]\n"
-                "波段(20日): 风险<高/中/低> 资金压力<1-5分> 关键窗口: [清单]\n"
-                "长线(60日): 风险<高/中/低> 资金压力<1-5分> 关键窗口: [清单]\n"
-                "```\n\n"
-                "## 一、短线资金日历（1-5 交易日）\n"
-                "（IPO/解禁/交割日/两融异动的短线压力分析）\n\n"
-                "## 二、波段资金日历（1-4 周）\n"
-                "（解禁高峰/季报窗口/政策事件/季末效应的波段影响）\n\n"
-                "## 三、长线资金日历（1-3 月）\n"
-                "（宏观数据发布/流动性政策/年报季的长线展望）\n\n"
-                "## 四、杠杆资金状况\n"
-                "（两融余额变化趋势、杠杆率水位）\n"
-                "请使用中文。"
+                + output_format
             ),
             MessagesPlaceholder(variable_name="messages"),
         ])

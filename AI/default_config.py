@@ -43,6 +43,19 @@ def load_config():
         # 日志
         "log_level": os.getenv("YOHO_LOG_LEVEL", "INFO"),
 
+        # 选股层（全市场模式，selectedLayer 含 "screening"）
+        "max_screened_stocks": int(os.getenv("YOHO_MAX_SCREENED_STOCKS", "10")),
+        "screening_lookback_days": int(os.getenv("YOHO_SCREENING_LOOKBACK_DAYS", "10")),
+        "screening_min_turnover": float(os.getenv("YOHO_SCREENING_MIN_TURNOVER", "50000000")),
+        "max_constituents": int(os.getenv("YOHO_MAX_CONSTITUENTS", "50")),
+
+        # 仓位管理层（全市场模式）
+        "total_capital": float(os.getenv("YOHO_TOTAL_CAPITAL", "0")),
+        "max_position_pct": float(os.getenv("YOHO_MAX_POSITION_PCT", "0.8")),
+        "max_single_stock_pct": float(os.getenv("YOHO_MAX_SINGLE_STOCK_PCT", "0.1")),
+        "max_sector_pct": float(os.getenv("YOHO_MAX_SECTOR_PCT", "0.3")),
+        "position_sizing_strategy": os.getenv("YOHO_POSITION_SIZING_STRATEGY", "confidence_weighted"),
+
         # 交易日历校正
         "tushare_data_ready_hour": int(os.getenv("TUSHARE_DATA_READY_HOUR", "20")),
         "trade_calendar_refresh_days": int(os.getenv("TRADE_CALENDAR_REFRESH_DAYS", "365")),

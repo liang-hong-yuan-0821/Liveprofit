@@ -22,10 +22,7 @@ def load_config():
         "data_source": os.getenv("YOHO_DATA_SOURCE", "tushare"),
 
         # 数据库
-        "mongodb_enabled": os.getenv("MONGODB_ENABLED", "false").lower() == "true",
         "redis_enabled": os.getenv("REDIS_ENABLED", "false").lower() == "true",
-        "mongodb_connection_string": os.getenv("MONGODB_CONNECTION_STRING", ""),
-        "mongodb_database": os.getenv("MONGODB_DATABASE", "yoho"),
         "redis_connection_string": os.getenv("REDIS_CONNECTION_STRING", ""),
 
         # 缓存

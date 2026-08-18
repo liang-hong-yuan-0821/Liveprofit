@@ -68,11 +68,11 @@ start_docker() {
 start_docker || exit 1
 
 # --------------- 1. 启动 Docker Compose 服务 ---------------
-log_info "启动 MongoDB + Redis 服务..."
+log_info "启动 PostgreSQL + Redis 服务..."
 docker-compose up -d
 
-# 等待 MongoDB 和 Redis 就绪
-log_info "等待 MongoDB/Redis 健康检查..."
+# 等待 PostgreSQL 和 Redis 就绪
+log_info "等待 Redis 健康检查..."
 sleep 5
 
 # --------------- 2. 激活虚拟环境 ---------------

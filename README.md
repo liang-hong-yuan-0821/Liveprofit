@@ -71,8 +71,8 @@ python main.py
 ### Docker 启动
 
 ```bash
-docker-compose up -d                          # 基础服务 (MongoDB + Redis + YoHo)
-docker-compose --profile management up -d     # 含管理界面 (Redis Commander + Mongo Express)
+docker-compose up -d                          # 基础服务 (PostgreSQL + Redis + YoHo)
+docker-compose --profile management up -d     # 含管理界面 (Redis Commander + Adminer)
 ```
 
 ## 配置参考
@@ -93,8 +93,6 @@ docker-compose --profile management up -d     # 含管理界面 (Redis Commander
 | `YOHO_MAX_DEBATE_ROUNDS` | 最大辩论轮数 | `1` |
 | `YOHO_MAX_RISK_ROUNDS` | 最大风险讨论轮数 | `1` |
 | `YOHO_LOG_LEVEL` | 日志级别 | `INFO` |
-| `MONGODB_ENABLED` | 启用 MongoDB 存储 | `false` |
-| `MONGODB_CONNECTION_STRING` | MongoDB 连接串 | - |
 | `REDIS_ENABLED` | 启用 Redis 缓存 | `false` |
 | `REDIS_CONNECTION_STRING` | Redis 连接串 | - |
 | `TA_CACHE_STRATEGY` | 缓存策略 (integrated / file) | `file` |
@@ -136,12 +134,6 @@ YoHo 使用 `langchain-openai` 的 `ChatOpenAI`，兼容任何 OpenAI 兼容 API
 
 ```
 YoHo
- ├── MongoDB (端口 27017, 可选)
- │    ├── token_usage        → LLM 使用记录
- │    ├── stock_data         → 行情缓存
- │    ├── news_data          → 新闻缓存
- │    └── fundamentals_data  → 基本面缓存
- │
  ├── Redis (端口 6379, 可选)
  │    ├── 行情缓存 (TTL: 6h)
  │    ├── 新闻缓存 (TTL: 24h)
@@ -167,15 +159,11 @@ YoHo/
 ├── pyproject.toml              # Python 项目配置与依赖
 ├── main.py                     # 入口
 ├── Dockerfile                  # Docker 镜像
-├── docker-compose.yml          # Docker 服务编排 (MongoDB + Redis + YoHo)
+├── docker-compose.yml          # Docker 服务编排 (PostgreSQL + Redis + YoHo)
 └── yoho/
     ├── default_config.py       # 环境变量 → 配置字典
     ├── config/                 # 配置层
-    │   ├── database_manager.py    # 智能 DB 检测 (MongoDB/Redis)
-    │   ├── database_config.py     # DB 配置读取
-    │   ├── mongodb_storage.py     # MongoDB 存储适配器
     │   ├── providers_config.py    # 数据源配置 (Tushare/AKShare)
-    │   ├── usage_models.py        # 使用记录数据模型
     │   └── env_utils.py           # 环境变量解析
     ├── graph/                  # LangGraph 编排
     │   ├── trading_graph.py      # 主编排器
@@ -206,11 +194,11 @@ YoHo/
 | LLM 提供商 | 13+ (含适配器层) | 1 (OpenAI 兼容) |
 | 数据源 | 10+ (中/港/美) | 2 (Tushare / AKShare) |
 | 配置文件 | MongoDB + JSON + .env | `a.bash` (环境变量) |
-| 缓存层 | MongoDB + Redis + File | MongoDB + Redis + File |
+| 缓存层 | MongoDB + Redis + File | Redis + File |
 | ChromaDB | 非持久化 + 7 嵌入提供商 | 持久化 + OpenAI 嵌入 |
 | Python 文件数 | ~112 | ~57 |
 | API/Web UI | FastAPI + Streamlit | 无 |
-| Docker | 5 服务 (含前后端) | 4 服务 (仅后端存储) |
+| Docker | 5 服务 (含前后端) | 2 服务 (仅后端存储) |
 
 ## 输出示例
 

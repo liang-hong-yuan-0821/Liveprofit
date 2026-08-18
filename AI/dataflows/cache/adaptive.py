@@ -1,6 +1,6 @@
 """
 YoHo 自适应缓存系统
-根据可用后端自动选择：Redis > MongoDB > File
+根据可用后端自动选择：Redis > File
 使用 pickle 序列化，支持任意 Python 对象。
 """
 
@@ -18,19 +18,12 @@ try:
 except ImportError:
     REDIS_AVAILABLE = False
 
-try:
-    import pymongo
-    PYMONGO_AVAILABLE = True
-except ImportError:
-    PYMONGO_AVAILABLE = False
-
 
 class AdaptiveCacheSystem:
     """自适应缓存，自动选择最优后端"""
 
     def __init__(self):
         self._redis = None
-        self._mongo_db = None
         self._backend = "file"  # 默认文件后端
 
         # 检测 Redis — 最高优先级
@@ -43,18 +36,6 @@ class AdaptiveCacheSystem:
                 self._redis.ping()
                 self._backend = "redis"
                 logger.info("AdaptiveCache: 使用 Redis 后端")
-            except Exception:
-                pass
-
-        # 检测 MongoDB — 次优先级
-        if self._backend != "redis" and PYMONGO_AVAILABLE:
-            try:
-                uri = os.getenv("MONGODB_CONNECTION_STRING", f"mongodb://localhost:27017")
-                client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=2000)
-                client.admin.command("ping")
-                self._mongo_db = client[os.getenv("MONGODB_DATABASE", "yoho")]
-                self._backend = "mongodb"
-                logger.info("AdaptiveCache: 使用 MongoDB 后端")
             except Exception:
                 pass
 
@@ -80,13 +61,6 @@ class AdaptiveCacheSystem:
                 pickled = pickle.dumps(data)
                 self._redis.setex(f"yoho:{key}", ttl, pickled)
                 return True
-            elif self._backend == "mongodb" and self._mongo_db:
-                # MongoDB：pickle 序列化后以 hex 编码存储
-                doc = {"_id": key, "data": pickle.dumps(data).hex(),
-                       "data_type": data_type,
-                       "expires_at": datetime.utcnow() + timedelta(seconds=ttl)}
-                self._mongo_db.cache.replace_one({"_id": key}, doc, upsert=True)
-                return True
             else:
                 # 文件回退：pickle 二进制文件 + 过期时间
                 path = os.path.join(self._file_dir, f"{key}.pkl")
@@ -104,11 +78,6 @@ class AdaptiveCacheSystem:
                 pickled = self._redis.get(f"yoho:{key}")
                 if pickled:
                     return pickle.loads(pickled)
-            elif self._backend == "mongodb" and self._mongo_db:
-                doc = self._mongo_db.cache.find_one({"_id": key})
-                if doc and doc.get("expires_at", datetime.min) > datetime.utcnow():
-                    # 从 hex 解码 pickle 数据
-                    return pickle.loads(bytes.fromhex(doc["data"]))
             else:
                 # 文件回退
                 path = os.path.join(self._file_dir, f"{key}.pkl")

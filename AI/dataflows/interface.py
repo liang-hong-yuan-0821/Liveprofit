@@ -2,7 +2,7 @@
 YoHo 数据接口层
 支持可配置数据源切换：tushare 或 akshare。
 通过环境变量 YOHO_DATA_SOURCE 控制（默认 tushare）。
-集成缓存层：Redis > MongoDB > File 三级缓存。
+集成缓存层：Redis > File 二级缓存。
 """
 
 import os

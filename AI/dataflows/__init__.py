@@ -1,7 +1,7 @@
 """
 YoHo 数据接口层
 统一数据访问入口，支持 tushare / akshare 双数据源切换，
-集成 Redis > MongoDB > File 三级缓存。
+集成 Redis > File 二级缓存。
 """
 
 from .interface import (

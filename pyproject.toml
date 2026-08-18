@@ -27,7 +27,6 @@ dependencies = [
     "python-dateutil>=2.9.0",
 
     # 数据库和缓存
-    "pymongo>=4.0.0",
     "redis>=6.2.0",
 
     # 事件研究系统：PostgreSQL 16 + pgvector

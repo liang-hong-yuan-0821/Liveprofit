@@ -2,11 +2,11 @@
 
 ## 市场 — 板块 — 个股三维度分析
 
-> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，个股层持续更新。
+> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，事件研究系统（金融事件影响分析，独立子系统）✅，个股层持续更新。
 >
-> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 个股层持续更新
+> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 事件研究系统 ✅ 个股层持续更新
 >
-> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`、`AI/graph/`、`AI/templates/`
+> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`
 
 ---
 
@@ -214,3 +214,20 @@ START
 - **仓位管理层**（`AI/position/`）：置信度加权/等权/凯利三种分配策略 + 单票/板块/总仓位上限裁剪 → `final_position_plan`（JSON 落盘 `logs/{ts}/reports/`）
 - **风险熔断**：市场层 `risk_gate` → `block` 只出风险提示计划、`caution` 目标仓位打 5 折
 - 详见归档方案：[done/选股层与仓位管理层技术方案.md](done/选股层与仓位管理层技术方案.md)
+
+---
+
+## 七、事件研究系统（已实现 ✅，独立子系统）
+
+金融事件影响分析系统（`AI/eventStudy/`）——采集宏观事件、人工审核、事件研究法标注影响、相似事件检索预测，为市场层国际新闻分析提供历史案例数据支撑。
+
+**核心能力**：
+
+- **存储**：PostgreSQL 16 + pgvector（docker-compose `postgres` 服务；6 表：assets / events / market_data / event_impacts / market_context / predictions）。草稿区约定：待审事件与影响结果先写 Redis 草稿，人工确认后落 PG（PG 只存正式数据）
+- **数据采集**：爬虫抓取财经快讯（金十/财联社/新浪 7x24/东财，写 Redis 待审队列）+ Provider 层结构化接口（`get_index_data_df` / `get_trade_cal` / `get_macro_context`，AKShare/Tushare 同步覆写）采集指数日线与宏观指标
+- **人工审核**：Streamlit 审核界面（事件类型/子类型/条件/重要性/预期实际值确认；影响结果按资产勾选落表）
+- **影响标注（核心）**：事件研究法——市场模型 OLS 回归（120 日估计窗口 + 10 日间隔），4 个目标指数（上证指数/科创50/科创100/沪深300）× 3 窗口（pre_event_5d / event_day / post_event_5d）CAR + t 统计量 + 方向判定（|CAR|>0.5% 且 |t|>1.96）+ 污染检查；t0 对齐规则：盘前（09:30 前）→ 当日，否则 → 下一交易日
+- **市场环境快照**：每日 `market_context`（20 日收益/年化波动/20 日均成交额/10 年国债收益率），事件环境按 T-1 规则匹配（禁止当日快照）
+- **AI 预测**：模板匹配（event_type+subtype+condition 的历史平均 CAR/胜率/样本数，权重 1.0）+ 向量检索（bge-m3 1024 维，pgvector 余弦，相似度<0.5 不纳入，权重=相似度×0.5）加权融合；LangGraph 工具 / REST API（`POST /predict`）/ 离线回测共用同一套确定性规则；预测仅显式保存（save=True）或回测时落库
+- **调度**：Windows 任务计划程序每日早间批处理（采集 → 行情 → 市场上下文 → 向量化 → 事件研究）
+- 详见归档方案：[done/事件研究方案.md](done/事件研究方案.md)

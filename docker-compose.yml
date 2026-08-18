@@ -1,9 +1,41 @@
 version: '3.8'
 
 # YoHo 存储基础设施
-# YoHo 直接在本机运行，docker-compose 仅提供 MongoDB + Redis 服务
+
+# YoHo 直接在本机运行，docker-compose 仅提供 MongoDB + Redis + PostgreSQL 服务
 
 services:
+  # PostgreSQL 16 + pgvector（事件研究系统存储：assets/events/market_data/
+  # event_impacts/market_context/predictions）
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: yoho-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: yoho
+      POSTGRES_PASSWORD: yoho123
+      POSTGRES_DB: yoho
+      TZ: "Asia/Shanghai"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # 首次启动自动执行建表脚本（含 CREATE EXTENSION vector + 资产种子数据）
+      - ./AI/eventStudy/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks:
+      - yoho-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yoho -d yoho"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
   # MongoDB 数据库服务
   mongodb:
     image: mongo:4.4
@@ -103,6 +135,9 @@ volumes:
   redis_data:
     driver: local
     name: yoho_redis_data
+  postgres_data:
+    driver: local
+    name: yoho_postgres_data
 
 networks:
   yoho-network:

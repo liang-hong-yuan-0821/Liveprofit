@@ -1698,3 +1698,100 @@ def predict_tomorrow_trend(hist_data: dict) -> str:
     lines.append("")
     lines.append("⚠️ 此预测基于历史数据的统计相关性，不构成投资建议。")
     return "\n".join(lines)
+
+    # ==================== 事件研究系统 — 结构化接口 ====================
+
+    def get_index_data_df(self, index_code: str, start_date: str, end_date: str):
+        """获取指数日线结构化行情（DataFrame，完整区间）。
+
+        返回标准列：trade_date / open / high / low / close / vol / amount
+        （AKShare 指数日线无成交额字段，amount 置 NaN）。
+        获取失败返回 None。
+        """
+        if not AKSHARE_AVAILABLE:
+            return None
+        symbol = self._index_symbol(index_code)
+        try:
+            df = _call_with_timeout(
+                lambda: ak.stock_zh_index_daily(symbol=symbol),
+                timeout=_AKSHARE_TIMEOUT * 2,
+            )
+            if df is None or df.empty:
+                return None
+            # 过滤日期区间
+            df = df[(df["date"] >= start_date.replace("-", ""))
+                    & (df["date"] <= end_date.replace("-", ""))]
+            if df.empty:
+                return None
+            df = df.sort_values("date")
+            std = pd.DataFrame({
+                "trade_date": df["date"].astype(str),
+                "open": pd.to_numeric(df.get("open"), errors="coerce"),
+                "high": pd.to_numeric(df.get("high"), errors="coerce"),
+                "low": pd.to_numeric(df.get("low"), errors="coerce"),
+                "close": pd.to_numeric(df.get("close"), errors="coerce"),
+                "vol": pd.to_numeric(df.get("volume"), errors="coerce"),
+                "amount": float("nan"),
+            })
+            return std
+        except Exception as e:
+            logger.warning("AKShare 结构化指数行情获取失败 [%s]: %s", index_code, e)
+            return None
+
+    @staticmethod
+    def _index_symbol(index_code: str) -> str:
+        """将 000001.SH 格式代码转为 AKShare symbol（sh000001）。"""
+        code = index_code.strip()
+        if "." in code:
+            num, exch = code.split(".")
+            return f"{exch.lower()}{num}"
+        if code.startswith("000") or code.startswith("600") or code.startswith("68"):
+            return f"sh{code}"
+        return f"sz{code}"
+
+    def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
+        """获取交易日历（DataFrame：trade_date, is_open）。V1 仅支持 CN。"""
+        if market != "CN" or not AKSHARE_AVAILABLE:
+            return None
+        try:
+            df = _call_with_timeout(
+                lambda: ak.tool_trade_date_hist_sina(),
+                timeout=_AKSHARE_TIMEOUT * 2,
+            )
+            if df is None or df.empty or "trade_date" not in df.columns:
+                return None
+            dates = pd.to_datetime(df["trade_date"])
+            start_ts = pd.Timestamp(start_date.replace("-", ""))
+            end_ts = pd.Timestamp(end_date.replace("-", ""))
+            mask = (dates >= start_ts) & (dates <= end_ts)
+            return pd.DataFrame({
+                "trade_date": dates[mask].reset_index(drop=True),
+                "is_open": 1,
+            })
+        except Exception as e:
+            logger.warning("AKShare 交易日历获取失败: %s", e)
+            return None
+
+    def get_macro_context(self, date: str, market: str = "CN") -> dict:
+        """获取指定日期 CN 宏观环境指标（10 年期国债收益率）。失败返回空 dict。"""
+        if market != "CN" or not AKSHARE_AVAILABLE:
+            return {}
+        result = {}
+        try:
+            end_dt = datetime.strptime(date.replace("-", ""), "%Y%m%d")
+            start_dt = end_dt - timedelta(days=10)
+            df = _call_with_timeout(
+                lambda: ak.bond_china_yield(
+                    start_date=start_dt.strftime("%Y%m%d"),
+                    end_date=end_dt.strftime("%Y%m%d"),
+                ),
+                timeout=_AKSHARE_TIMEOUT * 2,
+            )
+            if df is None or df.empty or "10年" not in df.columns:
+                return result
+            value = pd.to_numeric(df.iloc[-1]["10年"], errors="coerce")
+            if pd.notna(value):
+                result["rate_10y"] = float(value)
+        except Exception as e:
+            logger.warning("AKShare 10 年期国债收益率获取失败 [%s]: %s", date, e)
+        return result

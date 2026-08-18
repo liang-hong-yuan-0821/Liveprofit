@@ -142,6 +142,14 @@ class MarketLayerGraph:
             t = getattr(self.toolkit, tn, None)
             if t is not None:
                 tools.append(t)
+        # 事件研究系统工具（3.10）：历史事件影响检索，注册进国际新闻分析师工具循环。
+        # 事件库覆盖不足时工具返回明确提示，Agent 按原逻辑继续，不阻塞报告。
+        if key == "intl_news":
+            try:
+                from AI.eventStudy.integration.langgraph_tool import search_similar_events
+                tools.append(search_similar_events)
+            except Exception as e:
+                logger.warning(f"事件研究工具注册失败（不影响现有流程）: {e}")
         return tools
 
     def _make_router(self, key):

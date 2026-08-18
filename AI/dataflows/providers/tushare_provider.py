@@ -1293,3 +1293,125 @@ class TushareProvider(BaseStockDataProvider):
             lines.append("> 这部分板块虽未进入每日 TOP{}，但排名持续上升——是轮动预测的重要补充信号。".format(top_n))
 
         return "\n".join(lines)
+
+    # ==================== 事件研究系统 — 结构化接口 ====================
+
+    def get_index_data_df(self, index_code: str, start_date: str, end_date: str):
+        """获取指数日线结构化行情（DataFrame，完整区间，内部分页）。
+
+        与展示用 get_index_data 不同：不截断（limit 5），按时间窗口分页
+        循环拉取，保证事件研究所需的完整估计窗口 + 事件窗口数据。
+        返回标准列：trade_date / open / high / low / close / vol / amount。
+        获取失败返回 None。
+        """
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取结构化指数行情。")
+            return None
+        code = self._normalize_code(index_code)
+        try:
+            start_dt = datetime.strptime(start_date.replace("-", ""), "%Y%m%d")
+            end_dt = datetime.strptime(end_date.replace("-", ""), "%Y%m%d")
+        except ValueError:
+            logger.warning("日期格式错误: %s / %s", start_date, end_date)
+            return None
+
+        # 分页：按 120 个自然日一段循环拉取，避免 index_daily 单次 limit 截断
+        frames = []
+        chunk_start = start_dt
+        while chunk_start <= end_dt:
+            chunk_end = min(chunk_start + timedelta(days=119), end_dt)
+            try:
+                df = self._api_call(
+                    self.api.index_daily,
+                    ts_code=code,
+                    start_date=chunk_start.strftime("%Y%m%d"),
+                    end_date=chunk_end.strftime("%Y%m%d"),
+                )
+                if df is not None and not df.empty:
+                    frames.append(df)
+            except Exception as e:
+                logger.warning(
+                    "指数 %s 分段拉取失败 [%s ~ %s]: %s",
+                    code, chunk_start.date(), chunk_end.date(), e,
+                )
+            chunk_start = chunk_end + timedelta(days=1)
+
+        if not frames:
+            return None
+
+        df = pd.concat(frames, ignore_index=True)
+        df = df.drop_duplicates(subset=["trade_date"]).sort_values("trade_date")
+
+        # 标准化列：trade_date(YYYY-MM-DD str，与 AKShare 输出一致) / open / high / low / close / vol / amount
+        std = pd.DataFrame({
+            "trade_date": pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d"),
+            "open": pd.to_numeric(df.get("open"), errors="coerce"),
+            "high": pd.to_numeric(df.get("high"), errors="coerce"),
+            "low": pd.to_numeric(df.get("low"), errors="coerce"),
+            "close": pd.to_numeric(df.get("close"), errors="coerce"),
+            "vol": pd.to_numeric(df.get("vol"), errors="coerce"),
+            "amount": pd.to_numeric(df.get("amount"), errors="coerce"),
+        })
+        return std
+
+    def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
+        """获取交易日历（DataFrame：trade_date, is_open）。V1 仅支持 CN。"""
+        if market != "CN":
+            logger.warning("Tushare 交易日历仅支持 CN，收到 market=%s", market)
+            return None
+        if not self.connected:
+            return None
+        try:
+            start_dt = datetime.strptime(start_date.replace("-", ""), "%Y%m%d")
+            end_dt = datetime.strptime(end_date.replace("-", ""), "%Y%m%d")
+        except ValueError:
+            return None
+
+        # 分页：按 2 个自然年一段循环拉取
+        frames = []
+        chunk_start = start_dt
+        while chunk_start <= end_dt:
+            chunk_end = min(chunk_start + timedelta(days=729), end_dt)
+            try:
+                df = self._api_call(
+                    self.api.trade_cal,
+                    exchange="SSE",
+                    start_date=chunk_start.strftime("%Y%m%d"),
+                    end_date=chunk_end.strftime("%Y%m%d"),
+                    is_open="1",
+                )
+                if df is not None and not df.empty:
+                    frames.append(df)
+            except Exception as e:
+                logger.warning("交易日历分段拉取失败: %s", e)
+            chunk_start = chunk_end + timedelta(days=1)
+
+        if not frames:
+            return None
+        df = pd.concat(frames, ignore_index=True)
+        df = df.drop_duplicates(subset=["cal_date"]).sort_values("cal_date")
+        return pd.DataFrame({
+            "trade_date": pd.to_datetime(df["cal_date"]),
+            "is_open": 1,
+        })
+
+    def get_macro_context(self, date: str, market: str = "CN") -> dict:
+        """获取指定日期 CN 宏观环境指标（10 年期国债收益率）。失败返回空 dict。"""
+        if market != "CN" or not self.connected:
+            return {}
+        result = {}
+        trade_date = date.replace("-", "")
+        # 中债国债收益率曲线（10 年期）。接口对积分有要求，任何失败均降级为空。
+        try:
+            df = self._api_call(
+                self.api.yield_curve, trade_date=trade_date, curve_type="0"
+            )
+            if df is not None and not df.empty:
+                row = df[df["term"].astype(str) == "10"]
+                if not row.empty:
+                    value = pd.to_numeric(row.iloc[0].get("yield"), errors="coerce")
+                    if pd.notna(value):
+                        result["rate_10y"] = float(value)
+        except Exception as e:
+            logger.warning("Tushare 10 年期国债收益率获取失败 [%s]: %s", date, e)
+        return result

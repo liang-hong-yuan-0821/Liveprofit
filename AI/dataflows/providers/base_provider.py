@@ -193,3 +193,39 @@ class BaseStockDataProvider(ABC):
     def get_daily_basic(self, code: str, trade_date: str) -> str:
         """获取个股每日基础指标（PE/PB/市值/换手率等）"""
         return self._not_supported("每日指标")
+
+    # ==================== 事件研究系统 — 结构化接口 ====================
+    # 与上方 str 接口不同，以下接口返回结构化数据（DataFrame/dict），
+    # 供事件研究系统（AI/eventStudy）使用，不经展示层格式化。
+    # 不支持时返回 None / {}（调用方检查后降级），不抛异常。
+
+    def get_index_data_df(self, index_code: str, start_date: str, end_date: str):
+        """获取指数日线结构化行情 → pandas.DataFrame。
+
+        与展示用 get_index_data 的区别：返回原始 DataFrame（含开高低收、
+        成交量、成交额），且分页/limit 由子类内部处理，保证完整区间数据。
+        标准列：trade_date / open / high / low / close / vol / amount。
+        不支持时返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 结构化指数行情。", self.name)
+        return None
+
+    def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
+        """获取交易日历 → pandas.DataFrame（列：trade_date, is_open）。
+
+        用于事件研究系统 t0 对齐（盘前/盘中/盘后/非交易日 → t0 规则）。
+        market 预留多市场扩展（CN/US/KR），V1 仅 CN。
+        不支持时返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 交易日历（market=%s）。", self.name, market)
+        return None
+
+    def get_macro_context(self, date: str, market: str = "CN") -> dict:
+        """获取指定日期宏观环境指标 → dict（如 {"rate_10y": 2.34}）。
+
+        供市场环境快照（market_context）计算使用：10 年期国债收益率等。
+        market 预留多市场扩展，V1 仅 CN。
+        不支持或获取失败时返回空 dict（指标置空，不阻塞）。
+        """
+        logger.warning("数据不可用：%s 不支持 宏观环境指标（market=%s）。", self.name, market)
+        return {}

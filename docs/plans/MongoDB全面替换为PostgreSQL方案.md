@@ -1,8 +1,8 @@
 # MongoDB 全面替换为 PostgreSQL 方案
 
-> **状态**：实现中（2026-08-18）
-> **进度**：0/6 步骤
-> **下一步**：步骤 1——git 存档当前状态
+> **状态**：已完成（2026-08-18）
+> **进度**：6/6 步骤
+> **下一步**：移入 docs/done/ 归档（主干文档 docs/index.md 已核查无 MongoDB 描述，无需同步）
 > **关联文档**：[docs/index.md](../index.md)（存储架构）、[docs/done/事件研究方案.md](../done/事件研究方案.md)
 
 ---
@@ -23,7 +23,7 @@
 
 **（2）基础设施现状**
 
-- [docker-compose.yml:39-65](docker-compose.yml#L39-L65) 运行 `mongo:4.4`（已 EOL 的镜像版本）+ `mongo-express` 管理界面（[docker-compose.yml:110-129](docker-compose.yml#L110-L129)），独立维护一个数据库服务仅为一层可选缓存兜底
+- [docker-compose.yml:39-65](docker-compose.yml#L39-L65) 运行 `mongo:4.4`（已 EOL 的镜像版本）+ `mongo-express` 管理界面（[docker-compose.yml:130-149](docker-compose.yml#L130-L149)），独立维护一个数据库服务仅为一层可选缓存兜底
 - 项目**已有 PostgreSQL 16 + pgvector**（[docker-compose.yml:10-37](docker-compose.yml#L10-L37)，事件研究系统主存储，`AI/eventStudy/db/` 已使用 psycopg3），技术栈就绪
 - `.env`（[.env:18-28](.env#L18-L28)，含 :18-20 节注释头）与 `.env.example:34-43` 维护 8 个 `MONGODB_*` 配置项
 - [pyproject.toml:30](pyproject.toml#L30) 维护 `pymongo>=4.0.0` 运行时依赖

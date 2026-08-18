@@ -135,9 +135,9 @@ YoHo 使用 `langchain-openai` 的 `ChatOpenAI`，兼容任何 OpenAI 兼容 API
 ```
 YoHo
  ├── Redis (端口 6379, 可选)
- │    ├── 行情缓存 (TTL: 6h)
- │    ├── 新闻缓存 (TTL: 24h)
- │    └── 基本面缓存 (TTL: 24h)
+ │    ├── 行情缓存 (TTL: 1h)
+ │    ├── 新闻缓存 (TTL: 4h)
+ │    └── 基本面缓存 (TTL: 12h)
  │
  ├── ChromaDB (持久化: ./chroma_db/)
  │    ├── bull_memory / bear_memory

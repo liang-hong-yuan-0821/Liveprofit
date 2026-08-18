@@ -185,7 +185,11 @@ TEMPLATE_WEIGHT = 1.0
 CRAWLER_CONFIG = {
     # 主源：财联社电报 / 金十数据快讯
     "cls_telegraph": {
-        "url": "https://www.cls.cn/nodeapi/updateTelegraphList",
+        # v1 接口（参数排序 → SHA-1 → MD5 签名，支持深度分页）
+        "url": "https://www.cls.cn/v1/roll/get_roll_list",
+        # 备用接口（live 刷新用，无需签名）
+        "nodeapi_url": "https://www.cls.cn/nodeapi/updateTelegraphList",
+        "sv": "8.4.6",
         "enabled": parse_bool_env("CRAWLER_CLS_ENABLED", True),
     },
     "jin10_flash": {

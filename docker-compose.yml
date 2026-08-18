@@ -107,6 +107,26 @@ services:
     profiles:
       - management
 
+  # Adminer 管理界面（可选）：PostgreSQL 轻量 Web 管理
+  # 访问 http://localhost:8083 —— 系统 PostgreSQL / 服务器 postgres /
+  # 用户 yoho / 密码 yoho123 / 数据库 yoho
+  adminer:
+    image: adminer:4
+    container_name: yoho-adminer
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    environment:
+      TZ: "Asia/Shanghai"
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - yoho-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - management
+
   # Mongo Express 管理界面（可选）
   mongo-express:
     image: mongo-express:latest

@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import re
+import time
 from datetime import datetime, timezone, timedelta
 
 import requests
@@ -81,32 +82,80 @@ def _normalize(title: str, content: str, url: str, announced_at: str,
 
 # ==================== 各源解析器 ====================
 
+def _make_cls_sign(params: dict) -> str:
+    """财联社 v1 接口签名：参数按 key 排序拼接 → SHA-1 → MD5。"""
+    sign_str = "&".join(f"{k}={params[k]}" for k in sorted(params.keys()))
+    sha1 = hashlib.sha1(sign_str.encode()).hexdigest()
+    return hashlib.md5(sha1.encode()).hexdigest()
+
+
+# 财联社分级 → importance_hint（A 加红 / B 重要 / C 普通；审核时可人工改）
+_CLS_IMPORTANCE_BY_LEVEL = {"A": 5, "B": 4, "C": 3}
+
+
+def _normalize_cls_item(item: dict):
+    """财联社电报条目 → 标准化事件结构。"""
+    level = item.get("level", "C")
+    return _normalize(
+        item.get("title") or (item.get("content") or "")[:50],
+        item.get("content") or "",
+        f"https://www.cls.cn/detail/{item.get('id', '')}",
+        item.get("ctime"),
+        importance_hint=_CLS_IMPORTANCE_BY_LEVEL.get(level),
+        source="财联社电报",
+    )
+
+
 def _fetch_cls_telegraph():
-    """财联社电报（主源，最快）。"""
-    url = CRAWLER_CONFIG["cls_telegraph"]["url"]
-    payload = {
-        "app": "CailianpressWeb", "category": "", "lastTime": "", "last_time": "",
-        "os": "web", "rn": 30, "subscribedColumnIds": "", "sv": "7.7.5",
-    }
+    """财联社电报（主源，最快）。
+
+    v1 接口（参数排序 → SHA-1 → MD5 签名，支持深度分页）；
+    失败回退 nodeapi 接口（live 刷新用，无需签名）。
+    """
+    cfg = CRAWLER_CONFIG["cls_telegraph"]
+    events = []
+    # 主：v1 接口（带签名）
     try:
-        resp = _session().post(url, json=payload, timeout=15)
+        params = {
+            "app": "CailianpressWeb",
+            "os": "web",
+            "sv": cfg.get("sv", "8.4.6"),
+            "refresh_type": "1",
+            "rn": "30",
+            "last_time": str(int(time.time())),
+            "category": "",
+        }
+        params["sign"] = _make_cls_sign(params)
+        resp = _session().get(cfg["url"], params=params, timeout=15)
         data = resp.json()
-        roll = (data.get("data") or {}).get("roll_data") or []
-        events = []
-        for item in roll:
-            ev = _normalize(
-                item.get("title") or (item.get("brief") or "")[:50],
-                item.get("content") or item.get("brief") or "",
-                f"https://www.cls.cn/detail/{item.get('id', '')}",
-                item.get("ctime"),
-                source="财联社电报",
-            )
-            if ev and ev["title"]:
-                events.append(ev)
-        return events
+        if data.get("errno") in (None, 0, "0"):
+            roll = (data.get("data") or {}).get("roll_data") or []
+            for item in roll:
+                ev = _normalize_cls_item(item)
+                if ev and ev["title"]:
+                    events.append(ev)
     except Exception as e:
-        logger.warning(f"财联社电报抓取失败: {e}")
-        return []
+        logger.warning(f"财联社 v1 接口抓取失败: {e}")
+    if events:
+        return events
+    # 回退：nodeapi 接口（无需签名）
+    try:
+        resp = _session().get(
+            cfg.get("nodeapi_url", ""),
+            params={"app": "CailianpressWeb", "os": "web",
+                    "sv": cfg.get("sv", "8.4.6"), "rn": "30"},
+            timeout=15,
+        )
+        data = resp.json()
+        if data.get("error") == 0:
+            roll = (data.get("data") or {}).get("roll_data") or []
+            for item in roll:
+                ev = _normalize_cls_item(item)
+                if ev and ev["title"]:
+                    events.append(ev)
+    except Exception as e:
+        logger.warning(f"财联社 nodeapi 回退抓取失败: {e}")
+    return events
 
 
 def _fetch_jin10_flash():

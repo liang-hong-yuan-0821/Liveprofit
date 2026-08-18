@@ -1,5 +1,5 @@
 """
-YoHo Tushare 数据提供器
+LiveProfit Tushare 数据提供器
 与 AKShareProvider 接口完全对齐，支持无缝切换。
 Tushare 无法提供的数据（如全球宏观新闻）返回明确占位信息。
 

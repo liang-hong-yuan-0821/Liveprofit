@@ -1,5 +1,5 @@
 """
-YoHo 社交媒体/情绪分析师 (简化版)
+LiveProfit 社交媒体/情绪分析师 (简化版)
 分析市场情绪和投资者情绪。Tushare 无社交情绪数据，该 Agent 基于已有报告进行综合评估。
 
 移除：GoogleToolCallHandler、港股/美股代码路径、Reddit 情绪工具

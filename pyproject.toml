@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "yoho"
+name = "liveprofit"
 version = "0.1.0"
-description = "YoHo - 多智能体股票交易分析系统，基于 LangGraph 编排多个 LLM 智能体协作分析 A 股市场"
+description = "LiveProfit - 多智能体股票交易分析系统，基于 LangGraph 编排多个 LLM 智能体协作分析 A 股市场"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -53,7 +53,7 @@ dependencies = [
 ]
 
 [project.scripts]
-yoho = "main:main"
+liveprofit = "main:main"
 
 [tool.setuptools.packages.find]
 include = ["AI*"]

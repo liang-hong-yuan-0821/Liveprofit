@@ -24,9 +24,9 @@ load_dotenv()
 
 PG_HOST = os.getenv("PG_HOST", "localhost")
 PG_PORT = parse_int_env("PG_PORT", 5432)
-PG_USER = os.getenv("PG_USER", "yoho")
-PG_PASSWORD = os.getenv("PG_PASSWORD", "yoho123")
-PG_DATABASE = os.getenv("PG_DATABASE", "yoho")
+PG_USER = os.getenv("PG_USER", "liveprofit")
+PG_PASSWORD = os.getenv("PG_PASSWORD", "liveprofit123")
+PG_DATABASE = os.getenv("PG_DATABASE", "liveprofit")
 PG_SSLMODE = os.getenv("PG_SSLMODE", "disable")
 # 兼容整串连接串配置方式（优先于分项配置）
 PG_CONNECTION_STRING = os.getenv("PG_CONNECTION_STRING", "")
@@ -106,12 +106,12 @@ _provider = None
 def get_provider():
     """获取当前数据源 Provider 实例（与 AI.dataflows.interface 同规则）。
 
-    YOHO_DATA_SOURCE 环境变量控制（默认 tushare）。
+    LIVEPROFIT_DATA_SOURCE 环境变量控制（默认 tushare）。
     collector 经此接口访问 Provider 层，不直连任何数据源 SDK。
     """
     global _provider
     if _provider is None:
-        ds = os.getenv("YOHO_DATA_SOURCE", "tushare").lower()
+        ds = os.getenv("LIVEPROFIT_DATA_SOURCE", "tushare").lower()
         if ds == "akshare":
             from AI.dataflows.providers.akshare_provider import AKShareProvider
             _provider = AKShareProvider()

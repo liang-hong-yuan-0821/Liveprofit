@@ -1,5 +1,5 @@
 """
-YoHo 交易图编排器 (简化版)
+LiveProfit 交易图编排器 (简化版)
 整个多智能体交易分析系统的主编排器。
 
 三层 Subgraph 架构（自顶向下）：
@@ -82,7 +82,7 @@ class TradingAgentsGraph:
 
         if not api_key:
             raise ValueError(
-                "未配置 YOHO_API_KEY。请在 a.bash 中设置，然后执行 source a.bash"
+                "未配置 LIVEPROFIT_API_KEY。请在 a.bash 中设置，然后执行 source a.bash"
             )
 
         quick_model = self.config.get("quick_think_llm", "gpt-4o-mini")

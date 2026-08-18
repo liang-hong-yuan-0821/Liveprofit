@@ -30,7 +30,7 @@ def real_llm():
     """真实 ChatOpenAI LLM（quick_thinking，来自 .env 配置）"""
     config = load_config()
     if not config.get("api_key"):
-        pytest.skip("未配置 YOHO_API_KEY，跳过集成测试")
+        pytest.skip("未配置 LIVEPROFIT_API_KEY，跳过集成测试")
     return ChatOpenAI(
         model=config["quick_think_llm"],
         base_url=config["base_url"],

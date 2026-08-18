@@ -1,5 +1,5 @@
 """
-YoHo 简易日志初始化
+LiveProfit 简易日志初始化
 使用 Python 标准 logging 模块，无需复杂的管理器。
 """
 
@@ -22,6 +22,6 @@ def init_logging(level="INFO"):
     )
 
 
-def get_logger(name="yoho"):
+def get_logger(name="liveprofit"):
     """获取指定名称的 logger"""
     return logging.getLogger(name)

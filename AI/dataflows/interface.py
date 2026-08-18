@@ -1,7 +1,7 @@
 """
-YoHo 数据接口层
+LiveProfit 数据接口层
 支持可配置数据源切换：tushare 或 akshare。
-通过环境变量 YOHO_DATA_SOURCE 控制（默认 tushare）。
+通过环境变量 LIVEPROFIT_DATA_SOURCE 控制（默认 tushare）。
 集成缓存层：Redis > File 二级缓存。
 """
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 _DATA_SOURCE = None
 _provider = None
 _cache = None
-# AKShare 独立实例（国际宏观类数据固定走 AKShare，不随 YOHO_DATA_SOURCE 切换）
+# AKShare 独立实例（国际宏观类数据固定走 AKShare，不随 LIVEPROFIT_DATA_SOURCE 切换）
 _akshare_provider = None
 
 
@@ -66,7 +66,7 @@ def _get_data_source() -> str:
     """获取当前数据源名称"""
     global _DATA_SOURCE
     if _DATA_SOURCE is None:
-        _DATA_SOURCE = os.getenv("YOHO_DATA_SOURCE", "tushare").lower()
+        _DATA_SOURCE = os.getenv("LIVEPROFIT_DATA_SOURCE", "tushare").lower()
     return _DATA_SOURCE
 
 
@@ -91,7 +91,7 @@ def _get_provider():
 
 
 def _get_akshare_provider():
-    """懒加载 AKShare 数据提供器（独立于 YOHO_DATA_SOURCE）。
+    """懒加载 AKShare 数据提供器（独立于 LIVEPROFIT_DATA_SOURCE）。
 
     国际宏观类数据（全球宏观新闻/央行日历/宏观指标/大宗商品与汇率）
     Tushare 不提供，接口层固定路由到 AKShare。
@@ -552,7 +552,7 @@ def get_sector_horizon_screening(days: int = 120) -> str:
 
 # ==================== 市场层 — Global 接口 ====================
 # Tushare 不提供国际宏观类数据，以下函数固定走 AKShare，
-# 与全局 YOHO_DATA_SOURCE 配置无关（其余接口仍按全局数据源路由）。
+# 与全局 LIVEPROFIT_DATA_SOURCE 配置无关（其余接口仍按全局数据源路由）。
 
 @dataprovider_log
 def get_global_macro_news(curr_date: str) -> str:

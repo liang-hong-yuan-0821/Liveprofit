@@ -1,5 +1,5 @@
 """
-YoHo Toolkit (简化版)
+LiveProfit Toolkit (简化版)
 仅保留基于 Tushare 数据源的 5 个核心工具。
 
 从 TradingAgents-CN 的 Toolkit 类裁减：

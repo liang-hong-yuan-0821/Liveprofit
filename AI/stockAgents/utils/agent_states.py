@@ -1,5 +1,5 @@
 """
-YoHo Agent 状态定义
+LiveProfit Agent 状态定义
 定义 LangGraph 中使用的所有状态 TypedDict。
 
 从 TradingAgents-CN 复制，仅修改 import 路径。

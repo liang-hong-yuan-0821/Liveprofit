@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# YoHo - 多智能体股票交易分析系统
+# LiveProfit - 多智能体股票交易分析系统
 # 基于 TradingAgents-CN，简化为 OpenAI 兼容 API + Tushare 数据源
 
 import os
@@ -30,7 +30,7 @@ def _load_env_file():
 
 def main():
     """主入口：初始化并运行交易分析"""
-    trace_step("启动 YoHo 系统")
+    trace_step("启动 LiveProfit 系统")
     _load_env_file()
     config = load_config()
     init_logging(config.get("log_level", "INFO"))

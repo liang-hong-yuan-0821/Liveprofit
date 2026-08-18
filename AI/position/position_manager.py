@@ -4,12 +4,12 @@
 流水线收口环节：把多只个股各自独立的决策汇总成一份受总资金和
 仓位规则约束的可执行交易计划。全部确定性数值计算，可回溯、可复现。
 
-规则（YOHO_* 环境变量，见 default_config.py / .env.example）：
-- YOHO_TOTAL_CAPITAL：总资金，未配置时整层跳过并告警
-- YOHO_MAX_POSITION_PCT：总仓位上限（默认 0.8；risk_gate=caution 时 ×0.5）
-- YOHO_MAX_SINGLE_STOCK_PCT：单票仓位上限（默认 0.1）
-- YOHO_MAX_SECTOR_PCT：同板块合计上限（默认 0.3）
-- YOHO_POSITION_SIZING_STRATEGY：equal / confidence_weighted（默认）/ kelly
+规则（LIVEPROFIT_* 环境变量，见 default_config.py / .env.example）：
+- LIVEPROFIT_TOTAL_CAPITAL：总资金，未配置时整层跳过并告警
+- LIVEPROFIT_MAX_POSITION_PCT：总仓位上限（默认 0.8；risk_gate=caution 时 ×0.5）
+- LIVEPROFIT_MAX_SINGLE_STOCK_PCT：单票仓位上限（默认 0.1）
+- LIVEPROFIT_MAX_SECTOR_PCT：同板块合计上限（默认 0.3）
+- LIVEPROFIT_POSITION_SIZING_STRATEGY：equal / confidence_weighted（默认）/ kelly
 """
 
 import logging
@@ -44,14 +44,14 @@ def build_position_plan(state: dict, config: dict) -> dict:
     total_capital = config.get("total_capital") or 0
     plan_date = state.get("trade_date", "")
     if not total_capital or total_capital <= 0:
-        logger.warning("[仓位管理层] 未配置 YOHO_TOTAL_CAPITAL，整层跳过（不阻塞前序流程）")
+        logger.warning("[仓位管理层] 未配置 LIVEPROFIT_TOTAL_CAPITAL，整层跳过（不阻塞前序流程）")
         return {
             "plan_date": plan_date,
             "total_capital": 0,
             "risk_gate": risk_gate,
-            "error": "未配置 YOHO_TOTAL_CAPITAL，仓位管理层跳过",
+            "error": "未配置 LIVEPROFIT_TOTAL_CAPITAL，仓位管理层跳过",
             "orders": [],
-            "summary": {"advice": "配置 YOHO_TOTAL_CAPITAL 后自动生成交易计划"},
+            "summary": {"advice": "配置 LIVEPROFIT_TOTAL_CAPITAL 后自动生成交易计划"},
         }
 
     max_position_pct = float(config.get("max_position_pct", _DEFAULTS["max_position_pct"]))

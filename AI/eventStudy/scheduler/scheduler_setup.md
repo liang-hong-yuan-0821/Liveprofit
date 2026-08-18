@@ -17,7 +17,7 @@ D:\code\workspace\python\Liveprofit\.venv\Scripts\python.exe -m AI.eventStudy.sc
 ## 注册计划任务（管理员 PowerShell）
 
 ```powershell
-schtasks /Create /TN "YoHo事件研究每日批处理" ^
+schtasks /Create /TN "LiveProfit事件研究每日批处理" ^
   /TR "cmd /c D:\code\workspace\python\Liveprofit\AI\eventStudy\scheduler\run_daily.bat" ^
   /SC DAILY /ST 08:30 ^
   /RL LIMITED /F
@@ -28,10 +28,10 @@ schtasks /Create /TN "YoHo事件研究每日批处理" ^
 ## 常用管理命令
 
 ```powershell
-schtasks /Query /TN "YoHo事件研究每日批处理"      # 查看任务
-schtasks /Run  /TN "YoHo事件研究每日批处理"       # 手动立即运行
-schtasks /End  /TN "YoHo事件研究每日批处理"       # 终止运行中的任务
-schtasks /Delete /TN "YoHo事件研究每日批处理" /F  # 删除任务
+schtasks /Query /TN "LiveProfit事件研究每日批处理"      # 查看任务
+schtasks /Run  /TN "LiveProfit事件研究每日批处理"       # 手动立即运行
+schtasks /End  /TN "LiveProfit事件研究每日批处理"       # 终止运行中的任务
+schtasks /Delete /TN "LiveProfit事件研究每日批处理" /F  # 删除任务
 ```
 
 ## 手动运行 / 调试

@@ -1,5 +1,5 @@
 """
-YoHo AKShare 数据提供器 (简化版)
+LiveProfit AKShare 数据提供器 (简化版)
 免费开源数据源，支持 A 股、港股、全球指数。
 无需 API Token，基于网络爬虫。
 """

@@ -1,5 +1,5 @@
 """
-YoHo 基础数据提供器
+LiveProfit 基础数据提供器
 定义完整的数据接口契约，子类（AKShareProvider / TushareProvider / 未来新增）
 按需覆写。未覆写的方法自动返回"不支持"占位。
 

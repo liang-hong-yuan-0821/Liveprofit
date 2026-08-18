@@ -18,7 +18,7 @@ def _top_nodes(graph):
 @pytest.fixture(scope="module")
 def _skip_without_api_key():
     if not load_config().get("api_key"):
-        pytest.skip("未配置 YOHO_API_KEY，跳过拓扑集成测试")
+        pytest.skip("未配置 LIVEPROFIT_API_KEY，跳过拓扑集成测试")
 
 
 @pytest.mark.usefixtures("_skip_without_api_key")

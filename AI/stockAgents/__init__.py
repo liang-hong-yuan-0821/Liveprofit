@@ -1,5 +1,5 @@
 """
-YoHo Agents 包
+LiveProfit Agents 包
 个股层 (Stock Layer) — 三层 Subgraph 架构的第三层。
 
 导出：

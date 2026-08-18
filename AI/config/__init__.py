@@ -1,5 +1,5 @@
 """
-YoHo Config 包
+LiveProfit Config 包
 """
 
 from .providers_config import DataSourceConfig, get_provider_config

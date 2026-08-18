@@ -5946,7 +5946,7 @@ wheels = [
 ]
 
 [[package]]
-name = "yoho"
+name = "liveprofit"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

@@ -1,9 +1,9 @@
 """
-YoHo 记忆系统
+LiveProfit 记忆系统
 参考 TradingAgents-CN 架构：
 - ChromaDBManager 单例模式（线程安全）
 - FinancialSituationMemory 使用 ChromaDB 持久存储
-- 嵌入：OpenAI text-embedding-3-small（通过同一 YOHO_API_KEY）
+- 嵌入：OpenAI text-embedding-3-small（通过同一 LIVEPROFIT_API_KEY）
 - Windows 10/11 自动适配
 """
 
@@ -98,15 +98,15 @@ class FinancialSituationMemory:
         self._disabled = False
 
         # 检查启用状态
-        memory_enabled = os.getenv("YOHO_MEMORY_ENABLED", "true").lower() == "true"
+        memory_enabled = os.getenv("LIVEPROFIT_MEMORY_ENABLED", "true").lower() == "true"
         if not memory_enabled:
             self._disabled = True
             logger.info(f"记忆 '{name}': 已禁用")
             return
 
         # 初始化 OpenAI 嵌入客户端
-        api_key = os.getenv("YOHO_API_KEY", "")
-        base_url = os.getenv("YOHO_BASE_URL", "https://api.openai.com/v1")
+        api_key = os.getenv("LIVEPROFIT_API_KEY", "")
+        base_url = os.getenv("LIVEPROFIT_BASE_URL", "https://api.openai.com/v1")
         self._openai = None
         if OPENAI_AVAILABLE and api_key:
             try:

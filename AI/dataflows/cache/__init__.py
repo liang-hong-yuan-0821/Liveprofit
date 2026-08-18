@@ -1,5 +1,5 @@
 """
-YoHo 缓存层
+LiveProfit 缓存层
 支持二级缓存后端：Redis > File。
 通过 TA_CACHE_STRATEGY 环境变量控制。
 """

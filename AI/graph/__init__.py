@@ -1,5 +1,5 @@
 """
-YoHo Graph 包
+LiveProfit Graph 包
 顶层编排器：导入并串联市场层、板块层、个股层三个子图。
 """
 

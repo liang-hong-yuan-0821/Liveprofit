@@ -40,7 +40,7 @@ def fetch_market_data(ticker: str, start_date: str, end_date: str) -> pd.DataFra
 def _fallback_fetch(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
     """当前数据源失败时尝试另一数据源（Tushare ↔ AKShare 互换）。"""
     import os
-    current = os.getenv("YOHO_DATA_SOURCE", "tushare").lower()
+    current = os.getenv("LIVEPROFIT_DATA_SOURCE", "tushare").lower()
     other = "akshare" if current != "akshare" else "tushare"
     try:
         if other == "akshare":

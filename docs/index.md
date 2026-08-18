@@ -1,4 +1,4 @@
-# Liveprofit（YoHo）多智能体架构重构技术方案
+# Liveprofit（LiveProfit）多智能体架构重构技术方案
 
 ## 市场 — 板块 — 个股三维度分析
 
@@ -31,7 +31,7 @@
 
 ## 一、现状诊断
 
-Liveprofit（YoHo）现有 12 个 Agent，全部锚定在"个股"维度：
+Liveprofit（LiveProfit）现有 12 个 Agent，全部锚定在"个股"维度：
 
 | 层级 | 现有 Agent | 问题 |
 |------|------------|------|
@@ -225,7 +225,7 @@ START
 
 - **存储**：PostgreSQL 16 + pgvector（docker-compose `postgres` 服务；6 表：assets / events / market_data / event_impacts / market_context / predictions）。草稿区约定：待审事件与影响结果先写 Redis 草稿，人工确认后落 PG（PG 只存正式数据）
 - **数据采集**：爬虫抓取财经快讯（金十/财联社/新浪 7x24/东财，写 Redis 待审队列）+ Provider 层结构化接口（`get_index_data_df` / `get_trade_cal` / `get_macro_context`，AKShare/Tushare 同步覆写）采集指数日线与宏观指标
-- **人工审核**：Streamlit 审核界面（事件类型/子类型/条件/重要性/预期实际值确认；影响结果按资产勾选落表）
+- **人工审核**：Streamlit 审核界面（事件类型/子类型/条件/重要性/预期实际值确认；影响结果按资产勾选落表）。**AI 预填**（2026-08-19 增强）：批处理采集后用 LLM（quick 模型）对草稿自动预分类（类型/子类型/条件/重要性/数值提取），审核界面作为表单默认值展示（标注"AI 预填，请确认"），人工确认或修改；LLM 不可用时人工照旧填写
 - **影响标注（核心）**：事件研究法——市场模型 OLS 回归（120 日估计窗口 + 10 日间隔），4 个目标指数（上证指数/科创50/科创100/沪深300）× 3 窗口（pre_event_5d / event_day / post_event_5d）CAR + t 统计量 + 方向判定（|CAR|>0.5% 且 |t|>1.96）+ 污染检查；t0 对齐规则：盘前（09:30 前）→ 当日，否则 → 下一交易日
 - **市场环境快照**：每日 `market_context`（20 日收益/年化波动/20 日均成交额/10 年国债收益率），事件环境按 T-1 规则匹配（禁止当日快照）
 - **AI 预测**：模板匹配（event_type+subtype+condition 的历史平均 CAR/胜率/样本数，权重 1.0）+ 向量检索（bge-m3 1024 维，pgvector 余弦，相似度<0.5 不纳入，权重=相似度×0.5）加权融合；LangGraph 工具 / REST API（`POST /predict`）/ 离线回测共用同一套确定性规则；预测仅显式保存（save=True）或回测时落库

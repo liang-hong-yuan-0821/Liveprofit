@@ -1,18 +1,18 @@
 """
-审核界面（Streamlit，方案 3.2）
+审核界面（Streamlit，方案 3.2 + 2026-08-19 批量表格化改版）
 
 两个 Tab：
-1. 待审核事件：展示 Redis 待审草稿，人工确认事件类型/子类型/条件/
-   重要性/预期值/实际值/前值，通过或忽略
-2. 影响结果确认：展示 Redis 影响草稿（各资产 × 窗口 CAR/方向/污染），
-   勾选资产后确认落表 PG event_impacts
+1. 待审核事件：全量表格展示（可编辑列 = 类型/子类型/条件/重要性/操作），
+   批量提交（通过/忽略/跳过）；AI 预填建议作为各列默认值
+2. 影响结果确认：全部草稿平铺为 资产 × 窗口 表格，勾选后批量落表
 
 运行：streamlit run AI/eventStudy/review/review_app.py
 """
 
+import pandas as pd
 import streamlit as st
 
-from AI.eventStudy.collectors.config import get_redis_client, is_redis_available
+from AI.eventStudy.collectors.config import WINDOW_TYPES, is_redis_available
 from AI.eventStudy.db.connection import get_connection
 from AI.eventStudy.review import review_dao
 
@@ -48,90 +48,140 @@ def _status_line() -> None:
             st.error("Redis 不可用 — 待审草稿与影响草稿无法读写（请启动 docker-compose 的 redis 服务）")
 
 
+CONDITION_OPTIONS = ["", "超预期", "符合预期", "低于预期", "利好", "利空", "中性"]
+ACTION_OPTIONS = ["跳过", "通过", "忽略"]
+
+
+# ==================== Tab 1: 待审核事件（批量表格） ====================
+
 def render_pending_tab():
-    st.subheader("待审核事件草稿（Redis events:pending:*）")
+    st.subheader("待审核事件（批量）")
     events = review_dao.get_pending_events()
     if not events:
         st.info("暂无待审核事件。每日定时任务采集后自动进入队列。")
         return
 
-    options = {f"#{e['draft_id']} [{e.get('announced_at', '')[:16]}] {e['title'][:60]}": e
-               for e in events}
-    selected = st.selectbox("选择事件", list(options.keys()))
-    draft = options[selected]
-    st.markdown(f"**标题**: {draft['title']}")
-    st.markdown(f"**内容**: {draft.get('content') or '（无）'}")
-    st.markdown(f"**来源**: {draft.get('source') or '未知'}　**时间**: {draft.get('announced_at')}")
-    st.markdown(f"**原文链接**: {draft.get('source_url') or '（无）'}")
-    st.markdown(f"**爬虫重要性提示**: {draft.get('importance_hint') or '（无，请人工填写）'}")
+    # AI 预填按钮
+    from AI.eventStudy.review import ai_prelabel
+    if st.button("🤖 AI 预填全部待审事件", disabled=not is_redis_available()):
+        with st.spinner("AI 预填中…"):
+            n = ai_prelabel.prelabel_events(review_dao.get_pending_events())
+        st.success(f"已为 {n} 条事件生成预填建议")
+        st.rerun()
 
-    with st.form(f"review_form_{draft['draft_id']}"):
-        col1, col2 = st.columns(2)
-        with col1:
-            event_type = st.text_input("事件类型", value=draft.get("event_type", ""),
-                                       placeholder="宏观数据 / 央行 / 地缘 / 产业政策…")
-            event_subtype = st.text_input("事件子类型", value=draft.get("event_subtype", ""),
-                                          placeholder="CPI / LPR / 降准 / 加息…")
-            event_condition = st.selectbox(
-                "关键条件", ["", "超预期", "符合预期", "低于预期", "利好", "利空", "中性"],
-                index=0,
-            )
-        with col2:
-            importance = st.slider("重要性", 1, 5,
-                                   value=int(draft.get("importance_hint") or 3))
-            # number_input 未填写时返回 0.0，需用勾选区分"未填写"与"合法 0 值"
-            fill_expected = st.checkbox("填写预期值", value=False)
-            expected_value = st.number_input("预期值", value=0.0, format="%.4f",
-                                             disabled=not fill_expected)
-            fill_actual = st.checkbox("填写实际值", value=False)
-            actual_value = st.number_input("实际值", value=0.0, format="%.4f",
-                                           disabled=not fill_actual)
-            fill_previous = st.checkbox("填写前值", value=False)
-            previous_value = st.number_input("前值", value=0.0, format="%.4f",
-                                             disabled=not fill_previous)
-        operator = st.text_input("操作者", value="admin")
-        col_a, col_b = st.columns(2)
-        approve = col_a.form_submit_button("✅ 审核通过", type="primary")
-        ignore = col_b.form_submit_button("⏭️ 忽略")
-        confirm = st.checkbox("二次确认（防止误操作）", value=False)
+    # 组装表格：AI 建议作为各列默认值
+    rows = []
+    for e in events:
+        s = e.get("ai_suggestions") or {}
+        rows.append({
+            "draft_id": e["draft_id"],
+            "时间": str(e.get("announced_at", ""))[:16],
+            "来源": e.get("source", ""),
+            "标题": e["title"][:60],
+            "事件类型": s.get("event_type") or "",
+            "事件子类型": s.get("event_subtype") or "",
+            "关键条件": s.get("event_condition") or "",
+            "重要性": int(s.get("importance") or e.get("importance_hint") or 3),
+            "操作": "跳过",
+        })
+    df = pd.DataFrame(rows)
 
-    if approve and confirm:
+    edited = st.data_editor(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="fixed",
+        column_config={
+            "draft_id": st.column_config.NumberColumn("#", disabled=True),
+            "时间": st.column_config.TextColumn(disabled=True),
+            "来源": st.column_config.TextColumn(disabled=True),
+            "标题": st.column_config.TextColumn(disabled=True, width="large"),
+            "事件类型": st.column_config.TextColumn(required=False,
+                                                    help="宏观数据 / 央行 / 地缘 / 产业政策…"),
+            "事件子类型": st.column_config.TextColumn(required=False,
+                                                      help="CPI / LPR / 降准…"),
+            "关键条件": st.column_config.SelectboxColumn(options=CONDITION_OPTIONS),
+            "重要性": st.column_config.NumberColumn(min_value=1, max_value=5, step=1),
+            "操作": st.column_config.SelectboxColumn(options=ACTION_OPTIONS,
+                                                     help="跳过 = 本次不处理"),
+        },
+        key="pending_editor",
+    )
+
+    st.caption("预期值/实际值/前值：批量审核采用 AI 提取值（如有，见详情）；"
+               "需人工改数值的事件可单独在 Adminer 中修正。")
+
+    # 查看单条原文
+    with st.expander("查看事件原文"):
+        detail_map = {f"#{e['draft_id']} {e['title'][:40]}": e for e in events}
+        detail = st.selectbox("选择事件", list(detail_map.keys()))
+        if detail:
+            d = detail_map[detail]
+            st.markdown(f"**标题**: {d['title']}")
+            st.markdown(f"**内容**: {d.get('content') or '（无）'}")
+            st.markdown(f"**来源**: {d.get('source') or '未知'}　**时间**: {d.get('announced_at')}")
+            st.markdown(f"**原文链接**: {d.get('source_url') or '（无）'}")
+            if d.get("ai_suggestions"):
+                st.json(d["ai_suggestions"])
+
+    # 批量提交
+    col_btn, col_confirm = st.columns([1, 2])
+    submit = col_btn.button("🚀 批量提交", type="primary")
+    confirm = col_confirm.checkbox("二次确认（仅处理「操作」列非「跳过」的行）", value=False)
+
+    if submit and confirm:
         conn = get_conn()
         if conn is None:
             st.error("PostgreSQL 不可用，无法审核")
-        else:
+            return
+        from AI.eventStudy.processing import event_study
+        approved = ignored = computed = 0
+        for _, row in edited.iterrows():
+            action = row["操作"]
+            if action == "跳过":
+                continue
+            fields = {
+                "event_type": row["事件类型"] or None,
+                "event_subtype": row["事件子类型"] or None,
+                "event_condition": row["关键条件"] or None,
+                "importance": int(row["重要性"]),
+            }
+            # 数值三列采用 AI 提取值
+            suggestion = next(
+                (e.get("ai_suggestions") or {}
+                 for e in events if e["draft_id"] == row["draft_id"]), {})
+            fields["expected_value"] = suggestion.get("expected_value")
+            fields["actual_value"] = suggestion.get("actual_value")
+            fields["previous_value"] = suggestion.get("previous_value")
             try:
-                event_id = review_dao.approve_event(conn, draft["draft_id"], {
-                    "event_type": event_type or None,
-                    "event_subtype": event_subtype or None,
-                    "event_condition": event_condition or None,
-                    "importance": importance,
-                    # 未勾选 → None；勾选后输入 0 是合法值（M4）
-                    "expected_value": expected_value if fill_expected else None,
-                    "actual_value": actual_value if fill_actual else None,
-                    "previous_value": previous_value if fill_previous else None,
-                }, operator=operator)
-                st.success(f"已通过并写入事件库（event_id={event_id}），待影响计算")
-                st.rerun()
+                if action == "通过":
+                    event_id = review_dao.approve_event(conn, int(row["draft_id"]), fields)
+                    approved += 1
+                    # 确认后即刻计算影响（t0 对齐 + 4 指数 × 3 窗口），
+                    # 结果立即出现在「影响结果确认」Tab
+                    try:
+                        event_study.compute_all_windows(conn, event_id)
+                        computed += 1
+                    except Exception as e:
+                        st.warning(f"事件 {event_id} 影响即时计算失败（批处理会兜底重算）: {e}")
+                else:
+                    review_dao.ignore_event(conn, int(row["draft_id"]))
+                    ignored += 1
             except Exception as e:
-                st.error(f"审核通过失败: {e}")
-    elif approve and not confirm:
+                st.error(f"#{row['draft_id']} 处理失败: {e}")
+        msg = f"批量提交完成：通过 {approved} 条，忽略 {ignored} 条"
+        if computed:
+            msg += f"；影响已即时计算 {computed} 条（切到「影响结果确认」查看）"
+        st.success(msg)
+        st.rerun()
+    elif submit and not confirm:
         st.warning("请勾选二次确认")
-    if ignore and confirm:
-        conn = get_conn()
-        if conn is None:
-            st.error("PostgreSQL 不可用，无法审核")
-        else:
-            try:
-                event_id = review_dao.ignore_event(conn, draft["draft_id"], operator=operator)
-                st.success(f"已忽略（event_id={event_id}，保留用于爬虫去重）")
-                st.rerun()
-            except Exception as e:
-                st.error(f"忽略失败: {e}")
 
+
+# ==================== Tab 2: 影响结果确认（批量表格） ====================
 
 def render_impacts_tab():
-    st.subheader("影响结果确认（Redis event_impacts:draft:*）")
+    st.subheader("影响结果确认（批量）")
     conn = get_conn()
     if conn is None:
         st.error("PostgreSQL 不可用，无法确认落表")
@@ -141,53 +191,71 @@ def render_impacts_tab():
         st.info("暂无待确认的影响结果。定时任务对已通过事件计算后生成。")
         return
 
-    options = {
-        f"#{d['event_id']} {review_dao.get_event_title(conn, d['event_id'])[:50]} (t0={d.get('t0', '?')})": d
-        for d in drafts
-    }
-    selected = st.selectbox("选择事件", list(options.keys()))
-    draft = options[selected]
-    event_id = draft["event_id"]
-    st.markdown(f"**t0**: {draft.get('t0')}　**计算时间**: {draft.get('computed_at', '')[:19]}")
-
-    # 展示各资产 × 窗口结果
-    assets = draft.get("assets", {})
-    header = ["资产", "窗口", "CAR", "t值", "方向", "污染", "备注"]
+    # 全部草稿平铺为 资产 × 窗口 表格
     rows = []
-    for ticker, per_window in assets.items():
-        for wt in ("pre_event_5d", "event_day", "post_event_5d"):
-            r = per_window.get(wt, {})
-            direction = {1: "利好 ↑", -1: "利空 ↓", 0: "中性 →"}.get(r.get("direction"), "?")
-            rows.append([
-                ticker, wt,
-                f"{r['cumulative_abnormal_return'] * 100:.3f}%" if r.get("cumulative_abnormal_return") is not None else "—",
-                f"{r['t_stat']:.2f}" if r.get("t_stat") is not None else "—",
-                direction,
-                "⚠️ 是" if r.get("is_contaminated") else "否",
-                r.get("error") or "",
-            ])
-    st.table(rows)
+    for d in drafts:
+        title = review_dao.get_event_title(conn, d["event_id"])
+        for ticker, per_window in d.get("assets", {}).items():
+            for wt in WINDOW_TYPES:
+                r = per_window.get(wt, {})
+                car = r.get("cumulative_abnormal_return")
+                rows.append({
+                    "event_id": d["event_id"],
+                    "标题": title[:40],
+                    "t0": d.get("t0", ""),
+                    "资产": ticker,
+                    "窗口": wt,
+                    "CAR%": round(car * 100, 3) if car is not None else None,
+                    "t值": r.get("t_stat"),
+                    "方向": {1: "利好 ↑", -1: "利空 ↓", 0: "中性 →"}.get(r.get("direction"), "?"),
+                    "污染": "⚠️" if r.get("is_contaminated") else "",
+                    "备注": r.get("error") or "",
+                    "勾选": False,
+                })
+    df = pd.DataFrame(rows)
 
-    with st.form(f"impact_form_{event_id}"):
-        cols = st.columns(len(assets))
-        checks = {}
-        for i, ticker in enumerate(assets.keys()):
-            checks[ticker] = cols[i].checkbox(ticker, value=False)
-        operator = st.text_input("操作者", value="admin", key=f"op_{event_id}")
-        confirm = st.checkbox("二次确认（仅勾选的资产落表，未勾选不落表）", value=False)
-        submit = st.form_submit_button("✅ 确认落表", type="primary")
+    edited = st.data_editor(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="fixed",
+        column_config={
+            "event_id": st.column_config.NumberColumn("#", disabled=True),
+            "标题": st.column_config.TextColumn(disabled=True, width="large"),
+            "t0": st.column_config.TextColumn(disabled=True),
+            "资产": st.column_config.TextColumn(disabled=True),
+            "窗口": st.column_config.TextColumn(disabled=True),
+            "CAR%": st.column_config.NumberColumn(format="%.3f", disabled=True),
+            "t值": st.column_config.NumberColumn(format="%.2f", disabled=True),
+            "方向": st.column_config.TextColumn(disabled=True),
+            "污染": st.column_config.TextColumn(disabled=True),
+            "备注": st.column_config.TextColumn(disabled=True),
+            "勾选": st.column_config.CheckboxColumn(help="勾选 = 落表正式记录"),
+        },
+        key="impacts_editor",
+    )
+
+    col_btn, col_confirm = st.columns([1, 2])
+    submit = col_btn.button("🚀 确认落表", type="primary")
+    confirm = col_confirm.checkbox("二次确认（仅勾选行落表，未勾选不落表）", value=False)
 
     if submit and confirm:
-        selected_tickers = [t for t, v in checks.items() if v]
-        if not selected_tickers:
-            st.warning("请至少勾选一个资产")
-        else:
+        # 按事件聚合勾选的资产
+        checked = edited[edited["勾选"]]
+        if checked.empty:
+            st.warning("请至少勾选一行")
+            return
+        by_event = {}
+        for _, row in checked.iterrows():
+            by_event.setdefault(int(row["event_id"]), set()).add(row["资产"])
+        total = 0
+        for event_id, tickers in by_event.items():
             try:
-                count = review_dao.confirm_impacts(conn, event_id, selected_tickers, operator=operator)
-                st.success(f"已落表 {count} 条影响记录（仅勾选资产）")
-                st.rerun()
+                total += review_dao.confirm_impacts(conn, event_id, sorted(tickers))
             except Exception as e:
-                st.error(f"确认失败: {e}")
+                st.error(f"事件 {event_id} 确认失败: {e}")
+        st.success(f"已落表 {total} 条影响记录")
+        st.rerun()
 
 
 def main():

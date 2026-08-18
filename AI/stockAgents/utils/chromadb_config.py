@@ -1,5 +1,5 @@
 """
-YoHo ChromaDB 配置
+LiveProfit ChromaDB 配置
 参考 TradingAgents-CN，Windows 10/11 兼容，禁用遥测。
 """
 

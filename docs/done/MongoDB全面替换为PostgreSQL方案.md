@@ -184,11 +184,11 @@ TA_CACHE_STRATEGY=integrated 时：
 - [docker-compose.yml](docker-compose.yml)：
   - 删除 `mongodb` 服务（:39-65）
   - 删除 `mongo-express` 服务（:130-149；注意 :110-129 是 adminer——PostgreSQL 管理界面，保持不变）
-  - 删除 `volumes.mongodb_data`（:151-154，卷名 `yoho_mongodb_data`）
+  - 删除 `volumes.mongodb_data`（:151-154，卷名 `liveprofit_mongodb_data`）
   - 顶部注释（:5）"仅提供 MongoDB + Redis + PostgreSQL 服务" → "仅提供 Redis + PostgreSQL 服务"
   - `postgres`、`redis`、`redis-commander`、`adminer`、`networks` 均不动
 - [run.sh:71-75](run.sh#L71-L75)：:71 "启动 MongoDB + Redis 服务..." → "启动 PostgreSQL + Redis 服务..."；:74 注释 "等待 MongoDB 和 Redis 就绪" → "等待 PostgreSQL 和 Redis 就绪"；:75 "等待 MongoDB/Redis 健康检查..." → "等待 Redis 健康检查..."
-- **数据卷销毁**：`cache` 集合仅存 TTL ≤ 12h 的短期缓存（stock 1h / news 4h / fundamentals 12h，[adaptive.py:69-72](AI/dataflows/cache/adaptive.py#L69-L72)），无业务资产，**无需迁移**。实施时执行 `docker-compose down` 后 `docker volume rm yoho_mongodb_data`（实施前先提交 git 存档，如需留底可用 `mongodump` 备份后销毁）
+- **数据卷销毁**：`cache` 集合仅存 TTL ≤ 12h 的短期缓存（stock 1h / news 4h / fundamentals 12h，[adaptive.py:69-72](AI/dataflows/cache/adaptive.py#L69-L72)），无业务资产，**无需迁移**。实施时执行 `docker-compose down` 后 `docker volume rm liveprofit_mongodb_data`（实施前先提交 git 存档，如需留底可用 `mongodump` 备份后销毁）
 
 #### 3.4.2 三方依赖能力评估
 
@@ -237,12 +237,12 @@ TA_CACHE_STRATEGY=integrated 时：
 
 #### 3.6.1 模块设计
 
-- [README.md:74-75](README.md#L74-L75)：docker 启动说明 :74 `(MongoDB + Redis + YoHo)` → `(PostgreSQL + Redis + YoHo)`；:75 `(Redis Commander + Mongo Express)` → `(Redis Commander + Adminer)`
+- [README.md:74-75](README.md#L74-L75)：docker 启动说明 :74 `(MongoDB + Redis + LiveProfit)` → `(PostgreSQL + Redis + LiveProfit)`；:75 `(Redis Commander + Mongo Express)` → `(Redis Commander + Adminer)`
 - [README.md:96-97](README.md#L96-L97)：环境变量表删除 `MONGODB_ENABLED` / `MONGODB_CONNECTION_STRING` 两行
 - [README.md:139-142](README.md#L139-L142)：存储架构图删除 MongoDB 块（token_usage/stock_data/news_data/fundamentals_data 4 行）
-- [README.md:170](README.md#L170)：目录树注释 "Docker 服务编排 (MongoDB + Redis + YoHo)" → "(PostgreSQL + Redis + YoHo)"
+- [README.md:170](README.md#L170)：目录树注释 "Docker 服务编排 (MongoDB + Redis + LiveProfit)" → "(PostgreSQL + Redis + LiveProfit)"
 - [README.md:174-178](README.md#L174-L178)：目录树删除 `database_manager.py`（:174）、`database_config.py`（:175）、`mongodb_storage.py`（:176）、`usage_models.py`（:178）四行
-- [README.md:208-213](README.md#L208-L213)：差异表 "配置文件" 行维持原状；"缓存层" 行右侧 YoHo 列 `MongoDB + Redis + File` → `Redis + File`（左侧 TradingAgents-CN 列维持原状）；"Docker" 行 "4 服务 (仅后端存储)" → "2 服务 (仅后端存储)"（管理 profile 另有 redis-commander、adminer 两个可选界面）
+- [README.md:208-213](README.md#L208-L213)：差异表 "配置文件" 行维持原状；"缓存层" 行右侧 LiveProfit 列 `MongoDB + Redis + File` → `Redis + File`（左侧 TradingAgents-CN 列维持原状）；"Docker" 行 "4 服务 (仅后端存储)" → "2 服务 (仅后端存储)"（管理 profile 另有 redis-commander、adminer 两个可选界面）
 - [docs/index.md](../index.md)：已核查，主干文档无 MongoDB 描述，无需改动；`docs/done/` 归档文档按约定不回溯修改
 
 #### 3.6.2 三方依赖能力评估
@@ -251,7 +251,7 @@ TA_CACHE_STRATEGY=integrated 时：
 
 #### 3.6.3 风险与验证方式
 
-- 风险：README 部分目录树已滞后于实际结构（`yoho/` 包已改名 `AI/`），本次只改 MongoDB 相关行，不扩散修复范围
+- 风险：README 部分目录树已滞后于实际结构（`liveprofit/` 包已改名 `AI/`），本次只改 MongoDB 相关行，不扩散修复范围
 - 验证：人工检查 README 渲染后无 MongoDB 残留描述
 
 #### 3.6.4 文件变更清单
@@ -286,6 +286,6 @@ TA_CACHE_STRATEGY=integrated 时：
 | 1 | git 存档当前状态（注意：工作区已有未提交改动——international_news_analyst.py、docker-compose.yml、docs/市场层.md 及未跟踪的 docs/plans/，需一并提交形成干净基线） | — |
 | 2 | 缓存层改造（3.1） | adaptive.py、cache/__init__.py、interface.py、dataflows/__init__.py |
 | 3 | 死代码删除（3.2 + 3.3） | AI/config/ 4 文件、db_cache.py、config/__init__.py、default_config.py |
-| 4 | 基础设施清理（3.4） | docker-compose.yml、run.sh、销毁 yoho_mongodb_data 卷 |
+| 4 | 基础设施清理（3.4） | docker-compose.yml、run.sh、销毁 liveprofit_mongodb_data 卷 |
 | 5 | 环境变量与依赖（3.5） | .env、.env.example、pyproject.toml、uv.lock |
 | 6 | 文档同步 + 全库 grep 归零验证（3.6） | README.md |

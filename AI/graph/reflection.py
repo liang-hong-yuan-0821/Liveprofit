@@ -1,5 +1,5 @@
 """
-YoHo 反思器 (简化版)
+LiveProfit 反思器 (简化版)
 在交易结算后对决策进行反思，并更新记忆系统。
 从 TradingAgents-CN 复制，仅修改 import 路径。
 """

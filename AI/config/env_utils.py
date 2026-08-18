@@ -1,5 +1,5 @@
 """
-YoHo 环境变量解析工具
+LiveProfit 环境变量解析工具
 参考 TradingAgents-CN 实现，兼容 Python 3.13+。
 """
 

@@ -1,12 +1,12 @@
 """
-YoHo 调用栈追踪工具
+LiveProfit 调用栈追踪工具
 提供装饰器和工具函数，帮助理解项目运行时的调用栈和参数流转。
 
 使用方式：
     1. 装饰器:  @trace_call 自动打印函数入口/出口 + 耗时 + 返回值摘要
     2. 手动:    trace_state("步骤名", key=val) 在关键节点记录状态
 
-设置环境变量 YOHO_TRACE=0 可关闭追踪输出。
+设置环境变量 LIVEPROFIT_TRACE=0 可关闭追踪输出。
 """
 
 import os
@@ -18,7 +18,7 @@ from typing import Any, Callable
 logger = logging.getLogger(__name__)
 
 # 通过环境变量控制开关
-_TRACE_ENABLED = os.getenv("YOHO_TRACE", "1") != "0"
+_TRACE_ENABLED = os.getenv("LIVEPROFIT_TRACE", "1") != "0"
 _INDENT = 0  # 全局缩进，树状显示调用层级
 _INDENT_CHAR = "│  "
 

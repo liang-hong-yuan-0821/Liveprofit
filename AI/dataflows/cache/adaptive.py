@@ -1,5 +1,5 @@
 """
-YoHo 自适应缓存系统
+LiveProfit 自适应缓存系统
 根据可用后端自动选择：Redis > File
 使用 pickle 序列化，支持任意 Python 对象。
 """
@@ -59,7 +59,7 @@ class AdaptiveCacheSystem:
             if self._backend == "redis" and self._redis:
                 # Redis：pickle 序列化后写入，带 TTL
                 pickled = pickle.dumps(data)
-                self._redis.setex(f"yoho:{key}", ttl, pickled)
+                self._redis.setex(f"liveprofit:{key}", ttl, pickled)
                 return True
             else:
                 # 文件回退：pickle 二进制文件 + 过期时间
@@ -75,7 +75,7 @@ class AdaptiveCacheSystem:
         """从当前后端加载数据"""
         try:
             if self._backend == "redis" and self._redis:
-                pickled = self._redis.get(f"yoho:{key}")
+                pickled = self._redis.get(f"liveprofit:{key}")
                 if pickled:
                     return pickle.loads(pickled)
             else:

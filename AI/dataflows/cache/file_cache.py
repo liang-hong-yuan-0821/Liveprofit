@@ -1,5 +1,5 @@
 """
-YoHo 文件缓存系统
+LiveProfit 文件缓存系统
 参考 TradingAgents-CN，基于文件的缓存，按市场类型组织。
 使用 JSON 文件存储，MD5 哈希键名，支持 TTL 过期。
 """

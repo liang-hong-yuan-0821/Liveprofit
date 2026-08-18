@@ -1,5 +1,5 @@
 """
-YoHo 技术指标计算 (简化版)
+LiveProfit 技术指标计算 (简化版)
 使用 tushare 数据 + stockstats 计算技术指标，不再依赖 yfinance。
 支持指标：SMA、RSI、MACD、布林带、成交量等。
 """

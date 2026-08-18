@@ -37,7 +37,7 @@ from AI.utils.llm_callbacks import _run, _NODE_LAYER, _sanitize, _ts
 logger = logging.getLogger(__name__)
 
 # 当前正在执行的图节点名
-_current_node: ContextVar[str] = ContextVar("yoho_current_node", default="")
+_current_node: ContextVar[str] = ContextVar("liveprofit_current_node", default="")
 
 
 def track_node(node_name: str) -> Callable:

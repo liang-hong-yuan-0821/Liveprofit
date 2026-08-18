@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# YoHo - 一键运行脚本
+# LiveProfit - 一键运行脚本
 # 自动完成：Docker 启动 → 安装依赖 → 启动服务 → 运行分析
 # ============================================================
 set -e
@@ -106,7 +106,7 @@ if [ -f ".env" ]; then
         esac
     done < .env
     set +a
-    log_info ".env 已加载 (数据源: ${YOHO_DATA_SOURCE})"
+    log_info ".env 已加载 (数据源: ${LIVEPROFIT_DATA_SOURCE})"
 else
     log_warn "未找到 .env 文件"
 fi
@@ -114,9 +114,9 @@ fi
 # --------------- 5. 运行 ---------------
 echo ""
 log_info "============================================"
-log_info "  启动 YoHo 多智能体交易分析系统"
-log_info "  LLM: ${YOHO_DEEP_MODEL:-unknown}"
-log_info "  数据源: ${YOHO_DATA_SOURCE:-unknown}"
+log_info "  启动 LiveProfit 多智能体交易分析系统"
+log_info "  LLM: ${LIVEPROFIT_DEEP_MODEL:-unknown}"
+log_info "  数据源: ${LIVEPROFIT_DATA_SOURCE:-unknown}"
 log_info "============================================"
 echo ""
 

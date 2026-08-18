@@ -1,5 +1,5 @@
 """
-YoHo 状态传播器 (简化版)
+LiveProfit 状态传播器 (简化版)
 处理 LangGraph 初始状态的创建和图调用参数。
 从 TradingAgents-CN 复制，仅修改 import 路径。
 """

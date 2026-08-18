@@ -1,5 +1,5 @@
 """
-YoHo 数据源配置管理
+LiveProfit 数据源配置管理
 参考 TradingAgents-CN，管理 Tushare 和 AKShare 的配置和速率限制。
 """
 

@@ -1,10 +1,10 @@
-# YoHo - 多智能体股票交易分析系统
+# LiveProfit - 多智能体股票交易分析系统
 
 基于 [TradingAgents-CN](https://github.com/TauricResearch/TradingAgents) 的简化版，使用 **LangGraph** 编排多个 LLM 智能体协作分析 A 股市场。
 
 ## 架构概览
 
-YoHo 使用 LangGraph 构建一个多阶段分析流水线：
+LiveProfit 使用 LangGraph 构建一个多阶段分析流水线：
 
 ```
 START
@@ -43,15 +43,15 @@ uv pip install -e .
 
 ```bash
 # LLM (OpenAI 兼容 API)
-export YOHO_API_KEY="sk-your-actual-key"
-export YOHO_BASE_URL="https://api.openai.com/v1"
-export YOHO_QUICK_MODEL="gpt-4o-mini"
-export YOHO_DEEP_MODEL="gpt-4o"
+export LIVEPROFIT_API_KEY="sk-your-actual-key"
+export LIVEPROFIT_BASE_URL="https://api.openai.com/v1"
+export LIVEPROFIT_QUICK_MODEL="gpt-4o-mini"
+export LIVEPROFIT_DEEP_MODEL="gpt-4o"
 
 # 数据源 (二选一)
-export YOHO_DATA_SOURCE="tushare"
+export LIVEPROFIT_DATA_SOURCE="tushare"
 export TUSHARE_TOKEN="your-tushare-token"
-# 或免费数据源: export YOHO_DATA_SOURCE="akshare"
+# 或免费数据源: export LIVEPROFIT_DATA_SOURCE="akshare"
 ```
 
 加载配置：
@@ -71,7 +71,7 @@ python main.py
 ### Docker 启动
 
 ```bash
-docker-compose up -d                          # 基础服务 (PostgreSQL + Redis + YoHo)
+docker-compose up -d                          # 基础服务 (PostgreSQL + Redis + LiveProfit)
 docker-compose --profile management up -d     # 含管理界面 (Redis Commander + Adminer)
 ```
 
@@ -79,33 +79,33 @@ docker-compose --profile management up -d     # 含管理界面 (Redis Commander
 
 | 环境变量 | 说明 | 默认值 |
 |---------|------|--------|
-| `YOHO_API_KEY` | OpenAI 兼容 API 密钥 | - |
-| `YOHO_BASE_URL` | API 端点地址 | `https://api.openai.com/v1` |
-| `YOHO_QUICK_MODEL` | 快速思考模型 | `gpt-4o-mini` |
-| `YOHO_DEEP_MODEL` | 深度思考模型 | `gpt-4o` |
-| `YOHO_QUICK_TEMPERATURE` | 快速模型温度 | `0.7` |
-| `YOHO_DEEP_TEMPERATURE` | 深度模型温度 | `0.3` |
-| `YOHO_MAX_TOKENS` | 最大 Token 数 | `8192` |
-| `YOHO_DATA_SOURCE` | 数据源 (tushare / akshare) | `tushare` |
+| `LIVEPROFIT_API_KEY` | OpenAI 兼容 API 密钥 | - |
+| `LIVEPROFIT_BASE_URL` | API 端点地址 | `https://api.openai.com/v1` |
+| `LIVEPROFIT_QUICK_MODEL` | 快速思考模型 | `gpt-4o-mini` |
+| `LIVEPROFIT_DEEP_MODEL` | 深度思考模型 | `gpt-4o` |
+| `LIVEPROFIT_QUICK_TEMPERATURE` | 快速模型温度 | `0.7` |
+| `LIVEPROFIT_DEEP_TEMPERATURE` | 深度模型温度 | `0.3` |
+| `LIVEPROFIT_MAX_TOKENS` | 最大 Token 数 | `8192` |
+| `LIVEPROFIT_DATA_SOURCE` | 数据源 (tushare / akshare) | `tushare` |
 | `TUSHARE_TOKEN` | Tushare API Token | - |
-| `YOHO_MEMORY_ENABLED` | 启用 ChromaDB 记忆 | `true` |
-| `YOHO_MEMORY_PATH` | ChromaDB 存储路径 | `./chroma_db` |
-| `YOHO_MAX_DEBATE_ROUNDS` | 最大辩论轮数 | `1` |
-| `YOHO_MAX_RISK_ROUNDS` | 最大风险讨论轮数 | `1` |
-| `YOHO_LOG_LEVEL` | 日志级别 | `INFO` |
+| `LIVEPROFIT_MEMORY_ENABLED` | 启用 ChromaDB 记忆 | `true` |
+| `LIVEPROFIT_MEMORY_PATH` | ChromaDB 存储路径 | `./chroma_db` |
+| `LIVEPROFIT_MAX_DEBATE_ROUNDS` | 最大辩论轮数 | `1` |
+| `LIVEPROFIT_MAX_RISK_ROUNDS` | 最大风险讨论轮数 | `1` |
+| `LIVEPROFIT_LOG_LEVEL` | 日志级别 | `INFO` |
 | `REDIS_ENABLED` | 启用 Redis 缓存 | `false` |
 | `REDIS_CONNECTION_STRING` | Redis 连接串 | - |
 | `TA_CACHE_STRATEGY` | 缓存策略 (integrated / file) | `file` |
 
 ## LLM 提供商
 
-YoHo 使用 `langchain-openai` 的 `ChatOpenAI`，兼容任何 OpenAI 兼容 API：
+LiveProfit 使用 `langchain-openai` 的 `ChatOpenAI`，兼容任何 OpenAI 兼容 API：
 
-- **OpenAI**: `YOHO_BASE_URL=https://api.openai.com/v1`
-- **DeepSeek**: `YOHO_BASE_URL=https://api.deepseek.com/v1`
-- **OpenRouter**: `YOHO_BASE_URL=https://openrouter.ai/api/v1`
-- **Groq**: `YOHO_BASE_URL=https://api.groq.com/openai/v1`
-- **Ollama (本地)** : `YOHO_BASE_URL=http://localhost:11434/v1`
+- **OpenAI**: `LIVEPROFIT_BASE_URL=https://api.openai.com/v1`
+- **DeepSeek**: `LIVEPROFIT_BASE_URL=https://api.deepseek.com/v1`
+- **OpenRouter**: `LIVEPROFIT_BASE_URL=https://openrouter.ai/api/v1`
+- **Groq**: `LIVEPROFIT_BASE_URL=https://api.groq.com/openai/v1`
+- **Ollama (本地)** : `LIVEPROFIT_BASE_URL=http://localhost:11434/v1`
 - **其他** : 任何兼容 OpenAI 格式的 API
 
 ## 数据源
@@ -133,7 +133,7 @@ YoHo 使用 `langchain-openai` 的 `ChatOpenAI`，兼容任何 OpenAI 兼容 API
 参考 TradingAgents-CN 的三级存储体系：
 
 ```
-YoHo
+LiveProfit
  ├── Redis (端口 6379, 可选)
  │    ├── 行情缓存 (TTL: 1h)
  │    ├── 新闻缓存 (TTL: 4h)
@@ -153,14 +153,14 @@ YoHo
 ## 项目结构
 
 ```
-YoHo/
+LiveProfit/
 ├── README.md
 ├── a.bash                      # 配置文件 (source 此文件)
 ├── pyproject.toml              # Python 项目配置与依赖
 ├── main.py                     # 入口
 ├── Dockerfile                  # Docker 镜像
-├── docker-compose.yml          # Docker 服务编排 (PostgreSQL + Redis + YoHo)
-└── yoho/
+├── docker-compose.yml          # Docker 服务编排 (PostgreSQL + Redis + LiveProfit)
+└── liveprofit/
     ├── default_config.py       # 环境变量 → 配置字典
     ├── config/                 # 配置层
     │   ├── providers_config.py    # 数据源配置 (Tushare/AKShare)
@@ -189,7 +189,7 @@ YoHo/
 
 ## 与 TradingAgents-CN 的差异
 
-| 特性 | TradingAgents-CN | YoHo |
+| 特性 | TradingAgents-CN | LiveProfit |
 |------|-----------------|------|
 | LLM 提供商 | 13+ (含适配器层) | 1 (OpenAI 兼容) |
 | 数据源 | 10+ (中/港/美) | 2 (Tushare / AKShare) |

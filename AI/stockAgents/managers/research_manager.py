@@ -1,5 +1,5 @@
 """
-YoHo 研究经理 (简化版)
+LiveProfit 研究经理 (简化版)
 作为投资委员会主席，评估 Bull/Bear 辩论并生成综合投资计划。
 
 移除：token 统计、data_source_manager 回退

@@ -1,5 +1,5 @@
 """
-YoHo 条件逻辑 (简化版)
+LiveProfit 条件逻辑 (简化版)
 控制 LangGraph 中的条件边路由。
 从 TradingAgents-CN 复制，仅修改 import 路径。
 """

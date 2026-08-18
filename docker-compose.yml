@@ -1,29 +1,29 @@
-# YoHo 存储基础设施
+# LiveProfit 存储基础设施
 
-# YoHo 直接在本机运行，docker-compose 仅提供 Redis + PostgreSQL 服务
+# LiveProfit 直接在本机运行，docker-compose 仅提供 Redis + PostgreSQL 服务
 
 services:
   # PostgreSQL 16 + pgvector（事件研究系统存储：assets/events/market_data/
   # event_impacts/market_context/predictions）
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: yoho-postgres
+    container_name: liveprofit-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: yoho
-      POSTGRES_PASSWORD: yoho123
-      POSTGRES_DB: yoho
+      POSTGRES_USER: liveprofit
+      POSTGRES_PASSWORD: liveprofit123
+      POSTGRES_DB: liveprofit
       TZ: "Asia/Shanghai"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # 首次启动自动执行建表脚本（含 CREATE EXTENSION vector + 资产种子数据）
       - ./AI/eventStudy/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     networks:
-      - yoho-network
+      - liveprofit-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yoho -d yoho"]
+      test: ["CMD-SHELL", "pg_isready -U liveprofit -d liveprofit"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,19 +37,19 @@ services:
   # Redis 缓存服务
   redis:
     image: redis:7-alpine
-    container_name: yoho-redis
+    container_name: liveprofit-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     environment:
       TZ: "Asia/Shanghai"
-    command: redis-server --appendonly yes --requirepass yoho123
+    command: redis-server --appendonly yes --requirepass liveprofit123
     volumes:
       - redis_data:/data
     networks:
-      - yoho-network
+      - liveprofit-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "yoho123", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "liveprofit123", "incr", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,14 +63,14 @@ services:
   # Redis Commander 管理界面（可选）
   redis-commander:
     image: ghcr.io/joeferner/redis-commander:latest
-    container_name: yoho-redis-commander
+    container_name: liveprofit-redis-commander
     restart: unless-stopped
     ports:
       - "8081:8081"
     environment:
-      - REDIS_HOSTS=local:redis:6379:0:yoho123
+      - REDIS_HOSTS=local:redis:6379:0:liveprofit123
     networks:
-      - yoho-network
+      - liveprofit-network
     depends_on:
       redis:
         condition: service_healthy
@@ -79,10 +79,10 @@ services:
 
   # Adminer 管理界面（可选）：PostgreSQL 轻量 Web 管理
   # 访问 http://localhost:8083 —— 系统 PostgreSQL / 服务器 postgres /
-  # 用户 yoho / 密码 yoho123 / 数据库 yoho
+  # 用户 liveprofit / 密码 liveprofit123 / 数据库 liveprofit
   adminer:
     image: adminer:4
-    container_name: yoho-adminer
+    container_name: liveprofit-adminer
     restart: unless-stopped
     ports:
       - "8083:8080"
@@ -90,7 +90,7 @@ services:
       TZ: "Asia/Shanghai"
       ADMINER_DEFAULT_SERVER: postgres
     networks:
-      - yoho-network
+      - liveprofit-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,12 +100,12 @@ services:
 volumes:
   redis_data:
     driver: local
-    name: yoho_redis_data
+    name: liveprofit_redis_data
   postgres_data:
     driver: local
-    name: yoho_postgres_data
+    name: liveprofit_postgres_data
 
 networks:
-  yoho-network:
+  liveprofit-network:
     driver: bridge
-    name: yoho-network
+    name: liveprofit-network

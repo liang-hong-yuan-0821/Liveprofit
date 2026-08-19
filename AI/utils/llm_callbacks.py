@@ -9,7 +9,11 @@ LLM / 工具调用追踪器
     │   │   ├── req.md
     │   │   ├── res.md
     │   │   ├── meta.json
-    │   │   ├── {dataprovider接口名}.json   ← dataprovider 调用日志（见 dataprovider_log.py）
+    │   │   ├── 001_{dataprovider接口名}/   ← dataprovider 调用（见 dataprovider_log.py）
+    │   │   │   ├── req.json
+    │   │   │   ├── res.md                 ← 结果为 str（多数接口）
+    │   │   │   ├── res.json               ← 结果为非 str（与 res.md 二选一）
+    │   │   │   └── meta.json              ← {name, desc, seq, ts, res}
     │   │   └── tools/
     │   │       ├── 001_{tool}/
     │   │       │   ├── req.json
@@ -124,6 +128,7 @@ class _RunState:
     def __init__(self):
         self.llm_seq = 0
         self.tool_counters: Dict[str, int] = {}  # dir_name → count
+        self.dp_counters: Dict[str, int] = {}    # agent目录相对路径 → dataprovider 调用次数
         self.last_llm_dir = ""
 
     def next_llm(self) -> int:
@@ -134,9 +139,15 @@ class _RunState:
         self.tool_counters[parent_dir] = self.tool_counters.get(parent_dir, 0) + 1
         return self.tool_counters[parent_dir]
 
+    def next_dp(self, agent_dir: str) -> int:
+        """dataprovider 调用序号，按所属 Agent 目录独立计数"""
+        self.dp_counters[agent_dir] = self.dp_counters.get(agent_dir, 0) + 1
+        return self.dp_counters[agent_dir]
+
     def reset(self, log_dir: Path):
         self.llm_seq = 0
         self.tool_counters.clear()
+        self.dp_counters.clear()
         self.last_llm_dir = ""
         self.log_dir = log_dir
 

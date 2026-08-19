@@ -1,16 +1,16 @@
 """
 数据提供器（dataprovider）调用日志
-在 interface 层记录每次 dataprovider 接口调用，写入所属 Agent 的日志目录：
+在 interface 层记录每次 dataprovider 接口调用，写入所属 Agent 的日志目录。
 
-  logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/{接口名}.json
+新格式（每次调用一个目录，序号按所属 Agent 目录独立计数，重复调用不覆盖）：
 
-JSON 结构：
-  {
-    "name": "接口名",
-    "desc": "接口描述（用来干什么）",
-    "req":  {"入参名": 值, ...},
-    "res":  返回值
-  }
+  logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/{seq:03d}_{接口名}/
+    ├── req.json     ← 绑定后的完整入参
+    ├── res.md       ← 结果为 str（多数接口，markdown 契约）
+    ├── res.json     ← 结果为非 str（如 get_stock_info 返回 dict，二选一）
+    └── meta.json    ← {name, desc, seq, ts, res: 实际结果文件名}
+
+旧格式 {接口名}.json（{name, desc, req, res}）仅存在于历史 run，由 AI/logviewer 兼容展示。
 
 归属判定：
 - track_node 装饰器为每个图节点设置当前节点上下文（contextvar）；
@@ -24,15 +24,14 @@ JSON 结构：
 
 import functools
 import inspect
-import json
 import logging
 import re
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
-# 与 llm_callbacks 共享运行状态（log_dir / llm_seq / last_llm_dir）
-from AI.utils.llm_callbacks import _run, _NODE_LAYER, _sanitize, _ts
+# 与 llm_callbacks 共享运行状态（log_dir / llm_seq / last_llm_dir / dp_counters）
+from AI.utils.llm_callbacks import _run, _NODE_LAYER, _safe_json, _sanitize, _ts
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +110,7 @@ def _agent_dir() -> Optional[Path]:
 
 
 def _write(name: str, doc: Optional[str], req: Dict[str, Any], res: Any) -> None:
-    """写入 {接口名}.json 到当前 Agent 目录"""
+    """写入 {seq:03d}_{接口名}/ 目录到当前 Agent 目录（req.json + res.md|json + meta.json）"""
     agent_dir = _agent_dir()
     if agent_dir is None:
         logger.debug(f"[DP] 跳过 {name}：日志目录未初始化")
@@ -124,15 +123,26 @@ def _write(name: str, doc: Optional[str], req: Dict[str, Any], res: Any) -> None
         desc = first_line.strip()
 
     agent_dir.mkdir(parents=True, exist_ok=True)
-    fpath = agent_dir / f"{name}.json"
-    payload = {
+    # 序号 key 用归一化的相对路径，同一 Agent 目录内独立计数
+    rel = str(agent_dir.relative_to(_run.log_dir)).replace("\\", "/")
+    seq = _run.next_dp(rel)
+    call_dir = agent_dir / f"{seq:03d}_{_sanitize(name)}"
+    call_dir.mkdir(parents=True, exist_ok=True)
+
+    (call_dir / "req.json").write_text(_safe_json(req), encoding="utf-8")
+    # res：str（markdown 契约）→ res.md；非 str → res.json
+    if isinstance(res, str):
+        res_file = "res.md"
+        (call_dir / res_file).write_text(res, encoding="utf-8")
+    else:
+        res_file = "res.json"
+        (call_dir / res_file).write_text(_safe_json(res), encoding="utf-8")
+    (call_dir / "meta.json").write_text(_safe_json({
         "name": name,
         "desc": desc,
-        "req": req,
-        "res": res,
-    }
-    fpath.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, default=str),
-        encoding="utf-8",
-    )
-    logger.info("[DP] %s → %s::%s", _ts(), agent_dir.relative_to(_run.log_dir), name)
+        "seq": seq,
+        "ts": _ts(),
+        "res": res_file,
+    }), encoding="utf-8")
+
+    logger.info("[DP] %s → %s::%s::%03d", _ts(), rel, name, seq)

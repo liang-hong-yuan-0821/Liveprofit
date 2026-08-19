@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # LiveProfit - 一键运行脚本
-# 自动完成：Docker 启动 → 安装依赖 → 启动服务 → 运行分析
+# 自动完成：Docker 启动 → 安装依赖 → 启动服务 → 运行分析 → 日志查看器
 # ============================================================
 set -e
 
@@ -111,7 +111,28 @@ else
     log_warn "未找到 .env 文件"
 fi
 
-# --------------- 5. 运行 ---------------
+# --------------- 5. 启动日志查看器（后台 + 打开浏览器） ---------------
+VIEWER_PORT=8501
+VIEWER_URL="http://localhost:${VIEWER_PORT}"
+if curl -sf -o /dev/null "${VIEWER_URL}/healthz"; then
+    log_info "日志查看器已在运行 (${VIEWER_URL})"
+else
+    log_info "启动日志查看器 (${VIEWER_URL})，日志输出到 logs/viewer.log ..."
+    nohup streamlit run AI/logviewer/app.py --server.headless true \
+        --server.port ${VIEWER_PORT} > logs/viewer.log 2>&1 &
+    # 等待就绪（最多 20 秒）
+    for i in $(seq 1 20); do
+        if curl -sf -o /dev/null "${VIEWER_URL}/healthz"; then
+            log_info "日志查看器已就绪 ($i 秒)"
+            break
+        fi
+        sleep 1
+    done
+fi
+log_info "打开浏览器: ${VIEWER_URL}"
+cmd.exe /c "start \"\" ${VIEWER_URL}" 2>/dev/null || true
+
+# --------------- 6. 运行 ---------------
 echo ""
 log_info "============================================"
 log_info "  启动 LiveProfit 多智能体交易分析系统"

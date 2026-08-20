@@ -35,7 +35,7 @@ docs/
    - **每个复杂任务 = `docs/plans/` 下的一个方案文件**，该文件即为该任务的唯一追踪载体
    - 先写 `docs/plans/<方案名>.md`，包含：背景动机、设计思路、涉及文件清单、接口/字段变更、向后兼容、验证方法
    - **除非能确保 95% 实现无误，否则必须不断向我澄清问题**
-   - 我确认后开始实现
+   - **方案写完（澄清完毕）后，自动进入评审循环**（见下方"评审循环规则"）：换新 agent 多轮评审直到 verdict PASS 且无 blocker/major，修完剩余 minor + 过自检清单收尾；**评审通过后才请我确认**，我确认后开始实现
    - **实时状态更新**：实现过程中，每完成一个关键步骤（如：State 字段新增完毕、某个 Agent 写完、子图编译通过），**立即更新方案文件顶部的状态块**，记录当前进度和下一步
    - **代码写完之后，启动 subagent 做 code review**（见下方"Code Review 规则"）
    - **实现完成 + review 通过后，将方案中的架构变更整合进主干文档（`docs/*.md`），方案文件状态更新为"已完成"，移入 `docs/done/` 归档**
@@ -58,7 +58,7 @@ docs/
   > **下一步**：<接下来要做什么>
   ```
 
-- 状态取值：`方案设计` → `待确认` → `实现中` → `Code Review` → `已完成`
+- 状态取值：`方案设计` → `评审中`（写完自动进入评审循环）→ `待确认` → `实现中` → `Code Review` → `已完成`
 - **实现过程中每完成一个关键步骤，必须更新状态块的进度和下一步**
 - 任务完成后状态改为 `已完成`，**文件移入 `docs/done/`** 归档，架构变更同步进主干文档
 - **正文章节结构**：复制 [docs/template/技术方案文档模板.md](docs/template/技术方案文档模板.md) 到 `docs/plans/<方案名>.md`，取舍规则详见模板文件末尾速查表。已有历史方案不做回填改造
@@ -79,6 +79,24 @@ docs/
 
 > 中小改动不需要 code review。
 
+### 评审循环规则（修复 → 换新 agent 评审 → 直到通过）
+
+适用：任何评审驱动的修复循环（方案文档评审、Code Review 发现问题的修复、其他 agent 评审场景）。**复杂任务的方案文件写完（澄清完毕）后自动触发本循环**，评审通过前不进入实现。
+
+1. 修复完成后，启动 subagent（type: `claude`）做独立评审，prompt 需给出：被评审文件路径、修复背景（此前发现的问题清单）、评审维度、输出格式（verdict: PASS/FAIL + 按 severity 分级的 findings）
+2. **每轮评审必须换新 agent**（不复用已完成评审的 agent，保证独立视角）
+3. **评审范围以 delta 为主**：默认只核验"本轮修复的落地情况 + 修复点与周边文字的交互"；全文档无差别重读每 3 轮或 verdict 变更时才做一次——每轮全文重读会让文档越长、可挑刺的表面积越大，导致 minor 无限循环
+4. **findings 输出约束**：minor 必须区分"影响实施一致性"与"纯润色"（措辞/示例数值/格式样例），纯润色归并为一条；每轮 findings 上限 8 条，按影响排序
+5. **停止条件**：verdict PASS 且无 blocker/major → 主会话一次性修完剩余 minor + 过自检清单（数值推导自洽 / 章节交叉引用措辞同步 / 编号连续 / 测试落点与承诺一一对应 / 新文案与既有约定一致）后**收尾，不再开新轮**；仅当新发现"影响实施一致性"的问题时才再开一轮
+6. **轮数上限**：通常 ≤3 轮收敛；超过 5 轮仍未干净 → 停下向用户汇报每轮发现类型的分布趋势，询问是否继续
+7. 评审 agent 只读，不修改文件
+
+### CLAUDE.md 自我更新规则
+
+- **每次完成一个任务/分析（方案评审收尾、实现完成、Code Review 通过、踩坑解决）后，检查是否有值得沉淀进 CLAUDE.md 的内容**，有则直接更新，无需用户提醒
+- 值得写入：新确认的约定或决策、踩过的坑与规避方法、新数据源/新端点的用法（如 Tushare 代理端点）、评审循环暴露的规则缺陷、用户明确要求"记住"的内容
+- 不写入：任务本身的状态与进度（属于方案文件状态块）、一次性命令与临时信息、可由代码/git 推导的事实
+
 ### Data Provider 接口约定
 
 **接口契约以 `BaseStockDataProvider` 基类为准**（[base_provider.py](AI/dataflows/providers/base_provider.py)）。
@@ -87,12 +105,12 @@ docs/
 **设计原则：**
 - 基类定义完整接口 + 默认"不支持"返回 → 子类按需覆写
 - `interface.py` 通过 `hasattr(prov, 'method_name')` 动态检测可用方法
-- 新增数据能力时，**先在基类加方法签名 → 再在 AKShare/Tushare 分别覆写**
+- 新增数据能力时，**先在基类加方法签名 → 优先在 TushareProvider 覆写**（AKShare 仅在 Tushare 无法覆盖时补充，见强制规则 2）
 
 **强制规则：**
 
 1. **新增方法必须先加到基类** `BaseStockDataProvider`，提供默认 `_not_supported()` 返回
-2. **AKShareProvider 和 TushareProvider 同步覆写**，签名完全一致（参数名、默认值、返回类型）
+2. **优先 Tushare 实现**：新数据能力默认只在 TushareProvider 覆写；仅当 Tushare 无对应接口/权限、且 AKShare 有对应能力时才在 AKShareProvider 覆写（如 AKShare 独有接口）。两 provider 都覆写时签名完全一致（参数名、默认值、返回类型）
 3. **无法提供数据时**，不覆写基类方法即可（自动返回 `"数据不可用：{provider_name} 不支持 <功能>。"`）
 4. **仅 `get_stock_data` 和 `get_stock_info` 为抽象方法**（`@abstractmethod`），子类必须实现
 5. **返回格式统一为 `str`**（格式化 Markdown），仅 `get_stock_info` 返回 `dict`
@@ -131,3 +149,16 @@ docs/
 - 使用 `.env` 或 `.bash` 文件管理环境变量
 - `python-dotenv` 用于加载 `.env` 文件
 - 敏感信息（API Key）不提交到 Git
+
+### Tushare 代理端点（自定义 URL）
+
+- 位置：`TushareProvider._connect()`（`AI/dataflows/providers/tushare_provider.py`）——`ts.set_token(TUSHARE_TOKEN)` + `ts.pro_api()` 之后，覆写私有属性指向自定义端点：
+
+  ```python
+  self.api = ts.pro_api()
+  self.api._DataApi__http_url = "https://ts.gyzcloud.top/api"  # 自定义 Tushare 端点
+  ```
+
+- `_DataApi__http_url` 是 name-mangled 私有属性，写法必须保持双下划线形式；换回官方端点删掉该行即可（默认 `http://api.tushare.pro`）
+- Token 通过 `.env` 的 `TUSHARE_TOKEN` 配置（`LIVEPROFIT_DATA_SOURCE=tushare` 时生效）
+- **代理端点能力可能与官方有差异** → 新增数据函数做"三方依赖能力评估"时必须对代理端点**实测**（真实 token 探测），不能只看 tushare 官方文档

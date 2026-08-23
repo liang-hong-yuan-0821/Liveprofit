@@ -146,11 +146,11 @@ class BaseStockDataProvider(ABC):
         return self._not_supported("概念板块汇总")
 
     def get_industry_sector_performance(self, days: int = 10) -> str:
-        """获取全行业板块涨跌排名（TOP/BOTTOM）"""
+        """获取全行业板块涨跌排名（TOP/BOTTOM），输出含近10个交易日逐日涨跌幅矩阵"""
         return self._not_supported("行业板块表现")
 
     def get_concept_board_heat_rank(self, days: int = 10) -> str:
-        """获取热门概念板块热度排名（涨幅+成交额综合排序）"""
+        """获取热门概念板块热度排名（涨幅+成交额综合排序），输出含近10个交易日逐日涨跌幅矩阵"""
         return self._not_supported("板块热度排名")
 
     def get_sector_technical_screening(self, days: int = 60) -> str:
@@ -168,6 +168,40 @@ class BaseStockDataProvider(ABC):
         仅 Tushare 数据源支持（AKShare 无对等的打板专题数据接口）。
         """
         return self._not_supported("题材板块轮动矩阵（仅 Tushare 支持 limit_cpt_list）")
+
+    def get_concept_daily_top_gains(self, days: int = 10, top_n: int = 20) -> str:
+        """获取近 N 个交易日东财概念板块逐日涨幅 TOP 矩阵（含换手率 + 跨日上榜统计）。
+
+        逐日回退采集 dc_index 按日快照，用于识别主线持续性/新热点扩散。
+        仅 Tushare 数据源支持（AKShare 概念接口仅当日快照，无历史逐日横截面）。
+        """
+        return self._not_supported("逐日概念涨幅TOP20（仅 Tushare 支持 dc_index 按日快照）")
+
+    def get_limit_up_ladder(self, days: int = 20) -> str:
+        """获取近 N 个交易日全市场连板梯队与情绪数据。
+
+        每日涨停/跌停/炸板家数 + 连板分档 + 晋级率/炸板率矩阵，
+        用于判断市场情绪周期位置（冰点/修复/高潮/退潮）。
+        仅 Tushare 数据源支持（limit_list_d 单接口覆盖涨停/炸板/跌停三口径）。
+        """
+        return self._not_supported("连板梯队（仅 Tushare 支持 limit_list_d）")
+
+    def get_industry_daily_returns_matrix(self, days: int = 10):
+        """行业近 N 个交易日逐日涨跌幅结构化矩阵（热力图数据源）。
+
+        返回 dict {"source", "dates", "names", "pct_matrix"}：dates 升序（YYYYMMDD，
+        最长 10）、names 与 pct_matrix 行序对应、缺失格为 None。
+        结构化接口约定：不支持/失败时返回 None（不返回 _not_supported() 的 str）。
+        """
+        return None
+
+    def get_concept_daily_returns_matrix(self, days: int = 10, top_n: int = 30):
+        """概念板块近 N 个交易日逐日涨跌幅结构化矩阵（热力图数据源，热度 TOP N 同口径）。
+
+        返回结构与 get_industry_daily_returns_matrix 相同（names 为概念名）。
+        结构化接口约定：不支持/失败时返回 None。
+        """
+        return None
 
     # ==================== 板块层 — 选股层数据（东财概念体系） ====================
 

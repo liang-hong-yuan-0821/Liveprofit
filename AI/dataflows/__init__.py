@@ -24,6 +24,8 @@ from .interface import (
     get_sector_relative_strength,
     get_industry_policy_news,
     get_concept_rotation_ranking,
+    get_concept_daily_top_gains,
+    get_limit_up_ladder,
     switch_data_source,
     set_config,
 )

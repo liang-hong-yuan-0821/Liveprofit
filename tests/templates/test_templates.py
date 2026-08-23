@@ -67,3 +67,24 @@ def test_all_real_templates_loadable():
         for name in names:
             content = load_output_format(layer, name)
             assert content, f"模板 {layer}/{name}.md 为空"
+
+
+def test_rotation_template_has_mainline_tactic_sections():
+    """轮动模板：速览块主线状态/追高组/低吸组 3 行 + 主线判定与轮动期战术分组章节 + 四数据块规则"""
+    content = load_output_format("sector", "sector_rotation_analyst")
+    assert "主线状态: <明确主线(名称) / 轮动期(无明确主线)>" in content
+    assert "追高组: <板块名|逻辑|风险>" in content
+    assert "低吸组: <板块名|逻辑|风险>" in content
+    assert "## 三、主线判定与轮动期战术分组" in content
+    assert "## 八、跨体系交叉验证" in content        # 原七 → 八（重编号落地）
+    assert "四个数据块" in content
+    assert "缺失行业基本面" in content
+
+
+def test_news_template_has_policy_catalyst_section():
+    """新闻模板：速览块事件催化行 + 政策/事件催化章节 + 原章节重编号"""
+    content = load_output_format("sector", "sector_news_analyst")
+    assert "事件催化: 利好:[板块列表] | 利空:[板块列表]" in content
+    assert "## 四、政策/事件催化" in content
+    assert "## 五、三级别候选板块详细分析" in content   # 原四 → 五
+    assert "## 六、风格一致性验证" in content          # 原五 → 六

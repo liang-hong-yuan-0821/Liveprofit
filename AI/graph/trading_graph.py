@@ -40,6 +40,7 @@ from .reflection import Reflector
 from .signal_processing import SignalProcessor
 from AI.utils.llm_callbacks import LLMCallbackHandler, ToolCallbackHandler
 from AI.utils.dataprovider_log import track_node
+from AI.utils import step_gate
 
 logger = logging.getLogger(__name__)
 
@@ -308,6 +309,13 @@ class TradingAgentsGraph:
         self.tool_handler.set_log_dir(log_dir)
         logger.info(f"日志目录: {log_dir.resolve()}")
 
+        # ---- 调试步进模式（LIVEPROFIT_DEBUG_STEP=true）----
+        debug_step = self.config.get("debug_step", False)
+        if debug_step:
+            step_gate.enable(log_dir)
+            trace_step("调试步进模式已启用",
+                       checkpoint_file=str(step_gate.checkpoint_file()))
+
         trace_step("propagate 入口", company=company_name, trade_date=trade_date,
                    raw_date=raw_date, correction=date_correction,
                    callback=bool(progress_callback))
@@ -426,6 +434,10 @@ class TradingAgentsGraph:
             )
         trace_step("决策提取完成", action=decision.get("action"),
                    price=decision.get("target_price"), conf=decision.get("confidence"))
+
+        # 步进模式收尾：清理门控状态（防跨 run 残留）
+        if debug_step:
+            step_gate.disable()
 
         return final_state, decision
 

@@ -52,6 +52,10 @@ def logs_fixture(tmp_path, monkeypatch):
     reports.mkdir()
     (reports / "01_市场层报告.md").write_text("# 市场层", encoding="utf-8")
     (reports / "02_final_position_plan.json").write_text('{"a": 1}', encoding="utf-8")
+    # charts 子目录（板块层热力图 HTML）
+    charts_dir = reports / "charts"
+    charts_dir.mkdir()
+    (charts_dir / "sector_daily_heatmaps.html").write_text("<html>plotly</html>", encoding="utf-8")
 
     (logs / "backups").mkdir()
     (logs / "event_study_daily.log").write_text("", encoding="utf-8")
@@ -79,6 +83,16 @@ def test_list_layers_excludes_reports(logs_fixture):
     assert [p.name for p in L.list_layers(run)] == ["market"]
 
 
+def test_sort_layers_order(logs_fixture):
+    """已知 layer 按固定执行序 market→sector→stock→screening，未知字母序附后"""
+    run = logs_fixture / "2026-08-19_223929"
+    for name in ["screening", "stock", "sector", "unknown_x", "unknown_a"]:
+        (run / name).mkdir()
+    layers = L.list_layers(run)
+    assert [p.name for p in L.sort_layers(layers)] == [
+        "market", "sector", "stock", "screening", "unknown_a", "unknown_x"]
+
+
 def test_list_nodes(logs_fixture):
     layer = logs_fixture / "2026-08-19_223929" / "market"
     assert [p.name for p in L.list_nodes(layer)] == ["001_International_Event_Extraction_Analyst"]
@@ -101,7 +115,17 @@ def test_list_tools(logs_fixture):
 def test_list_report_files(logs_fixture):
     run = logs_fixture / "2026-08-19_223929"
     assert [p.name for p in L.list_report_files(run)] == [
-        "01_市场层报告.md", "02_final_position_plan.json"]
+        "01_市场层报告.md", "02_final_position_plan.json",
+        "sector_daily_heatmaps.html"]
+
+
+def test_list_report_files_recurses_charts_subdir(logs_fixture):
+    """reports/ 递归收集：charts/ 子目录下的 HTML 图表文件纳入，排序键为相对路径"""
+    run = logs_fixture / "2026-08-19_223929"
+    rel = [p.relative_to(run / "reports").as_posix()
+           for p in L.list_report_files(run)]
+    assert rel == ["01_市场层报告.md", "02_final_position_plan.json",
+                   "charts/sector_daily_heatmaps.html"]
 
 
 def test_read_missing_and_bad_json(logs_fixture):
@@ -119,3 +143,36 @@ def test_parse_legacy(logs_fixture):
     assert payload["desc"] == "宏观指标"
     assert payload["req"] == {"kind": "cpi"}
     assert payload["res"] == "# CPI\n- 3.4"
+
+
+# ---- 调试步进检查点 ----
+
+def test_find_checkpoint(logs_fixture):
+    """缺失 → None；正常 JSON → payload；坏 JSON → None"""
+    run = logs_fixture / "2026-08-19_223929"
+    assert L.find_checkpoint(run) is None
+    (run / L.CHECKPOINT_FILE).write_text('{"status": "waiting", "seq": 1}',
+                                         encoding="utf-8")
+    assert L.find_checkpoint(run)["status"] == "waiting"
+    (run / L.CHECKPOINT_FILE).write_text("not-json", encoding="utf-8")
+    assert L.find_checkpoint(run) is None
+
+
+def test_find_active_checkpoint_waiting_first(logs_fixture):
+    """无检查点 → None；waiting 优先（并发 run 不被遮蔽）；无 waiting 退回最新"""
+    run_old = logs_fixture / "2026-08-15_194033"
+    run_new = logs_fixture / "2026-08-19_223929"
+
+    assert L.find_active_checkpoint() is None
+
+    # 仅较新 run 有 confirmed → 返回它（历史状态展示）
+    (run_new / L.CHECKPOINT_FILE).write_text(
+        '{"status": "confirmed", "seq": 2}', encoding="utf-8")
+    run_dir, payload = L.find_active_checkpoint()
+    assert run_dir == run_new and payload["status"] == "confirmed"
+
+    # 较旧 run 出现 waiting → 优先返回 waiting（不被较新 run 的 confirmed 遮蔽）
+    (run_old / L.CHECKPOINT_FILE).write_text(
+        '{"status": "waiting", "seq": 1}', encoding="utf-8")
+    run_dir, payload = L.find_active_checkpoint()
+    assert run_dir == run_old and payload["status"] == "waiting"

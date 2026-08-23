@@ -44,6 +44,9 @@ dependencies = [
     "uvicorn>=0.30.0",
     "streamlit>=1.40.0",
 
+    # 板块层热力图（自包含 HTML，离线生成）
+    "plotly>=5.18.0",
+
     # 事件研究系统：事件爬虫（requests + BeautifulSoup）
     "requests>=2.32.0",
     "beautifulsoup4>=4.12.0",

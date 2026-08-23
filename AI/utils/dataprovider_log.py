@@ -20,6 +20,9 @@
   3) 无节点上下文（如 ToolNode 内部）→ 回退到最近一次 LLM 目录。
 
 控制台仅输出一行摘要。
+
+调试步进模式（LIVEPROFIT_DEBUG_STEP=true）下，每次调用落盘后挂 DP 响应检查点
+（见 AI/utils/step_gate.py）。
 """
 
 import functools
@@ -32,6 +35,7 @@ from typing import Any, Callable, Dict, Optional
 
 # 与 llm_callbacks 共享运行状态（log_dir / llm_seq / last_llm_dir / dp_counters）
 from AI.utils.llm_callbacks import _run, _NODE_LAYER, _safe_json, _sanitize, _ts
+from AI.utils import step_gate
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +68,25 @@ def dataprovider_log(fn: Callable) -> Callable:
         req = _bind_req(fn, args, kwargs)
         result = fn(*args, **kwargs)
         try:
-            _write(fn.__name__, fn.__doc__, req, result)
+            written = _write(fn.__name__, fn.__doc__, req, result)
         except Exception as e:
             logger.debug(f"[DP] 日志写入失败 {fn.__name__}: {e}")
+            written = None
+        # 调试步进：DP 响应检查点（日志目录未初始化时跳过；异常隔离不干扰数据流）
+        if written is not None:
+            try:
+                call_dir, res_file = written
+                rel = str(call_dir.relative_to(_run.log_dir)).replace("\\", "/")
+                step_gate.checkpoint(
+                    "dp",
+                    layer=rel.split("/")[0],
+                    node=_current_node.get() or "unknown",
+                    name=fn.__name__,
+                    dir=rel,
+                    show_file=res_file,
+                )
+            except Exception as e:
+                logger.debug(f"[DP] 步进检查点失败 {fn.__name__}: {e}")
         return result
 
     return wrapper
@@ -109,12 +129,17 @@ def _agent_dir() -> Optional[Path]:
     return None
 
 
-def _write(name: str, doc: Optional[str], req: Dict[str, Any], res: Any) -> None:
-    """写入 {seq:03d}_{接口名}/ 目录到当前 Agent 目录（req.json + res.md|json + meta.json）"""
+def _write(name: str, doc: Optional[str], req: Dict[str, Any],
+           res: Any) -> Optional[tuple]:
+    """写入 {seq:03d}_{接口名}/ 目录到当前 Agent 目录（req.json + res.md|json + meta.json）
+
+    返回 (call_dir, res_file) 供步进检查点定位内容；
+    日志目录未初始化时返回 None（不落盘）。
+    """
     agent_dir = _agent_dir()
     if agent_dir is None:
         logger.debug(f"[DP] 跳过 {name}：日志目录未初始化")
-        return
+        return None
 
     # desc = docstring 首行
     desc = ""
@@ -146,3 +171,4 @@ def _write(name: str, doc: Optional[str], req: Dict[str, Any], res: Any) -> None
     }), encoding="utf-8")
 
     logger.info("[DP] %s → %s::%s::%03d", _ts(), rel, name, seq)
+    return call_dir, res_file

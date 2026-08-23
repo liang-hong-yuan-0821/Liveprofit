@@ -42,7 +42,10 @@ start_docker() {
         DOCKER_PATH="${DOCKER_PATH//\\//}"  # 反斜杠转正斜杠
         if [ -f "$DOCKER_PATH" ]; then
             log_info "找到 Docker Desktop: $DOCKER_PATH"
-            start "" "$DOCKER_PATH" 2>/dev/null || cmd.exe /c "start \"\" \"$DOCKER_PATH\"" 2>/dev/null || true
+            # </dev/null 防止 cmd 交互式挂起脚本（同"打开浏览器"一步）
+            start "" "$DOCKER_PATH" 2>/dev/null || \
+                powershell.exe -NoProfile -Command "Start-Process '$DOCKER_PATH'" </dev/null 2>/dev/null || \
+                cmd.exe /c "start \"\" \"$DOCKER_PATH\"" </dev/null 2>/dev/null || true
             break
         fi
     done
@@ -130,7 +133,11 @@ else
     done
 fi
 log_info "打开浏览器: ${VIEWER_URL}"
-cmd.exe /c "start \"\" ${VIEWER_URL}" 2>/dev/null || true
+# Git Bash 下 cmd.exe /c "start ..." 的 /c 会被 MSYS 路径转换破坏，
+# 导致 cmd 进入交互式会话挂起脚本 → 用 PowerShell Start-Process 打开默认浏览器，
+# </dev/null 兜底防交互式挂起，失败不阻塞主流程
+powershell.exe -NoProfile -Command "Start-Process '${VIEWER_URL}'" </dev/null 2>/dev/null || \
+    cmd.exe /c "start \"\" \"${VIEWER_URL}\"" </dev/null 2>/dev/null || true
 
 # --------------- 6. 运行 ---------------
 echo ""

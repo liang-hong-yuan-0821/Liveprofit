@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 import pandas as pd
 
 from .base_provider import BaseStockDataProvider
+from . import daily_matrix_utils
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,15 @@ def _try_call(fn, *args, timeout=_AKSHARE_TIMEOUT, **kwargs):
         return _call_with_timeout(fn, timeout, *args, **kwargs)
     except Exception:
         return None
+
+
+def _is_intraday_trading_time(now=None) -> bool:
+    """A 股盘中交易时段判定（周一至周五 9:30-15:00），用于逐日表盘中标注
+    （与 tushare_provider._is_intraday_trading_time 同口径）。"""
+    now = now or datetime.now()
+    if now.weekday() >= 5:
+        return False
+    return 930 <= now.hour * 100 + now.minute <= 1500
 
 
 def _extract_date_from_row(row, df=None) -> str:
@@ -1052,64 +1062,25 @@ class AKShareProvider(BaseStockDataProvider):
         """
         获取全行业（申万一级+二级）涨跌排名。
         遍历所有行业板块指数，计算近 N 日涨跌幅并排序。
+        输出含「近10个交易日逐日涨跌幅」章节（固定 10 列，与 days 参数无关；
+        复用同一批 hist_em 序列，不新增 API 调用）。
         """
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装，无法获取行业板块数据。"
 
         try:
-            # 获取所有行业板块名称列表
-            industry_df = _try_call(ak.stock_board_industry_name_em)
-            if industry_df is None or industry_df.empty:
-                return "未获取到行业板块列表（API 不可用）。"
-
-            # 提取板块名称（申万一级行业通常在前列）
-            industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
-
-            if not industry_names:
-                return "行业板块列表为空。"
-
-            end_date = datetime.now().strftime("%Y%m%d")
-            start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
-
-            performance_list = []
-            consecutive_failures = 0
-            for name in industry_names:
-                try:
-                    df = _call_with_timeout(
-                        lambda n=name: ak.stock_board_industry_hist_em(
-                            symbol=n,
-                            start_date=start_date,
-                            end_date=end_date,
-                            period="daily",
-                            adjust="",
-                        ),
-                        timeout=_AKSHARE_TIMEOUT,
-                    )
-                    if df is not None and not df.empty and len(df) >= 2:
-                        df = df.tail(days + 1)
-                        close_col = _detect_close_column(df)
-                        if close_col:
-                            first_close = float(df[close_col].iloc[0])
-                            last_close = float(df[close_col].iloc[-1])
-                            if first_close > 0:
-                                pct_change = (last_close - first_close) / first_close * 100
-                                performance_list.append((name, pct_change, last_close, len(df)))
-                        consecutive_failures = 0
-                    else:
-                        consecutive_failures += 1
-                except Exception:
-                    consecutive_failures += 1
-                    if consecutive_failures >= 3:
-                        break
-                    continue
-
+            performance_list, daily_closes, date_range, err = self._fetch_industry_daily_series(days)
+            if err:
+                return err
             if not performance_list:
                 return "未获取到任何行业板块数据。"
 
             # 按涨跌幅排序
             performance_list.sort(key=lambda x: x[1], reverse=True)
 
-            lines = [f"# 全行业板块涨跌排名（近 {days} 日）\n"]
+            lines = [f"# 全行业板块涨跌排名（近 {days} 日）"]
+            lines.append(f"（{date_range[0]} - {date_range[1]}）\n"
+                         if date_range else "")
             lines.append(f"共覆盖 {len(performance_list)} 个行业板块\n")
             lines.append("| 排名 | 行业 | 涨跌幅(%) | 最新收盘价 | 数据天数 |")
             lines.append("|------|------|-----------|------------|----------|")
@@ -1124,11 +1095,158 @@ class AKShareProvider(BaseStockDataProvider):
             for i, (name, pct, price, _) in enumerate(performance_list[-5:], 1):
                 lines.append(f"  {i}. {name}: {pct:+.2f}%（收盘 {price:.2f}）")
 
+            daily_section = self._append_industry_daily_section(performance_list, daily_closes, days)
+            if daily_section:
+                lines.append(daily_section)
             return "\n".join(lines)
         except Exception as e:
             logger.warning(f"获取行业板块排名失败: {e}")
             return f"获取行业板块排名失败: {e}"
 
+    def _fetch_industry_daily_series(self, days: int = 10):
+        """行业日线拉取（东财行业板块）：返回 (performance_list, daily_closes, date_range, err)。
+
+        performance_list = [(name, pct, price, ndays)]（未排序，provider 获取序）；
+        daily_closes = {行业名: DataFrame[date_col, close_col]}（tail(11)，逐日章节/矩阵复用）；
+        date_range = (start, end) 取自首个成功行业的日线窗口。
+        err 非空 = 列表接口失败/列表为空（err 即原返回文案）；全部行业失败 → ([], {}, None, None)。
+        """
+        # 获取所有行业板块名称列表
+        industry_df = _try_call(ak.stock_board_industry_name_em)
+        if industry_df is None or industry_df.empty:
+            return None, None, None, "未获取到行业板块列表（API 不可用）。"
+
+        # 提取板块名称（申万一级行业通常在前列）
+        industry_names = industry_df.iloc[:, 0].tolist() if len(industry_df.columns) > 0 else []
+
+        if not industry_names:
+            return None, None, None, "行业板块列表为空。"
+
+        end_date = datetime.now().strftime("%Y%m%d")
+        start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
+
+        performance_list = []
+        daily_closes = {}  # 行业名 → tail(11) 日线，逐日章节/矩阵复用（不新增 API 调用）
+        date_range = None  # 聚合区间 (start, end)，取自首个成功行业的日线窗口
+        consecutive_failures = 0
+        for name in industry_names:
+            try:
+                df = _call_with_timeout(
+                    lambda n=name: ak.stock_board_industry_hist_em(
+                        symbol=n,
+                        start_date=start_date,
+                        end_date=end_date,
+                        period="daily",
+                        adjust="",
+                    ),
+                    timeout=_AKSHARE_TIMEOUT,
+                )
+                if df is not None and not df.empty and len(df) >= 2:
+                    df = df.tail(days + 1)
+                    close_col = self._detect_close_column(df)
+                    if close_col:
+                        first_close = float(df[close_col].iloc[0])
+                        last_close = float(df[close_col].iloc[-1])
+                        if first_close > 0:
+                            pct_change = (last_close - first_close) / first_close * 100
+                            performance_list.append((name, pct_change, last_close, len(df)))
+                            date_col = self._detect_date_column(df)
+                            if date_col:
+                                daily_closes[name] = df.tail(11)[[date_col, close_col]].copy()
+                                if date_range is None:
+                                    dvals = pd.to_datetime(df[date_col])
+                                    date_range = (dvals.min().strftime("%Y%m%d"),
+                                                  dvals.max().strftime("%Y%m%d"))
+                    consecutive_failures = 0
+                else:
+                    consecutive_failures += 1
+            except Exception:
+                consecutive_failures += 1
+                if consecutive_failures >= 3:
+                    break
+                continue
+        return performance_list, daily_closes, date_range, None
+
+    def get_industry_daily_returns_matrix(self, days: int = 10):
+        """行业近 N 个交易日逐日涨跌幅结构化矩阵（热力图数据源）。
+
+        复用 get_industry_sector_performance 的日线拉取（_fetch_industry_daily_series），
+        与文本逐日章节同源同口径。
+        返回 {"source": "akshare", "dates": [...升序], "names": [...], "pct_matrix": [...]}；
+        不支持/数据不足时返回 None（结构化接口约定）。
+        """
+        if not AKSHARE_AVAILABLE:
+            return None
+        try:
+            performance_list, daily_closes, _, err = self._fetch_industry_daily_series(days)
+            if err or not performance_list or not daily_closes:
+                return None
+            series_map = {}
+            for name, df in daily_closes.items():
+                # 列名是动态探测的（date/close 均为 _detect 结果），按列位置取
+                series_map[name] = daily_matrix_utils.daily_pct_from_closes(
+                    df.iloc[:, 0].astype(str).tolist(),
+                    pd.to_numeric(df.iloc[:, 1], errors="coerce").tolist(),
+                )
+            n = min(daily_matrix_utils.DAILY_COLS, days)
+            master = daily_matrix_utils.master_dates_from_series(series_map, n=n)
+            if len(master) < 2:
+                return None
+            names = [name for name, *_ in performance_list]
+            return {"source": "akshare", "dates": master, "names": names,
+                    "pct_matrix": [[series_map.get(nm, {}).get(d) for d in master]
+                                   for nm in names]}
+        except Exception as e:
+            logger.warning(f"获取行业逐日矩阵失败: {e}")
+            return None
+
+    def _append_industry_daily_section(self, performance_list, daily_closes, days: int) -> str:
+        """行业逐日涨跌幅章节（纯格式化）：行序 = 聚合排名序，固定最近 10 个交易日列。
+
+        performance_list = [(name, pct, price, ndays)]（已按 pct 降序）；
+        daily_closes = {name: DataFrame[日期列, 收盘列]}（tail(11)，不足按实际）。
+        累计列 = 逐日 pct 复利，days=10 时与聚合表 pct 一致。
+        """
+        n = min(daily_matrix_utils.DAILY_COLS, days)
+        series_map = {}
+        for name, df in daily_closes.items():
+            series_map[name] = daily_matrix_utils.daily_pct_from_closes(
+                df.iloc[:, 0].tolist(),
+                pd.to_numeric(df.iloc[:, 1], errors="coerce").tolist())
+        if not series_map:
+            return ""
+        master = daily_matrix_utils.master_dates_from_series(series_map, n=n)
+        if len(master) < 2:
+            return "\n> 近10日逐日涨跌幅数据不足（仅 %d 天），已省略。" % len(master)
+        covered = {d for s in series_map.values() for d in s}
+        gaps = daily_matrix_utils.compute_gap_dates(min(covered), max(covered), covered)
+        rows = [(name, series_map.get(name, {}),
+                 daily_matrix_utils.cum_pct_from_daily(series_map.get(name, {})))
+                for name, *_ in performance_list]
+        today = datetime.now().strftime("%Y%m%d")
+        intraday_date = master[-1] if (master[-1] == today
+                                       and _is_intraday_trading_time()) else None
+        caption_parts = ["覆盖 %s ~ %s，共 %d 个交易日" % (
+            daily_matrix_utils.fmt_date_short(master[0]),
+            daily_matrix_utils.fmt_date_short(master[-1]), len(master))]
+        if intraday_date:
+            caption_parts.append("最新列 %s（盘中）为盘中未定稿数据"
+                                 % daily_matrix_utils.fmt_date_short(master[-1]))
+        if len(master) < daily_matrix_utils.DAILY_COLS:
+            caption_parts.append("仅覆盖 %d 个交易日" % len(master))
+        lag_days = (datetime.now() - pd.to_datetime(master[-1])).days
+        if lag_days > 3:
+            caption_parts.append("最新交易日 %s（%d 天前），数据可能滞后" % (
+                daily_matrix_utils.fmt_date_short(master[-1]), lag_days))
+        section = daily_matrix_utils.format_daily_matrix(
+            rows, master,
+            title="近%d个交易日逐日涨跌幅（行业×日期，列头 MM-DD）" % len(master),
+            caption="；".join(caption_parts),
+            intraday_date=intraday_date,
+            gap_dates=gaps,
+            name_col="行业",
+        )
+        return ("\n\n" + section) if section else ""
 
     @staticmethod
     def _detect_close_column(df) -> str:
@@ -1144,64 +1262,36 @@ class AKShareProvider(BaseStockDataProvider):
                 return col
         return None
 
+    @staticmethod
+    def _detect_date_column(df) -> str:
+        """自动探测 DataFrame 中的日期列名（逐日章节用）"""
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if col_lower in ("date", "trade_date", "日期", "交易日期"):
+                return col
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if "日期" in col_lower or "date" in col_lower:
+                return col
+        return None
+
 
     def get_concept_board_heat_rank(self, days: int = 10) -> str:
         """
         获取热门概念板块热度排名（涨幅+成交额综合排序）。
         遍历所有概念板块，按综合热度排序。
+        输出含「近10个交易日逐日涨跌幅」章节（行 = 热度 TOP30，复用已取日线，
+        不新增 API 调用）。
         """
         if not AKSHARE_AVAILABLE:
             return "AKShare 未安装，无法获取概念板块数据。"
 
         try:
-            # 获取概念板块名称列表
-            concept_df = ak.stock_board_concept_name_em()
-            if concept_df is None or concept_df.empty:
-                return "未获取到概念板块列表。"
-
-            concept_names = concept_df.iloc[:, 0].tolist() if len(concept_df.columns) > 0 else []
-            if not concept_names:
-                return "概念板块列表为空。"
-
-            end_date = datetime.now().strftime("%Y%m%d")
-            start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
-
-            heat_list = []
-            for name in concept_names:
-                try:
-                    df = ak.stock_board_concept_hist_em(
-                        symbol=name,
-                        period="daily",
-                        start_date=start_date,
-                        end_date=end_date,
-                    )
-                    if df is not None and not df.empty and len(df) >= 2:
-                        df = df.tail(days + 1)
-                        close_col = _detect_close_column(df)
-                        volume_col = _detect_volume_column(df)
-                        if close_col:
-                            first_close = float(df[close_col].iloc[0])
-                            last_close = float(df[close_col].iloc[-1])
-                            if first_close > 0:
-                                pct_change = (last_close - first_close) / first_close * 100
-                                # 计算成交额变化
-                                vol_change = 0
-                                if volume_col:
-                                    recent_vol = float(df[volume_col].iloc[-days:].mean()) if len(df) >= days else float(df[volume_col].mean())
-                                    older_vol = float(df[volume_col].iloc[:-days].mean()) if len(df) > days else recent_vol
-                                    if older_vol > 0:
-                                        vol_change = (recent_vol - older_vol) / older_vol * 100
-                                # 综合热度 = 涨跌幅权重0.6 + 成交额变化权重0.4
-                                heat_score = pct_change * 0.6 + vol_change * 0.4
-                                heat_list.append((name, pct_change, vol_change, heat_score))
-                except Exception:
-                    continue
-
+            heat_list, daily_pct, err = self._fetch_concept_heat(days, top_n=30)
+            if err:
+                return err
             if not heat_list:
                 return "未获取到任何概念板块数据。"
-
-            # 按综合热度排序
-            heat_list.sort(key=lambda x: x[3], reverse=True)
 
             lines = [f"# 概念板块热度排名（近 {days} 日）\n"]
             lines.append(f"共覆盖 {len(heat_list)} 个概念板块\n")
@@ -1214,10 +1304,160 @@ class AKShareProvider(BaseStockDataProvider):
             for i, (name, pct, vol_chg, heat) in enumerate(heat_list[:10], 1):
                 lines.append(f"  {i}. {name}: 涨幅 {pct:+.2f}%, 量变 {vol_chg:+.1f}%, 热度 {heat:+.1f}")
 
+            daily_section = self._append_concept_daily_section(heat_list, daily_pct, days)
+            if daily_section:
+                lines.append(daily_section)
             return "\n".join(lines)
         except Exception as e:
             logger.warning(f"获取概念板块热度失败: {e}")
             return f"获取概念板块热度失败: {e}"
+
+    def _fetch_concept_heat(self, days: int, top_n: int = 30):
+        """概念热度计算（遍历概念板块 hist_em）：返回 (heat_list, daily_pct, err)。
+
+        heat_list = [(name, pct, vol_change, heat)] 已按热度降序；
+        daily_pct = {概念名: {YYYYMMDD: pct}}（逐日章节/矩阵复用，不新增 API 调用）。
+        err 非空 = 列表接口失败/列表为空（err 即原返回文案）。
+        """
+        # 获取概念板块名称列表
+        concept_df = ak.stock_board_concept_name_em()
+        if concept_df is None or concept_df.empty:
+            return None, None, "未获取到概念板块列表。"
+
+        concept_names = concept_df.iloc[:, 0].tolist() if len(concept_df.columns) > 0 else []
+        if not concept_names:
+            return None, None, "概念板块列表为空。"
+
+        end_date = datetime.now().strftime("%Y%m%d")
+        start_date = (datetime.now() - timedelta(days=days * 3)).strftime("%Y%m%d")
+
+        heat_list = []
+        daily_pct = {}  # 概念名 → {YYYYMMDD: pct}，逐日章节/矩阵复用（不新增 API 调用）
+        for name in concept_names:
+            try:
+                df = ak.stock_board_concept_hist_em(
+                    symbol=name,
+                    period="daily",
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                if df is not None and not df.empty and len(df) >= 2:
+                    df = df.tail(days + 1)
+                    close_col = self._detect_close_column(df)
+                    volume_col = self._detect_volume_column(df)
+                    if close_col:
+                        first_close = float(df[close_col].iloc[0])
+                        last_close = float(df[close_col].iloc[-1])
+                        if first_close > 0:
+                            pct_change = (last_close - first_close) / first_close * 100
+                            # 计算成交额变化
+                            vol_change = 0
+                            if volume_col:
+                                recent_vol = float(df[volume_col].iloc[-days:].mean()) if len(df) >= days else float(df[volume_col].mean())
+                                older_vol = float(df[volume_col].iloc[:-days].mean()) if len(df) > days else recent_vol
+                                if older_vol > 0:
+                                    vol_change = (recent_vol - older_vol) / older_vol * 100
+                            # 综合热度 = 涨跌幅权重0.6 + 成交额变化权重0.4
+                            heat_score = pct_change * 0.6 + vol_change * 0.4
+                            heat_list.append((name, pct_change, vol_change, heat_score))
+                            date_col = self._detect_date_column(df)
+                            if date_col:
+                                daily_pct[name] = daily_matrix_utils.daily_pct_from_closes(
+                                    df.tail(11)[date_col].tolist(),
+                                    pd.to_numeric(df.tail(11)[close_col],
+                                                 errors="coerce").tolist())
+            except Exception:
+                continue
+
+        if not heat_list:
+            # 防御性分支：concept_names 非空时每行成功 append / 失败 continue，正常路径
+            # 仅当全部概念行均失败时可达——保留兜底，调用方按空列表处理
+            return [], {}, None
+        # 按综合热度排序
+        heat_list.sort(key=lambda x: x[3], reverse=True)
+        return heat_list, daily_pct, None
+
+    def _concept_daily_rows(self, heat_list, daily_pct, days: int, top_n: int = 30):
+        """概念逐日涨跌幅行数据（已取日线口径）：返回 (rows, master, gaps, insufficient)。
+
+        rows = [(name, {YYYYMMDD: pct}, cum_pct)]，行序 = heat_list[:top_n] 序；
+        daily_pct 全空 → (None, [], [], None)；master 不足 2 天 → rows=None、
+        insufficient = master 长度（供调用方生成"数据不足"提示）。
+        """
+        n = min(daily_matrix_utils.DAILY_COLS, days)
+        if not daily_pct:
+            return None, [], [], None
+        # 历史概念可能上市晚，日期轴用覆盖 ≥50% 概念的最近 n 天口径
+        master = daily_matrix_utils.master_dates_from_series(daily_pct, n=n, min_coverage=0.5)
+        if len(master) < 2:
+            return None, [], [], len(master)
+        covered = {d for s in daily_pct.values() for d in s}
+        gaps = daily_matrix_utils.compute_gap_dates(min(covered), max(covered), covered)
+        rows = [(name, daily_pct.get(name, {}),
+                 daily_matrix_utils.cum_pct_from_daily(daily_pct.get(name, {})))
+                for name, *_ in heat_list[:top_n]]
+        return rows, master, gaps, None
+
+    def _append_concept_daily_section(self, heat_list, daily_pct, days: int) -> str:
+        """概念逐日涨跌幅章节（近 10 个交易日）：行 = 热度 TOP30，单元格来自已取日线 close 序列。
+
+        heat_list = [(name, pct, vol_chg, heat)]（已按热度降序）；
+        daily_pct = {概念名: {YYYYMMDD: pct}}。
+        累计列 = 逐日 pct 复利，days=10 时与聚合表 pct 一致。
+        """
+        rows, master, gaps, insufficient = self._concept_daily_rows(heat_list, daily_pct, days)
+        if rows is None:
+            if insufficient is None:
+                return ""
+            return "\n> 近10日逐日涨跌幅数据不足（仅 %d 天），已省略。" % insufficient
+        today = datetime.now().strftime("%Y%m%d")
+        intraday_date = master[-1] if (master[-1] == today
+                                       and _is_intraday_trading_time()) else None
+        caption_parts = ["覆盖 %s ~ %s，共 %d 个交易日" % (
+            daily_matrix_utils.fmt_date_short(master[0]),
+            daily_matrix_utils.fmt_date_short(master[-1]), len(master))]
+        if intraday_date:
+            caption_parts.append("最新列 %s（盘中）为盘中未定稿数据"
+                                 % daily_matrix_utils.fmt_date_short(master[-1]))
+        if len(master) < daily_matrix_utils.DAILY_COLS:
+            caption_parts.append("仅覆盖 %d 个交易日" % len(master))
+        lag_days = (datetime.now() - pd.to_datetime(master[-1])).days
+        if lag_days > 3:
+            caption_parts.append("最新交易日 %s（%d 天前），数据可能滞后" % (
+                daily_matrix_utils.fmt_date_short(master[-1]), lag_days))
+        section = daily_matrix_utils.format_daily_matrix(
+            rows, master,
+            title="近%d个交易日逐日涨跌幅（概念×日期，列头 MM-DD）" % len(master),
+            caption="；".join(caption_parts),
+            intraday_date=intraday_date,
+            gap_dates=gaps,
+            name_col="概念板块",
+        )
+        return ("\n\n" + section) if section else ""
+
+    def get_concept_daily_returns_matrix(self, days: int = 10, top_n: int = 30):
+        """概念板块近 N 个交易日逐日涨跌幅结构化矩阵（热力图数据源）。
+
+        行集合与概念热度 TOP N 章节同口径（批量 hist_em + 热度公式排序，
+        复用 _fetch_concept_heat + _concept_daily_rows）。
+        返回 {"source": "akshare", "dates": [...升序], "names": [...], "pct_matrix": [...]}；
+        不支持/数据不足时返回 None（结构化接口约定）。
+        """
+        if not AKSHARE_AVAILABLE:
+            return None
+        try:
+            heat_list, daily_pct, err = self._fetch_concept_heat(days, top_n)
+            if err or not heat_list:
+                return None
+            rows, master, _, _ = self._concept_daily_rows(heat_list, daily_pct, days, top_n)
+            if rows is None or len(master) < 2:
+                return None
+            names = [name for name, *_ in rows]
+            return {"source": "akshare", "dates": master, "names": names,
+                    "pct_matrix": [[pcts.get(d) for d in master] for _, pcts, _ in rows]}
+        except Exception as e:
+            logger.warning(f"获取概念逐日矩阵失败: {e}")
+            return None
 
 
     @staticmethod
@@ -1332,7 +1572,7 @@ class AKShareProvider(BaseStockDataProvider):
                     consecutive_failures = 0
 
                     df = df.tail(days)
-                    close_col = _detect_close_column(df)
+                    close_col = self._detect_close_column(df)
                     if not close_col:
                         continue
 
@@ -1364,7 +1604,7 @@ class AKShareProvider(BaseStockDataProvider):
                     macd_signal = _calc_macd_signal(closes)
 
                     # 量比（5日均量 vs 20日均量）
-                    vol_col = _detect_volume_column(df)
+                    vol_col = self._detect_volume_column(df)
                     volume_ratio = 1.0
                     if vol_col:
                         vols = df[vol_col].astype(float)
@@ -1514,7 +1754,7 @@ class AKShareProvider(BaseStockDataProvider):
                 )
                 if sh_df is not None and not sh_df.empty and len(sh_df) >= 2:
                     sh_df = sh_df.tail(days + 1)
-                    close_col = _detect_close_column(sh_df)
+                    close_col = self._detect_close_column(sh_df)
                     if close_col:
                         first = float(sh_df[close_col].iloc[0])
                         last = float(sh_df[close_col].iloc[-1])
@@ -1546,7 +1786,7 @@ class AKShareProvider(BaseStockDataProvider):
                     )
                     if df is not None and not df.empty and len(df) >= 2:
                         df = df.tail(days + 1)
-                        close_col = _detect_close_column(df)
+                        close_col = self._detect_close_column(df)
                         if close_col:
                             first_close = float(df[close_col].iloc[0])
                             last_close = float(df[close_col].iloc[-1])

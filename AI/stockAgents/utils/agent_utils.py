@@ -178,6 +178,7 @@ class Toolkit:
         """
         获取全行业（申万一级+二级）板块涨跌排名。
         遍历所有行业板块指数，按近N日涨跌幅排序，标注领涨TOP5和领跌BOTTOM5。
+        输出含近10个交易日逐日涨跌幅矩阵，可判断领涨/领跌行业的持续性。
         用于全市场行业强弱横向对比。
         """
         return dataflow.get_industry_sector_performance(days)
@@ -200,6 +201,7 @@ class Toolkit:
     ) -> str:
         """
         获取热门概念板块热度排名（涨幅+成交额综合排序）。
+        输出含近10个交易日逐日涨跌幅矩阵（热度TOP30），可判断热点概念的持续性。
         用于判断当前市场热点概念及其持续性。
         """
         return dataflow.get_concept_board_heat(days)
@@ -234,8 +236,8 @@ class Toolkit:
         curr_date: Annotated[str, "当前日期 YYYY-mm-dd"],
     ) -> str:
         """
-        获取近期产业政策/重大行业新闻（一期占位）。
-        当前无免费行业政策聚合接口，Agent 应靠 LLM 训练知识做方向性判断。
+        获取近期产业政策/重大行业新闻（事件研究系统事件流：PG approved + Redis pending 合并去重）。
+        含已审核事件与 AI 预填待审快讯，供分析利好/利空与受影响板块。
         """
         return dataflow.get_industry_policy_news(curr_date)
 

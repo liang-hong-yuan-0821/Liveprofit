@@ -330,7 +330,7 @@ def analyze_tech_correlation(days: int = 10) -> str:
 
 @dataprovider_log
 def get_industry_sector_performance(days: int = 10) -> str:
-    """获取全行业板块涨跌排名"""
+    """获取全行业板块涨跌排名，输出含近10个交易日逐日涨跌幅矩阵（固定 10 日，与 days 参数无关）"""
     prov = _get_provider()
     if hasattr(prov, 'get_industry_sector_performance'):
         return prov.get_industry_sector_performance(days)
@@ -339,7 +339,7 @@ def get_industry_sector_performance(days: int = 10) -> str:
 
 @dataprovider_log
 def get_sector_fund_flow(days: int = 5) -> str:
-    """获取行业板块主力资金流向排名"""
+    """获取行业板块资金流向排名（东财行业口径：Tushare moneyflow_ind_dc 逐日聚合 / AKShare 行业资金流快照）"""
     prov = _get_provider()
     if hasattr(prov, 'get_sector_fund_flow_rank'):
         return prov.get_sector_fund_flow_rank(days)
@@ -348,7 +348,7 @@ def get_sector_fund_flow(days: int = 5) -> str:
 
 @dataprovider_log
 def get_concept_board_heat(days: int = 10) -> str:
-    """获取热门概念板块热度排名（涨幅+成交额综合排序）"""
+    """获取热门概念板块热度排名（涨幅+成交额综合排序），输出含近10个交易日逐日涨跌幅矩阵（固定 10 日）"""
     prov = _get_provider()
     if hasattr(prov, 'get_concept_board_heat_rank'):
         return prov.get_concept_board_heat_rank(days)
@@ -418,10 +418,68 @@ def get_concept_rotation_ranking(days: int = 5, top_n: int = 10) -> str:
 
 
 @dataprovider_log
+def get_concept_daily_top_gains(days: int = 10, top_n: int = 20) -> str:
+    """获取近 N 个交易日东财概念板块逐日涨幅 TOP 矩阵（含换手率 + 跨日上榜统计）。
+
+    用于识别主线持续性/新热点扩散效应。
+    仅 Tushare 数据源支持（AKShare 概念接口仅当日快照，无历史逐日横截面）。
+    """
+    prov = _get_provider()
+    if hasattr(prov, 'get_concept_daily_top_gains'):
+        return prov.get_concept_daily_top_gains(days, top_n)
+    return "当前数据源不支持逐日概念涨幅矩阵（仅 Tushare 支持 dc_index 按日快照）。"
+
+
+@dataprovider_log
+def get_limit_up_ladder(days: int = 20) -> str:
+    """获取近 N 个交易日全市场连板梯队与情绪数据。
+
+    每日涨停/跌停/炸板家数 + 连板分档 + 晋级率/炸板率矩阵，
+    用于判断市场情绪周期位置（冰点/修复/高潮/退潮）。
+    仅 Tushare 数据源支持（limit_list_d 单接口覆盖涨停/炸板/跌停三口径）。
+    """
+    prov = _get_provider()
+    if hasattr(prov, 'get_limit_up_ladder'):
+        return prov.get_limit_up_ladder(days)
+    return "当前数据源不支持连板梯队（仅 Tushare 支持 limit_list_d 接口）。"
+
+
+@dataprovider_log
+def get_industry_daily_returns_matrix(days: int = 10):
+    """行业近N个交易日逐日涨跌幅结构化矩阵（热力图数据源）。
+
+    返回 dict {source, dates, names, pct_matrix}；数据源不支持/失败时返回 None。
+    """
+    prov = _get_provider()
+    if hasattr(prov, 'get_industry_daily_returns_matrix'):
+        return prov.get_industry_daily_returns_matrix(days)
+    return None
+
+
+@dataprovider_log
+def get_concept_daily_returns_matrix(days: int = 10, top_n: int = 30):
+    """概念板块近N个交易日逐日涨跌幅结构化矩阵（热力图数据源，热度TOP N 同口径）。
+
+    返回 dict {source, dates, names, pct_matrix}；数据源不支持/失败时返回 None。
+    """
+    prov = _get_provider()
+    if hasattr(prov, 'get_concept_daily_returns_matrix'):
+        return prov.get_concept_daily_returns_matrix(days, top_n)
+    return None
+
+
+@dataprovider_log
 def get_industry_policy_news(curr_date: str) -> str:
-    """近期产业政策/重大行业新闻（一期占位）"""
-    # TODO: AKShare 无行业政策聚合新闻接口
-    return "数据不可用：暂无行业政策新闻聚合数据源。"
+    """近期产业政策/重大行业新闻（事件研究系统事件流：PG approved + Redis pending 合并）"""
+    try:
+        # 函数内 lazy import：interface ← eventStudy 仅此一处依赖，
+        # 且 eventStudy 顶层不 import dataflows（get_provider 亦为函数内 lazy），
+        # lazy import 兜底防任何循环导入
+        from AI.eventStudy.integration.industry_news import fetch_recent_industry_events
+        return fetch_recent_industry_events(curr_date)
+    except Exception as e:
+        logger.warning(f"获取产业政策新闻失败: {e}")
+        return f"数据不可用：产业政策新闻获取失败（{e}）。"
 
 
 @dataprovider_log

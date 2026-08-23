@@ -31,6 +31,10 @@ LLM / 工具调用追踪器
         └── ...
 
 控制台仅输出一行摘要。
+
+调试步进模式（LIVEPROFIT_DEBUG_STEP=true）下，每次 LLM 调用挂两个检查点：
+llm_req（on_llm_start，请求发出前）与 llm_res（on_llm_end，res.md 写入后）；
+图外 LLM 调用（节点名不在 _NODE_LAYER 表中）不产生检查点（见 AI/utils/step_gate.py）。
 """
 
 import json
@@ -41,6 +45,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+
+from AI.utils import step_gate
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +166,7 @@ class LLMCallbackHandler(BaseCallbackHandler):
     """记录 ChatOpenAI 每次调用 → {seq:03d}_{NodeName}/req.md + res.md + meta.json"""
 
     def __init__(self):
-        self._pending: Dict[str, tuple] = {}  # run_id → (dir_name, seq)
+        self._pending: Dict[str, tuple] = {}  # run_id → (dir_name, seq, node)
 
     def set_log_dir(self, log_dir: Path) -> None:
         self._pending.clear()
@@ -185,7 +191,7 @@ class LLMCallbackHandler(BaseCallbackHandler):
         _run.last_llm_dir = dir_name
         rid = str(run_id) if run_id else None
         if rid:
-            self._pending[rid] = (dir_name, seq)
+            self._pending[rid] = (dir_name, seq, node)
 
         logger.info("[LLM] %s → #%d %s | %s | prompt数=%d",
                     _ts(), seq, node, model, len(prompts))
@@ -199,6 +205,25 @@ class LLMCallbackHandler(BaseCallbackHandler):
                 "model": model, "node": node, "run_id": rid, "seq": seq,
             }), encoding="utf-8")
 
+        # 调试步进：LLM 调用前检查点（on_llm_start 在 API 请求发出前触发，
+        # 此处阻塞即实现"调用 LLM 前暂停"）；图外 LLM 调用（node 不在
+        # _NODE_LAYER 表中，如决策抽取/反思）不产生检查点。
+        # rid 为 None 时不挂（与 on_llm_end 的 entry 注册同规则，避免
+        # start 暂停而 end 跳过的单边检查点）。
+        if (rid and hasattr(_run, 'log_dir') and _run.log_dir
+                and _node_layer(node) != "unknown"):
+            try:
+                step_gate.checkpoint(
+                    "llm_req",
+                    layer=layer,
+                    node=node,
+                    name=node,
+                    dir=dir_name,
+                    show_file="req.md",
+                )
+            except Exception as e:
+                logger.debug("[步进] llm_req 检查点失败: %s", e)
+
     def on_llm_end(
         self,
         response: LLMResult,
@@ -209,7 +234,7 @@ class LLMCallbackHandler(BaseCallbackHandler):
     ) -> None:
         rid = str(run_id) if run_id else None
         entry = self._pending.pop(rid, None) if rid else None
-        dir_name, seq = entry if entry else ("unknown", 0)
+        dir_name, seq, node = entry if entry else ("unknown", 0, "unknown")
 
         for gen in response.generations:
             for g in gen:
@@ -252,6 +277,21 @@ class LLMCallbackHandler(BaseCallbackHandler):
                     if tc_clean:
                         meta["tool_calls"] = tc_clean
                     (call_dir / "meta.json").write_text(_safe_json(meta), encoding="utf-8")
+
+        # 调试步进：节点 res 检查点（与 on_llm_start 同规则：图外 LLM 调用不产生检查点）
+        if (entry and hasattr(_run, 'log_dir') and _run.log_dir
+                and _node_layer(node) != "unknown"):
+            try:
+                step_gate.checkpoint(
+                    "llm_res",
+                    layer=dir_name.split("/")[0],
+                    node=node,
+                    name=node,
+                    dir=dir_name,
+                    show_file="res.md",
+                )
+            except Exception as e:
+                logger.debug("[步进] llm_res 检查点失败: %s", e)
 
     def on_llm_error(self, error, *, run_id=None, parent_run_id=None, **kwargs):
         logger.error("[LLM ERROR] %s: %s", type(error).__name__, str(error)[:200])

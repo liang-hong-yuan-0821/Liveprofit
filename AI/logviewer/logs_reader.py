@@ -20,6 +20,8 @@ from typing import Any, Dict, List, Optional, Tuple
 _RUN_RE = re.compile(r"\d{4}-\d{2}-\d{2}_\d{6}")
 # 序号前缀目录：001_International_News_Analyst / 001_get_xxx / 001_search
 _SEQ_DIR_RE = re.compile(r"\d{3}_.+")
+# 真实执行序（trading_graph：Market → Sector → Stock，Screening 在 Stock 层内）
+LAYER_ORDER = ["market", "sector", "stock", "screening"]
 
 
 def logs_root() -> Path:
@@ -46,6 +48,15 @@ def list_layers(run: Path) -> List[Path]:
     return sorted(
         (p for p in run.iterdir() if p.is_dir() and p.name != "reports"),
         key=lambda p: p.name,
+    )
+
+
+def sort_layers(layers: List[Path]) -> List[Path]:
+    """已知 layer 按固定执行序（market→sector→stock→screening），未知 layer 字母序附后"""
+    return sorted(
+        layers,
+        key=lambda p: (LAYER_ORDER.index(p.name)
+                       if p.name in LAYER_ORDER else len(LAYER_ORDER), p.name),
     )
 
 
@@ -87,14 +98,42 @@ def list_dp_calls(node_dir: Path) -> List[Tuple[str, Path]]:
 
 
 def list_report_files(run: Path) -> List[Path]:
-    """run 级 reports/ 下的报告文件（md + json）"""
+    """run 级 reports/ 下的报告文件（md/json/html，递归含 charts/ 子目录）"""
     reports_dir = run / "reports"
     if not reports_dir.is_dir():
         return []
     return sorted(
-        (p for p in reports_dir.iterdir() if p.is_file()),
-        key=lambda p: p.name,
+        (p for p in reports_dir.rglob("*") if p.is_file()),
+        key=lambda p: p.relative_to(reports_dir).as_posix(),
     )
+
+
+# 调试步进检查点文件名（run 根下隐藏文件，单点定义见 AI/utils/step_gate.py）
+from AI.utils.step_gate import CHECKPOINT_FILE
+
+
+def find_checkpoint(run: Path) -> Optional[Dict[str, Any]]:
+    """读 run 的调试步进检查点文件；缺失/坏 JSON → None"""
+    return read_json(run / CHECKPOINT_FILE)
+
+
+def find_active_checkpoint(root: Optional[Path] = None) -> Optional[Tuple[Path, Dict[str, Any]]]:
+    """扫描全部 run（最新在前），返回 (run_dir, payload)；无 → None。
+
+    优先返回 waiting 的检查点（并发多 run 时，较旧 run 仍在等待的检查点
+    不能被较新 run 已结束的 confirmed 残留遮蔽）；无 waiting 时退回最新的
+    非 waiting 检查点（历史状态展示）。
+    """
+    fallback: Optional[Tuple[Path, Dict[str, Any]]] = None
+    for run in list_runs(root):
+        payload = find_checkpoint(run)
+        if payload is None:
+            continue
+        if payload.get("status") == "waiting":
+            return run, payload
+        if fallback is None:
+            fallback = (run, payload)
+    return fallback
 
 
 def read_json(p: Path) -> Optional[Dict[str, Any]]:

@@ -40,6 +40,9 @@ def load_config():
         # 日志
         "log_level": os.getenv("LIVEPROFIT_LOG_LEVEL", "INFO"),
 
+        # 调试步进模式（DP 响应 / LLM 调用前 / 节点 res 检查点，页面确认后继续）
+        "debug_step": os.getenv("LIVEPROFIT_DEBUG_STEP", "false").lower() == "true",
+
         # 选股层（全市场模式，selectedLayer 含 "screening"）
         "max_screened_stocks": int(os.getenv("LIVEPROFIT_MAX_SCREENED_STOCKS", "10")),
         "screening_lookback_days": int(os.getenv("LIVEPROFIT_SCREENING_LOOKBACK_DAYS", "10")),

@@ -55,7 +55,7 @@ results/
 eval_results/
 data/tushare/
 data/cache/
-logs/
+# logs/
 *.log
 
 # ===== 配置（含密钥，勿提交） =====

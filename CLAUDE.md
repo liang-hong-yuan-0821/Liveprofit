@@ -145,6 +145,13 @@ docs/
 - 构建后端：`setuptools.build_meta`（`setuptools>=61.0`）
 - 安装命令：`pip install -e .` 或 `uv pip install -e .`
 
+### 每日批处理触发方式（2026-08-31 起）
+
+- **方案 B（推荐）**：常驻自调度——`AI/eventStudy/scheduler/app_scheduler.py` 的 APScheduler 挂在 eventStudy FastAPI lifespan（`AI/eventStudy/api/main.py`），每天 `EVENT_STUDY_DAILY_TIME`（默认 08:30，本地时区）以**子进程**触发 `python -m AI.eventStudy.scheduler.daily_job`；防重复用 `logs/daily_job.running` 标记文件（写子进程 pid，服务启动时按 pid 存活清理陈旧标记）+ 进程内 threading.Lock；misfire 补跑窗口 30 分钟
+- **补跑机制（2026-08-31，电脑睡眠场景）**：完成标记 `logs/daily_job_done.YYYYMMDD`（子进程退出码 0 时原子写入）＋三层触发——cron 08:30 正常触发、服务启动自检、**每 15 分钟周期自检**（睡眠期间调度器冻结无启动事件，唤醒后靠周期自检补跑）；当日自动尝试上限 `EVENT_STUDY_DAILY_MAX_ATTEMPTS`（默认 3）防持续故障空跑，次日自动恢复
+- 运行约束：uvicorn **单 worker、禁用 --reload**（否则调度器重复启动）；Windows 守护用 NSSM 注册 Windows 服务（见 AI/eventStudy/scheduler/scheduler_setup.md）
+- **方案 A**：schtasks 每日 08:30 触发（无常驻服务时用，注册命令见 scheduler_setup.md）；A/B 同时开启安全（标记文件防重复），但建议只用一个
+
 ### 调试步进模式（Debug Step Mode）
 
 - 开启：运行分析前设 `LIVEPROFIT_DEBUG_STEP=true`（default_config → `debug_step`），分析进程在 **DP 响应 / LLM 调用前（on_llm_start，API 请求发出前）/ 节点 res** 三个检查点暂停
@@ -186,3 +193,26 @@ docs/
 - Token 通过 `.env` 的 `TUSHARE_TOKEN` 配置（`LIVEPROFIT_DATA_SOURCE=tushare` 时生效）
 - **代理端点能力可能与官方有差异** → 新增数据函数做"三方依赖能力评估"时必须对代理端点**实测**（真实 token 探测），不能只看 tushare 官方文档
 - **日线接口返回降序（2026-08-23 踩坑）**：sw_daily / dc_daily / ths_daily / index_daily 实测按 trade_date **降序**（新→旧）返回，直接 `tail(N)` 会取到最旧数据（曾导致行业排名拿到 17 天前的数据）。所有日线消费点必须先经 `tushare_provider._sort_asc_by_trade_date(df)` 升序归一，再 tail/iloc；新增日线消费点必须遵守，单测需含"降序输入"回归用例
+- **端点子日志（2026-08-25 引入）**：`wrap_tushare_api(api)`（dataprovider_log.py）在 `_connect`/trading_calendar 建 api 后包装 `query`，端点调用落在当前 DP 调用目录的 `tushare/{seq:03d}_{api_name}/`（req/res/meta.json，viewer 在 dataprovider 展开内嵌套展示）；仅 tushare 数据源 + run 内有 DP 上下文时落盘，`LIVEPROFIT_TUSHARE_LOG=0` 可关闭
+  - **tushare DataApi 的 `__getattr__` 对任意未知属性返回 `partial(self.query, name)`（truthy）** → 包装器幂等/探测标志判定必须查实例 `__dict__`，`getattr` 会误判"已包装"导致完全不落盘
+  - **ThreadPoolExecutor 不自动传播 contextvars（Py3.12 实测）** → `_run_with_timeout` 已用 `contextvars.copy_context()` + `ctx.run` 显式带入；任何新增"在 worker 线程内读 contextvar"的代码必须同样显式复制，勿假设自动传播
+  - 端点调用超时（`_api_call` 返回 None）后 worker 仍会补写日志（上下文已复制），「DP res 显示超时、tushare 展开却有成功记录」并存属预期诊断行为
+  - `_connect` 的连通性探测调用（stock_basic limit=1）在 DP 上下文内会被记录，meta 带 `probe=true`（viewer 显示「🔌 连通性探测」角标）
+  - 单次结果 records 超 500 行截断（`truncated=true` + `row_count` 元数据）
+- **全市场拉取禁止区间查询（2026-08-30 踩坑）**：代理端点 `daily(start,end 区间，无 ts_code)` 2 天区间仅回 6000 行（应 ~11000，**静默截断**）、`fund_daily` 区间返回 0 行——全市场日线/因子拉取必须 `trade_date` 单日查询；单日行数 ≥6000 视为截断，自动降级为分批补拉（每批 100 代码逗号分隔 + trade_date，store/backfill.fetch_day_frames 已实现该降级，新增全市场消费点必须复用）
+- **概念成分接口参数硬约束（实测）**：ths 用 `ths_member(ts_code=概念代码)`（`code=` 参数被代理忽略，恒回全量截断 6000 行）；dc 用 `dc_member(ts_code=板块代码, trade_date=最近交易日)` 组合过滤（仅 ts_code 返回跨 5 日快照、全量拉截断 8000 行）
+
+### 全市场日线本地库（store 包，2026-08-30）
+
+- 位置：`AI/dataflows/store/`（`schema.sql` / `db.py` / `stock_daily_dao.py` / `concepts.py` / `backfill.py` / `incremental.py`），六张表建在 liveprofit 库 **public schema**，与事件研究同库不同表（`market_data` 及消费方零改动）：`stock_basic` / `fund_basic` / `stock_daily` / `adj_factor` / `concept` / `concept_member`
+- **分类约定**：`stock_daily` / `adj_factor` 股票与场内基金**共用**，分类一律走 `is_fund_ts_code()` 前缀函数（沪 5 开头、深 15/16/18 开头 = 基金），查询不 JOIN 基本信息表白名单过滤（避免退市股/异常代码被静默漏掉）
+- **写入约定**：批量写入 COPY → 临时表（表名带 pid+随机后缀）→ `INSERT ... ON CONFLICT`；清洗顺序 close NaN 行显式 drop（close 列 NOT NULL）→ 其余 NaN→None（**必须先转 object dtype**——float64 列上 `where(cond, None)` 会把 None 压回 NaN）；幂等策略由调用方控制（决策 5）：回填 `DO NOTHING`、增量最近 3 交易日 `DO UPDATE`（覆盖 tushare 日终修正）
+- **实测踩坑（2026-08-30 集成验证）**：
+  - `CREATE TEMP TABLE (LIKE 表)` **默认不复制 DEFAULT 表达式** → 带 `DEFAULT now()` 的 NOT NULL 列（updated_at）在 COPY 时被填 NULL 违例；必须写 `LIKE ... INCLUDING DEFAULTS`
+  - pandas `Series.apply` 的 dtype 推断不可靠：**单行且结果均匀时推 int64、多行含 None 时把 int 整体压回 float64**（单测会骗过）——整数列转换（如 concept.count，tushare 返回 float 300.0）必须用显式 `dtype=object` 的列表推导，否则 COPY 报 `invalid input syntax for type integer`
+  - 批量写入的 SQL 级失败会使事务 abort，**下一段 DB 写入报 "current transaction is aborted"**——按来源/批次隔离的采集循环中，每段失败分支必须 rollback 恢复干净状态，且**成功段必须独立 commit**（否则后段失败的回滚把前段成果一并清空，实测 dc 失败清空 ths 899 概念）
+  - 概念成分响应含重复 con_code 时，同一 INSERT 批次提出两行相同 PK 会报 `ON CONFLICT DO UPDATE cannot affect row a second time`——Provider 归一化与 DAO 双保险 drop_duplicates
+- **事务约定**：单日提交（库内无"半截日"）；概念采集按来源独立提交、基本信息刷新独立提交（逐日失败 rollback 不得静默丢弃 35 分钟概念采集）；commit 失败（事务可能已 abort）需 rollback 恢复干净状态再继续
+- **回填**：`python -m AI.dataflows.store.backfill [--start 2016-01-01] [--end 今天] [--retry-missing] [--skip-concepts]`；断点续跑按库内**已入库交易日集合**跳过（存在即完整，"完整日才入库"不变式）——**禁用 max(trade_date) 截断**：库内只有尾部几日时会把全部历史误判跳过（2026-08-30 实测踩坑）；`--skip-concepts` 在概念数据已新鲜时跳过重采（省 ~35 分钟）；失败清单 `logs/stock_backfill_failures.json`（temp+rename 原子写）
+- **增量**：daily_job 步骤 3（`--skip` 名 `store`），最近 3 交易日窗口；概念体系周一自动周刷（`collect_incremental(refresh_concepts=None/True/False)`）；akshare 数据源下结构化方法返回 None → 记 warning 跳过不阻断
+- 实现详见归档方案：docs/done/全市场日线本地库方案.md

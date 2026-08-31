@@ -33,6 +33,19 @@ def logs_fixture(tmp_path, monkeypatch):
         '{"name": "get_central_bank_calendar", "desc": "获取日历", "seq": 1, "ts": "1", "res": "res.md"}',
         encoding="utf-8")
 
+    # tushare 端点子日志（嵌套在 DP 调用目录内）
+    ts_call = dp_new / "tushare" / "001_trade_cal"
+    ts_call.mkdir(parents=True)
+    (ts_call / "req.json").write_text(
+        '{"api_name": "trade_cal", "fields": "", "params": {"exchange": "SSE"}}',
+        encoding="utf-8")
+    (ts_call / "res.json").write_text('{"columns": [], "shape": [0, 0]}',
+                                      encoding="utf-8")
+    (ts_call / "meta.json").write_text(
+        '{"name": "trade_cal", "seq": 1, "ts": "1", "res": "res.json", "probe": false}',
+        encoding="utf-8")
+    (dp_new / "tushare" / "noise.txt").write_text("噪音文件", encoding="utf-8")
+
     # 旧格式 dataprovider（平铺 json）
     (node / "get_macro_indicators.json").write_text(json.dumps({
         "name": "get_macro_indicators",
@@ -110,6 +123,17 @@ def test_list_dp_calls_new_and_legacy(logs_fixture):
 def test_list_tools(logs_fixture):
     node = logs_fixture / "2026-08-19_223929" / "market" / "001_International_Event_Extraction_Analyst"
     assert [p.name for p in L.list_tools(node)] == ["001_search"]
+
+
+def test_list_tushare_calls(logs_fixture):
+    """DP 调用目录下的 tushare/ 端点调用目录；噪音文件排除；无 tushare/ → 空"""
+    node = logs_fixture / "2026-08-19_223929" / "market" / "001_International_Event_Extraction_Analyst"
+    dp_new = node / "001_get_central_bank_calendar"
+    assert [p.name for p in L.list_tushare_calls(dp_new)] == ["001_trade_cal"]
+
+    # 无 tushare/ 子目录（旧 run / 非 tushare 数据源）→ 空列表
+    legacy_node_dir = dp_new.parent
+    assert L.list_tushare_calls(legacy_node_dir) == []
 
 
 def test_list_report_files(logs_fixture):

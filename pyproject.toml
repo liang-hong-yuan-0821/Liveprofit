@@ -44,6 +44,9 @@ dependencies = [
     "uvicorn>=0.30.0",
     "streamlit>=1.40.0",
 
+    # 事件研究系统：每日批处理常驻调度（挂 FastAPI lifespan，替代 schtasks 方案 B）
+    "apscheduler>=3.10.0",
+
     # 板块层热力图（自包含 HTML，离线生成）
     "plotly>=5.18.0",
 

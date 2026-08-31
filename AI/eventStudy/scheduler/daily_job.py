@@ -4,9 +4,10 @@
 每天早间由 Windows 任务计划程序触发（schtasks，见 scheduler_setup.md），流程：
 1. 采集前一日/当日事件（爬虫）→ Redis 待审草稿
 2. 拉取最新行情（Provider 层）→ market_data
-3. 更新市场上下文 → market_context
-4. 向量化新增 approved 事件（bge-m3）
-5. 对 PG 中无 Redis 影响草稿的 approved 事件执行事件研究（幂等，草稿过期可重算）
+3. 全市场日线本地库增量（store 包）→ stock_daily / adj_factor 等六表
+4. 更新市场上下文 → market_context
+5. 向量化新增 approved 事件（bge-m3）
+6. 对 PG 中无 Redis 影响草稿的 approved 事件执行事件研究（幂等，草稿过期可重算）
 
 步骤间相互独立，单步失败不影响后续（记录错误日志继续）。
 """
@@ -38,11 +39,11 @@ def step_crawl_events(conn):
     """步骤 1：采集事件 → Redis 待审草稿 → AI 预填（审核辅助）。"""
     events = event_crawler.fetch_events_from_crawler()
     ids = event_crawler.save_pending_events(events, conn=conn)
-    logger.info(f"[1/5] 事件采集完成：抓取 {len(events)} 条，新写入待审草稿 {len(ids)} 条")
+    logger.info(f"[1/6] 事件采集完成：抓取 {len(events)} 条，新写入待审草稿 {len(ids)} 条")
     # AI 预填：对尚无建议的待审草稿批量生成分类建议（LLM 不可用自动跳过）
     from AI.eventStudy.review import ai_prelabel, review_dao
     prelabeled = ai_prelabel.prelabel_events(review_dao.get_pending_events())
-    logger.info(f"[1/5] AI 预填完成: {prelabeled} 条")
+    logger.info(f"[1/6] AI 预填完成: {prelabeled} 条")
     return len(ids)
 
 
@@ -51,21 +52,29 @@ def step_collect_market_data(conn, start_date, end_date):
     result = market_data_collector.collect_index_market_data(
         conn, start_date=start_date, end_date=end_date
     )
-    logger.info(f"[2/5] 行情采集完成: {result}")
+    logger.info(f"[2/6] 行情采集完成: {result}")
+    return result
+
+
+def step_collect_stock_daily(conn):
+    """步骤 3：全市场日线本地库增量（store 包，DO UPDATE 覆盖 tushare 日终修正）。"""
+    from AI.dataflows.store import incremental
+    result = incremental.collect_incremental(conn)
+    logger.info(f"[3/6] 全市场日线本地库增量完成: {result}")
     return result
 
 
 def step_update_market_context(conn, start_date, end_date):
-    """步骤 3：更新市场环境快照。"""
+    """步骤 4：更新市场环境快照。"""
     n = market_context.update_market_context(conn, start_date, end_date)
-    logger.info(f"[3/5] 市场上下文更新完成: {n} 行")
+    logger.info(f"[4/6] 市场上下文更新完成: {n} 行")
     return n
 
 
 def step_vectorize(conn):
-    """步骤 4：为新增 approved 事件生成向量。"""
+    """步骤 5：为新增 approved 事件生成向量。"""
     n = event_vectorizer.vectorize_unembedded(conn)
-    logger.info(f"[4/5] 事件向量化完成: {n} 条")
+    logger.info(f"[5/6] 事件向量化完成: {n} 条")
     return n
 
 
@@ -79,7 +88,7 @@ def _draft_has_error(draft: dict) -> bool:
 
 
 def step_event_study(conn):
-    """步骤 5：对无影响草稿的 approved 事件执行事件研究（幂等）。
+    """步骤 6：对无影响草稿的 approved 事件执行事件研究（幂等）。
 
     跳过规则：
     - 草稿存在且所有窗口计算成功 → 跳过（草稿 TTL 过期后可重算）
@@ -113,8 +122,8 @@ def step_event_study(conn):
             event_study.compute_all_windows(conn, event_id)
             done += 1
         except Exception as e:
-            logger.error(f"[5/5] 事件 {event_id} 影响计算失败: {e}")
-    logger.info(f"[5/5] 事件研究完成: 新计算 {done} 个事件（共 {len(rows)} 个 approved）")
+            logger.error(f"[6/6] 事件 {event_id} 影响计算失败: {e}")
+    logger.info(f"[6/6] 事件研究完成: 新计算 {done} 个事件（共 {len(rows)} 个 approved）")
     return done
 
 
@@ -123,7 +132,7 @@ def run_daily_job():
     parser.add_argument("--start-date", default=None, help="行情/上下文起始日期 YYYY-MM-DD，默认 2 年前")
     parser.add_argument("--end-date", default=None, help="截止日期 YYYY-MM-DD，默认今天")
     parser.add_argument("--skip", nargs="*", default=[],
-                        choices=["crawl", "market", "context", "vectorize", "study"],
+                        choices=["crawl", "market", "store", "context", "vectorize", "study"],
                         help="跳过的步骤")
     args = parser.parse_args()
 
@@ -145,6 +154,7 @@ def run_daily_job():
         steps = [
             ("crawl", lambda: step_crawl_events(conn)),
             ("market", lambda: step_collect_market_data(conn, start_date, end_date)),
+            ("store", lambda: step_collect_stock_daily(conn)),
             ("context", lambda: step_update_market_context(conn, start_date, end_date)),
             ("vectorize", lambda: step_vectorize(conn)),
             ("study", lambda: step_event_study(conn)),

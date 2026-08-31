@@ -39,6 +39,8 @@ from pathlib import Path
 from typing import Optional, Callable, Tuple
 from zoneinfo import ZoneInfo
 
+from AI.utils.dataprovider_log import wrap_tushare_api
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -172,6 +174,8 @@ def _fetch_tushare_calendar(year: int) -> Optional[set[str]]:
         ts.set_token(token)
         api = ts.pro_api()
         api._DataApi__http_url = _TUSHARE_ENDPOINT
+        # 端点调用子日志：缓存 miss 且发生在 DP 调用内时归入当前 DP 调用的 tushare/ 下
+        wrap_tushare_api(api)
 
         start = f"{year}0101"
         end = f"{year}1231"

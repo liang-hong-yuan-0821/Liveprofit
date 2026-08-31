@@ -1,0 +1,245 @@
+"""
+单元测试：概念体系多来源采集（concepts，方案 3.6）
+
+- 双来源逐概念拉取循环：ths 与 dc 各自循环调用 get_concept_members_df，
+  dc 传最近交易日（trade_cal 末位）、ths 忽略
+- 失败域分层：单概念失败仅跳过该概念、单来源失败不阻断另一来源
+- dc 无最近交易日快照 → 列表入库、成分采集跳过
+- 概念 DAO 双向查询（get_concepts / get_concept_members / get_stock_concepts，
+  source=None 全来源）
+"""
+
+from datetime import date
+from unittest.mock import MagicMock
+
+import pandas as pd
+import pytest
+
+from AI.dataflows.store import concepts as cpts
+from AI.dataflows.store import stock_daily_dao as dao
+
+
+# ==================== helpers ====================
+
+def _concept_list_df(codes, source_col=True):
+    df = pd.DataFrame({
+        "ts_code": codes,
+        "name": [f"概念{c}" for c in codes],
+        "count": [1] * len(codes),
+        "exchange": ["A"] * len(codes),
+        "list_date": ["20200101"] * len(codes),
+        "type": ["N"] * len(codes),
+    })
+    if source_col:
+        df["source"] = ["ths"] * len(codes)
+    return df
+
+
+def _members_df(ts_codes):
+    return pd.DataFrame({"concept_code": ["C"] * len(ts_codes),
+                         "ts_code": ts_codes})
+
+
+def _mock_provider(ths_codes=("883300.TI",), dc_codes=("BK1753",),
+                   members=None, list_side_effect=None):
+    prov = MagicMock()
+    prov.get_trade_cal.return_value = pd.DataFrame({
+        "trade_date": pd.to_datetime(["2026-08-27", "2026-08-28"]),
+        "is_open": 1,
+    })
+    if list_side_effect is not None:
+        prov.get_concept_list_df.side_effect = list_side_effect
+    else:
+        prov.get_concept_list_df.side_effect = (
+            lambda source: _concept_list_df(ths_codes) if source == "ths"
+            else _concept_list_df(dc_codes))
+    if members is not None:
+        prov.get_concept_members_df.side_effect = (
+            lambda code, source, trade_date=None: members.get((source, code)))
+    else:
+        prov.get_concept_members_df.return_value = _members_df(["000001.SZ"])
+    return prov
+
+
+@pytest.fixture(autouse=True)
+def _no_sleep(monkeypatch):
+    monkeypatch.setattr(cpts.time, "sleep", lambda s: None)
+
+
+@pytest.fixture
+def _fake_conn(monkeypatch):
+    conn = MagicMock()
+    recorded = {}
+    monkeypatch.setattr(cpts, "upsert_concepts",
+                        lambda c, df: recorded.setdefault("concepts", []).append(df) or len(df))
+    monkeypatch.setattr(cpts, "upsert_concept_members",
+                        lambda c, df: recorded.setdefault("members", []).append(df) or len(df))
+    monkeypatch.setattr(dao, "upsert_concepts",
+                        lambda c, df: recorded.setdefault("concepts", []).append(df) or len(df))
+    monkeypatch.setattr(dao, "upsert_concept_members",
+                        lambda c, df: recorded.setdefault("members", []).append(df) or len(df))
+    return conn, recorded
+
+
+# ==================== 双来源逐概念拉取循环 ====================
+
+def test_dual_source_loop_and_dc_trade_date(_fake_conn):
+    conn, recorded = _fake_conn
+    members = {
+        ("ths", "883300.TI"): _members_df(["000001.SZ"]),
+        ("ths", "883301.TI"): _members_df(["600000.SH"]),
+        ("dc", "BK1753"): _members_df(["301630.SZ"]),
+        ("dc", "BK1754"): _members_df(["300750.SZ"]),
+    }
+    prov = _mock_provider(ths_codes=("883300.TI", "883301.TI"),
+                          dc_codes=("BK1753", "BK1754"), members=members)
+    result = cpts.collect_concepts(conn, prov)
+
+    # ths 899 规模下逐概念循环：trade_date 忽略（传 None）
+    ths_calls = [c for c in prov.get_concept_members_df.call_args_list
+                 if c.args[1] == "ths"]
+    assert [(c.args[0], c.kwargs.get("trade_date")) for c in ths_calls] == [
+        ("883300.TI", None), ("883301.TI", None)]
+    # dc 传最近交易日（trade_cal 末位 2026-08-28）
+    dc_calls = [c for c in prov.get_concept_members_df.call_args_list
+                if c.args[1] == "dc"]
+    assert [(c.args[0], c.kwargs.get("trade_date")) for c in dc_calls] == [
+        ("BK1753", "20260828"), ("BK1754", "20260828")]
+
+    assert result["ths"]["concepts"] == 2 and result["dc"]["concepts"] == 2
+    assert result["ths"]["members"] == 2 and result["dc"]["members"] == 2
+    assert result["ths"]["failed"] == [] and result["dc"]["failed"] == []
+    assert conn.commit.call_count == 2   # 按来源独立提交
+
+    # 两张表 source 列由采集层附加
+    concept_dfs = recorded["concepts"]
+    assert [df["source"].iloc[0] for df in concept_dfs] == ["ths", "dc"]
+    for df in recorded["members"]:
+        assert df["source"].iloc[0] in ("ths", "dc")
+
+
+def test_single_concept_failure_only_skips_that_concept(_fake_conn):
+    conn, recorded = _fake_conn
+    members = {
+        ("ths", "883300.TI"): None,                          # 失败（None）
+        ("ths", "883301.TI"): pd.DataFrame(),                # 空 = 无 A 股成分，不算失败
+        ("ths", "883302.TI"): _members_df(["000001.SZ"]),    # 成功
+    }
+    prov = _mock_provider(ths_codes=("883300.TI", "883301.TI", "883302.TI"),
+                          members=members)
+    result = cpts.collect_concepts(conn, prov)
+    assert result["ths"]["members"] == 1
+    assert result["ths"]["failed"] == ["883300.TI"]
+
+
+def test_single_source_failure_does_not_block_other(_fake_conn):
+    conn, _ = _fake_conn
+
+    def side(source):
+        if source == "ths":
+            return _concept_list_df(("883300.TI",))
+        raise RuntimeError("dc 列表挂了")
+
+    prov = _mock_provider(list_side_effect=side)
+    result = cpts.collect_concepts(conn, prov)
+    assert result["ths"]["members"] == 1 and result["ths"]["error"] is None
+    assert result["dc"]["error"] is not None
+    assert result["dc"]["members"] == 0
+
+
+def test_dc_without_trade_date_skips_members_but_keeps_list(_fake_conn):
+    conn, recorded = _fake_conn
+    prov = _mock_provider(ths_codes=("883300.TI",), dc_codes=("BK1753",))
+    prov.get_trade_cal.return_value = None   # trade_cal 不可用
+    result = cpts.collect_concepts(conn, prov)
+    assert result["dc"]["concepts"] == 1     # 列表已入库
+    assert result["dc"]["members"] == 0      # 成分跳过
+    assert "无最近交易日" in result["dc"]["error"]
+    # ths 不受影响
+    assert result["ths"]["members"] == 1
+
+
+def test_members_exception_records_failed(_fake_conn):
+    conn, _ = _fake_conn
+    prov = _mock_provider(ths_codes=("883300.TI",))
+    prov.get_concept_members_df.side_effect = RuntimeError("成分接口异常")
+    result = cpts.collect_concepts(conn, prov)
+    assert result["ths"]["failed"] == ["883300.TI"]
+    assert result["ths"]["members"] == 0
+
+
+def test_source_sql_failure_rolls_back_before_next_source(_fake_conn,
+                                                          monkeypatch):
+    """回归：来源级 SQL 失败（COPY 语法错误等）使事务 abort，不回滚会污染
+    下一来源的 DB 写入（"current transaction is aborted"）。"""
+    conn, _ = _fake_conn
+    prov = _mock_provider(ths_codes=("883300.TI",), dc_codes=("BK1753",))
+    original = cpts.upsert_concepts
+
+    def flaky_upsert(c, df):
+        if df["source"].iloc[0] == "ths":
+            raise RuntimeError("SQL 级失败（事务 abort）")
+        return original(c, df)
+
+    monkeypatch.setattr(cpts, "upsert_concepts", flaky_upsert)
+    result = cpts.collect_concepts(conn, prov)
+    assert result["ths"]["error"] is not None
+    assert result["dc"]["members"] == 1   # 回滚后 dc 来源正常写入
+    assert conn.rollback.call_count == 1  # 仅回滚 ths 半截写入
+    assert conn.commit.call_count == 1    # dc 成功独立提交
+
+
+def test_prior_source_commit_survives_later_source_failure(_fake_conn,
+                                                           monkeypatch):
+    """回归（2026-08-30 实测踩坑）：不按来源独立提交时，后一来源失败的回滚
+    会把已成功的前一来源成果一并清空。"""
+    conn, _ = _fake_conn
+    prov = _mock_provider(ths_codes=("883300.TI",), dc_codes=("BK1753",))
+
+    def side(source):
+        if source == "ths":
+            return _concept_list_df(("883300.TI",))
+        raise RuntimeError("dc 列表挂了")
+
+    prov.get_concept_list_df.side_effect = side
+    result = cpts.collect_concepts(conn, prov)
+    assert result["ths"]["members"] == 1   # ths 成果保留（已独立提交）
+    assert result["dc"]["error"] is not None
+    # ths 提交 1 次 + dc 软失败（列表不可用正常返回 error dict）后空提交 1 次（无害）
+    assert conn.commit.call_count == 2
+    assert conn.rollback.call_count == 0   # 软失败无半截写入，无需回滚；ths 不受影响
+
+
+# ==================== 概念 DAO 双向查询 ====================
+
+def _query_conn(rows):
+    conn = MagicMock()
+    conn.execute.return_value.fetchall.return_value = rows
+    return conn
+
+
+def test_get_concepts_and_members_bidirectional():
+    # 伪连接不执行 ORDER BY，行序即"SQL 已按 source 排序"的返回
+    conn = _query_conn([
+        ("dc", "BK1753", "光刻胶", None, None, None, None),
+        ("ths", "883300.TI", "沪深300样本股", 300, "A", date(2010, 4, 13), "N"),
+    ])
+    df = dao.get_concepts(conn)    # source=None 全来源
+    assert df["concept_code"].tolist() == ["BK1753", "883300.TI"]  # 按 source 排序
+
+    conn2 = _query_conn([("ths", "883300.TI", "000001.SZ")])
+    df2 = dao.get_concept_members(conn2, "883300.TI", source="ths")
+    assert df2["ts_code"].tolist() == ["000001.SZ"]
+
+    conn3 = _query_conn([("dc", "BK1753", "000001.SZ"),
+                         ("ths", "883300.TI", "000001.SZ")])
+    df3 = dao.get_stock_concepts(conn3, "000001.SZ")   # source=None 全来源
+    assert df3["source"].tolist() == ["dc", "ths"]     # ORDER BY source
+
+
+def test_get_concepts_with_source_filter():
+    conn = _query_conn([])
+    dao.get_concepts(conn, source="ths")
+    sql = conn.execute.call_args[0][0]
+    assert "WHERE source = %s" in sql
+    assert conn.execute.call_args[0][1] == ("ths",)

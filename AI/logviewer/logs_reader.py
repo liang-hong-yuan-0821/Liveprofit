@@ -4,6 +4,7 @@
 目录约定见 AI/utils/llm_callbacks.py 与 AI/utils/dataprovider_log.py 的模块 docstring：
   logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/req.md + res.md + meta.json
                               └─ {seq:03d}_{接口名}/req.json + res.md|json + meta.json   ← dataprovider 新格式
+                              │  └─ tushare/{seq:03d}_{api_name}/req.json + res.json + meta.json  ← tushare 端点子日志
                               └─ tools/{seq:03d}_{tool}/req.json + res.txt
                               └─ {接口名}.json                                          ← dataprovider 旧格式（仅历史 run）
 
@@ -95,6 +96,20 @@ def list_dp_calls(node_dir: Path) -> List[Tuple[str, Path]]:
         elif p.is_file() and p.suffix == ".json" and p.name != "meta.json":
             calls.append(("legacy", p))
     return sorted(calls, key=lambda kv: kv[1].name)
+
+
+def list_tushare_calls(dp_dir: Path) -> List[Path]:
+    """DP 调用目录下 tushare/ 子目录内的端点调用目录（{seq:03d}_{api_name}）。
+
+    无 tushare/ 子目录（旧 run / 非 tushare 数据源 / 无端点调用）→ 空列表。
+    """
+    ts_dir = dp_dir / "tushare"
+    if not ts_dir.is_dir():
+        return []
+    return sorted(
+        (p for p in ts_dir.iterdir() if p.is_dir() and _SEQ_DIR_RE.fullmatch(p.name)),
+        key=lambda p: p.name,
+    )
 
 
 def list_report_files(run: Path) -> List[Path]:

@@ -13,7 +13,12 @@ LLM / 工具调用追踪器
     │   │   │   ├── req.json
     │   │   │   ├── res.md                 ← 结果为 str（多数接口）
     │   │   │   ├── res.json               ← 结果为非 str（与 res.md 二选一）
-    │   │   │   └── meta.json              ← {name, desc, seq, ts, res}
+    │   │   │   ├── meta.json              ← {name, desc, seq, ts, res}
+    │   │   │   └── tushare/               ← tushare 端点子日志（仅 tushare 数据源）
+    │   │   │       └── {seq:03d}_{api_name}/
+    │   │   │           ├── req.json       ← {"api_name", "fields", "params"}
+    │   │   │           ├── res.json       ← 端点原始返回 / {"error"}
+    │   │   │           └── meta.json      ← {name, seq, ts, res, probe, error?}
     │   │   └── tools/
     │   │       ├── 001_{tool}/
     │   │       │   ├── req.json

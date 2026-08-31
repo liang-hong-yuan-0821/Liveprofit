@@ -1,8 +1,9 @@
 """
 LiveProfit 日志查看器
 浏览 logs/{时间戳}/ 下的运行日志：layer 大展开 → LLM 节点展开（调用时序）→
-节点内嵌套 dataprovider / tools 展开；兼容历史旧格式 dataprovider 日志
-（{接口名}.json，标记"旧格式"）。
+节点内嵌套 dataprovider / tools 展开；dataprovider 展开内再嵌套 tushare 端点
+子调用展开（tushare/{seq:03d}_{api_name}/，仅 tushare 数据源的 run 有）；
+兼容历史旧格式 dataprovider 日志（{接口名}.json，标记"旧格式"）。
 
 页面结构：
 - sidebar：仅 run 批次选择，@st.fragment(run_every="5s") 自动刷新目录列表
@@ -41,7 +42,8 @@ st.markdown(_CSS_STICKY_HEADER, unsafe_allow_html=True)
 
 
 def _render_res(res, label: str = "res") -> None:
-    """按类型渲染调用结果：str → markdown，dict → json，超大文本折叠"""
+    """按类型渲染调用结果：str → markdown，dict → json，超大内容折叠
+    （str 按字符数、dict 按序列化字节数，防大结果拖慢布局）"""
     if isinstance(res, str):
         if len(res) > _LARGE_RES_KB * 1024:
             st.caption(f"{label}（{len(res) // 1024} KB，已折叠）")
@@ -50,7 +52,13 @@ def _render_res(res, label: str = "res") -> None:
         else:
             st.markdown(res)
     elif isinstance(res, dict):
-        st.json(res)
+        size = len(json.dumps(res, ensure_ascii=False, default=str))
+        if size > _LARGE_RES_KB * 1024:
+            st.caption(f"{label}（{size // 1024} KB，已折叠）")
+            with st.expander("查看完整内容"):
+                st.json(res)
+        else:
+            st.json(res)
     else:
         st.code(str(res))
 
@@ -101,6 +109,7 @@ def _render_dp_calls(node_dir: Path, expand_target=None) -> None:
                 else:
                     st.info(f"{res_file} 未生成（调用可能未完成）")
                 st.caption(f"seq={meta.get('seq')}  ts={meta.get('ts', '')}")
+                _render_tushare_calls(path)
         else:
             payload = L.parse_legacy(path)
             if payload is None:
@@ -120,6 +129,47 @@ def _render_dp_calls(node_dir: Path, expand_target=None) -> None:
                     st.info("无返回结果")
                 else:
                     _render_res(res)
+
+
+def _render_tushare_calls(dp_dir: Path) -> None:
+    """DP 调用内的 tushare 端点子调用（tushare/{seq:03d}_{api_name}/），
+    嵌套在 dataprovider 展开内。未发生调用时不渲染占位（"生长"约定）。"""
+    calls = L.list_tushare_calls(dp_dir)
+    if not calls:
+        return
+
+    with st.expander(f"tushare（{len(calls)} 次端点调用）"):
+        for tdir in calls:
+            meta = L.read_json(tdir / "meta.json") or {}
+            name = meta.get("name") or tdir.name
+            title = f"{tdir.name}　{name}"
+            if meta.get("probe"):
+                title += "　🔌 连通性探测"
+            if meta.get("error"):
+                title += "　⚠️ 调用异常"
+            with st.expander(title):
+                req_path = tdir / "req.json"
+                if req_path.exists():
+                    req = L.read_json(req_path)
+                    if req is None:
+                        st.warning("req.json 解析失败，以下为原始内容")
+                        st.code(L.read_text(req_path) or "(空)")
+                    else:
+                        st.json(req)
+                else:
+                    st.info("req.json 未生成")
+
+                res_path = tdir / "res.json"
+                if res_path.exists():
+                    res = L.read_json(res_path)
+                    if res is None:
+                        st.warning("res.json 解析失败，以下为原始内容")
+                        st.code(L.read_text(res_path) or "(空)")
+                    else:
+                        _render_res(res, "res.json")
+                else:
+                    st.info("res.json 未生成（调用可能未完成）")
+                st.caption(f"seq={meta.get('seq')}  ts={meta.get('ts', '')}")
 
 
 def _render_tools(node_dir: Path) -> None:

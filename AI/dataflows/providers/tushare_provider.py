@@ -13,6 +13,7 @@ import os
 import re
 import time
 import logging
+import contextvars
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
@@ -21,6 +22,7 @@ import pandas as pd
 from .base_provider import BaseStockDataProvider
 from . import daily_matrix_utils
 from .limit_ladder_utils import calc_break_rate, calc_promotion_rates, format_ladder_matrix
+from AI.utils.dataprovider_log import wrap_tushare_api
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +43,13 @@ def _run_with_timeout(fn, timeout, *args, **kwargs):
     注意：不能使用 with ThreadPoolExecutor，因为 __exit__ 会调用
     shutdown(wait=True)，导致超时后主线程仍被 hang 住的工作线程阻塞。
     """
+    # 显式复制调用方上下文进 worker：实测（2026-08-25，Py3.12.10）本环境
+    # ThreadPoolExecutor 不自动传播 contextvars，tushare 端点子日志的
+    # _current_dp_call 上下文必须手动带入，否则 worker 内读到 None 不落盘
+    ctx = contextvars.copy_context()
     pool = ThreadPoolExecutor(max_workers=1)
     try:
-        future = pool.submit(fn, *args, **kwargs)
+        future = pool.submit(ctx.run, fn, *args, **kwargs)
         return future.result(timeout=timeout)
     finally:
         pool.shutdown(wait=False)
@@ -196,6 +202,8 @@ class TushareProvider(BaseStockDataProvider):
                 ts.set_token(token)
                 self.api = ts.pro_api()
                 self.api._DataApi__http_url = "https://ts.gyzcloud.top/api"  # 自定义 Tushare 端点
+                wrap_tushare_api(self.api)  # 端点调用子日志（挂当前 DP 调用目录的 tushare/ 下）
+                self.api._lp_probe_next = True  # 标记连通性探测调用（meta.probe=true）
                 test = self._api_call(self.api.stock_basic, list_status="L", limit=1)
                 if test is not None and not test.empty:
                     self.connected = True
@@ -2005,3 +2013,196 @@ class TushareProvider(BaseStockDataProvider):
         except Exception as e:
             logger.warning("Tushare 10 年期国债收益率获取失败 [%s]: %s", date, e)
         return result
+
+    # ==================== 全市场日线本地库（store）— 结构化接口 ====================
+
+    # 日线标准列序（3.2.1）：实测 fund_daily 列序为
+    # ts_code,trade_date,pre_close,open,high,low,close,change,pct_chg,vol,amount，
+    # daily 为 ts_code,trade_date,open,high,low,close,pre_close,…——统一按标准列序
+    # 重排（缺失列置 NaN），消费方不感知差异。
+    _STORE_DAILY_COLS = [
+        "ts_code", "trade_date", "open", "high", "low", "close",
+        "pre_close", "change", "pct_chg", "vol", "amount",
+    ]
+    _STORE_BASIC_COLS = [
+        "ts_code", "name", "market", "exchange", "industry", "area",
+        "list_status", "list_date", "delist_date",
+    ]
+    _STORE_CONCEPT_COLS = ["ts_code", "name", "count", "exchange",
+                           "list_date", "type"]
+
+    @staticmethod
+    def _reindex_store_cols(df, cols: list):
+        """store 结构化接口列序归一：按 cols 顺序重排，缺失列置 NaN。"""
+        if df is None or df.empty:
+            return df
+        return pd.DataFrame({c: df[c] if c in df.columns else float("nan")
+                             for c in cols})
+
+    @staticmethod
+    def _normalize_store_member_code(code: str):
+        """概念成分代码 → A 股带交易所后缀 ts_code（与 stock_basic 口径对齐）。
+
+        ths/dc 的 con_code 为 6 位无后缀；B 股（900/200）实测不存在于 daily/
+        stock_basic 端点（方案 2.1），900 防御性归入 .SH。
+        非 A 股形态（美股 .O/.N、港股 .HK、非 6 位等——实测 ths 跨市场概念
+        含 NVDA/AAPL/腾讯等境外标的）返回 None，由调用方 drop（V1 范围外）。
+        """
+        code = str(code).strip()
+        if "." in code:
+            if code.split(".", 1)[1] in ("SH", "SZ", "BJ"):
+                return code
+            return None
+        if not code.isdigit() or len(code) != 6:
+            return None
+        if code.startswith("6"):
+            return f"{code}.SH"
+        if code.startswith(("0", "3")):
+            return f"{code}.SZ"
+        if code.startswith(("4", "8", "920")):
+            return f"{code}.BJ"
+        if code.startswith("9"):
+            return f"{code}.SH"   # 900 B 股（实测端点不含，防御性归沪）
+        return None
+
+    def get_full_market_daily_df(self, trade_date: str, market: str = "stock"):
+        """单交易日全市场日线（结构化 DataFrame，标准列序归一）。
+
+        market: "stock"=股票 daily 接口 / "fund"=场内基金 fund_daily 接口。
+        只传 trade_date 单日参数——代理端点区间查询有 6000 行静默截断
+        （fund_daily 区间甚至返回 0 行），禁止区间查询（方案 3.2.2 硬性约束）。
+        不支持/失败返回 None。
+        """
+        if market not in ("stock", "fund"):
+            logger.warning("get_full_market_daily_df: 未知 market=%s", market)
+            return None
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取全市场日线。")
+            return None
+        fn = self.api.daily if market == "stock" else self.api.fund_daily
+        try:
+            df = self._api_call(fn, trade_date=self._normalize_date(trade_date))
+            return self._reindex_store_cols(df, self._STORE_DAILY_COLS) \
+                if df is not None else None
+        except Exception as e:
+            logger.warning("获取全市场日线失败 [%s/%s]: %s", trade_date, market, e)
+            return None
+
+    def get_full_market_factor_df(self, trade_date: str, market: str = "stock"):
+        """单交易日全市场复权因子（adj_factor / fund_adj），标准列
+        [ts_code, trade_date, adj_factor]。只传 trade_date 单日参数。不支持/失败返回 None。"""
+        if market not in ("stock", "fund"):
+            logger.warning("get_full_market_factor_df: 未知 market=%s", market)
+            return None
+        if not self.connected:
+            return None
+        fn = self.api.adj_factor if market == "stock" else self.api.fund_adj
+        try:
+            df = self._api_call(fn, trade_date=self._normalize_date(trade_date))
+            return self._reindex_store_cols(
+                df, ["ts_code", "trade_date", "adj_factor"]) if df is not None else None
+        except Exception as e:
+            logger.warning("获取全市场复权因子失败 [%s/%s]: %s",
+                           trade_date, market, e)
+            return None
+
+    def get_stock_basic_df(self):
+        """股票基本信息全量（stock_basic 不传 list_status，含退市 D/暂停 P，
+        含 area 地域原生字段），标准列归一。失败返回 None。"""
+        if not self.connected:
+            return None
+        try:
+            df = self._api_call(
+                self.api.stock_basic,
+                fields="ts_code,name,market,exchange,industry,area,"
+                       "list_status,list_date,delist_date",
+            )
+            return self._reindex_store_cols(df, self._STORE_BASIC_COLS) \
+                if df is not None else None
+        except Exception as e:
+            logger.warning("获取股票基本信息全量失败: %s", e)
+            return None
+
+    def get_fund_basic_df(self):
+        """场内基金基本信息全量（fund_basic market='E' 全字段透传，
+        含费率 m_fee/c_fee/业绩基准 benchmark/托管人 custodian）。失败返回 None。"""
+        if not self.connected:
+            return None
+        try:
+            return self._api_call(self.api.fund_basic, market="E")
+        except Exception as e:
+            logger.warning("获取场内基金基本信息全量失败: %s", e)
+            return None
+
+    def get_concept_list_df(self, source: str = "ths"):
+        """概念列表（多来源，标准列 [ts_code, name, count, exchange, list_date, type]）。
+
+        ths：ths_index(type='N')（概念指数，899 行实测）；
+        dc：dc_index(trade_date=<最近交易日>, idx_type='概念板块')（快照式，
+        从今天向前探测最近有数据交易日），dc 缺失列置 None。
+        未知 source / 失败返回 None。
+        """
+        if not self.connected:
+            return None
+        try:
+            if source == "ths":
+                df = self._api_call(self.api.ths_index, type="N")
+                return self._reindex_store_cols(df, self._STORE_CONCEPT_COLS) \
+                    if df is not None else None
+            if source == "dc":
+                df = self._get_dc_concept_index()
+                return self._reindex_store_cols(df, self._STORE_CONCEPT_COLS) \
+                    if df is not None else None
+            logger.warning("get_concept_list_df: 未知 source=%s", source)
+            return None
+        except Exception as e:
+            logger.warning("获取概念列表失败 [%s]: %s", source, e)
+            return None
+
+    def get_concept_members_df(self, concept_code: str, source: str = "ths",
+                               trade_date: str = None):
+        """单个概念的全部成分，统一归一为 [concept_code, ts_code]（来源的
+        con_name 丢弃，决策 12；6 位代码补交易所后缀与 stock_basic 对齐）。
+
+        ths：ths_member(ts_code=概念代码)——必须用 ts_code= 参数：实测代理端点
+        忽略 code= 参数（返回全量截断 6000 行），ts_code= 过滤精确生效；
+        trade_date 参数忽略。
+        dc：dc_member(ts_code=板块代码, trade_date=最近交易日) 组合过滤——仅
+        ts_code 返回该板块跨 5 个交易日快照（光刻胶 61 成分 × 5 日 ≈ 1883 行）、
+        全量拉取截断 8000 行，均实测；trade_date 必传，缺失返回 None。
+        """
+        if source not in ("ths", "dc"):
+            logger.warning("get_concept_members_df: 未知 source=%s", source)
+            return None
+        if not self.connected:
+            return None
+        if source == "dc" and not trade_date:
+            logger.warning("get_concept_members_df: dc 来源必须传 trade_date（快照式）")
+            return None
+        try:
+            if source == "ths":
+                df = self._api_call(self.api.ths_member, ts_code=concept_code)
+            else:
+                df = self._api_call(
+                    self.api.dc_member, ts_code=concept_code,
+                    trade_date=self._normalize_date(trade_date),
+                )
+        except Exception as e:
+            logger.warning("概念成分拉取失败 [%s/%s]: %s", source, concept_code, e)
+            return None
+        if df is None or df.empty:
+            return df if df is not None else None
+        if "con_code" not in df.columns:
+            # 数据形态失败（缺 con_code 列）→ None，与"拉取失败"同义（采集层记 failed）
+            logger.warning("概念成分响应缺 con_code 列 [%s/%s]", source, concept_code)
+            return None
+        codes = df["con_code"].dropna().astype(str)
+        out = pd.DataFrame({
+            "concept_code": concept_code,
+            "ts_code": codes.map(self._normalize_store_member_code),
+        })
+        # 非 A 股成分（美股/港股等）drop（V1 范围外，实测 ths 概念含境外标的）
+        out = out[out["ts_code"].notna()]
+        # 实测 dc_member 响应含重复 con_code——同一 INSERT 批次提出两行相同 PK
+        # 会报 ON CONFLICT DO UPDATE cannot affect row a second time，必须去重
+        return out.drop_duplicates(subset=["ts_code"]).reset_index(drop=True)

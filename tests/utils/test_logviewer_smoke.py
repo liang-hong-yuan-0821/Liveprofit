@@ -38,6 +38,19 @@ def logs_fixture(tmp_path, monkeypatch):
         '{"name": "get_x", "desc": "获取x", "seq": 1, "ts": "1", "res": "res.md"}',
         encoding="utf-8")
 
+    # tushare 端点子日志（嵌套在 DP 调用目录内，含连通性探测标记）
+    ts_call = dp_new / "tushare" / "001_daily"
+    ts_call.mkdir(parents=True)
+    (ts_call / "req.json").write_text(
+        '{"api_name": "daily", "fields": "", "params": {"ts_code": "000001.SH"}}',
+        encoding="utf-8")
+    (ts_call / "res.json").write_text(
+        '{"columns": ["trade_date"], "shape": [1, 1], "records": [{"trade_date": "20260825"}], '
+        '"row_count": 1, "truncated": false}', encoding="utf-8")
+    (ts_call / "meta.json").write_text(
+        '{"name": "daily", "seq": 1, "ts": "1", "res": "res.json", "probe": true}',
+        encoding="utf-8")
+
     (node / "get_y.json").write_text(json.dumps(
         {"name": "get_y", "desc": "获取y", "req": {}, "res": "# y"},
         ensure_ascii=False), encoding="utf-8")
@@ -216,6 +229,16 @@ def test_checkpoint_expands_dp(logs_fixture):
     at.run()
     labels = [e.label for e in at.expander]
     assert "⏸ 001_get_x　get_x — 获取x" in labels
+
+
+def test_tushare_expander_inside_dp(logs_fixture):
+    """DP 展开内嵌套 tushare 展开：外层计数标题 + 每调用一个子展开（含探测角标）"""
+    at = AppTest.from_file(str(APP_PATH), default_timeout=15)
+    at.run()
+    assert not at.exception
+    labels = [e.label for e in at.expander]
+    assert "tushare（1 次端点调用）" in labels
+    assert "001_daily　daily　🔌 连通性探测" in labels
 
 
 def test_checkpoint_expands_llm_req(logs_fixture):

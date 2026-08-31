@@ -263,3 +263,36 @@ class BaseStockDataProvider(ABC):
         """
         logger.warning("数据不可用：%s 不支持 宏观环境指标（market=%s）。", self.name, market)
         return {}
+
+    # ==================== 全市场日线本地库（store）— 结构化接口 ====================
+    # 供 AI/dataflows/store（本地库回填/增量/DAO）消费，返回 DataFrame。
+    # 结构化接口约定（规则 8）：默认返回 None（不返回 _not_supported() 的 str，
+    # 避免破坏 DataFrame 消费方）；不支持/失败时返回 None。
+
+    def get_full_market_daily_df(self, trade_date: str, market: str = "stock"):
+        """单交易日全市场日线（结构化 DataFrame）。
+        market: "stock"=股票 daily 接口 / "fund"=场内基金 fund_daily 接口。
+        trade_date: YYYYMMDD。不支持或失败返回 None。"""
+        return None
+
+    def get_full_market_factor_df(self, trade_date: str, market: str = "stock"):
+        """单交易日全市场复权因子（adj_factor / fund_adj）。同上。"""
+        return None
+
+    def get_stock_basic_df(self):
+        """股票基本信息全量（含退市，含 area 地域）。返回 None 表示不支持/失败。"""
+        return None
+
+    def get_fund_basic_df(self):
+        """场内基金基本信息全量（fund_basic market='E'）。返回 None 表示不支持/失败。"""
+        return None
+
+    def get_concept_list_df(self, source: str = "ths"):
+        """概念列表（多来源）。source: "ths"=同花顺 / "dc"=东方财富。返回 None 表示不支持/失败。"""
+        return None
+
+    def get_concept_members_df(self, concept_code: str, source: str = "ths",
+                               trade_date: str = None):
+        """单个概念的全部成分（按概念代码过滤，多来源）。trade_date 仅 dc 来源需要（快照式，
+        调用方传最近交易日）；ths 来源忽略该参数。返回 None 表示不支持/失败。"""
+        return None

@@ -2,11 +2,11 @@
 
 ## 市场 — 板块 — 个股三维度分析
 
-> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，事件研究系统（金融事件影响分析，独立子系统）✅，个股层持续更新。
+> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，事件研究系统（金融事件影响分析，独立子系统）✅，全市场日线本地库（数据层子系统）✅，个股层持续更新。
 >
-> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 事件研究系统 ✅ 个股层持续更新
+> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 事件研究系统 ✅ 全市场日线本地库 ✅ 个股层持续更新
 >
-> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`
+> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`（含 `store/`）、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`
 
 ---
 
@@ -229,5 +229,20 @@ START
 - **影响标注（核心）**：事件研究法——市场模型 OLS 回归（120 日估计窗口 + 10 日间隔），4 个目标指数（上证指数/科创50/科创100/沪深300）× 3 窗口（pre_event_5d / event_day / post_event_5d）CAR + t 统计量 + 方向判定（|CAR|>0.5% 且 |t|>1.96）+ 污染检查；t0 对齐规则：盘前（09:30 前）→ 当日，否则 → 下一交易日
 - **市场环境快照**：每日 `market_context`（20 日收益/年化波动/20 日均成交额/10 年国债收益率），事件环境按 T-1 规则匹配（禁止当日快照）
 - **AI 预测**：模板匹配（event_type+subtype+condition 的历史平均 CAR/胜率/样本数，权重 1.0）+ 向量检索（bge-m3 1024 维，pgvector 余弦，相似度<0.5 不纳入，权重=相似度×0.5）加权融合；LangGraph 工具 / REST API（`POST /predict`）/ 离线回测共用同一套确定性规则；预测仅显式保存（save=True）或回测时落库
-- **调度**：Windows 任务计划程序每日早间批处理（采集 → 行情 → 市场上下文 → 向量化 → 事件研究）
+- **调度**：Windows 任务计划程序每日早间批处理（采集 → 行情 → 全市场日线增量 → 市场上下文 → 向量化 → 事件研究）
 - 详见归档方案：[done/事件研究方案.md](done/事件研究方案.md)
+
+---
+
+## 八、全市场日线本地库（已实现 ✅，数据层子系统）
+
+全市场 A 股 + 场内基金（ETF/LOF）近 10 年日线的本地 PostgreSQL 落地（`AI/dataflows/store/`），供全市场横截面（涨跌分布/选股）与本地回测消费；与事件研究同库（liveprofit public schema）不同表，现有 `market_data` 表及消费方**零改动**。
+
+**核心能力**：
+
+- **六张表**：`stock_basic` / `fund_basic`（基本信息，含退市股与基金费率/业绩基准）、`stock_daily` / `adj_factor`（日线与复权因子，股票基金**共用**，分类靠 `is_fund_ts_code()` 前缀函数判定，不冗余 asset_type）、`concept` / `concept_member`（概念体系多来源 ths=同花顺 / dc=东方财富；不存成分股名，展示一律 ts_code JOIN stock_basic 取权威名称）
+- **数据采集**：`TushareProvider` 新增 6 个结构化方法（`get_full_market_daily_df` / `get_full_market_factor_df` / `get_stock_basic_df` / `get_fund_basic_df` / `get_concept_list_df` / `get_concept_members_df`，基类默认返回 None，规则 8）；全市场拉取**只允许 trade_date 单日查询**（区间查询 6000 行静默截断，实测），单日行数 ≥6000 自动降级分批补拉（每批 100 代码逗号分隔）
+- **回填与增量**：`backfill.py` 历史回填（断点续跑以 PG 内 max(trade_date) 为天然断点；单日失败重试 3 次后跳过记 `logs/stock_backfill_failures.json`，`--retry-missing` 补拉；单日提交，库内无"半截日"）；`incremental.py` 每日增量（daily_job 步骤 3，最近 3 交易日 DO UPDATE 覆盖 tushare 日终修正；概念体系周一自动周刷，`refresh_concepts` 可手动触发）
+- **查询 DAO**：单标的区间序列（`get_daily`）、全市场横截面（`get_cross_section`）、前复权序列（`get_qfq_daily`，qfq_x = x × factor_t / factor_latest）、概念双向查询（`get_stock_concepts` / `get_concept_members`）
+- **调度**：并入事件研究每日批处理（采集 → 行情 → 全市场日线增量 → 市场上下文 → 向量化 → 事件研究），`--skip` 步骤名 `store`
+- 详见归档方案：[done/全市场日线本地库方案.md](done/全市场日线本地库方案.md)

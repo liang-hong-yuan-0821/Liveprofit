@@ -6,9 +6,14 @@
 
 运行：uvicorn AI.eventStudy.api.main:app --host 0.0.0.0 --port 8100
 日常调用不落库（save=False 默认）；save=True 显式保存供事后追踪。
+
+常驻调度（方案 B）：服务启动时内置 APScheduler 每天 08:30（本地时区，
+EVENT_STUDY_DAILY_TIME 可改）以子进程方式触发 daily_job——运行约束：
+单 worker、禁用 --reload（避免调度器重复启动），详见 scheduler_setup.md。
 """
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 
@@ -16,10 +21,22 @@ from AI.eventStudy.api.schemas import HealthResponse, PredictRequest
 from AI.eventStudy.collectors.config import WINDOW_TYPES, is_redis_available
 from AI.eventStudy.db.connection import get_connection
 from AI.eventStudy.prediction import predictor
+from AI.eventStudy.scheduler.app_scheduler import (
+    start_daily_scheduler, stop_daily_scheduler,
+)
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="事件研究预测 API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """服务生命周期：启动时挂 daily_job 常驻调度器，关闭时停止。"""
+    start_daily_scheduler()
+    yield
+    stop_daily_scheduler()
+
+
+app = FastAPI(title="事件研究预测 API", version="0.1.0", lifespan=lifespan)
 
 
 def _open_conn():

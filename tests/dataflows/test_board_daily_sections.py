@@ -16,8 +16,8 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from AI.dataflows.providers import daily_matrix_utils
-from AI.dataflows.providers.tushare_provider import TushareProvider
+from AI.dataflows.providers.cn import daily_matrix_utils
+from AI.dataflows.providers.cn.tushare import TushareProvider
 
 
 # ==================== fixtures / helpers ====================
@@ -32,7 +32,7 @@ def _new_tushare_provider(api=None):
 
 
 class _FakeDateTime:
-    """替换 tushare_provider.datetime：now() 返回固定时刻（测试可控）"""
+    """替换 cn.tushare.datetime：now() 返回固定时刻（测试可控）"""
     _now = _real_dt(2026, 8, 19, 16, 0, 0)   # 默认盘后
 
     @classmethod
@@ -42,7 +42,7 @@ class _FakeDateTime:
 
 def _patch_now(monkeypatch, dt: _real_dt):
     """固定 provider 内 datetime.now() 到指定时刻"""
-    import AI.dataflows.providers.tushare_provider as ts_prov
+    import AI.dataflows.providers.cn.tushare as ts_prov
     _FakeDateTime._now = dt
     monkeypatch.setattr(ts_prov, "datetime", _FakeDateTime)
 

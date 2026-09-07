@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 深色专业投研终端基础 Token；组件样式首期直接消费变量与工具类 */
+:root {
+  color-scheme: dark;
+  --color-bg: #0b0f14;
+  --color-surface: #11161d;
+  --color-border: #232a33;
+  --color-fg: #d7dee6;
+  --color-fg-muted: #8b95a1;
+  --color-accent: #3b82f6;
+}
+
+html {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+}

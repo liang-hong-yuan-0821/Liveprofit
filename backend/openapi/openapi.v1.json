@@ -1,0 +1,5368 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Liveprofit API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health Live",
+        "operationId": "health_live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Live Health Live Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health Ready",
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Ready Health Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Metrics",
+        "operationId": "metrics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks": {
+      "post": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Create Task",
+        "operationId": "create_task_api_v1_analysis_tasks_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SingleStockCreateRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MarketWideCreateRequest"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "task_type",
+                  "mapping": {
+                    "SINGLE_STOCK": "#/components/schemas/SingleStockCreateRequest",
+                    "MARKET_WIDE": "#/components/schemas/MarketWideCreateRequest"
+                  }
+                },
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskCreatedData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "List Tasks",
+        "operationId": "list_tasks_api_v1_analysis_tasks_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "all",
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}": {
+      "delete": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Delete Task",
+        "description": "删除任务记录（仅终态任务可删；FK 级联删除报告与 Outbox，DELETE 返回 200 envelope）。",
+        "operationId": "delete_task_api_v1_analysis_tasks__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DeleteResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Get Task",
+        "operationId": "get_task_api_v1_analysis_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/cancel": {
+      "post": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Cancel Task",
+        "operationId": "cancel_task_api_v1_analysis_tasks__task_id__cancel_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/execution-logs": {
+      "get": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Get Execution Logs",
+        "operationId": "get_execution_logs_api_v1_analysis_tasks__task_id__execution_logs_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ExecutionLogsDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/execution-logs/content": {
+      "get": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Get Execution Log Content",
+        "operationId": "get_execution_log_content_api_v1_analysis_tasks__task_id__execution_logs_content_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "file",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "相对任务日志目录的文件路径（/ 分隔）",
+              "title": "File"
+            },
+            "description": "相对任务日志目录的文件路径（/ 分隔）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ExecutionFileDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-dashboard": {
+      "get": {
+        "tags": [
+          "analysis-dashboard"
+        ],
+        "summary": "Get Dashboard",
+        "operationId": "get_dashboard_api_v1_analysis_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AnalysisDashboardDTO_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/events": {
+      "get": {
+        "tags": [
+          "analysis-events"
+        ],
+        "summary": "Task Events",
+        "operationId": "task_events_api_v1_analysis_tasks__task_id__events_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SSEContract"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/report": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Report",
+        "operationId": "get_report_api_v1_analysis_tasks__task_id__report_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ReportDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/predictions": {
+      "post": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "Predict",
+        "operationId": "predict_api_v1_event_studies_predictions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PredictionData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/assets": {
+      "get": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "List Assets",
+        "operationId": "list_assets_api_v1_event_studies_assets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AssetListData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/macro-information": {
+      "get": {
+        "tags": [
+          "macro-information"
+        ],
+        "summary": "List Macro Information",
+        "operationId": "list_macro_information_api_v1_macro_information_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Market"
+            }
+          },
+          {
+            "name": "topic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Topic"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_MacroInformationData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists": {
+      "get": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "List Watchlists",
+        "operationId": "list_watchlists_api_v1_watchlists_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_WatchlistListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Create Watchlist",
+        "operationId": "create_watchlist_api_v1_watchlists_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_WatchlistDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}": {
+      "patch": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Rename Watchlist",
+        "operationId": "rename_watchlist_api_v1_watchlists__watchlist_id__patch",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_WatchlistDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Delete Watchlist",
+        "operationId": "delete_watchlist_api_v1_watchlists__watchlist_id__delete",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Expected Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DeleteResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}/items": {
+      "get": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "List Watchlist Items",
+        "operationId": "list_watchlist_items_api_v1_watchlists__watchlist_id__items_get",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_WatchlistItemsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Add Watchlist Item",
+        "operationId": "add_watchlist_item_api_v1_watchlists__watchlist_id__items_post",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistItemCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_WatchlistItemMutationData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}/items/order": {
+      "put": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Reorder Watchlist Items",
+        "operationId": "reorder_watchlist_items_api_v1_watchlists__watchlist_id__items_order_put",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistItemOrderUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_WatchlistOrderData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}/items/{item_id}": {
+      "delete": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Remove Watchlist Item",
+        "operationId": "remove_watchlist_item_api_v1_watchlists__watchlist_id__items__item_id__delete",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "expected_watchlist_revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Expected Watchlist Revision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DeleteResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios": {
+      "get": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "List Portfolios",
+        "operationId": "list_portfolios_api_v1_portfolios_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PortfolioListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Create Portfolio",
+        "operationId": "create_portfolio_api_v1_portfolios_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PortfolioDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}": {
+      "patch": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Rename Portfolio",
+        "operationId": "rename_portfolio_api_v1_portfolios__portfolio_id__patch",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PortfolioDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Delete Portfolio",
+        "operationId": "delete_portfolio_api_v1_portfolios__portfolio_id__delete",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Expected Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DeleteResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}/positions": {
+      "get": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "List Positions",
+        "operationId": "list_positions_api_v1_portfolios__portfolio_id__positions_get",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PortfolioPositionsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}/positions/{market}/{symbol}": {
+      "put": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Upsert Position",
+        "operationId": "upsert_position_api_v1_portfolios__portfolio_id__positions__market___symbol__put",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "market",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionUpsertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PortfolioPositionMutationData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Remove Position",
+        "operationId": "remove_position_api_v1_portfolios__portfolio_id__positions__market___symbol__delete",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "market",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "expected_portfolio_revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Expected Portfolio Revision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DeleteResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-assets": {
+      "get": {
+        "tags": [
+          "market-assets"
+        ],
+        "summary": "List Market Assets",
+        "operationId": "list_market_assets_api_v1_market_assets_get",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Enabled"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_MarketAssetsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/indices/{symbol}/bars": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Index Bars",
+        "operationId": "index_bars_api_v1_market_data_indices__symbol__bars_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_BarsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/concepts/hot": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Hot Concepts",
+        "operationId": "hot_concepts_api_v1_market_data_concepts_hot_get",
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_HotConceptsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActiveTaskDTO": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_STOCK",
+              "MARKET_WIDE"
+            ],
+            "title": "Task Type"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING"
+            ],
+            "title": "Status"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_type",
+          "ticker",
+          "effective_trade_date",
+          "status",
+          "attempt_no",
+          "updated_at",
+          "next_retry_at"
+        ],
+        "title": "ActiveTaskDTO"
+      },
+      "AnalysisDashboardDTO": {
+        "properties": {
+          "pending_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PendingActionDTO"
+            },
+            "type": "array",
+            "title": "Pending Actions"
+          },
+          "active_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/ActiveTaskDTO"
+            },
+            "type": "array",
+            "title": "Active Tasks"
+          },
+          "recent_conclusions": {
+            "items": {
+              "$ref": "#/components/schemas/RecentConclusionDTO"
+            },
+            "type": "array",
+            "title": "Recent Conclusions"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pending_actions",
+          "active_tasks",
+          "recent_conclusions",
+          "generated_at"
+        ],
+        "title": "AnalysisDashboardDTO"
+      },
+      "AnalysisOptions": {
+        "properties": {},
+        "additionalProperties": true,
+        "type": "object",
+        "title": "AnalysisOptions",
+        "description": "接口定义的其余选项（扩展点，服务层复验）。"
+      },
+      "AssetListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventStudyAssetDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AssetListData"
+      },
+      "BarDTO": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date",
+            "title": "Timestamp"
+          },
+          "open": {
+            "type": "number",
+            "title": "Open"
+          },
+          "high": {
+            "type": "number",
+            "title": "High"
+          },
+          "low": {
+            "type": "number",
+            "title": "Low"
+          },
+          "close": {
+            "type": "number",
+            "title": "Close"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "title": "BarDTO"
+      },
+      "BarsAssetInfo": {
+        "properties": {
+          "market": {
+            "type": "string",
+            "enum": [
+              "US",
+              "KR",
+              "CN"
+            ],
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "market_timezone": {
+            "type": "string",
+            "title": "Market Timezone"
+          },
+          "supported_intervals": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supported Intervals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "market",
+          "symbol",
+          "name",
+          "currency",
+          "market_timezone",
+          "supported_intervals"
+        ],
+        "title": "BarsAssetInfo"
+      },
+      "BarsData": {
+        "properties": {
+          "asset": {
+            "$ref": "#/components/schemas/BarsAssetInfo"
+          },
+          "interval": {
+            "type": "string",
+            "title": "Interval"
+          },
+          "from": {
+            "type": "string",
+            "format": "date",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "title": "To"
+          },
+          "bars": {
+            "items": {
+              "$ref": "#/components/schemas/BarDTO"
+            },
+            "type": "array",
+            "title": "Bars"
+          },
+          "indicators": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndicatorsDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "source_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Updated At"
+          },
+          "freshness_status": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNAVAILABLE"
+            ],
+            "title": "Freshness Status"
+          },
+          "market_session_status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "CLOSED"
+            ],
+            "title": "Market Session Status"
+          },
+          "market_closed_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Closed Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset",
+          "interval",
+          "from",
+          "to",
+          "bars",
+          "source",
+          "as_of",
+          "source_updated_at",
+          "freshness_status",
+          "market_session_status",
+          "market_closed_reason"
+        ],
+        "title": "BarsData"
+      },
+      "BollBandsDTO": {
+        "properties": {
+          "period": {
+            "type": "integer",
+            "title": "Period"
+          },
+          "k": {
+            "type": "number",
+            "title": "K"
+          },
+          "mid": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Mid"
+          },
+          "upper": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Upper"
+          },
+          "lower": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Lower"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "k",
+          "mid",
+          "upper",
+          "lower"
+        ],
+        "title": "BollBandsDTO",
+        "description": "布林带三线：各数组与 bars 等长按 index 对齐，窗口不足处为 null。"
+      },
+      "BusinessEventData": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Attempt No"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "schema_version": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schema Version",
+            "default": "v1"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "market",
+                  "sector",
+                  "stock",
+                  "decision",
+                  "queue",
+                  "finish"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "worker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worker Id"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "attempt_no",
+          "occurred_at"
+        ],
+        "title": "BusinessEventData",
+        "description": "六种业务帧 data 的公共字段 + 事件专属可选字段。"
+      },
+      "DailyChangeDTO": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "change_pct": {
+            "type": "number",
+            "title": "Change Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "change_pct"
+        ],
+        "title": "DailyChangeDTO"
+      },
+      "DataSourceDTO": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "source"
+        ],
+        "title": "DataSourceDTO"
+      },
+      "DeleteResultData": {
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted",
+            "default": true
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id",
+            "description": "被删除资源 UUID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource_id"
+        ],
+        "title": "DeleteResultData"
+      },
+      "EnvelopeMeta": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id",
+            "description": "请求标识（X-Trace-ID）"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "v1"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "不透明续页游标；无下一页为 null"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id"
+        ],
+        "title": "EnvelopeMeta"
+      },
+      "Envelope_AnalysisDashboardDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnalysisDashboardDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AnalysisDashboardDTO]"
+      },
+      "Envelope_AssetListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AssetListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AssetListData]"
+      },
+      "Envelope_BarsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BarsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[BarsData]"
+      },
+      "Envelope_DeleteResultData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DeleteResultData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[DeleteResultData]"
+      },
+      "Envelope_ExecutionFileDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ExecutionFileDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ExecutionFileDTO]"
+      },
+      "Envelope_ExecutionLogsDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ExecutionLogsDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ExecutionLogsDTO]"
+      },
+      "Envelope_HotConceptsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/HotConceptsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[HotConceptsData]"
+      },
+      "Envelope_MacroInformationData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MacroInformationData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[MacroInformationData]"
+      },
+      "Envelope_MarketAssetsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MarketAssetsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[MarketAssetsData]"
+      },
+      "Envelope_PortfolioDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PortfolioDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PortfolioDTO]"
+      },
+      "Envelope_PortfolioListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PortfolioListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PortfolioListData]"
+      },
+      "Envelope_PortfolioPositionMutationData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PortfolioPositionMutationData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PortfolioPositionMutationData]"
+      },
+      "Envelope_PortfolioPositionsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PortfolioPositionsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PortfolioPositionsData]"
+      },
+      "Envelope_PredictionData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PredictionData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PredictionData]"
+      },
+      "Envelope_ReportDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReportDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ReportDTO]"
+      },
+      "Envelope_TaskCreatedData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskCreatedData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TaskCreatedData]"
+      },
+      "Envelope_TaskDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TaskDTO]"
+      },
+      "Envelope_TaskListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TaskListData]"
+      },
+      "Envelope_WatchlistDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WatchlistDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[WatchlistDTO]"
+      },
+      "Envelope_WatchlistItemMutationData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WatchlistItemMutationData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[WatchlistItemMutationData]"
+      },
+      "Envelope_WatchlistItemsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WatchlistItemsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[WatchlistItemsData]"
+      },
+      "Envelope_WatchlistListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WatchlistListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[WatchlistListData]"
+      },
+      "Envelope_WatchlistOrderData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WatchlistOrderData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[WatchlistOrderData]"
+      },
+      "EventStudyAssetDTO": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticker",
+          "name",
+          "market"
+        ],
+        "title": "EventStudyAssetDTO"
+      },
+      "ExecutionDpCallDTO": {
+        "properties": {
+          "dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dir",
+            "description": "新格式目录相对路径；旧格式为 null"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "接口名（meta.name 或目录/文件名推导）"
+          },
+          "desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desc"
+          },
+          "seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seq"
+          },
+          "ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ts"
+          },
+          "error": {
+            "type": "boolean",
+            "title": "Error"
+          },
+          "legacy": {
+            "type": "boolean",
+            "title": "Legacy",
+            "description": "旧格式平铺文件"
+          },
+          "req": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Req",
+            "description": "req.json；旧格式 payload.req"
+          },
+          "res": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionFileDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "res.md/res.json；旧格式 payload.res（dict → kind=json）"
+          },
+          "tushare": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionTushareDTO"
+            },
+            "type": "array",
+            "title": "Tushare"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "desc",
+          "seq",
+          "ts",
+          "error",
+          "legacy",
+          "req",
+          "res",
+          "tushare"
+        ],
+        "title": "ExecutionDpCallDTO",
+        "description": "dataprovider 调用（新格式目录或旧格式平铺 json）。"
+      },
+      "ExecutionFileDTO": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "相对任务目录的文件路径"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "md",
+              "json",
+              "txt"
+            ],
+            "title": "Kind",
+            "description": "按扩展名分流"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content",
+            "description": "kind=md/txt → str；kind=json → 解析后 dict；解析失败/超限截断时 → null"
+          },
+          "parse_error": {
+            "type": "boolean",
+            "title": "Parse Error",
+            "description": "json 解析失败（content=null 时区分原因）",
+            "default": false
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "description": "超过内容上限，content=null",
+            "default": false
+          },
+          "total_bytes": {
+            "type": "integer",
+            "title": "Total Bytes",
+            "description": "原始文件字节数（截断时前端展示「查看完整内容」）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "kind",
+          "total_bytes"
+        ],
+        "title": "ExecutionFileDTO",
+        "description": "日志内容文件（相对任务目录）。truncated 统一语义：内容未内嵌，可经 content 端点拉全量。"
+      },
+      "ExecutionLayerDTO": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "\"market\" / \"sector\" / \"stock\" / \"screening\" / 未知层名"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionNodeDTO"
+            },
+            "type": "array",
+            "title": "Nodes",
+            "description": "按目录名排序（seq 前缀）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "nodes"
+        ],
+        "title": "ExecutionLayerDTO"
+      },
+      "ExecutionLogsDTO": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "任务日志目录是否存在且可读；false 时 layers 为空"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At",
+            "description": "树构建时间"
+          },
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionLayerDTO"
+            },
+            "type": "array",
+            "title": "Layers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "attempt_no",
+          "available",
+          "generated_at",
+          "layers"
+        ],
+        "title": "ExecutionLogsDTO"
+      },
+      "ExecutionNodeDTO": {
+        "properties": {
+          "dir": {
+            "type": "string",
+            "title": "Dir",
+            "description": "相对任务目录，如 \"sector/001_Sector_News_Analyst\""
+          },
+          "seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seq",
+            "description": "目录名数字前缀；解析失败为 null"
+          },
+          "node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node",
+            "description": "meta.json 的 node（LLM 节点名）"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "meta.json 的 model"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta",
+            "description": "meta.json 原样（含 tool_calls 摘要）"
+          },
+          "llm_req": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionFileDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "req.md"
+          },
+          "llm_res": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionFileDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "res.md"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionToolDTO"
+            },
+            "type": "array",
+            "title": "Tools",
+            "description": "tools/ 子目录，按名称排序"
+          },
+          "dp_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionDpCallDTO"
+            },
+            "type": "array",
+            "title": "Dp Calls",
+            "description": "新格式目录 + 旧格式平铺 json，按名称排序"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dir",
+          "seq",
+          "node",
+          "model",
+          "meta",
+          "llm_req",
+          "llm_res",
+          "tools",
+          "dp_calls"
+        ],
+        "title": "ExecutionNodeDTO",
+        "description": "LLM 节点目录。"
+      },
+      "ExecutionToolDTO": {
+        "properties": {
+          "dir": {
+            "type": "string",
+            "title": "Dir"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "工具名（req.json 的 name，缺省取目录名）"
+          },
+          "req": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Req"
+          },
+          "res": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionFileDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "res.txt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dir",
+          "name",
+          "req",
+          "res"
+        ],
+        "title": "ExecutionToolDTO",
+        "description": "LLM 工具调用。"
+      },
+      "ExecutionTushareDTO": {
+        "properties": {
+          "dir": {
+            "type": "string",
+            "title": "Dir"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "api_name"
+          },
+          "seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seq"
+          },
+          "ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ts"
+          },
+          "probe": {
+            "type": "boolean",
+            "title": "Probe"
+          },
+          "error": {
+            "type": "boolean",
+            "title": "Error"
+          },
+          "req": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Req",
+            "description": "{api_name, fields, params}"
+          },
+          "res": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionFileDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "res.json（DataFrame 归一结构或 {\"error\":...}）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dir",
+          "name",
+          "seq",
+          "ts",
+          "probe",
+          "error",
+          "req",
+          "res"
+        ],
+        "title": "ExecutionTushareDTO",
+        "description": "tushare 端点子调用（DP 调用目录 tushare/ 内）。"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HeartbeatEventData": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "title": "Connection Id"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sent At"
+          },
+          "schema_version": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schema Version",
+            "default": "v1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connection_id",
+          "sent_at"
+        ],
+        "title": "HeartbeatEventData",
+        "description": "heartbeat 控制帧 data（固定且仅此三字段，无 id）。"
+      },
+      "HotConceptDTO": {
+        "properties": {
+          "concept_code": {
+            "type": "string",
+            "title": "Concept Code"
+          },
+          "concept_name": {
+            "type": "string",
+            "title": "Concept Name"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "hotness_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotness Reason"
+          },
+          "period_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Return"
+          },
+          "daily_changes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DailyChangeDTO"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Changes"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "bars": {
+            "items": {
+              "$ref": "#/components/schemas/BarDTO"
+            },
+            "type": "array",
+            "title": "Bars"
+          }
+        },
+        "type": "object",
+        "required": [
+          "concept_code",
+          "concept_name",
+          "rank",
+          "hotness_reason",
+          "period_return",
+          "daily_changes",
+          "updated_at",
+          "bars"
+        ],
+        "title": "HotConceptDTO"
+      },
+      "HotConceptsData": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "algorithm_version": {
+            "type": "string",
+            "title": "Algorithm Version"
+          },
+          "result_status": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "NO_HOT_CONCEPTS"
+            ],
+            "title": "Result Status"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HotConceptDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "source_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Updated At"
+          },
+          "freshness_status": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE"
+            ],
+            "title": "Freshness Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_of",
+          "algorithm_version",
+          "result_status",
+          "items",
+          "source",
+          "source_updated_at",
+          "freshness_status"
+        ],
+        "title": "HotConceptsData"
+      },
+      "IndicatorsDTO": {
+        "properties": {
+          "ma": {
+            "items": {
+              "$ref": "#/components/schemas/MaLineDTO"
+            },
+            "type": "array",
+            "title": "Ma"
+          },
+          "boll": {
+            "$ref": "#/components/schemas/BollBandsDTO"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ma",
+          "boll"
+        ],
+        "title": "IndicatorsDTO",
+        "description": "MA/BOLL 技术指标（K线指标叠加方案 §2.1）；bars 为空时整个字段为 null。"
+      },
+      "MaLineDTO": {
+        "properties": {
+          "period": {
+            "type": "integer",
+            "title": "Period"
+          },
+          "values": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "values"
+        ],
+        "title": "MaLineDTO",
+        "description": "单条均线：values 与 bars 等长按 index 对齐，窗口不足处为 null。"
+      },
+      "MacroInformationData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MacroInformationItemDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "MacroInformationData"
+      },
+      "MacroInformationItemDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "market_tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Market Tags"
+          },
+          "macro_topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macro Topic"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "related_assets": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Assets"
+          },
+          "research_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "event_id",
+          "title",
+          "occurred_at",
+          "market_tags",
+          "macro_topic",
+          "summary",
+          "source",
+          "related_assets",
+          "research_status"
+        ],
+        "title": "MacroInformationItemDTO"
+      },
+      "MarketAssetDTO": {
+        "properties": {
+          "market": {
+            "type": "string",
+            "enum": [
+              "US",
+              "KR",
+              "CN"
+            ],
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "market_timezone": {
+            "type": "string",
+            "title": "Market Timezone"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "supported_intervals": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supported Intervals"
+          },
+          "availability_status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "DISABLED",
+              "UNAVAILABLE"
+            ],
+            "title": "Availability Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "market",
+          "symbol",
+          "name",
+          "currency",
+          "market_timezone",
+          "display_order",
+          "enabled",
+          "supported_intervals",
+          "availability_status"
+        ],
+        "title": "MarketAssetDTO"
+      },
+      "MarketAssetsData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MarketAssetDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "MarketAssetsData"
+      },
+      "MarketWideCreateRequest": {
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "const": "MARKET_WIDE",
+            "title": "Task Type"
+          },
+          "ticker": {
+            "type": "null",
+            "title": "Ticker"
+          },
+          "requested_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Requested Trade Date"
+          },
+          "selected_layers": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "market",
+                "sector",
+                "stock",
+                "screening",
+                "position"
+              ]
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Selected Layers"
+          },
+          "analysis_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_type",
+          "requested_trade_date",
+          "selected_layers"
+        ],
+        "title": "MarketWideCreateRequest"
+      },
+      "PendingActionDTO": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FAILED_TASK",
+              "REPORT_SECTION_UNAVAILABLE"
+            ],
+            "title": "Kind"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_STOCK",
+              "MARKET_WIDE"
+            ],
+            "title": "Task Type"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Summary"
+          },
+          "unavailable_blocks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/UnavailableBlockDTO"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Blocks"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "task_id",
+          "task_type",
+          "ticker",
+          "effective_trade_date",
+          "updated_at",
+          "error_code",
+          "error_summary",
+          "unavailable_blocks",
+          "retryable"
+        ],
+        "title": "PendingActionDTO"
+      },
+      "PortfolioCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PortfolioCreateRequest"
+      },
+      "PortfolioDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "position_count": {
+            "type": "integer",
+            "title": "Position Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "position_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PortfolioDTO"
+      },
+      "PortfolioListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PortfolioListData"
+      },
+      "PortfolioPositionDTO": {
+        "properties": {
+          "portfolio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Portfolio Id"
+          },
+          "market": {
+            "type": "string",
+            "enum": [
+              "US",
+              "KR",
+              "CN"
+            ],
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "average_cost": {
+            "type": "number",
+            "title": "Average Cost"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "portfolio_id",
+          "market",
+          "symbol",
+          "quantity",
+          "average_cost",
+          "updated_at"
+        ],
+        "title": "PortfolioPositionDTO"
+      },
+      "PortfolioPositionMutationData": {
+        "properties": {
+          "position": {
+            "$ref": "#/components/schemas/PortfolioPositionDTO"
+          },
+          "portfolio_revision": {
+            "type": "integer",
+            "title": "Portfolio Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position",
+          "portfolio_revision"
+        ],
+        "title": "PortfolioPositionMutationData"
+      },
+      "PortfolioPositionsData": {
+        "properties": {
+          "portfolio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Portfolio Id"
+          },
+          "portfolio_revision": {
+            "type": "integer",
+            "title": "Portfolio Revision"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioPositionDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "portfolio_id",
+          "portfolio_revision",
+          "items"
+        ],
+        "title": "PortfolioPositionsData"
+      },
+      "PortfolioUpdateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "expected_version"
+        ],
+        "title": "PortfolioUpdateRequest"
+      },
+      "PositionUpsertRequest": {
+        "properties": {
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "average_cost": {
+            "type": "number",
+            "title": "Average Cost"
+          },
+          "expected_portfolio_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Portfolio Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quantity",
+          "average_cost",
+          "expected_portfolio_revision"
+        ],
+        "title": "PositionUpsertRequest"
+      },
+      "PredictionData": {
+        "properties": {
+          "prediction": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Prediction"
+          },
+          "template_stats": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Template Stats"
+          },
+          "supplement_events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Supplement Events"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prediction",
+          "template_stats",
+          "supplement_events",
+          "note"
+        ],
+        "title": "PredictionData"
+      },
+      "PredictionRequest": {
+        "properties": {
+          "event_text": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Event Text"
+          },
+          "asset_ticker": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Asset Ticker"
+          },
+          "window_type": {
+            "type": "string",
+            "enum": [
+              "pre_event_5d",
+              "event_day",
+              "post_event_5d"
+            ],
+            "title": "Window Type",
+            "default": "post_event_5d"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "event_subtype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Subtype"
+          },
+          "event_condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Condition"
+          },
+          "save": {
+            "type": "boolean",
+            "title": "Save",
+            "default": false
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_text",
+          "asset_ticker"
+        ],
+        "title": "PredictionRequest"
+      },
+      "RecentConclusionDTO": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_STOCK",
+              "MARKET_WIDE"
+            ],
+            "title": "Task Type"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          },
+          "conclusion_summary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion Summary"
+          },
+          "risk_flag": {
+            "type": "boolean",
+            "title": "Risk Flag"
+          },
+          "risk_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Hint"
+          },
+          "has_report": {
+            "type": "boolean",
+            "title": "Has Report"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_type",
+          "ticker",
+          "effective_trade_date",
+          "completed_at",
+          "risk_flag",
+          "risk_hint",
+          "has_report",
+          "updated_at"
+        ],
+        "title": "RecentConclusionDTO"
+      },
+      "ReportDTO": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "report_version": {
+            "type": "integer",
+            "title": "Report Version"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "task": {
+            "$ref": "#/components/schemas/ReportTaskInfo"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSectionDTO"
+            },
+            "type": "array",
+            "title": "Sections"
+          },
+          "data_sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DataSourceDTO"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Sources"
+          },
+          "risk_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "schema_version",
+          "report_version",
+          "generated_at",
+          "task",
+          "sections"
+        ],
+        "title": "ReportDTO"
+      },
+      "ReportSectionDTO": {
+        "properties": {
+          "block": {
+            "type": "string",
+            "enum": [
+              "market",
+              "sector",
+              "stock",
+              "decision"
+            ],
+            "title": "Block"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE",
+              "NOT_REQUESTED"
+            ],
+            "title": "Status"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "charts": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charts"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "retryable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retryable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "block",
+          "status"
+        ],
+        "title": "ReportSectionDTO"
+      },
+      "ReportTaskInfo": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_STOCK",
+              "MARKET_WIDE"
+            ],
+            "title": "Task Type"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_type",
+          "ticker",
+          "effective_trade_date"
+        ],
+        "title": "ReportTaskInfo"
+      },
+      "ResetEventData": {
+        "properties": {
+          "task_url": {
+            "type": "string",
+            "title": "Task Url"
+          },
+          "earliest_event_id": {
+            "type": "string",
+            "title": "Earliest Event Id"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "schema_version": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schema Version",
+            "default": "v1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_url",
+          "earliest_event_id",
+          "occurred_at"
+        ],
+        "title": "ResetEventData",
+        "description": "reset 控制帧 data（固定且仅此四字段，无 id）。"
+      },
+      "SSEContract": {
+        "properties": {
+          "business": {
+            "$ref": "#/components/schemas/BusinessEventData"
+          },
+          "reset": {
+            "$ref": "#/components/schemas/ResetEventData"
+          },
+          "heartbeat": {
+            "$ref": "#/components/schemas/HeartbeatEventData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business",
+          "reset",
+          "heartbeat"
+        ],
+        "title": "SSEContract",
+        "description": "SSE 协议帧集合（OpenAPI 文档用途：运行时为 text/event-stream 分帧）。"
+      },
+      "SingleStockCreateRequest": {
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "const": "SINGLE_STOCK",
+            "title": "Task Type"
+          },
+          "ticker": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Ticker",
+            "description": "单股分析目标"
+          },
+          "requested_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Requested Trade Date"
+          },
+          "selected_layers": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "market",
+                "sector",
+                "stock",
+                "screening",
+                "position"
+              ]
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Selected Layers"
+          },
+          "analysis_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_type",
+          "ticker",
+          "requested_trade_date",
+          "selected_layers"
+        ],
+        "title": "SingleStockCreateRequest"
+      },
+      "TaskCreatedData": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED",
+              "CANCEL_REQUESTED"
+            ],
+            "title": "Status"
+          },
+          "requested_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Trade Date"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "date_correction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Correction"
+          },
+          "events_url": {
+            "type": "string",
+            "title": "Events Url",
+            "description": "服务端派生的 SSE 相对 URL"
+          },
+          "report_url": {
+            "type": "string",
+            "title": "Report Url",
+            "description": "服务端派生的报告相对 URL"
+          },
+          "execution_logs_url": {
+            "type": "string",
+            "title": "Execution Logs Url",
+            "description": "服务端派生的执行调用日志相对 URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status",
+          "requested_trade_date",
+          "effective_trade_date",
+          "date_correction",
+          "events_url",
+          "report_url",
+          "execution_logs_url"
+        ],
+        "title": "TaskCreatedData"
+      },
+      "TaskDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_STOCK",
+              "MARKET_WIDE"
+            ],
+            "title": "Task Type"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "requested_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Trade Date"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "date_correction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Correction"
+          },
+          "selected_layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Layers"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED",
+              "CANCEL_REQUESTED"
+            ],
+            "title": "Status"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Summary"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "events_url": {
+            "type": "string",
+            "title": "Events Url",
+            "description": "恒等于 /api/v1/analysis-tasks/{id}/events"
+          },
+          "report_url": {
+            "type": "string",
+            "title": "Report Url",
+            "description": "恒等于 /api/v1/analysis-tasks/{id}/report"
+          },
+          "execution_logs_url": {
+            "type": "string",
+            "title": "Execution Logs Url",
+            "description": "恒等于 /api/v1/analysis-tasks/{id}/execution-logs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_type",
+          "ticker",
+          "requested_trade_date",
+          "effective_trade_date",
+          "date_correction",
+          "selected_layers",
+          "status",
+          "attempt_no",
+          "next_retry_at",
+          "error_code",
+          "error_summary",
+          "created_at",
+          "updated_at",
+          "events_url",
+          "report_url",
+          "execution_logs_url"
+        ],
+        "title": "TaskDTO"
+      },
+      "TaskListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskListItemDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "TaskListData"
+      },
+      "TaskListItemDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_STOCK",
+              "MARKET_WIDE"
+            ],
+            "title": "Task Type"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "effective_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Trade Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED",
+              "CANCEL_REQUESTED"
+            ],
+            "title": "Status"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Summary"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_type",
+          "ticker",
+          "effective_trade_date",
+          "status",
+          "attempt_no",
+          "error_code",
+          "error_summary",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskListItemDTO"
+      },
+      "UnavailableBlockDTO": {
+        "properties": {
+          "block": {
+            "type": "string",
+            "enum": [
+              "market",
+              "sector",
+              "stock",
+              "decision"
+            ],
+            "title": "Block"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "block"
+        ],
+        "title": "UnavailableBlockDTO"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WatchlistCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "WatchlistCreateRequest"
+      },
+      "WatchlistDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "item_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WatchlistDTO"
+      },
+      "WatchlistItemCreateRequest": {
+        "properties": {
+          "market": {
+            "type": "string",
+            "enum": [
+              "US",
+              "KR",
+              "CN"
+            ],
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Symbol"
+          },
+          "expected_watchlist_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Watchlist Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "market",
+          "symbol",
+          "expected_watchlist_revision"
+        ],
+        "title": "WatchlistItemCreateRequest"
+      },
+      "WatchlistItemDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "watchlist_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Watchlist Id"
+          },
+          "market": {
+            "type": "string",
+            "enum": [
+              "US",
+              "KR",
+              "CN"
+            ],
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "watchlist_id",
+          "market",
+          "symbol",
+          "display_order",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WatchlistItemDTO"
+      },
+      "WatchlistItemMutationData": {
+        "properties": {
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WatchlistItemDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "watchlist_revision": {
+            "type": "integer",
+            "title": "Watchlist Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item",
+          "watchlist_revision"
+        ],
+        "title": "WatchlistItemMutationData"
+      },
+      "WatchlistItemOrderEntry": {
+        "properties": {
+          "market": {
+            "type": "string",
+            "enum": [
+              "US",
+              "KR",
+              "CN"
+            ],
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Display Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "market",
+          "symbol",
+          "display_order"
+        ],
+        "title": "WatchlistItemOrderEntry"
+      },
+      "WatchlistItemOrderUpdateRequest": {
+        "properties": {
+          "expected_watchlist_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Watchlist Revision"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchlistItemOrderEntry"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_watchlist_revision",
+          "items"
+        ],
+        "title": "WatchlistItemOrderUpdateRequest"
+      },
+      "WatchlistItemsData": {
+        "properties": {
+          "watchlist_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Watchlist Id"
+          },
+          "watchlist_revision": {
+            "type": "integer",
+            "title": "Watchlist Revision"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchlistItemDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "watchlist_id",
+          "watchlist_revision",
+          "items"
+        ],
+        "title": "WatchlistItemsData"
+      },
+      "WatchlistListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchlistDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "WatchlistListData"
+      },
+      "WatchlistOrderData": {
+        "properties": {
+          "watchlist_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Watchlist Id"
+          },
+          "watchlist_revision": {
+            "type": "integer",
+            "title": "Watchlist Revision"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchlistItemDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "watchlist_id",
+          "watchlist_revision",
+          "items"
+        ],
+        "title": "WatchlistOrderData"
+      },
+      "WatchlistUpdateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "expected_version"
+        ],
+        "title": "WatchlistUpdateRequest"
+      }
+    }
+  }
+}

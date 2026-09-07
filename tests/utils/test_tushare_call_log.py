@@ -28,7 +28,7 @@ from AI.utils.dataprovider_log import (
     wrap_tushare_api,
 )
 from AI.utils.llm_callbacks import _run
-from AI.dataflows.providers.tushare_provider import TushareProvider
+from AI.dataflows.providers.cn.tushare import TushareProvider
 
 
 @pytest.fixture

@@ -15,8 +15,8 @@ import pandas as pd
 import pytest
 
 from AI.dataflows.providers.base_provider import BaseStockDataProvider
-from AI.dataflows.providers.tushare_provider import TushareProvider
-from AI.dataflows.providers import akshare_provider
+from AI.dataflows.providers.cn.tushare import TushareProvider
+from AI.dataflows.providers.cn import akshare
 
 DAY_TODAY = "20260819"
 TRADING_11 = ["20260805", "20260806", "20260807", "20260810", "20260811",
@@ -178,13 +178,13 @@ def fake_ak(monkeypatch):
     ak.stock_board_concept_name_em = MagicMock(
         return_value=pd.DataFrame({"概念名称": ["A概念", "B概念"]}))
     ak.stock_board_concept_hist_em = MagicMock()
-    monkeypatch.setattr(akshare_provider, "ak", ak)
-    monkeypatch.setattr(akshare_provider, "AKSHARE_AVAILABLE", True)
+    monkeypatch.setattr(akshare, "ak", ak)
+    monkeypatch.setattr(akshare, "AKSHARE_AVAILABLE", True)
     return ak
 
 
 def _new_akshare_provider():
-    return akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    return akshare.AKShareProvider.__new__(akshare.AKShareProvider)
 
 
 def test_ak_industry_matrix(fake_ak):

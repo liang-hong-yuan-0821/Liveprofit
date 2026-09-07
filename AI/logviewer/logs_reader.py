@@ -20,7 +20,8 @@ from typing import Any, Dict, List, Optional, Tuple
 # 运行批次目录名：2026-08-19_223929
 _RUN_RE = re.compile(r"\d{4}-\d{2}-\d{2}_\d{6}")
 # 序号前缀目录：001_International_News_Analyst / 001_get_xxx / 001_search
-_SEQ_DIR_RE = re.compile(r"\d{3}_.+")
+# 数字段 3 位起（seq 超 999 后内核 f"{seq:03d}" 自然变 4 位，如 1000_Sector_News_Analyst）
+_SEQ_DIR_RE = re.compile(r"\d{3,}_.+")
 # 真实执行序（trading_graph：Market → Sector → Stock，Screening 在 Stock 层内）
 LAYER_ORDER = ["market", "sector", "stock", "screening"]
 

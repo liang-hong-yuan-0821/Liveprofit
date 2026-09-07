@@ -39,7 +39,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from AI.dataflows.providers.tushare_provider import TushareProvider
+from AI.dataflows.providers.cn.tushare import TushareProvider
 
 from . import concepts
 from .db import get_connection, init_store_schema

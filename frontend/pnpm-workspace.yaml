@@ -1,0 +1,4 @@
+# pnpm 11 构建脚本白名单（playwright 不在此列，浏览器在 T9 按需安装）
+allowBuilds:
+  esbuild: true
+  '@tailwindcss/oxide': true

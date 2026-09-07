@@ -57,6 +57,8 @@ data/tushare/
 data/cache/
 # logs/
 *.log
+# 平台产物卷（artifacts、临时文件）
+var/
 
 # ===== 配置（含密钥，勿提交） =====
 a.bash

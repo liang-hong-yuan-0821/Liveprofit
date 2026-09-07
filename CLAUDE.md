@@ -10,9 +10,11 @@ docs/
 ├── 市场层.md             ← 主干：市场层架构定义
 ├── 板块层.md             ← 主干：板块层架构定义
 ├── 个股层.md             ← 主干：个股层架构定义
-├── template/             ← 文档模板（起草新方案时复制使用）
-│   └── 技术方案文档模板.md
+├── template/             ← 文档模板（起草新方案/任务清单时复制使用）
+│   ├── 技术方案文档模板.md
+│   └── 开发任务模板.md
 ├── plans/                ← 进行中的复杂任务方案（每个文件 = 一个任务）
+├── tasks/                ← 开发任务清单（方案确认后生成，每个文件 = 一个方案的任务分解）
 └── done/                 ← 已完成的方案归档（历史参考，不删除）
     ├── 市场层重构方案.md
     ├── 板块层技术方案.md
@@ -20,13 +22,14 @@ docs/
     └── 技术指标T-1交易日限制梳理方案.md
 ```
 
-**两类文档的定位：**
+**文档类型定位：**
 
 | 类型 | 位置 | 生命周期 | 示例 |
 |------|------|----------|------|
-| **主干架构文档** | `docs/*.md`（除 template/、plans/、done/） | 持续演进，随项目更新 | 市场层.md、板块层.md |
-| **文档模板** | `docs/template/*.md` | 稳定，起草新方案时复制使用 | 技术方案文档模板.md |
+| **主干架构文档** | `docs/*.md`（除 template/、plans/、tasks/、done/） | 持续演进，随项目更新 | 市场层.md、板块层.md |
+| **文档模板** | `docs/template/*.md` | 稳定，起草新方案时复制使用 | 技术方案文档模板.md、开发任务模板.md |
 | **进行中方案** | `docs/plans/*.md` | 任务驱动，实施完成后移入 done/ | — |
+| **开发任务清单** | `docs/tasks/*.md` | 方案确认后创建，实施完成随方案归档删除（过程性文档） | — |
 | **已完成方案** | `docs/done/*.md` | 归档保留，作为设计决策的历史参考 | 市场层重构方案.md |
 
 ### 工作流程
@@ -35,8 +38,9 @@ docs/
    - **每个复杂任务 = `docs/plans/` 下的一个方案文件**，该文件即为该任务的唯一追踪载体
    - 先写 `docs/plans/<方案名>.md`，包含：背景动机、设计思路、涉及文件清单、接口/字段变更、向后兼容、验证方法
    - **除非能确保 95% 实现无误，否则必须不断向我澄清问题**
-   - **方案写完（澄清完毕）后，自动进入评审循环**（见下方"评审循环规则"）：换新 agent 多轮评审直到 verdict PASS 且无 blocker/major，修完剩余 minor + 过自检清单收尾；**评审通过后才请我确认**，我确认后开始实现
-   - **实时状态更新**：实现过程中，每完成一个关键步骤（如：State 字段新增完毕、某个 Agent 写完、子图编译通过），**立即更新方案文件顶部的状态块**，记录当前进度和下一步
+   - **方案写完（澄清完毕）后，自动进入评审循环**（见下方"评审循环规则"）：换新 agent 多轮评审直到 verdict PASS 且无 blocker/major，修完剩余 minor + 过自检清单收尾；**评审通过后才请我确认**
+   - **我确认后先做任务分解**：生成 `docs/tasks/<方案名>.md` 开发任务清单（复制 [docs/template/开发任务模板.md](docs/template/开发任务模板.md)，见下方"Tasks 文件约定"），把方案拆成可独立验收的开发任务；任务清单就绪后才开始实现
+   - **实时状态更新**：实现过程中，每完成一个关键步骤（如：State 字段新增完毕、某个 Agent 写完、子图编译通过）或一个开发任务，**立即更新方案文件与任务清单的状态块**（任务完成 → 勾选验收项 + 同步任务总览表），记录当前进度和下一步
    - **代码写完之后，启动 subagent 做 code review**（见下方"Code Review 规则"）
    - **实现完成 + review 通过后，将方案中的架构变更整合进主干文档（`docs/*.md`），方案文件状态更新为"已完成"，移入 `docs/done/` 归档**
 
@@ -58,10 +62,22 @@ docs/
   > **下一步**：<接下来要做什么>
   ```
 
-- 状态取值：`方案设计` → `评审中`（写完自动进入评审循环）→ `待确认` → `实现中` → `Code Review` → `已完成`
+- 状态取值：`方案设计` → `评审中`（写完自动进入评审循环）→ `待确认` → `任务分解`（用户确认后生成任务清单）→ `实现中` → `Code Review` → `已完成`
 - **实现过程中每完成一个关键步骤，必须更新状态块的进度和下一步**
 - 任务完成后状态改为 `已完成`，**文件移入 `docs/done/`** 归档，架构变更同步进主干文档
 - **正文章节结构**：复制 [docs/template/技术方案文档模板.md](docs/template/技术方案文档模板.md) 到 `docs/plans/<方案名>.md`，取舍规则详见模板文件末尾速查表。已有历史方案不做回填改造
+
+### Tasks 文件约定
+
+- **方案经用户确认后**，生成 `docs/tasks/<方案名>.md`（与方案文件同名）——把方案的实施步骤拆解为可独立验收的开发任务，是方案的实施计划载体。任务清单直接由已评审通过的方案拆出，**无需额外评审**
+- 文件结构（顶部状态块 + 任务总览表 + 逐任务详情）与任务块结构，复制 [docs/template/开发任务模板.md](docs/template/开发任务模板.md)
+- **拆分原则**：
+  - 每个任务 = 一个可独立验收的实现单元（新建一个模块 / 改造一个文件 / 写一组单测）
+  - 按依赖排序，任务块标注依赖关系；无依赖的任务可并行
+  - 通常 3–10 个任务；每个任务的验收标准必须是**可执行的检查项**（单测命令 / 可运行检查 / 写明观察点的人工检查），禁止"完成 XX 功能"式模糊表述
+- **状态取值**：`待开始` → `进行中` → `已完成`；被阻塞时标 `阻塞：<原因>`，解除后恢复流转
+- **实时更新**：实现过程中每完成一个任务，立即更新该任务块的状态、勾选验收项，并同步任务总览表与文件顶部的进度
+- **生命周期**：任务清单是过程性文档——方案完成归档（移入 `docs/done/`）时，对应任务清单随之**删除**（验收结论已固化进方案文件与代码）。中小改动不需要任务清单
 
 ### Code Review 规则
 
@@ -86,7 +102,7 @@ docs/
 
 ### 评审循环规则（修复 → 换新 agent 评审 → 直到通过）
 
-适用：任何评审驱动的修复循环（方案文档评审、Code Review 发现问题的修复、其他 agent 评审场景）。**复杂任务的方案文件写完（澄清完毕）后自动触发本循环**，评审通过前不进入实现。
+适用：任何评审驱动的修复循环（方案文档评审、Code Review 发现问题的修复、其他 agent 评审场景）。**复杂任务的方案文件写完（澄清完毕）后自动触发本循环**，评审通过前不进入任务分解与实现。
 
 1. 修复完成后，启动 subagent（type: `claude`）做独立评审，prompt 需给出：被评审文件路径、修复背景（此前发现的问题清单）、评审维度、输出格式（verdict: PASS/FAIL + 按 severity 分级的 findings）
 2. **每轮评审必须换新 agent**（不复用已完成评审的 agent，保证独立视角）
@@ -99,6 +115,7 @@ docs/
    - **初稿必须把声明级细节一次写全**，不留猜测空间：每条数据流的接续（如 X 由谁产生、传给哪个参数、最终落到哪个输出）、每个匹配规则的落点（如 checkpoint dir 第几段对应哪个 expander 标签）、每个测试断言的可构造性（fixture 能否真的造出该场景，注意"恒空公式"这类永远测不到的死路径）
    - **修复 findings 时必须同步所有同类表述**：同一概念在代码草图/决策表/契约/测试清单多处出现时全部一起改——残留未同步的同类表述是下一轮 findings 的主要来源（实测第 2 轮 2 条 findings 全是第 1 轮修复的残留）
    - **修复不得引入新矛盾**：改一个公式/口径时，先推演它与上游来源、下游消费的组合是否仍成立（如"以覆盖日期生成的窗口做差集恒为空"）
+   - **元组形状改造必须枚举全量随迁点（2026-09-06 踩坑，评审 2 轮才收齐）**：方案描述"改私有方法返回元组/元素形状"时，除调用点解包外，还必须逐点列出函数体内部随迁点——失败路径 return 的值个数、按 index 取元素的排序键（头部插字段导致索引整体移位）、函数自身 docstring 的形状描述；漏任何一类都会让消费侧解包抛 ValueError 或排序静默错序
 
 ### CLAUDE.md 自我更新规则
 
@@ -110,6 +127,12 @@ docs/
 
 **接口契约以 `BaseStockDataProvider` 基类为准**（[base_provider.py](AI/dataflows/providers/base_provider.py)）。
 所有 Provider（AKShare、Tushare、未来新增）继承该基类。
+
+**目录结构（2026-09-01 起）**：CN 市场提供器统一放在 `AI/dataflows/providers/cn/` 子包
+（`cn/tushare.py`、`cn/akshare.py` 及仅被二者使用的纯函数模块 `cn/daily_matrix_utils.py`、
+`cn/limit_ladder_utils.py`）；`base_provider.py` 留在 `providers/` 层作跨市场契约。
+模块名不含 `_provider` 后缀，类名仍为 `TushareProvider`/`AKShareProvider`；引用一律走
+`AI.dataflows.providers.cn.<模块>`，不留旧模块名兼容 shim（见 docs/done/数据提供器目录重构方案.md）。
 
 **设计原则：**
 - 基类定义完整接口 + 默认"不支持"返回 → 子类按需覆写
@@ -140,6 +163,18 @@ docs/
 
 ## 项目配置
 
+### 前端包管理器（pnpm）
+
+- **frontend 是 pnpm 布局**（pnpm-lock.yaml + node_modules/.pnpm 符号链接），依赖操作一律用 `pnpm add` / `pnpm install` / `pnpm run`——`npm install` 会报 `Cannot read properties of null (reading 'matches')`（npm arborist 无法处理 pnpm 布局，2026-09-06 踩坑）
+- 前端 API client 由 `pnpm run generate:api` 生成；openapi-typescript-codegen 按 **tags 分组**生成 Service——同 tag 的多个端点会归进同一个 Service 类（如 execution-logs 端点按 tags=["analysis-tasks"] 归入 AnalysisTasksService），不存在独立 Service 文件属正常，消费时按 tag 找方法
+
+### 前端 markdown 渲染约定（2026-09-06 起）
+
+- **统一组件 `MarkdownView`**（`frontend/src/shared/ui/markdown.tsx`）：所有 markdown 字符串内容（LLM 提示词/输出、DP 出参 res.md、报告分区正文等）一律经它渲染，不得再手写 `whitespace-pre-wrap` pre 或 `dangerouslySetInnerHTML`/v-html 式注入
+- 技术栈：`react-markdown` + `remark-gfm`（GFM 表格）+ `remark-breaks`（单换行→`<br>`，对齐内核输出的换行习惯）；样式走 `@tailwindcss/typography`（styles.css 里 `@plugin` 接入）的 `prose prose-sm prose-invert max-w-none [&_table]:block [&_table]:overflow-x-auto`——**prose-invert 无条件加载**（应用 dark-first，`:root` 直接深色 token）；`[&_table]` 两个类兜底宽表格在窄容器的横向溢出（typography 本身不处理）
+- **内容类型分流**（ExecutionLogsPanel.FileContent 与后续新增消费点遵守）：`kind=md` → MarkdownView；`kind=json` → 格式化 pre（含 200KB 渲染保护）；`kind=txt` → 纯文本 pre；缺失/空内容显示占位
+- raw HTML 默认转义（react-markdown 无 rehype-raw），内核内容为受信 markdown 无需 DOMPurify；新增 markdown 消费点直接复用 MarkdownView，勿重复引入 marked 等第二引擎（见 docs/done/任务详情页markdown渲染方案.md）
+
 ### pyproject.toml 优先
 - **所有 Python 项目使用 `pyproject.toml` 管理依赖**，不使用 `requirements.txt` 作为主要依赖声明
 - 构建后端：`setuptools.build_meta`（`setuptools>=61.0`）
@@ -160,6 +195,24 @@ docs/
 - 图外 LLM 调用（决策抽取 process_signal / Reflector）不产生检查点（节点名不在 `_NODE_LAYER` 表 → unknown 过滤）
 - 页面按钮有 stale 防护：比对 session_state 记存的渲染 seq 与文件当前 seq，不一致不写（防连点把确认写进下一个检查点）
 
+
+### 后端平台踩坑（backend/，2026-09-05 起）
+
+- **alembic.ini 必须纯 ASCII**：alembic 以 locale 编码读取配置文件，Windows GBK locale 下含中文注释会抛 UnicodeDecodeError（表象为 pytest 卡死在配置解析）；ini 注释用英文，说明写进 backend/migrations/env.py
+- **Windows 上 psycopg async 需要 SelectorEventLoop + uvicorn loop="none"**：ProactorEventLoop 下 psycopg async 直接 InterfaceError；create_app 内设 policy 对 uvicorn 场景太晚（uvicorn 在加载工厂前建循环），且 uvicorn 的 loop="auto" 在 Windows 会强制装回 Proactor 覆盖你的策略——正确姿势：cli 里先 set_event_loop_policy(WindowsSelectorEventLoopPolicy) 再 uvicorn.run(..., loop="none")；redis.asyncio 两种循环都可用，但连接串 host 也须归一化（`_normalize_loopback_host` 注意 `:pass@host` 形式 username 为空串，重建 netloc 时不得丢密码——曾因此把 redis 密码丢了）
+- **PG_HOST=localhost 必须归一化为 127.0.0.1**：Docker 端口代理仅监听 IPv4 loopback，psycopg 优先尝试 `::1` 被黑洞且默认无 connect_timeout → 无限挂起（faulthandler 定位在 psycopg wait_conn）；backend.bootstrap.settings 的 resolved_database_url/resolved_redis_url 已做归一化，bootstrap 引擎统一带 connect_timeout=5
+- **Windows 管道下 Python stdout 全缓冲**：pytest 经 `| tail/head` 观察输出会误判"卡死"（实际在跑）；排查挂起用 `-o faulthandler_timeout=30` 抓真实栈
+- **JSONB 写入前必须归一为纯 JSON 基本类型**（2026-09-06 踩坑）：psycopg 的 JSONB dump 用标准 `json.dumps`（**无 default 兜底**），LangChain 对象（如 HumanMessage）进 JSONB 会抛 `Object of type HumanMessage is not JSON serializable`；"序列化校验"若只 `json.dumps(payload, default=str)` 而不**回写结果**等于没校验（raw 对象仍入列）——归一写法：`payload = json.loads(json.dumps(payload, ensure_ascii=False, default=str))`，并在 Service 写入边界再做一次防御
+- - **pydantic-settings 带 `validation_alias` 的字段不叠加 `env_prefix`**（2026-09-06 踩坑）：env 变量名 = alias 原样，prefix 被忽略——backend CoreSettings 曾写 `validation_alias="QUICK_MODEL"` + `env_prefix="LIVEPROFIT_"`，实际读的是无前缀的 `QUICK_MODEL`，.env 里的 `LIVEPROFIT_QUICK_MODEL` 被静默无视、落默认 gpt-4o-mini（表象为 LLM 400 无效模型名）。alias 必须写完整环境变量名（`validation_alias="LIVEPROFIT_QUICK_MODEL"`）；新增 aliased 字段时先实测 `Settings().field` 确认读到的是哪个 env
+- **Thread 子类禁用 `_stop` 属性名**：threading.Thread 内部方法 `_stop()` 在 join 时被调用，子类用 `self._stop = threading.Event()` 覆盖后 join 抛 `TypeError: 'Event' object is not callable`；心跳/控制线程的事件命名用 `_stop_requested`
+- **Dramatiq 在 Windows 上禁用 CLI WorkerProcess**：CLI 的 spawn 子进程经 pickle 传递 RedisBroker，认证信息丢失导致 consumer 反复报 "HELLO must be called with the client already authenticated"（主进程 ping 正常、诊断日志密码正常也一样）——改用进程内模型：`Worker(broker, queues=["default"], worker_threads=1, worker_timeout=1000)` + `worker.start()` 后主线程 `while running: sleep(1)` 保活（start() 不阻塞、join() 语义不是等待消费）；注意 dramatiq 1.17 `broker.enqueue` 只收 Message，投递必须走 `actor.send(...)`；队列实际 key 为 `dramatiq:default`（带前缀）
+- **Dramatiq CLI 传参**：`dramatiq.cli.main(args)` 的 args 会被直接当 Namespace 用（`args.path` AttributeError）；必须 `sys.argv = ["liveprofit-worker", "模块", "--processes", ...]` 后无参调用 `main()`，且以 try/except SystemExit 收口
+- **concurrent.futures.Future 不能直接 wait_for/shield**：需 `asyncio.wrap_future()` 桥接；超时用 `wait_for(shield(wrapped))` 语义（inner 继续跑，完成回调才释放名额）；注意 `asyncio.run()` 结束后回调 `call_soon_threadsafe` 会抛 `Event loop is closed`——测试必须等名额归零再退出
+- **FastAPI 注册 SSE 协议 Schema 进 OpenAPI**：StreamingResponse 端点的响应 Schema 默认不进 components；给端点加 `response_model=SSEContract`（文档用途）即可把 BusinessEventData/ResetEventData/HeartbeatEventData 注册进 components，运行时 StreamingResponse 不经 JSON 序列化不受影响；`responses={...content: {schema: <ModelClass>}}` 反而会把 ModelMetaclass 编进 schema 报 PydanticSerializationError
+- **prometheus_client 导入路径**：`GaugeMetricFamily` 在 `prometheus_client.metrics_core`，顶层包不导出
+- **Alembic 迁移内 raw SQL**：必须 `text()` 包装（SQLAlchemy 2.0 拒绝裸字符串 + params）；ORM 模型 Python 端 `default=uuid.uuid4` 不作用于迁移 SQL——INSERT 需显式 `gen_random_uuid()`（PG13+ 内置）
+- **SQLAlchemy 条件 UPDATE 含比较运算**：WHERE 用 `<`/`>` 比较时，默认 synchronize_session="auto"→evaluate 会在 Python 层比较 naive/aware datetime 抛 TypeError；一律显式 `synchronize_session="fetch"`（既避免异常又保持会话内对象新鲜；False 会让后续 get 读到旧状态）
+- **module 级共享 DB 的集成测试**：必须 autouse fixture 逐用例 TRUNCATE + flushdb 隔离（否则前用例遗留 Outbox/任务被后用例 claim，如 dispatch 数量断言翻倍）；pytest 输出经管道时用 `-o faulthandler_timeout` 或写文件排查挂起
 
 ## 项目结构约定
 
@@ -182,7 +235,7 @@ docs/
 
 ### Tushare 代理端点（自定义 URL）
 
-- 位置：`TushareProvider._connect()`（`AI/dataflows/providers/tushare_provider.py`）——`ts.set_token(TUSHARE_TOKEN)` + `ts.pro_api()` 之后，覆写私有属性指向自定义端点：
+- 位置：`TushareProvider._connect()`（`AI/dataflows/providers/cn/tushare.py`）——`ts.set_token(TUSHARE_TOKEN)` + `ts.pro_api()` 之后，覆写私有属性指向自定义端点：
 
   ```python
   self.api = ts.pro_api()
@@ -192,7 +245,7 @@ docs/
 - `_DataApi__http_url` 是 name-mangled 私有属性，写法必须保持双下划线形式；换回官方端点删掉该行即可（默认 `http://api.tushare.pro`）
 - Token 通过 `.env` 的 `TUSHARE_TOKEN` 配置（`LIVEPROFIT_DATA_SOURCE=tushare` 时生效）
 - **代理端点能力可能与官方有差异** → 新增数据函数做"三方依赖能力评估"时必须对代理端点**实测**（真实 token 探测），不能只看 tushare 官方文档
-- **日线接口返回降序（2026-08-23 踩坑）**：sw_daily / dc_daily / ths_daily / index_daily 实测按 trade_date **降序**（新→旧）返回，直接 `tail(N)` 会取到最旧数据（曾导致行业排名拿到 17 天前的数据）。所有日线消费点必须先经 `tushare_provider._sort_asc_by_trade_date(df)` 升序归一，再 tail/iloc；新增日线消费点必须遵守，单测需含"降序输入"回归用例
+- **日线接口返回降序（2026-08-23 踩坑）**：sw_daily / dc_daily / ths_daily / index_daily 实测按 trade_date **降序**（新→旧）返回，直接 `tail(N)` 会取到最旧数据（曾导致行业排名拿到 17 天前的数据）。所有日线消费点必须先经 `cn/tushare.py` 的 `_sort_asc_by_trade_date(df)` 升序归一，再 tail/iloc；新增日线消费点必须遵守，单测需含"降序输入"回归用例
 - **端点子日志（2026-08-25 引入）**：`wrap_tushare_api(api)`（dataprovider_log.py）在 `_connect`/trading_calendar 建 api 后包装 `query`，端点调用落在当前 DP 调用目录的 `tushare/{seq:03d}_{api_name}/`（req/res/meta.json，viewer 在 dataprovider 展开内嵌套展示）；仅 tushare 数据源 + run 内有 DP 上下文时落盘，`LIVEPROFIT_TUSHARE_LOG=0` 可关闭
   - **tushare DataApi 的 `__getattr__` 对任意未知属性返回 `partial(self.query, name)`（truthy）** → 包装器幂等/探测标志判定必须查实例 `__dict__`，`getattr` 会误判"已包装"导致完全不落盘
   - **ThreadPoolExecutor 不自动传播 contextvars（Py3.12 实测）** → `_run_with_timeout` 已用 `contextvars.copy_context()` + `ctx.run` 显式带入；任何新增"在 worker 线程内读 contextvar"的代码必须同样显式复制，勿假设自动传播

@@ -113,10 +113,10 @@ def get_provider():
     if _provider is None:
         ds = os.getenv("LIVEPROFIT_DATA_SOURCE", "tushare").lower()
         if ds == "akshare":
-            from AI.dataflows.providers.akshare_provider import AKShareProvider
+            from AI.dataflows.providers.cn.akshare import AKShareProvider
             _provider = AKShareProvider()
         else:
-            from AI.dataflows.providers.tushare_provider import TushareProvider
+            from AI.dataflows.providers.cn.tushare import TushareProvider
             _provider = TushareProvider()
         logger.info(f"[eventStudy] 数据源: {ds}")
     return _provider

@@ -11,8 +11,8 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from AI.dataflows.providers.tushare_provider import TushareProvider
-from AI.dataflows.providers.akshare_provider import AKShareProvider
+from AI.dataflows.providers.cn.tushare import TushareProvider
+from AI.dataflows.providers.cn.akshare import AKShareProvider
 
 
 # ==================== fixtures ====================
@@ -178,7 +178,7 @@ def test_tushare_ranking_circuit_breaker():
 # ==================== AKShare ====================
 
 def test_akshare_get_concept_board_names(monkeypatch):
-    import AI.dataflows.providers.akshare_provider as ak_prov
+    import AI.dataflows.providers.cn.akshare as ak_prov
     fake_ak = MagicMock()
     fake_ak.stock_board_concept_name_em.return_value = pd.DataFrame(
         {"板块名称": ["白酒", "人工智能"]}
@@ -191,7 +191,7 @@ def test_akshare_get_concept_board_names(monkeypatch):
 
 
 def test_akshare_get_sector_constituents(monkeypatch):
-    import AI.dataflows.providers.akshare_provider as ak_prov
+    import AI.dataflows.providers.cn.akshare as ak_prov
     fake_ak = MagicMock()
     fake_ak.stock_board_concept_cons_em.return_value = pd.DataFrame([
         {"序号": 1, "代码": "600519", "名称": "贵州茅台", "最新价": 1501.0},
@@ -206,7 +206,7 @@ def test_akshare_get_sector_constituents(monkeypatch):
 
 def test_akshare_ranking_unadjusted(monkeypatch):
     """AKShare 排名用未复权日线（last_close 为真实市场价）"""
-    import AI.dataflows.providers.akshare_provider as ak_prov
+    import AI.dataflows.providers.cn.akshare as ak_prov
     fake_ak = MagicMock()
     fake_ak.stock_zh_a_hist.return_value = pd.DataFrame({
         "日期": [f"2026-08-{str(i + 1).zfill(2)}" for i in range(11)],
@@ -230,7 +230,7 @@ def test_akshare_ranking_unadjusted(monkeypatch):
 
 def test_akshare_ranking_missing_close_column_fails_soft(monkeypatch):
     """无收盘价列 → 该只失败计数，最终无数据时安全返回"""
-    import AI.dataflows.providers.akshare_provider as ak_prov
+    import AI.dataflows.providers.cn.akshare as ak_prov
     fake_ak = MagicMock()
     fake_ak.stock_zh_a_hist.return_value = pd.DataFrame({"日期": ["2026-08-01"], "成交量": [1]})
     monkeypatch.setattr(ak_prov, "ak", fake_ak)

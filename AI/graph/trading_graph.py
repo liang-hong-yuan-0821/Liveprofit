@@ -45,6 +45,20 @@ from AI.utils import step_gate
 logger = logging.getLogger(__name__)
 
 
+def resolve_run_log_dir(init_state: dict, now: datetime | None = None) -> Path:
+    """本次运行的日志目录。
+
+    平台任务经 init_state["platform_log_dir"] 注入确定性任务目录
+    （logs/tasks/{task_id}/{attempt_no}/）；CLI/既有测试不含该 key 时
+    维持现状，写 logs/{时间戳}/。now 参数仅供单测固定时间戳。
+    """
+    platform_dir = str(init_state.get("platform_log_dir") or "").strip()
+    if platform_dir:
+        return Path(platform_dir)
+    run_ts = (now or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
+    return Path(f"logs/{run_ts}")
+
+
 class TradingAgentsGraph:
     """多智能体交易分析框架的主编排器"""
 
@@ -303,8 +317,8 @@ class TradingAgentsGraph:
         self.ticker = company_name or "market_screening"
 
         # ---- 本次运行的日志目录 ----
-        run_ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        log_dir = Path(f"logs/{run_ts}")
+        log_dir = resolve_run_log_dir(init_state)
+        log_dir.mkdir(parents=True, exist_ok=True)  # 平台多级目录（logs/tasks/{uuid}/{n}）提前建
         self.llm_handler.set_log_dir(log_dir)
         self.tool_handler.set_log_dir(log_dir)
         logger.info(f"日志目录: {log_dir.resolve()}")

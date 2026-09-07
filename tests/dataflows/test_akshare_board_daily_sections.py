@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from AI.dataflows.providers import akshare_provider
+from AI.dataflows.providers.cn import akshare
 
 
 # 2026-08-19（周三）为"今天"；TRADING_11 = 最近 11 个交易日（升序）
@@ -53,8 +53,8 @@ def fake_ak(monkeypatch):
     ak.stock_board_concept_name_em = MagicMock(
         return_value=pd.DataFrame({"概念名称": ["A概念", "B概念"]}))
     ak.stock_board_concept_hist_em = MagicMock()
-    monkeypatch.setattr(akshare_provider, "ak", ak)
-    monkeypatch.setattr(akshare_provider, "AKSHARE_AVAILABLE", True)
+    monkeypatch.setattr(akshare, "ak", ak)
+    monkeypatch.setattr(akshare, "AKSHARE_AVAILABLE", True)
     return ak
 
 
@@ -77,7 +77,7 @@ def test_ak_industry_daily_section_format(fake_ak):
         "电子": _em_hist(TRADING_11, _geo_closes(100, -0.02, 11), True),     # str 日期
     })
 
-    prov = akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    prov = akshare.AKShareProvider.__new__(akshare.AKShareProvider)
     out = prov.get_industry_sector_performance(days=10)
 
     # 标题下方展示聚合区间 YYYYMMDD - YYYYMMDD
@@ -97,7 +97,7 @@ def test_ak_concept_heat_daily_section_top30(fake_ak):
                           vol=[1000.0] * 11),
     })
 
-    prov = akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    prov = akshare.AKShareProvider.__new__(akshare.AKShareProvider)
     out = prov.get_concept_board_heat_rank(days=10)
 
     # 热度 = pct*0.6（量恒定无量变）：A(21.90) > B(10.46)
@@ -114,7 +114,7 @@ def test_ak_missing_day_cell(fake_ak):
         "电子": _em_hist(TRADING_11[-5:], _geo_closes(100, -0.02, 5)),   # 仅 5 行
     })
 
-    prov = akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    prov = akshare.AKShareProvider.__new__(akshare.AKShareProvider)
     out = prov.get_industry_sector_performance(days=10)
 
     daily = out.split("## 近10个交易日逐日涨跌幅", 1)[1]
@@ -131,7 +131,7 @@ def test_ak_gap_footnote(fake_ak):
         "电子": _em_hist(dates, _geo_closes(100, -0.02, len(dates))),
     })
 
-    prov = akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    prov = akshare.AKShareProvider.__new__(akshare.AKShareProvider)
     out = prov.get_industry_sector_performance(days=10)
 
     assert "> 数据缺口：以下日期无数据已跳过：" in out
@@ -141,7 +141,7 @@ def test_ak_gap_footnote(fake_ak):
 
 
 class _FakeDateTime:
-    """替换 akshare_provider.datetime：now() 返回固定时刻（测试可控）"""
+    """替换 akshare.datetime：now() 返回固定时刻（测试可控）"""
     _now = _real_dt(2026, 8, 19, 16, 0, 0)
 
     @classmethod
@@ -155,9 +155,9 @@ def test_ak_industry_intraday_annotation(fake_ak, monkeypatch):
         "银行": _em_hist(TRADING_11, _geo_closes(100, 0.02, 11)),
     })
     _FakeDateTime._now = _real_dt(2026, 8, 19, 10, 0, 0)   # 盘中
-    monkeypatch.setattr(akshare_provider, "datetime", _FakeDateTime)
+    monkeypatch.setattr(akshare, "datetime", _FakeDateTime)
 
-    prov = akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    prov = akshare.AKShareProvider.__new__(akshare.AKShareProvider)
     out = prov.get_industry_sector_performance(days=10)
     assert "| 08-19（盘中） |" in out
 
@@ -175,7 +175,7 @@ def test_ak_nan_close_cell(fake_ak):
         "电子": _em_hist(TRADING_11, _geo_closes(100, -0.02, 11)),
     })
 
-    prov = akshare_provider.AKShareProvider.__new__(akshare_provider.AKShareProvider)
+    prov = akshare.AKShareProvider.__new__(akshare.AKShareProvider)
     out = prov.get_industry_sector_performance(days=10)
 
     assert "+nan%" not in out

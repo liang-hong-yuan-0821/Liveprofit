@@ -1,0 +1,18 @@
+# Liveprofit Worker / Dispatcher 镜像（Dramatiq；与 API 共用依赖锁定）
+# 默认启动 Worker；Dispatcher 由 compose 用 command 覆盖为 liveprofit-dispatcher。
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    LIVEPROFIT_ENV=container
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY main.py ./
+COPY AI ./AI
+COPY backend ./backend
+
+RUN pip install --no-cache-dir ".[platform]"
+
+CMD ["liveprofit-worker"]

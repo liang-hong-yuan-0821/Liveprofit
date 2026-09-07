@@ -1,16 +1,23 @@
-# LiveProfit 存储基础设施
-
-# LiveProfit 直接在本机运行，docker-compose 仅提供 Redis + PostgreSQL 服务
+# LiveProfit 本地编排（loopback local-only，§3.1.1）
+#
+# 用法（基础设施为默认服务，保持既有 `docker compose up -d` 行为不变）：
+#   仅基础设施：docker compose up -d
+#   全栈本地：  docker compose --profile app up -d
+#   管理界面：  docker compose --profile management up -d
+#
+# 安全约定：宿主机只发布 frontend 的 127.0.0.1:${FRONTEND_HOST_PORT:-3000}:80；
+# API 使用内部 expose 不配置 ports；基础设施端口仅绑定 127.0.0.1（保留宿主 yoho CLI /
+# 事件研究直接访问能力，同时不暴露 LAN）。local-only 是绑定策略，不是认证边界；
+# LAN 访问必须以认证、TLS、CORS、audit 的独立方案重新设计。
 
 services:
-  # PostgreSQL 16 + pgvector（事件研究系统存储：assets/events/market_data/
-  # event_impacts/market_context/predictions）
+  # PostgreSQL 16 + pgvector（事件研究系统存储 + 平台业务真相/读模型/Outbox）
   postgres:
     image: pgvector/pgvector:pg16
     container_name: liveprofit-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: liveprofit
       POSTGRES_PASSWORD: liveprofit123
@@ -34,13 +41,13 @@ services:
         max-size: "50m"
         max-file: "2"
 
-  # Redis 缓存服务
+  # Redis（Dramatiq Broker + SSE Stream + 短期缓存；AOF 持久化）
   redis:
     image: redis:7-alpine
     container_name: liveprofit-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     environment:
       TZ: "Asia/Shanghai"
     command: redis-server --appendonly yes --requirepass liveprofit123
@@ -60,13 +67,137 @@ services:
         max-size: "50m"
         max-file: "2"
 
+  # ---- app profile：API / Worker / Dispatcher / Frontend（仅 frontend 发布宿主端口） ----
+
+  # FastAPI API：仅 REST/SSE，不执行 AI 图；容器内 0.0.0.0 监听供 Nginx 反代
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: liveprofit-api
+    restart: unless-stopped
+    expose: ["8000"]
+    environment:
+      LIVEPROFIT_ENV: container
+      LIVEPROFIT_API_HOST: 0.0.0.0
+      LIVEPROFIT_API_PORT: 8000
+      LIVEPROFIT_DATABASE_URL: postgresql+psycopg://liveprofit:liveprofit123@postgres:5432/liveprofit
+      LIVEPROFIT_REDIS_URL: redis://:liveprofit123@redis:6379/0
+    env_file:
+      - .env
+    networks:
+      - liveprofit-network
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Dramatiq 分析 Worker：单进程单线程运行 AI 图（扩容 = 增加独立 Worker 容器）
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: liveprofit-worker
+    restart: unless-stopped
+    environment:
+      LIVEPROFIT_ENV: container
+      LIVEPROFIT_DATABASE_URL: postgresql+psycopg://liveprofit:liveprofit123@postgres:5432/liveprofit
+      LIVEPROFIT_REDIS_URL: redis://:liveprofit123@redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      # 产物卷：与 dispatcher 共享，容器重建不丢失（§2.4 var/runs）
+      - liveprofit_artifacts:/app/var/runs
+    networks:
+      - liveprofit-network
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Outbox Dispatcher：发布、过期租约恢复与业务级重试的唯一调度者
+  dispatcher:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: liveprofit-dispatcher
+    restart: unless-stopped
+    command: liveprofit-dispatcher
+    environment:
+      LIVEPROFIT_ENV: container
+      LIVEPROFIT_DATABASE_URL: postgresql+psycopg://liveprofit:liveprofit123@postgres:5432/liveprofit
+      LIVEPROFIT_REDIS_URL: redis://:liveprofit123@redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      # 产物卷：与 worker 共享，reconciliation 才能看到同一份 artifacts
+      - liveprofit_artifacts:/app/var/runs
+    networks:
+      - liveprofit-network
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Frontend：Nginx 静态资源 + /api 反代 + SSE 禁缓冲（唯一发布宿主端口）
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: liveprofit-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # 前端静态构建产物（compose up 前执行 pnpm --dir frontend build；或改用 frontend/Dockerfile 镜像）
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    networks:
+      - liveprofit-network
+    profiles: ["app"]
+    depends_on:
+      api:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # ---- management profile：可选管理界面（loopback 发布） ----
+
   # Redis Commander 管理界面（可选）
   redis-commander:
     image: ghcr.io/joeferner/redis-commander:latest
     container_name: liveprofit-redis-commander
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       - REDIS_HOSTS=local:redis:6379:0:liveprofit123
     networks:
@@ -85,7 +216,7 @@ services:
     container_name: liveprofit-adminer
     restart: unless-stopped
     ports:
-      - "8083:8080"
+      - "127.0.0.1:8083:8080"
     environment:
       TZ: "Asia/Shanghai"
       ADMINER_DEFAULT_SERVER: postgres
@@ -104,6 +235,9 @@ volumes:
   postgres_data:
     driver: local
     name: liveprofit_postgres_data
+  liveprofit_artifacts:
+    driver: local
+    name: liveprofit_artifacts
 
 networks:
   liveprofit-network:

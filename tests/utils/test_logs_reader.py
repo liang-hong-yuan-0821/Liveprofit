@@ -169,6 +169,35 @@ def test_parse_legacy(logs_fixture):
     assert payload["res"] == "# CPI\n- 3.4"
 
 
+# ---- 4 位序号前缀（seq 超 999，2026-09-06 放宽 _SEQ_DIR_RE 为 \d{3,}_.+）----
+
+def test_list_four_digit_seq_prefix(logs_fixture):
+    """seq 超 999 后内核目录名前缀自然变 4 位（如 1000_xxx），四个 list 函数不得漏列"""
+    layer = logs_fixture / "2026-08-19_223929" / "market"
+    node4 = layer / "1000_Long_Run_Node"
+    node4.mkdir()
+    dp4 = node4 / "1001_get_stock_data"
+    dp4.mkdir()
+    ts4 = dp4 / "tushare" / "1002_daily"
+    ts4.mkdir(parents=True)
+    tool4 = node4 / "tools" / "1003_search"
+    tool4.mkdir(parents=True)
+
+    assert "1000_Long_Run_Node" in [p.name for p in L.list_nodes(layer)]
+    calls = L.list_dp_calls(node4)
+    assert [k for k, _ in calls] == ["new"]
+    assert [p.name for _, p in calls] == ["1001_get_stock_data"]
+    assert [p.name for p in L.list_tools(node4)] == ["1003_search"]
+    assert [p.name for p in L.list_tushare_calls(dp4)] == ["1002_daily"]
+
+
+def test_list_two_digit_seq_prefix_still_excluded(logs_fixture):
+    """下界回归：不足 3 位的数字前缀目录仍被排除（不因放宽而误列）"""
+    layer = logs_fixture / "2026-08-19_223929" / "market"
+    (layer / "12_two_digit").mkdir()
+    assert "12_two_digit" not in [p.name for p in L.list_nodes(layer)]
+
+
 # ---- 调试步进检查点 ----
 
 def test_find_checkpoint(logs_fixture):

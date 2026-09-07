@@ -91,7 +91,7 @@ def main():
     # ===== 创建 Provider =====
     print("\n>>> 初始化 TushareProvider...")
     t0 = time.perf_counter()
-    from AI.dataflows.providers.tushare_provider import TushareProvider
+    from AI.dataflows.providers.cn.tushare import TushareProvider
     provider = TushareProvider()
     elapsed = time.perf_counter() - t0
     print(f"    连接状态: {'已连接' if provider.connected else '未连接'} | 耗时: {format_duration(elapsed)}")

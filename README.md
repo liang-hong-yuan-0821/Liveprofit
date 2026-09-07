@@ -63,10 +63,14 @@ source a.bash
 ### 3. 运行
 
 ```bash
-python main.py
+./run.sh classic                 # 经典模式：运行 AI 分析（等价于 python main.py）
+# 或直接：python main.py
 ```
 
 默认分析 `000001.SZ`（平安银行）。修改 `main.py` 中的股票代码和日期即可分析其他标的。
+
+> 现在直接运行 `./run.sh`（无参数）会一键启动 **Web 全栈**（后端平台 + 前端工作台），
+> 经典 CLI 分析模式请用 `./run.sh classic`。
 
 ### Docker 启动
 
@@ -74,6 +78,109 @@ python main.py
 docker-compose up -d                          # 基础服务 (PostgreSQL + Redis + LiveProfit)
 docker-compose --profile management up -d     # 含管理界面 (Redis Commander + Adminer)
 ```
+
+## 平台模式启动（Web 后端：API / Worker / Dispatcher）
+
+平台后端提供统一 Web API（REST + SSE，契约见 [docs/API契约.md](docs/API契约.md)），
+与经典 CLI 分析共用 AI 内核。**仅本机 loopback 使用**（首期不支持 LAN/公网访问）。
+
+### 方式一：一键脚本（推荐）
+
+```bash
+./run.sh                 # 一键全栈：后端平台 + 大盘数据采集 + 前端 dev server + 打开浏览器（http://localhost:5173）
+                         #   启动完成后前台实时输出 api/worker/dispatcher 日志（Ctrl+C 退出查看，服务保持运行）
+./run.sh stop            # 停止一键启动的前端与后端进程（不停止 Docker 基础设施）
+./run.sh platform        # 仅启动平台后端（infra + 迁移 + API/Worker/Dispatcher）
+./run.sh ingest-market   # 仅采集 CN 指数日线（大盘数据，幂等；一键启动时自动执行）
+```
+
+### 方式二：手动分步（本地开发）
+
+```bash
+# 1. 基础设施
+docker compose up -d
+
+# 2. 依赖（platform 依赖组）
+pip install -e ".[platform,test]"
+
+# 3. 数据库迁移（只新增平台表，不动事件研究既有表）
+alembic upgrade head
+
+# 4. 三个进程（各自终端窗口）
+liveprofit-api          # FastAPI：REST + SSE（127.0.0.1:8000）
+liveprofit-worker       # Dramatiq 分析 Worker（单进程单线程运行 AI 图）
+liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试唯一调度者）
+```
+
+### 方式三：全栈容器（含前端 Nginx）
+
+```bash
+./run.sh stack                              # 构建前端产物后 compose --profile app up（Nginx 127.0.0.1:${FRONTEND_HOST_PORT:-3000}）
+# 等价手动方式：
+#   pnpm --dir frontend build
+#   docker compose --profile app up -d --build
+```
+
+### 启动后检查
+
+| 入口 | 地址 | 说明 |
+|------|------|------|
+| 存活检查 | http://127.0.0.1:8000/health/live | 进程存活 |
+| 就绪检查 | http://127.0.0.1:8000/health/ready | PG + Redis 依赖就绪 |
+| API 文档 | http://127.0.0.1:8000/docs | FastAPI Swagger（OpenAPI v1 另见 backend/openapi/openapi.v1.json） |
+| 指标 | http://127.0.0.1:8000/metrics | Prometheus 文本格式 |
+
+### 配置要求
+
+- `.env` 需包含平台连接配置：`LIVEPROFIT_DATABASE_URL` / `LIVEPROFIT_REDIS_URL`，
+  未配置时自动回退到 `PG_*` / `REDIS_*` 变量（注意 `localhost` 会自动归一化为 `127.0.0.1`）。
+- run.sh 默认以 `HF_HUB_OFFLINE=1` 启动（本地已缓存 HuggingFace 模型时跳过联网检查，
+  避免国内网络下启动超时重试；可在 `.env` 中显式设 `HF_HUB_OFFLINE=0` 覆盖）。
+- LLM 透传沿用内核变量：`LIVEPROFIT_API_KEY` / `LIVEPROFIT_BASE_URL` / `LIVEPROFIT_QUICK_MODEL` / `LIVEPROFIT_DEEP_MODEL`。
+- 进程日志：`logs/api.log` / `logs/worker.log` / `logs/dispatcher.log`。
+
+## 前端（Web 投研工作台）
+
+`frontend/` 是独立的 React + TypeScript 工程（Node 22+ / pnpm），与平台后端通过版本化 OpenAPI
+（`backend/openapi/openapi.v1.json` → `frontend/src/api/generated/`，契约见 [docs/API契约.md](docs/API契约.md)）对接。
+
+| 页面 | 路由 | 说明 |
+|------|------|------|
+| 大盘 | `/market` | 市场（宏观指数）/ 板块（热门概念）/ 信息（宏观信息）三固定区块 |
+| 自选 | `/watchlist` | 自选分组/标的 与 手工组合/持仓 两独立资源区 |
+| AI 投研看板 | `/ai` | 待处理 / 进行中 / 最近结论 / 新建分析 |
+| AI 任务中心 | `/ai/tasks` | 全量任务摘要 + 服务端状态筛选 + Cursor 分页 |
+| 任务详情 | `/ai/tasks/:taskId` | 任务 REST 状态 + SSE 进度恢复 + 最新结构化报告 |
+| 事件研究 | `/ai/event-study` | 单次同步影响预测（不创建分析任务） |
+
+技术栈：React 19 · TypeScript · TanStack Query · Zustand · Tailwind CSS（shadcn 风格组件）· ECharts · Vitest/RTL · Playwright。
+
+### 运行方式（已集成到 run.sh）
+
+```bash
+# 一键全栈（推荐）：后端平台 + 大盘数据采集 + 前端 dev server + 自动打开浏览器
+./run.sh                         # Web 工作台 http://localhost:5173（/api 代理 → 127.0.0.1:8000）
+./run.sh stop                    # 停止全部
+./run.sh ingest-market           # 单独补采大盘数据（幂等）
+
+# 仅前端开发模式（Vite dev server，需后端已运行：./run.sh platform）
+./run.sh frontend-dev            # 浏览器打开 http://localhost:5173
+
+# 前端质量检查（typecheck + 单测 + 构建）
+./run.sh frontend-check
+
+# E2E 端到端测试（需后端已运行；自动拉起 dev server）
+# 注意：「任务闭环」用例会创建真实分析任务（触发真实 LLM），建议用受控/假 Worker 环境
+./run.sh frontend-e2e
+# 对 Compose 全栈（Nginx 3000 端口）跑 E2E：
+#   FRONTEND_BASE_URL=http://127.0.0.1:3000 ./run.sh frontend-e2e
+
+# 全栈容器（infra + API/Worker/Dispatcher + 前端 Nginx）
+./run.sh stack                   # 访问 http://127.0.0.1:3000
+```
+
+前端手动命令（不经过 run.sh）：`pnpm --dir frontend dev / test / build / generate:api / e2e`。
+OpenAPI 变更后重新生成前端 client：`pnpm --dir frontend generate:api`（生成物提交，禁止手写领域 DTO）。
 
 ## 配置参考
 

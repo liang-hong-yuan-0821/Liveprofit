@@ -2,11 +2,17 @@
 
 ## 市场 — 板块 — 个股三维度分析
 
-> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，事件研究系统（金融事件影响分析，独立子系统）✅，全市场日线本地库（数据层子系统）✅，个股层持续更新。
+> **AI 速览**：市场层（独立子图，7 个 Agent）✅，板块层（独立子图，3 个 Analyst）✅，选股层/仓位管理层（纯代码层，无 LLM）✅，事件研究系统（金融事件影响分析，独立子系统）✅，全市场日线本地库（数据层子系统）✅，个股层持续更新，**后端平台（Web API / Worker / Dispatcher）✅**。
 >
-> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 事件研究系统 ✅ 全市场日线本地库 ✅ 个股层持续更新
+> **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 事件研究系统 ✅ 全市场日线本地库 ✅ 后端平台 ✅ 个股层持续更新
 >
-> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`（含 `store/`）、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`
+> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`（含 `store/`）、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`、`backend/`（平台）、`docker/`（编排）
+
+### 后端平台（2026-09-06 起）
+
+- **契约与启动**：[API 契约 v1](API契约.md)（冻结端点/字段/错误码，前端实现参照）；启动方式见 `README.md`「平台模式启动」或 `./run.sh platform`
+- **架构**：模块化单体（backend/ 可导入包）；API（REST/SSE）＋ Dramatiq Worker（可靠任务执行：Outbox + 租约 fencing + Redis Stream 事件流）＋ Dispatcher（发布/恢复唯一调度者）；PostgreSQL 业务真相，Redis Broker/事件流
+- **设计文档**：[后端平台技术方案（已归档）](done/后端方案.md)；产品基线：[产品需求分析](plans/产品需求分析.md)
 
 ---
 

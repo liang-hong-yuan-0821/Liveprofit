@@ -19,8 +19,8 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from AI.dataflows.providers.tushare_provider import TushareProvider
-from AI.dataflows.providers.limit_ladder_utils import (
+from AI.dataflows.providers.cn.tushare import TushareProvider
+from AI.dataflows.providers.cn.limit_ladder_utils import (
     calc_break_rate, calc_promotion_rates, format_ladder_matrix,
 )
 
@@ -62,7 +62,7 @@ class _FakeDateTime:
 
 
 def _patch_now(monkeypatch, dt: _real_dt):
-    import AI.dataflows.providers.tushare_provider as ts_prov
+    import AI.dataflows.providers.cn.tushare as ts_prov
     _FakeDateTime._now = dt
     monkeypatch.setattr(ts_prov, "datetime", _FakeDateTime)
 

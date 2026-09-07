@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from AI.dataflows.providers.tushare_provider import TushareProvider
+from AI.dataflows.providers.cn.tushare import TushareProvider
 
 
 def _new_provider(api=None):

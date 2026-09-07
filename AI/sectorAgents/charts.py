@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 
 from AI.dataflows import interface as dataflow
-from AI.dataflows.providers import daily_matrix_utils
+from AI.dataflows.providers.cn import daily_matrix_utils
 
 logger = logging.getLogger(__name__)
 

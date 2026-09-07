@@ -1,0 +1,22 @@
+# Liveprofit API 镜像（FastAPI，仅 REST/SSE，不执行 AI 图）
+# 容器内以 LIVEPROFIT_ENV=container + LIVEPROFIT_API_HOST=0.0.0.0 监听，
+# 由 Compose 内部 expose 供 Nginx 反代；宿主机不发布 API 端口。
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    LIVEPROFIT_ENV=container \
+    LIVEPROFIT_API_HOST=0.0.0.0
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY main.py ./
+COPY AI ./AI
+COPY backend ./backend
+
+RUN pip install --no-cache-dir ".[platform]"
+
+EXPOSE 8000
+
+CMD ["liveprofit-api"]

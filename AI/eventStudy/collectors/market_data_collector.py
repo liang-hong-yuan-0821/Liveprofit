@@ -44,10 +44,10 @@ def _fallback_fetch(ticker: str, start_date: str, end_date: str) -> pd.DataFrame
     other = "akshare" if current != "akshare" else "tushare"
     try:
         if other == "akshare":
-            from AI.dataflows.providers.akshare_provider import AKShareProvider
+            from AI.dataflows.providers.cn.akshare import AKShareProvider
             prov = AKShareProvider()
         else:
-            from AI.dataflows.providers.tushare_provider import TushareProvider
+            from AI.dataflows.providers.cn.tushare import TushareProvider
             prov = TushareProvider()
         if not hasattr(prov, "get_index_data_df"):
             return pd.DataFrame()

@@ -78,11 +78,11 @@ def _get_provider():
     # 数据源变更时重置 provider
     if _provider is None or _DATA_SOURCE != getattr(_provider, '_source_name', None):
         if ds == "akshare":
-            from .providers.akshare_provider import AKShareProvider
+            from .providers.cn.akshare import AKShareProvider
             _provider = AKShareProvider()
             _provider._source_name = "akshare"
         else:
-            from .providers.tushare_provider import TushareProvider
+            from .providers.cn.tushare import TushareProvider
             _provider = TushareProvider()
             _provider._source_name = "tushare"
         logger.info(f"数据源: {ds}")
@@ -99,7 +99,7 @@ def _get_akshare_provider():
     global _akshare_provider
     if _akshare_provider is None:
         try:
-            from .providers.akshare_provider import AKShareProvider
+            from .providers.cn.akshare import AKShareProvider
             _akshare_provider = AKShareProvider()
         except Exception as e:
             logger.warning(f"AKShare provider 初始化失败: {e}")
@@ -270,7 +270,7 @@ def get_all_concept_boards(days: int = 10) -> str:
 @dataprovider_log
 def analyze_tech_correlation(days: int = 10) -> str:
     """分析科技指数相关性并预测"""
-    from .providers.akshare_provider import (
+    from .providers.cn.akshare import (
         calculate_correlation, predict_tomorrow_trend
     )
 

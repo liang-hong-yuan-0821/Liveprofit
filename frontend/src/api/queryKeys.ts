@@ -21,9 +21,11 @@ export const queryKeys = {
   analysisTask: {
     ...makeQueryKeys('analysis-task'),
     executionLogs: (taskId: string) => ['analysis-task', 'execution-logs', taskId] as const,
+    graphTopology: (taskId: string) => ['analysis-task', 'graph-topology', taskId] as const,
   },
   analysisReport: makeQueryKeys('analysis-report'),
   watchlists: makeQueryKeys('watchlists'),
   portfolios: makeQueryKeys('portfolios'),
   eventStudyAssets: makeQueryKeys('event-study-assets'),
+  eventStudyReview: makeQueryKeys('event-study-review'),
 } as const;

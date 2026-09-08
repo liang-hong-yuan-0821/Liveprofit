@@ -163,6 +163,13 @@ docs/
 
 ## 项目配置
 
+### LangGraph 图结构提取约定（2026-09-08 拓扑图功能踩坑）
+
+- **langgraph 1.2.10 的 `get_graph()` 不能用于确定性顺序提取**：返回 langchain_core Graph，`edges` 是 set（无序），且 draw 模拟（apply_writes）对无 reducer 的 dict state 抛并发写冲突。要确定性拓扑（含条件边声明序）用 `compiled.builder`：`builder.nodes`（dict 声明序、不含 __start__/__end__）、`builder.edges`（set，直接边）、`builder.branches[src][router_key].ends`（dict 保留条件目标声明序，如 Risky 的 Safe 在 Risk Judge 前）——实现见 AI/graph/topology.py
+- **openapi 重导出链条**：backend 新增/修改路由后必须 `python -m backend.scripts.export_openapi` + `pnpm run generate:api` 再动前端消费代码；并发编辑下他人前端代码依赖新枚举（如 action approve/ignore）时，未重导出会导致其 typecheck 失败（2026-09-08 实测）
+- **openapi-typescript-codegen 把 Literal 生成 enum namespace**（如 `TopologyNodeDTO.status.EXECUTED`），测试/组件需值导入（不能 import type），mock 数据用枚举成员不用字符串字面量
+- **React Query refetchOnMount 默认 true**：同 query key 的观察者晚于首个观察者挂载（如弹窗在数据到达后才挂载）会触发一次额外 refetch（staleTime 0 下数据即陈旧）——弹窗类共享缓存订阅用 `enabled` 门控（打开才订阅），见 NodeLogsDialog
+
 ### 前端包管理器（pnpm）
 
 - **frontend 是 pnpm 布局**（pnpm-lock.yaml + node_modules/.pnpm 符号链接），依赖操作一律用 `pnpm add` / `pnpm install` / `pnpm run`——`npm install` 会报 `Cannot read properties of null (reading 'matches')`（npm arborist 无法处理 pnpm 布局，2026-09-06 踩坑）

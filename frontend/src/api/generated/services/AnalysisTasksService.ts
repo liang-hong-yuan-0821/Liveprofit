@@ -5,6 +5,7 @@
 import type { Envelope_DeleteResultData_ } from '../models/Envelope_DeleteResultData_';
 import type { Envelope_ExecutionFileDTO_ } from '../models/Envelope_ExecutionFileDTO_';
 import type { Envelope_ExecutionLogsDTO_ } from '../models/Envelope_ExecutionLogsDTO_';
+import type { Envelope_GraphTopologyDTO_ } from '../models/Envelope_GraphTopologyDTO_';
 import type { Envelope_TaskCreatedData_ } from '../models/Envelope_TaskCreatedData_';
 import type { Envelope_TaskDTO_ } from '../models/Envelope_TaskDTO_';
 import type { Envelope_TaskListData_ } from '../models/Envelope_TaskListData_';
@@ -164,6 +165,26 @@ export class AnalysisTasksService {
             },
             query: {
                 'file': file,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Get Graph Topology
+     * @param taskId
+     * @returns Envelope_GraphTopologyDTO_ Successful Response
+     * @throws ApiError
+     */
+    public static getGraphTopologyApiV1AnalysisTasksTaskIdGraphTopologyGet(
+        taskId: string,
+    ): CancelablePromise<Envelope_GraphTopologyDTO_> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/analysis-tasks/{task_id}/graph-topology',
+            path: {
+                'task_id': taskId,
             },
             errors: {
                 422: `Validation Error`,

@@ -2,6 +2,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ApiError } from '../../../api/client';
 import { renderWithRouter } from '../../../test/utils';
+import { daysAgoLocalDate } from '../../../shared/format/dateTime';
 import { MarketIndicesPanel } from './MarketIndicesPanel';
 
 vi.mock('../../../api/generated/services/MarketAssetsService', () => ({
@@ -89,8 +90,9 @@ describe('MarketIndicesPanel', () => {
     await screen.findByTestId('candlestick-chart');
     const callsBefore = barsMock.mock.calls.length;
 
-    // jsdom 的 date input 不支持键盘逐字输入，用 fireEvent.change 直接赋值
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-09-07' } });
+    // jsdom 的 date input 不支持键盘逐字输入，用 fireEvent.change 直接赋值；
+    // 开始日期取明天（结束日期默认为今天），保证任意运行日期都晚于结束日期
+    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: daysAgoLocalDate(-1) } });
 
     expect(screen.getByText('开始日期不能晚于结束日期')).toBeInTheDocument();
     expect(barsMock.mock.calls.length).toBe(callsBefore);

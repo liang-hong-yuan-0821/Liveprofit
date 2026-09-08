@@ -13,6 +13,7 @@ const AiDashboardPage = lazy(() => import('../modules/analysis/pages/dashboard/A
 const AiTasksPage = lazy(() => import('../modules/analysis/pages/tasks/AiTasksPage'));
 const AiTaskDetailPage = lazy(() => import('../modules/analysis/pages/task-detail/AiTaskDetailPage'));
 const AiEventStudyPage = lazy(() => import('../modules/event-study/pages/AiEventStudyPage'));
+const EventStudyReviewPage = lazy(() => import('../modules/event-study/pages/review/EventStudyReviewPage'));
 
 function page(node: ReactNode) {
   return <Suspense fallback={<LoadingState label="页面加载中…" />}>{node}</Suspense>;
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'ai/tasks', element: page(<AiTasksPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/tasks/:taskId', element: page(<AiTaskDetailPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/event-study', element: page(<AiEventStudyPage />), errorElement: <RouteErrorBoundary /> },
+      { path: 'ai/event-study/review', element: page(<EventStudyReviewPage />), errorElement: <RouteErrorBoundary /> },
       { path: '*', element: <NotFoundState to="/market" label="返回大盘" /> },
     ],
   },

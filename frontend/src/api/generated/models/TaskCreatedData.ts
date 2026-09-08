@@ -20,6 +20,10 @@ export type TaskCreatedData = {
      * 服务端派生的执行调用日志相对 URL
      */
     execution_logs_url: string;
+    /**
+     * 服务端派生的图拓扑相对 URL
+     */
+    graph_topology_url: string;
 };
 export namespace TaskCreatedData {
     export enum status {

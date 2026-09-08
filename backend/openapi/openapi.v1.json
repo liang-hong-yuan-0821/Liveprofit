@@ -438,6 +438,49 @@
         }
       }
     },
+    "/api/v1/analysis-tasks/{task_id}/graph-topology": {
+      "get": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Get Graph Topology",
+        "operationId": "get_graph_topology_api_v1_analysis_tasks__task_id__graph_topology_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_GraphTopologyDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analysis-dashboard": {
       "get": {
         "tags": [
@@ -632,6 +675,234 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_AssetListData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/pending-events": {
+      "get": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "List Pending Events",
+        "operationId": "list_pending_events_api_v1_event_studies_review_pending_events_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PendingEventListData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/prelabel": {
+      "post": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "Prelabel",
+        "operationId": "prelabel_api_v1_event_studies_review_prelabel_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrelabelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PrelabelData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/batch": {
+      "post": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "Submit Batch",
+        "operationId": "submit_batch_api_v1_event_studies_review_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ReviewBatchData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/events/{event_id}/compute": {
+      "post": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "Compute",
+        "operationId": "compute_api_v1_event_studies_review_events__event_id__compute_post",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ComputeData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/impact-drafts": {
+      "get": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "List Impact Drafts",
+        "operationId": "list_impact_drafts_api_v1_event_studies_review_impact_drafts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ImpactDraftListData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/impact-drafts/{event_id}/confirm": {
+      "post": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "Confirm Impacts",
+        "operationId": "confirm_impacts_api_v1_event_studies_review_impact_drafts__event_id__confirm_post",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmImpactsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ConfirmImpactsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2109,6 +2380,29 @@
         ],
         "title": "BarsData"
       },
+      "BatchSummary": {
+        "properties": {
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "ignored": {
+            "type": "integer",
+            "title": "Ignored"
+          },
+          "computed": {
+            "type": "integer",
+            "title": "Computed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approved",
+          "ignored",
+          "computed"
+        ],
+        "title": "BatchSummary"
+      },
       "BollBandsDTO": {
         "properties": {
           "period": {
@@ -2290,6 +2584,92 @@
         "title": "BusinessEventData",
         "description": "六种业务帧 data 的公共字段 + 事件专属可选字段。"
       },
+      "ComputeData": {
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "status"
+        ],
+        "title": "ComputeData"
+      },
+      "ComputeRequest": {
+        "properties": {
+          "operator": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Operator",
+            "default": "admin"
+          }
+        },
+        "type": "object",
+        "title": "ComputeRequest"
+      },
+      "ConfirmImpactsData": {
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "inserted": {
+            "type": "integer",
+            "title": "Inserted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "inserted"
+        ],
+        "title": "ConfirmImpactsData"
+      },
+      "ConfirmImpactsRequest": {
+        "properties": {
+          "tickers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Tickers"
+          },
+          "operator": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Operator",
+            "default": "admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tickers"
+        ],
+        "title": "ConfirmImpactsRequest"
+      },
       "DailyChangeDTO": {
         "properties": {
           "date": {
@@ -2436,6 +2816,38 @@
         ],
         "title": "Envelope[BarsData]"
       },
+      "Envelope_ComputeData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ComputeData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ComputeData]"
+      },
+      "Envelope_ConfirmImpactsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ConfirmImpactsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ConfirmImpactsData]"
+      },
       "Envelope_DeleteResultData_": {
         "properties": {
           "data": {
@@ -2484,6 +2896,22 @@
         ],
         "title": "Envelope[ExecutionLogsDTO]"
       },
+      "Envelope_GraphTopologyDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GraphTopologyDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[GraphTopologyDTO]"
+      },
       "Envelope_HotConceptsData_": {
         "properties": {
           "data": {
@@ -2499,6 +2927,22 @@
           "meta"
         ],
         "title": "Envelope[HotConceptsData]"
+      },
+      "Envelope_ImpactDraftListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ImpactDraftListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ImpactDraftListData]"
       },
       "Envelope_MacroInformationData_": {
         "properties": {
@@ -2531,6 +2975,22 @@
           "meta"
         ],
         "title": "Envelope[MarketAssetsData]"
+      },
+      "Envelope_PendingEventListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PendingEventListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PendingEventListData]"
       },
       "Envelope_PortfolioDTO_": {
         "properties": {
@@ -2612,6 +3072,22 @@
         ],
         "title": "Envelope[PredictionData]"
       },
+      "Envelope_PrelabelData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PrelabelData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PrelabelData]"
+      },
       "Envelope_ReportDTO_": {
         "properties": {
           "data": {
@@ -2627,6 +3103,22 @@
           "meta"
         ],
         "title": "Envelope[ReportDTO]"
+      },
+      "Envelope_ReviewBatchData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReviewBatchData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ReviewBatchData]"
       },
       "Envelope_TaskCreatedData_": {
         "properties": {
@@ -3244,6 +3736,53 @@
         "title": "ExecutionTushareDTO",
         "description": "tushare 端点子调用（DP 调用目录 tushare/ 内）。"
       },
+      "GraphTopologyDTO": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "run 目录是否存在且可读；false 时 nodes 仍为静态结构、status 全 not_executed"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At",
+            "description": "组装时间"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/TopologyNodeDTO"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/TopologyEdgeDTO"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "attempt_no",
+          "available",
+          "generated_at",
+          "nodes",
+          "edges"
+        ],
+        "title": "GraphTopologyDTO"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -3442,6 +3981,70 @@
           "freshness_status"
         ],
         "title": "HotConceptsData"
+      },
+      "ImpactDraftDTO": {
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "t0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T0"
+          },
+          "computed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Computed At"
+          },
+          "assets": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Assets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "title"
+        ],
+        "title": "ImpactDraftDTO"
+      },
+      "ImpactDraftListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactDraftDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ImpactDraftListData"
       },
       "IndicatorsDTO": {
         "properties": {
@@ -3862,6 +4465,107 @@
         ],
         "title": "PendingActionDTO"
       },
+      "PendingEventDTO": {
+        "properties": {
+          "draft_id": {
+            "type": "integer",
+            "title": "Draft Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "announced_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Announced At"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "importance_hint": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Importance Hint"
+          },
+          "ai_suggestions": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Suggestions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft_id",
+          "title"
+        ],
+        "title": "PendingEventDTO"
+      },
+      "PendingEventListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PendingEventDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PendingEventListData"
+      },
       "PortfolioCreateRequest": {
         "properties": {
           "name": {
@@ -4189,6 +4893,37 @@
           "asset_ticker"
         ],
         "title": "PredictionRequest"
+      },
+      "PrelabelData": {
+        "properties": {
+          "prelabeled": {
+            "type": "integer",
+            "title": "Prelabeled"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prelabeled",
+          "remaining"
+        ],
+        "title": "PrelabelData"
+      },
+      "PrelabelRequest": {
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "title": "PrelabelRequest"
       },
       "RecentConclusionDTO": {
         "properties": {
@@ -4534,6 +5269,221 @@
         "title": "ResetEventData",
         "description": "reset 控制帧 data（固定且仅此四字段，无 id）。"
       },
+      "ReviewBatchData": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewRowResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BatchSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results",
+          "summary"
+        ],
+        "title": "ReviewBatchData"
+      },
+      "ReviewBatchRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewRowRequest"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ReviewBatchRequest"
+      },
+      "ReviewRowRequest": {
+        "properties": {
+          "draft_id": {
+            "type": "integer",
+            "title": "Draft Id"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "ignore"
+            ],
+            "title": "Action"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "event_subtype": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Subtype"
+          },
+          "event_condition": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Condition"
+          },
+          "importance": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Importance"
+          },
+          "expected_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Value"
+          },
+          "actual_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Value"
+          },
+          "previous_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Value"
+          },
+          "operator": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Operator",
+            "default": "admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft_id",
+          "action"
+        ],
+        "title": "ReviewRowRequest"
+      },
+      "ReviewRowResult": {
+        "properties": {
+          "draft_id": {
+            "type": "integer",
+            "title": "Draft Id"
+          },
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "compute_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "failed",
+                  "skipped"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft_id",
+          "ok"
+        ],
+        "title": "ReviewRowResult"
+      },
       "SSEContract": {
         "properties": {
           "business": {
@@ -4679,6 +5629,11 @@
             "type": "string",
             "title": "Execution Logs Url",
             "description": "服务端派生的执行调用日志相对 URL"
+          },
+          "graph_topology_url": {
+            "type": "string",
+            "title": "Graph Topology Url",
+            "description": "服务端派生的图拓扑相对 URL"
           }
         },
         "type": "object",
@@ -4690,7 +5645,8 @@
           "date_correction",
           "events_url",
           "report_url",
-          "execution_logs_url"
+          "execution_logs_url",
+          "graph_topology_url"
         ],
         "title": "TaskCreatedData"
       },
@@ -4838,6 +5794,11 @@
             "type": "string",
             "title": "Execution Logs Url",
             "description": "恒等于 /api/v1/analysis-tasks/{id}/execution-logs"
+          },
+          "graph_topology_url": {
+            "type": "string",
+            "title": "Graph Topology Url",
+            "description": "恒等于 /api/v1/analysis-tasks/{id}/graph-topology"
           }
         },
         "type": "object",
@@ -4858,7 +5819,8 @@
           "updated_at",
           "events_url",
           "report_url",
-          "execution_logs_url"
+          "execution_logs_url",
+          "graph_topology_url"
         ],
         "title": "TaskDTO"
       },
@@ -4981,6 +5943,109 @@
           "updated_at"
         ],
         "title": "TaskListItemDTO"
+      },
+      "TopologyEdgeDTO": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "源节点 id，如 \"stock:Bull Researcher\""
+          },
+          "target": {
+            "type": "string",
+            "title": "Target",
+            "description": "目标节点 id，如 \"stock:Bear Researcher\""
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "conditional",
+              "loop"
+            ],
+            "title": "Kind",
+            "description": "direct/conditional（条件边虚线）/loop（screening→stock 逐票循环虚线）"
+          },
+          "parallel": {
+            "type": "boolean",
+            "title": "Parallel",
+            "description": "存在反向边（如 Bull↔Bear 互指），前端画弧线避免重叠"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "target",
+          "kind",
+          "parallel"
+        ],
+        "title": "TopologyEdgeDTO"
+      },
+      "TopologyNodeDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\"{layer}:{label}\"，如 \"stock:Bull Researcher\""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "图节点显示名（含 \" Analyst\" 后缀），如 \"Bull Researcher\"、\"Screening\""
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer",
+            "description": "所属层目录名，如 \"market\" / \"stock\""
+          },
+          "row": {
+            "type": "integer",
+            "title": "Row",
+            "description": "行号（= 层执行序）：market=0、sector=1、stock=2、screening=2；screening 任务中 stock=3"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "层内主节点序（DFS 前序），如 stock 层 Bull Researcher=4"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_executed",
+              "executed",
+              "running",
+              "error"
+            ],
+            "title": "Status",
+            "description": "未执行/已执行/执行中/出错"
+          },
+          "invocation_count": {
+            "type": "integer",
+            "title": "Invocation Count",
+            "description": "匹配到的节点日志目录数（LLM 目录 + 纯代码节点预测目录）"
+          },
+          "dirs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dirs",
+            "description": "相对任务目录的节点目录路径，按名（seq）排序，如 [\"stock/005_Bull_Researcher\"]"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "layer",
+          "row",
+          "order",
+          "status",
+          "invocation_count",
+          "dirs"
+        ],
+        "title": "TopologyNodeDTO",
+        "description": "拓扑主节点（含未执行节点）。"
       },
       "UnavailableBlockDTO": {
         "properties": {

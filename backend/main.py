@@ -22,7 +22,9 @@ from backend.api.routers import (
     analysis_events,
     analysis_tasks,
     event_studies,
+    event_study_review,
     execution_logs,
+    graph_topology,
     health,
     macro_information,
     market_assets,
@@ -52,6 +54,7 @@ async def lifespan(app: FastAPI):
     app.state.analysis_services = build_api_analysis_services(container)
     app.state.event_study_service = _build_event_study_service(settings)
     app.state.event_study_executor = app.state.event_study_service._executor
+    app.state.event_study_review_service = _build_event_study_review_service()
     app.state.market_calendar = _build_market_calendar()
     metrics_collector, metrics_cache, refresh_task = await _install_metrics(app, container)
     try:
@@ -135,6 +138,14 @@ def _build_event_study_service(settings: Settings):
     )
 
 
+def _build_event_study_review_service():
+    """审核服务复用 API 分析服务线程池（低频管理流，不新建独立 executor）。"""
+    from backend.modules.event_study.application.review_service import EventStudyReviewService
+    from backend.modules.event_study.infrastructure.review_adapter import EventStudyReviewAdapter
+
+    return EventStudyReviewService(adapter=EventStudyReviewAdapter())
+
+
 def _ensure_windows_selector_loop() -> None:
     """Windows ProactorEventLoop 不支持 psycopg async（'ProactorEventLoop' InterfaceError）。
 
@@ -159,10 +170,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(metrics.router)
     app.include_router(analysis_tasks.router)
     app.include_router(execution_logs.router)
+    app.include_router(graph_topology.router)
     app.include_router(analysis_dashboard.router)
     app.include_router(analysis_events.router)
     app.include_router(reports.router)
     app.include_router(event_studies.router)
+    app.include_router(event_study_review.router)
     app.include_router(macro_information.router)
     app.include_router(watchlists.router)
     app.include_router(portfolios.router)

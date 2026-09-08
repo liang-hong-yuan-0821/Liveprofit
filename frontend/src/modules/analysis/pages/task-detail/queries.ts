@@ -3,7 +3,7 @@ import { AnalysisTasksService } from '../../../../api/generated/services/Analysi
 import { ReportsService } from '../../../../api/generated/services/ReportsService';
 import { requestEnvelope } from '../../../../api/client';
 import { queryKeys } from '../../../../api/queryKeys';
-import type { DeleteResultData, ExecutionLogsDTO, ReportDTO, TaskDTO } from '../../../../api/generated';
+import type { DeleteResultData, ExecutionLogsDTO, GraphTopologyDTO, ReportDTO, TaskDTO } from '../../../../api/generated';
 
 // 任务详情：Task REST Query 是正式状态唯一真相；非终态每 5 秒 refetch；
 // 成功时启用 Report Query；取消 Mutation 成功后以服务端 TaskDTO 更新缓存。
@@ -43,6 +43,21 @@ export function useExecutionLogsQuery(taskId: string, enabled: boolean, terminal
       (
         await requestEnvelope<ExecutionLogsDTO>(
           AnalysisTasksService.getExecutionLogsApiV1AnalysisTasksTaskIdExecutionLogsGet(taskId),
+        )
+      ).data,
+    refetchInterval: terminal ? false : 5000,
+  });
+}
+
+// 图拓扑（静态结构 + 运行状态叠加）：与执行日志同节奏轮询，终态停止。
+export function useGraphTopologyQuery(taskId: string, enabled: boolean, terminal: boolean) {
+  return useQuery({
+    queryKey: queryKeys.analysisTask.graphTopology(taskId),
+    enabled,
+    queryFn: async (): Promise<GraphTopologyDTO> =>
+      (
+        await requestEnvelope<GraphTopologyDTO>(
+          AnalysisTasksService.getGraphTopologyApiV1AnalysisTasksTaskIdGraphTopologyGet(taskId),
         )
       ).data,
     refetchInterval: terminal ? false : 5000,

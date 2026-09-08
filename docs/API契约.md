@@ -21,6 +21,7 @@
 | 分析任务 | GET /api/v1/analysis-tasks/{taskId}/report | 第一阶段 |
 | 分析任务 | GET /api/v1/analysis-tasks/{taskId}/execution-logs | 第一阶段（2026-09-06 增补） |
 | 分析任务 | GET /api/v1/analysis-tasks/{taskId}/execution-logs/content?file= | 第一阶段（2026-09-06 增补） |
+| 分析任务 | GET /api/v1/analysis-tasks/{taskId}/graph-topology | 第一阶段（2026-09-08 增补） |
 | AI 看板 | GET /api/v1/analysis-dashboard | 第一阶段 |
 | 事件研究 | POST /api/v1/event-studies/predictions | 第一阶段 |
 | 事件研究 | GET /api/v1/event-studies/assets | 第一阶段 |
@@ -272,6 +273,7 @@ TaskListItemDTO 字段：`id: UUID、task_type、ticker?: string、effective_tra
 | events_url | string | 服务端派生，恒等于 `/api/v1/analysis-tasks/{id}/events` |
 | report_url | string | 服务端派生，恒等于 `/api/v1/analysis-tasks/{id}/report` |
 | execution_logs_url | string | 服务端派生，恒等于 `/api/v1/analysis-tasks/{id}/execution-logs` |
+| graph_topology_url | string | 服务端派生，恒等于 `/api/v1/analysis-tasks/{id}/graph-topology` |
 
 前端在 `/ai/tasks/:taskId` 先获取该 DTO；**仅在任务非终态且 events_url 严格等于上述 canonical 规则时建立 SSE**，否则视为协议错误只做 REST 轮询（5s 一次直至终态）。
 
@@ -300,6 +302,17 @@ TaskListItemDTO 字段：`id: UUID、task_type、ticker?: string、effective_tra
 
 - `file` 必须为 `/` 分隔的相对任务日志目录路径、扩展名 ∈ {.json,.md,.txt}、resolve 后位于任务日志目录内（双保险防路径逃逸）；任一失败 → 422 VALIDATION_ERROR。
 - 单文件上限 10MB（超限 → 422）；文件不存在 → 404 RESOURCE_NOT_FOUND；任务不存在 → 404 TASK_NOT_FOUND。
+
+### 3.7 图拓扑 GET /api/v1/analysis-tasks/{taskId}/graph-topology（2026-09-08 增补）
+
+200 + envelope，data 为 GraphTopologyDTO：静态图拓扑（LangGraph 图定义提取，三层 + 层内主节点，tools_*/Msg Clear 辅助节点折叠）+ 本次运行状态叠加，字段结构见 OpenAPI（TopologyNodeDTO/TopologyEdgeDTO，状态枚举 not_executed/executed/running/error，边 kind direct/conditional/loop）。
+
+要点：
+
+- 静态拓扑来源是图定义本身（`AI/graph/topology.py` dummy 编译三层子图，lru_cache），不手写第二份拓扑表；screening 任务 stock 层恒出现（逐票循环复用 stock 子图，与 selected_layers 是否含 "stock" 无关），以 `kind="loop"` 虚线边挂 Screening 之后。
+- 运行状态按日志目录叠加：节点目录分 LLM 目录（含节点级 meta.json）与预测目录（dataprovider_log 为纯代码节点按 llm_seq+1 预测创建，两者 seq 可能并列）——running/error 兜底只作用于 LLM 目录；error = 任一 DP meta.error 或（FAILED 终态 + 全局最大 seq 的 LLM 目录无 res.md）；未匹配拓扑节点的目录忽略。
+- 目录不存在 → 200 + `available=false`（nodes 仍为静态结构、全 not_executed）；任务不存在 → 404 TASK_NOT_FOUND。
+- 运行中每 5s 轮询，终态停止；详情页终态翻转瞬间与 execution-logs 一起补拉一次（防尾部滞留）。前端点击节点弹面板展示该节点日志（复用 execution-logs 同 query 缓存，零额外内容端点）。
 
 ---
 

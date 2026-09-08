@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router';
-import { FlaskConical } from 'lucide-react';
+import { ClipboardCheck, FlaskConical } from 'lucide-react';
 import { Button } from '../../../../shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../shared/ui/dialog';
 import { ActiveTasksPanel } from './ActiveTasksPanel';
@@ -53,6 +53,12 @@ export default function AiDashboardPage() {
             <Link to="/ai/event-study">
               <FlaskConical className="size-4" aria-hidden />
               事件研究
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/ai/event-study/review">
+              <ClipboardCheck className="size-4" aria-hidden />
+              事件审核
             </Link>
           </Button>
           <Button asChild variant="ghost" size="sm">

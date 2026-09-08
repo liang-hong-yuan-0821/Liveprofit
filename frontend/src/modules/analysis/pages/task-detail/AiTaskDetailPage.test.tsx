@@ -13,10 +13,15 @@ vi.mock('../../../../api/generated/services/AnalysisTasksService', () => ({
     deleteTaskApiV1AnalysisTasksTaskIdDelete: vi.fn(),
     getExecutionLogsApiV1AnalysisTasksTaskIdExecutionLogsGet: vi.fn(),
     getExecutionLogContentApiV1AnalysisTasksTaskIdExecutionLogsContentGet: vi.fn(),
+    getGraphTopologyApiV1AnalysisTasksTaskIdGraphTopologyGet: vi.fn(),
   },
 }));
 vi.mock('../../../../api/generated/services/ReportsService', () => ({
   ReportsService: { getReportApiV1AnalysisTasksTaskIdReportGet: vi.fn() },
+}));
+// 拓扑面板渲染 echarts（jsdom 无 canvas），页面级测试同面板测试 mock 掉
+vi.mock('echarts-for-react', () => ({
+  default: vi.fn(() => <div data-testid="echarts" />),
 }));
 
 import { AnalysisTasksService } from '../../../../api/generated/services/AnalysisTasksService';
@@ -27,6 +32,7 @@ const cancelMock = AnalysisTasksService.cancelTaskApiV1AnalysisTasksTaskIdCancel
 const deleteMock = AnalysisTasksService.deleteTaskApiV1AnalysisTasksTaskIdDelete as Mock;
 const getReportMock = ReportsService.getReportApiV1AnalysisTasksTaskIdReportGet as Mock;
 const getLogsMock = AnalysisTasksService.getExecutionLogsApiV1AnalysisTasksTaskIdExecutionLogsGet as Mock;
+const getTopologyMock = AnalysisTasksService.getGraphTopologyApiV1AnalysisTasksTaskIdGraphTopologyGet as Mock;
 
 const TASK_ID = 'task-1';
 
@@ -84,6 +90,18 @@ function makeLogs(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function makeTopology(overrides: Record<string, unknown> = {}) {
+  return {
+    task_id: TASK_ID,
+    attempt_no: 1,
+    available: false,
+    generated_at: '2026-09-08T10:00:00Z',
+    nodes: [],
+    edges: [],
+    ...overrides,
+  };
+}
+
 beforeEach(() => {
   FakeEventSource.reset();
   vi.stubGlobal('EventSource', FakeEventSource);
@@ -92,9 +110,11 @@ beforeEach(() => {
   deleteMock.mockReset();
   getReportMock.mockReset();
   getLogsMock.mockReset();
+  getTopologyMock.mockReset();
   getTaskMock.mockResolvedValue(envelope(makeTask('RUNNING')));
   getReportMock.mockResolvedValue(envelope(makeReport()));
   getLogsMock.mockResolvedValue(envelope(makeLogs()));
+  getTopologyMock.mockResolvedValue(envelope(makeTopology()));
 });
 
 afterEach(() => {
@@ -246,6 +266,18 @@ describe('AiTaskDetailPage 执行调用日志区块', () => {
     expect(panel.compareDocumentPosition(timelineText) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
+  it('拓扑面板挂载于时间线之后、执行日志面板之前', async () => {
+    renderPage();
+
+    await screen.findByText('运行中');
+    const topology = await screen.findByTestId('graph-topology-panel');
+    const panel = screen.getByTestId('execution-logs-panel');
+    const timelineText = screen.getByText('暂无进度事件');
+    // 拓扑在时间线之后、日志面板之前
+    expect(topology.compareDocumentPosition(timelineText) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(panel.compareDocumentPosition(topology) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
+
   it('SUCCEEDED 终态：面板位于报告区之前，静态展示', async () => {
     getTaskMock.mockResolvedValue(envelope(makeTask('SUCCEEDED')));
     renderPage();
@@ -271,5 +303,20 @@ describe('AiTaskDetailPage 执行调用日志区块', () => {
 
     // 翻转瞬间 executionLogs key 被失效 → 主动补拉一次（终态后 refetchInterval 已为 false）
     await waitFor(() => expect(getLogsMock).toHaveBeenCalledTimes(2));
+  });
+
+  it('终态翻转（false→true）瞬间同时补拉一次拓扑状态', async () => {
+    const { queryClient } = renderPage();
+    await screen.findByText('运行中');
+    await waitFor(() => expect(getTopologyMock).toHaveBeenCalledTimes(1));
+
+    getTaskMock.mockResolvedValue(envelope(makeTask('SUCCEEDED')));
+    act(() => {
+      void queryClient.invalidateQueries({ queryKey: ['analysis-task', 'detail', TASK_ID] });
+    });
+    await screen.findByText('最新报告');
+
+    // 翻转瞬间 graphTopology key 被失效 → 主动补拉一次（防尾部滞留，与 executionLogs 同理由）
+    await waitFor(() => expect(getTopologyMock).toHaveBeenCalledTimes(2));
   });
 });

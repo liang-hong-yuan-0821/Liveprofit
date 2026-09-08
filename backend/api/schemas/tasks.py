@@ -51,6 +51,7 @@ class TaskCreatedData(BaseModel):
     events_url: str = Field(description="服务端派生的 SSE 相对 URL")
     report_url: str = Field(description="服务端派生的报告相对 URL")
     execution_logs_url: str = Field(description="服务端派生的执行调用日志相对 URL")
+    graph_topology_url: str = Field(description="服务端派生的图拓扑相对 URL")
 
 
 class TaskListItemDTO(BaseModel):
@@ -88,3 +89,4 @@ class TaskDTO(BaseModel):
     events_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/events")
     report_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/report")
     execution_logs_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/execution-logs")
+    graph_topology_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/graph-topology")

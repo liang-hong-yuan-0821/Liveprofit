@@ -29,6 +29,10 @@ export type TaskDTO = {
      * 恒等于 /api/v1/analysis-tasks/{id}/execution-logs
      */
     execution_logs_url: string;
+    /**
+     * 恒等于 /api/v1/analysis-tasks/{id}/graph-topology
+     */
+    graph_topology_url: string;
 };
 export namespace TaskDTO {
     export enum task_type {

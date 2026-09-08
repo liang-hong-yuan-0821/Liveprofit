@@ -36,6 +36,7 @@ VALID_STATUS_FILTERS = {"all", "active", "succeeded", "failed", "cancelled"}
 _EVENTS_URL = "/api/v1/analysis-tasks/{task_id}/events"
 _REPORT_URL = "/api/v1/analysis-tasks/{task_id}/report"
 _EXECUTION_LOGS_URL = "/api/v1/analysis-tasks/{task_id}/execution-logs"
+_GRAPH_TOPOLOGY_URL = "/api/v1/analysis-tasks/{task_id}/graph-topology"
 
 
 def _meta(request: Request, next_cursor: str | None = None) -> EnvelopeMeta:
@@ -76,6 +77,7 @@ async def create_task(
         events_url=_EVENTS_URL.format(task_id=task_id),
         report_url=_REPORT_URL.format(task_id=task_id),
         execution_logs_url=_EXECUTION_LOGS_URL.format(task_id=task_id),
+        graph_topology_url=_GRAPH_TOPOLOGY_URL.format(task_id=task_id),
     )
     return Envelope(data=data, meta=_meta(request)).model_dump()
 
@@ -203,6 +205,7 @@ def _to_task_dto(dto) -> TaskDTO:
         events_url=_EVENTS_URL.format(task_id=dto.id),
         report_url=_REPORT_URL.format(task_id=dto.id),
         execution_logs_url=_EXECUTION_LOGS_URL.format(task_id=dto.id),
+        graph_topology_url=_GRAPH_TOPOLOGY_URL.format(task_id=dto.id),
     )
 
 

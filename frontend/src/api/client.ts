@@ -85,10 +85,13 @@ OpenAPI.BASE = '';
 /**
  * 统一消费 generated client 服务方法：解包 { data, meta } envelope，
  * 并将 generated ApiError（body 为 Problem Details）映射为页面 ApiError。
+ * opts.timeoutMs 可覆盖默认 45s（如审核批量提交/预填用 300s——既有调用点零改动）。
  */
 export async function requestEnvelope<TData>(
   promise: PromiseLike<unknown> & { cancel?: () => void },
+  opts?: { timeoutMs?: number },
 ): Promise<ApiEnvelope<TData>> {
+  const timeoutMs = opts?.timeoutMs ?? clientDefaults.timeoutMs;
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const result = await Promise.race([
@@ -99,7 +102,7 @@ export async function requestEnvelope<TData>(
           reject(
             new ApiError({ code: 'REQUEST_TIMEOUT', message: '请求超时，请稍后重试', retryable: false, status: 0 }),
           );
-        }, clientDefaults.timeoutMs);
+        }, timeoutMs);
       }),
     ]);
     return unwrapEnvelope<TData>(result);

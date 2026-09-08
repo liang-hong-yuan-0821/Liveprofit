@@ -12,6 +12,7 @@ import { Badge } from '../../../../shared/ui/badge';
 import { ConfirmDialog } from '../../../../shared/ui/ConfirmDialog';
 import { TaskStatusCard } from './TaskStatusCard';
 import { TaskProgressTimeline } from './TaskProgressTimeline';
+import { GraphTopologyPanel } from './GraphTopologyPanel';
 import { ExecutionLogsPanel } from './ExecutionLogsPanel';
 import { ReportContent } from './ReportContent';
 import { toReportViewModel } from './reportMappers/toReportViewModels';
@@ -76,6 +77,8 @@ export default function AiTaskDetailPage() {
     prevTerminalRef.current = terminal;
     if (terminal && !wasTerminal) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.analysisTask.executionLogs(taskId) });
+      // 拓扑状态与日志同节奏冻结，同步补拉防尾部滞留（FAILED 末节点 error 标记后写）
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisTask.graphTopology(taskId) });
     }
   }, [terminal, taskId, queryClient]);
 
@@ -147,6 +150,8 @@ export default function AiTaskDetailPage() {
           <TaskProgressTimeline events={events} />
         </>
       )}
+
+      <GraphTopologyPanel taskId={taskId} terminal={terminal} taskFailed={task.status === 'FAILED'} />
 
       <ExecutionLogsPanel taskId={taskId} terminal={terminal} />
 

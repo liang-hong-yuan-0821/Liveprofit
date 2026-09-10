@@ -7,6 +7,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +39,12 @@ def create_us_tech_analyst(llm, toolkit):
         output_format = load_output_format("market", "tech_common")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专注美股的技术分析师。\n\n"
-                + date_line + "\n"
-                "## 已获取的数据\n\n"
-                "### 美股三大指数数据\n{index_data}\n\n"
-                "### 美股板块轮动数据\n{sector_rotation}\n\n"
-                "分析维度：\n"
-                "- 标普500 / 纳斯达克 / 道琼斯：趋势方向、均线系统(MA5/10/20/60)、量能变化、RSI/MACD\n"
-                "- 板块结构：科技 vs 价值、大盘 vs 小盘轮动\n"
-                "- 跨市场定位：美股在全球风险资产中的相对强弱\n\n"
-                "数据不可用时标注'数据暂不可用，以下分析基于公开信息'\n\n"
-                "输出格式：\n"
-                "# 美国市场技术分析报告\n\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:US Tech Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

@@ -25,6 +25,13 @@
 | AI 看板 | GET /api/v1/analysis-dashboard | 第一阶段 |
 | 事件研究 | POST /api/v1/event-studies/predictions | 第一阶段 |
 | 事件研究 | GET /api/v1/event-studies/assets | 第一阶段 |
+| 事件研究审核 | GET /api/v1/event-studies/review/pending-events | 第一阶段（2026-09-08 增补） |
+| 事件研究审核 | POST /api/v1/event-studies/review/prelabel | 第一阶段（2026-09-08 增补） |
+| 事件研究审核 | POST /api/v1/event-studies/review/batch | 第一阶段（2026-09-08 增补） |
+| 事件研究审核 | POST /api/v1/event-studies/review/events/{event_id}/compute | 第一阶段（2026-09-08 增补） |
+| 事件研究审核 | GET /api/v1/event-studies/review/impact-drafts | 第一阶段（2026-09-08 增补） |
+| 事件研究审核 | POST /api/v1/event-studies/review/impact-drafts/{event_id}/confirm | 第一阶段（2026-09-08 增补） |
+| 事件研究审核 | POST /api/v1/event-studies/review/refresh | 第一阶段（2026-09-08 增补） |
 | 市场 | GET /api/v1/market-assets?enabled=true | 第二阶段 |
 | 市场 | GET /api/v1/market-data/indices/{symbol}/bars | 第二阶段 |
 | 市场 | GET /api/v1/market-data/concepts/hot | 第二阶段 |
@@ -100,6 +107,10 @@ Base URL：前端经 Nginx 同源反代访问，业务路径即 `/api/v1/...`（
 | EVENT_STUDY_BUSY | 503 | true | 事件研究繁忙；仅手动重试 |
 | EVENT_STUDY_TIMEOUT | 504 | true | 事件研究超时；仅手动重试 |
 | EVENT_STUDY_INTERNAL | 500 | false | 事件研究内部失败；脱敏摘要 |
+| REVIEW_DRAFT_NOT_FOUND | 404 | false | 待审草稿/影响草稿不存在或已过期；刷新列表后重试 |
+| REVIEW_EVENT_NOT_FOUND | 404 | false | 补算目标事件不存在 |
+| REVIEW_UPSTREAM_UNAVAILABLE | 503 | true | 审核草稿区（Redis）不可用；可重试错误态 |
+| REVIEW_COMPUTE_FAILED | 500 | true | 补算执行异常；可重试 |
 | INTERNAL_ERROR | 500 | false | 未分类内部错误；安全摘要 + request_id |
 
 > 任务 DTO 的 `error_code` 是**任务级错误分类**（非 HTTP 错误码），首期取值包括：
@@ -574,6 +585,23 @@ data: {"connection_id":"...","sent_at":"2026-09-05T09:12:30Z","schema_version":"
 
 200 + `data.items: [{ticker, name, market}]`（首期为事件研究系统已初始化的 4 个 CN 指数：000001.SH 上证指数 / 000688.SH 科创50 / 000698.SH 科创100 / 000300.SH 沪深300）。供资产下拉选项；接口缺失时前端保留自由输入，**不硬编码名单**。
 
+### 7.3 审核 API（2026-09-08 增补，平台集成版替代 Streamlit review_app）
+
+行为对齐原 Streamlit 审核界面；草稿存 Redis（`events:pending:{draft_id}` 30 天 / `event_impacts:draft:{event_id}` 7 天），审核终态写 PG `events`（approved/ignored）与 `event_impacts`，审核日志 LPUSH Redis `event_review_log`。设计细节见 docs/done/事件研究审核界面平台集成方案.md。
+
+| Method/Path | 请求体 | 响应 data |
+|---|---|---|
+| GET /api/v1/event-studies/review/pending-events | — | `items: [{draft_id, title, announced_at, source, content, source_url, importance_hint, ai_suggestions}]`（announced_at 降序全量；Redis 不可用 503） |
+| POST /api/v1/event-studies/review/prelabel | `{limit: 1..200 = 50}` | `{prelabeled, remaining}`（幂等：仅预填无 ai_suggestions 的草稿；remaining=执行后仍无建议数） |
+| POST /api/v1/event-studies/review/batch | `{items: [1..50]}`，每行 `{draft_id, action: approve\|ignore, event_type?, event_subtype?, event_condition?, importance? 1..5, expected_value?, actual_value?, previous_value?, operator? = "admin"}` | `{results: [{draft_id, ok, event_id?, error_code?, error_message?, compute_status?}], summary: {approved, ignored, computed}}`（行级失败不失败整批：`REVIEW_DRAFT_NOT_FOUND` 草稿缺失 / `REVIEW_ROW_FAILED` 其他行级错误；approve 成功即内联计算影响，失败仅 `compute_status="failed"`，daily_job 兜底） |
+| POST /api/v1/event-studies/review/events/{event_id}/compute | `{operator? = "admin"}` | `{event_id, status: ok\|failed, message?}`（补算覆盖草稿刷新 TTL；事件不存在 404；全窗口失败折叠为 200 failed） |
+| GET /api/v1/event-studies/review/impact-drafts | — | `items: [{event_id, title, t0, computed_at, assets: {ticker: {window_type: {...}}}}]`（含事件标题 join） |
+| POST /api/v1/event-studies/review/impact-drafts/{event_id}/confirm | `{tickers: [1..], operator? = "admin"}` | `{event_id, inserted}`（仅正常窗口落表，`ON CONFLICT DO NOTHING`；草稿不存在 404；ticker 缺失静默跳过） |
+| POST /api/v1/event-studies/review/refresh | —（无请求体） | `{fetched, new_drafts, skipped_reason: "locked"\|"failed"\|null}`（采集各启用源最新事件写入待审草稿：PG + Redis 标题去重；Redis 锁防并发，锁占用 → skipped_reason="locked"，采集异常 → "failed"，均 200 降级不报错；Redis 不可用 503；不含 AI 预填，预填走 /prelabel） |
+
+- 审核字段省略键 = 委托 review_dao 默认链（importance → importance_hint 或 3；数值键 → 落 NULL，0 是合法值）。
+- 无认证；operator 仅写入审核日志（追溯保险），默认 "admin"。
+
 ---
 
 ## 八、市场数据 API（第二阶段）
@@ -728,7 +756,7 @@ Query：`limit`（必填，受上限约束）、`cursor`（可选）、`market`�
 
 空列表为正常空态（"暂无可展示的事件研究宏观信息"），不从预测响应或报告文本拼装。主题筛选采用可搜索下拉（选项来自已加载数据去重），自由输入以服务端校验为准。
 
-**卡片跳转事件研究（Q-03 已确认）**：点击标题 → `/ai/event-study?event_id=<id>`；事件研究页用**卡片已渲染字段**（标题/摘要/市场标签）预填 event_text 与类型标签，不预填资产（除非卡片有唯一关联资产），窗口默认 post_event_5d，**不自动提交**（后端不提供 prefill 接口）。
+**卡片跳转事件研究（Q-03 已确认）**：点击标题 → `/event-study?event_id=<id>`；事件研究页用**卡片已渲染字段**（标题/摘要/市场标签）预填 event_text 与类型标签，不预填资产（除非卡片有唯一关联资产），窗口默认 post_event_5d，**不自动提交**（后端不提供 prefill 接口）。
 
 ---
 

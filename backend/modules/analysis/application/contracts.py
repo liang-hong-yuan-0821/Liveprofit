@@ -43,6 +43,8 @@ class ClaimedTask:
     selected_layers: tuple[str, ...]
     effective_trade_date: date | None
     request_params: dict
+    # 单Agent重跑：本次执行的起点节点 id（取自消息 kwarg，非任务行；None=全图执行）
+    rerun_from_node_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +163,7 @@ class TaskDTO:
     error_summary: str | None
     created_at: datetime
     updated_at: datetime
+    rerun_from_node_id: str | None
     # events_url / report_url 由 Router 从 data.id 派生（T5），不在此携带
 
 

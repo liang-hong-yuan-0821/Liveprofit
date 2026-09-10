@@ -32,10 +32,12 @@ ALLOWED_TRANSITIONS: dict[TaskStatus, frozenset[TaskStatus]] = {
     TaskStatus.QUEUED: frozenset({TaskStatus.RUNNING}),
     TaskStatus.RUNNING: frozenset({TaskStatus.SUCCEEDED, TaskStatus.FAILED, TaskStatus.RETRYING}),
     TaskStatus.CANCEL_REQUESTED: frozenset({TaskStatus.CANCELLED}),
-    # 终态不可再迁移
-    TaskStatus.SUCCEEDED: frozenset(),
-    TaskStatus.FAILED: frozenset(),
-    TaskStatus.CANCELLED: frozenset(),
+    # 终态 → PENDING：单Agent重跑方案（产品确认的偏离）——唯一入口为
+    # TaskService.rerun_task（attempt_no+1 + Outbox payload 携带 rerun_from）；
+    # generic 路径（is_terminal）仍按终态收口，不得复用该迁移
+    TaskStatus.SUCCEEDED: frozenset({TaskStatus.PENDING}),
+    TaskStatus.FAILED: frozenset({TaskStatus.PENDING}),
+    TaskStatus.CANCELLED: frozenset({TaskStatus.PENDING}),
 }
 
 # 未运行取消：request_cancel 对这些状态直接收口（finalize_pending_cancellation）
@@ -53,5 +55,10 @@ def assert_transition(current: TaskStatus, target: TaskStatus) -> None:
         raise InvalidStateTransitionError(current, target)
 
 
+# 终态显式集合：is_terminal 判定独立于转移表（终态 → PENDING 的重跑出边
+# 不改变"终态收口"的 generic 语义，见 ALLOWED_TRANSITIONS 注释）
+TERMINAL_STATUSES = frozenset({TaskStatus.SUCCEEDED, TaskStatus.FAILED, TaskStatus.CANCELLED})
+
+
 def is_terminal(status: TaskStatus) -> bool:
-    return not ALLOWED_TRANSITIONS.get(status, frozenset())
+    return status in TERMINAL_STATUSES

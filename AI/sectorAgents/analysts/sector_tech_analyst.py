@@ -7,6 +7,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 from AI.templates import load_output_format
 from AI.sectorAgents.analysts.structured_list import (
     extract_sector_structured_list,
@@ -46,55 +47,12 @@ def create_sector_tech_analyst(llm, toolkit, enable_structured_list=False):
         output_format = load_output_format("sector", "sector_tech_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位资深 A 股板块技术分析师，负责逐行业做技术面体检，"
-                "并产出三时间级别的技术确认结论。\n"
-                "你的分析对象是行业板块指数的日K线（OHLCV），不是个股K线。\n\n"
-                "分析日期：{current_date}\n\n"
-                "背景上下文（来自市场层宏观分析 + 板块层新闻分析）：\n"
-                "{sector_market_context}\n\n"
-                "## 已获取的数据\n\n"
-                "### 全行业 日/周/月 三级趋势矩阵（120日）\n{horizon}\n\n"
-                "### 全行业近期涨跌数据（20日）\n{industry_perf}\n\n"
-                "### 日线技术状态矩阵（60日）\n{tech_screening}\n\n"
-                "### 行业 Alpha 排名（20日）\n{rel_strength}\n\n"
-                "### AI 产业链数据\n{ai_chain}\n\n"
-                "### 科技相关性分析\n{tech_corr}\n\n"
-                "分析维度（按优先级排列）：\n\n"
-                "A. ★ 多级别共振判定（核心新增）\n"
-                "  - 基于 get_sector_horizon_screening 的三级趋势矩阵\n"
-                "  - 三线共振上行（日/周/月均多头）= ★★★ 强板块\n"
-                "  - 二线偏强（日+周多头）= ★★ 偏强\n"
-                "  - 仅日线多头 = ★ 偏弱（可能只是短线反弹）\n"
-                "  - 空头排列 = 弱势\n\n"
-                "B. ★ 候选板块技术确认（核心新增）\n"
-                "  - 对上下文中的'候选板块短名单'（sector_shortlist）逐一做技术确认\n"
-                "  - 短线候选：确认日线信号（量比/突破/RSI）+ 短期风险\n"
-                "  - 波段主线：确认日线+周线趋势共振 + 量价配合 + 主力资金方向\n"
-                "  - 长线配置：确认周线+月线趋势 + 估值水位 + 距高点回撤\n"
-                "  - 每个板块输出：确认 / 存疑 / 否认 + 技术依据\n\n"
-                "C. 全行业技术状态总览\n"
-                "  - 技术面强势的行业有哪些？（均线多头排列 + RSI > 50 + MACD 金叉）\n"
-                "  - 技术面弱势的行业有哪些？（均线空头排列 + RSI < 50 + MACD 死叉）\n"
-                "  - 哪些行业出现异动信号？（放量突破/高位背离/底部放量企稳）\n\n"
-                "D. 重点行业深度分析\n"
-                "  - 领涨行业：趋势是否健康？量价配合如何？多级别是否共振？\n"
-                "  - 领跌行业：是否出现底部企稳信号？还是下跌中继？\n"
-                "  - 行业 alpha 排名：哪些行业真正跑赢大盘（持续正 alpha）？\n\n"
-                "E. 风格因子 + AI/科技专题\n"
-                "  - 风格因子技术验证：板块层面的技术信号是否与市场层风格判断一致\n"
-                "  - AI产业链内部轮动：当前热点在哪个环节？传导是否有效？\n"
-                "  - 美股科技→韩股科技→A股科技板块的传导有效性\n"
-                "  - 对科技相关行业重点使用 AI 产业链和相关性分析数据\n\n"
-                "注意事项：\n"
-                "- 数据不可用时标注'数据暂不可用（需 AKShare 数据源）'\n"
-                "- 技术指标只是辅助工具，不构成投资建议\n"
-                "- 行业数量多（约30个），请做归纳总结而非逐行业罗列\n"
-                "- 候选板块技术确认是核心交付物，务必逐一覆盖\n\n"
-                "输出格式（结论前置）：\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["sector:Sector Tech Analyst"].replace(
+                        "{output_format}", output_format
+                    ),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

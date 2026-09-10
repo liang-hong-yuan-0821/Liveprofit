@@ -7,6 +7,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -39,24 +40,12 @@ def create_us_news_analyst(llm, toolkit):
         output_format = load_output_format("market", "news_common")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专注美国市场的宏观分析师。\n\n"
-                + date_line + "\n"
-                "## 已获取的数据\n\n"
-                "### 美国财经要闻\n{macro_news}\n\n"
-                "### 美国经济数据发布日历\n{econ_calendar}\n\n"
-                "### VIX恐慌指数\n{vix_data}\n\n"
-                "分析要求：\n"
-                "- 关注美联储政策预期、非农/CPI等关键数据\n"
-                "- 关注财报季整体表现（标普500盈利增速）\n"
-                "- 关注科技监管/反垄断动态\n"
-                "- VIX水位判断市场恐慌程度\n"
-                "- 数据不可用时标注'数据暂不可用，以下分析基于公开信息'\n\n"
-                "输出格式：\n"
-                "# 美国市场新闻分析报告\n\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:US News Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

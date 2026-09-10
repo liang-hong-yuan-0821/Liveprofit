@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import copy
 import uuid
+from types import SimpleNamespace
 from datetime import date, datetime, timedelta
 
 from backend.modules.analysis.domain.enums import TaskStatus
@@ -239,6 +240,33 @@ class FakeReportRepository:
         return (latest.report_version + 1) if latest else 1
 
 
+class FakePromptOverrideRepository:
+    """Agent 提示词覆盖内存仓库（与真实 SqlAlchemyPromptOverrideRepository 同接口）。"""
+
+    def __init__(self) -> None:
+        self.rows: dict[str, dict] = {}
+
+    def get(self, node_id: str):
+        return self.rows.get(node_id)
+
+    def list_as_map(self) -> dict[str, str]:
+        return {k: v["prompt_text"] for k, v in self.rows.items()}
+
+    def upsert(self, node_id: str, prompt_text: str, now) -> dict:
+        row = self.rows.get(node_id)
+        if row is None:
+            row = {"node_id": node_id, "prompt_text": prompt_text,
+                   "created_at": now, "updated_at": now}
+            self.rows[node_id] = row
+        else:
+            row["prompt_text"] = prompt_text
+            row["updated_at"] = now
+        return SimpleNamespace(**row)
+
+    def delete(self, node_id: str) -> bool:
+        return self.rows.pop(node_id, None) is not None
+
+
 class FakeUnitOfWork:
     """三个实体各自独立 store，保证事务边界按实体隔离（与真实表结构一致）。"""
 
@@ -249,6 +277,7 @@ class FakeUnitOfWork:
         self.tasks = FakeTaskRepository(self.tasks_store, reports_store=self.reports_store)
         self.outbox = FakeTaskOutboxRepository(self.outbox_store)
         self.reports = FakeReportRepository(self.reports_store)
+        self.prompts = FakePromptOverrideRepository()
         self.commit_count = 0
         self.rollback_count = 0
 

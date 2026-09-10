@@ -10,6 +10,7 @@ import type { Envelope_TaskCreatedData_ } from '../models/Envelope_TaskCreatedDa
 import type { Envelope_TaskDTO_ } from '../models/Envelope_TaskDTO_';
 import type { Envelope_TaskListData_ } from '../models/Envelope_TaskListData_';
 import type { MarketWideCreateRequest } from '../models/MarketWideCreateRequest';
+import type { RerunTaskRequest } from '../models/RerunTaskRequest';
 import type { SingleStockCreateRequest } from '../models/SingleStockCreateRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -121,6 +122,34 @@ export class AnalysisTasksService {
             path: {
                 'task_id': taskId,
             },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Rerun Task
+     * 终态任务从指定节点重跑（单Agent重跑与提示词编辑方案 3.4）。
+     *
+     * 路由层前置校验（FS/拓扑，服务保持 DB 纯净）：节点在任务拓扑内（404）、
+     * screening 任务个股层 v1 限制（409）、entry checkpoint 存在（409）。
+     * @param taskId
+     * @param requestBody
+     * @returns Envelope_TaskDTO_ Successful Response
+     * @throws ApiError
+     */
+    public static rerunTaskApiV1AnalysisTasksTaskIdRerunPost(
+        taskId: string,
+        requestBody: RerunTaskRequest,
+    ): CancelablePromise<Envelope_TaskDTO_> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/analysis-tasks/{task_id}/rerun',
+            path: {
+                'task_id': taskId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: `Validation Error`,
             },

@@ -23,6 +23,22 @@ from AI.utils.llm_callbacks import _sanitize
 _SEQ_PREFIX_RE = re.compile(r"^(\d+)_")
 
 
+def attempt_chain_dirs(execution_logs_root: Path, task_id, attempt_no: int) -> list[Path]:
+    """attempt 目录链（新→旧，仅存在且含 complete.json 完成标记的目录）。
+
+    单Agent重跑方案 3.4.1：三处消费点（rerun 路由前置校验、worker 侧
+    build_real_initial_state、任务拓扑 rerun_available 计算）共享本函数
+    单点构造，杜绝口径分叉——任一处置漏过滤即复活环中态无限循环。
+    attempt_no 为链上包含的最新目录号（路由侧传 base、worker 侧传 base-1）。
+    """
+    chain = []
+    for n in range(attempt_no, 0, -1):
+        d = execution_logs_root / "tasks" / str(task_id) / str(n)
+        if (d / "complete.json").is_file():
+            chain.append(d)
+    return chain
+
+
 def _dir_seq(name: str) -> int:
     m = _SEQ_PREFIX_RE.match(name)
     return int(m.group(1)) if m else -1

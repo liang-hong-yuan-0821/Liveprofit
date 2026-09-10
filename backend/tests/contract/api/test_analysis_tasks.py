@@ -177,3 +177,79 @@ def test_problem_details_never_leak_internals(client):
     assert set(problem.keys()) >= {"type", "title", "status", "detail", "code", "request_id", "retryable"}
     rendered = json.dumps(problem, ensure_ascii=False)
     assert "Traceback" not in rendered and "token" not in rendered.lower()
+
+
+# ---------- 单Agent重跑（单Agent重跑与提示词编辑方案 3.4） ----------
+
+def _to_terminal(client, task_id: str, status: str = "FAILED", attempt_no: int = 1) -> None:
+    with client.http.app.state.analysis_services.open() as bundle:
+        ok = bundle.uow.tasks.conditional_update(
+            task_id, expect={"attempt_no": attempt_no}, changes={"status": status})
+        bundle.uow.commit()
+        assert ok
+
+
+def _point_logs_root(client, monkeypatch, root) -> None:
+    monkeypatch.setattr(client.http.app.state.settings.core, "execution_logs_root", root)
+
+
+def _make_complete_attempt(root, task_id: str, attempt_no: int = 1) -> None:
+    """伪造完整 attempt 目录：complete.json + CN News checkpoint（CN Tech 的前驱）。"""
+    run_dir = root / "tasks" / task_id / str(attempt_no)
+    (run_dir / "checkpoints" / "market").mkdir(parents=True)
+    (run_dir / "complete.json").write_text('{"completed_at": "x"}', encoding="utf-8")
+    (run_dir / "checkpoints" / "market" / "CN_News_Analyst.json").write_text(
+        '{"saved_at": "x", "node_id": "market:CN News Analyst", "state": {"messages": []}}',
+        encoding="utf-8",
+    )
+
+
+def test_rerun_terminal_task_200_pending_next_attempt(client, monkeypatch, tmp_path):
+    task = _create(client, f"rerun-{uuid.uuid4().hex[:8]}")
+    task_id = task.json()["data"]["task_id"]
+    _to_terminal(client, task_id, "FAILED")
+    _point_logs_root(client, monkeypatch, tmp_path)
+    _make_complete_attempt(tmp_path, task_id, attempt_no=1)
+
+    response = client.http.post(
+        f"/api/v1/analysis-tasks/{task_id}/rerun",
+        json={"node_id": "market:CN Tech Analyst"},
+        headers={"X-Trace-ID": f"trace-rerun-{task_id}"},
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()["data"]
+    assert data["status"] == "PENDING"
+    assert data["attempt_no"] == 2
+    assert data["rerun_from_node_id"] == "market:CN Tech Analyst"
+
+
+def test_rerun_non_terminal_409(client):
+    task = _create(client, f"rerun-{uuid.uuid4().hex[:8]}")
+    task_id = task.json()["data"]["task_id"]
+    response = client.http.post(
+        f"/api/v1/analysis-tasks/{task_id}/rerun", json={"node_id": "market:CN Tech Analyst"})
+    assert response.status_code == 409
+    assert response.json()["code"] == "TASK_NOT_TERMINAL"
+
+
+def test_rerun_unknown_node_404(client, monkeypatch, tmp_path):
+    task = _create(client, f"rerun-{uuid.uuid4().hex[:8]}")
+    task_id = task.json()["data"]["task_id"]
+    _to_terminal(client, task_id, "FAILED")
+    _point_logs_root(client, monkeypatch, tmp_path)
+    response = client.http.post(
+        f"/api/v1/analysis-tasks/{task_id}/rerun", json={"node_id": "market:不存在节点"})
+    assert response.status_code == 404
+    assert response.json()["code"] == "AGENT_NODE_NOT_FOUND"
+
+
+def test_rerun_no_checkpoint_409(client, monkeypatch, tmp_path):
+    task = _create(client, f"rerun-{uuid.uuid4().hex[:8]}")
+    task_id = task.json()["data"]["task_id"]
+    _to_terminal(client, task_id, "FAILED")
+    _point_logs_root(client, monkeypatch, tmp_path)
+    # 无 attempt 目录（旧版本运行）→ entry 不可用
+    response = client.http.post(
+        f"/api/v1/analysis-tasks/{task_id}/rerun", json={"node_id": "market:CN Tech Analyst"})
+    assert response.status_code == 409
+    assert response.json()["code"] == "RERUN_NOT_AVAILABLE"

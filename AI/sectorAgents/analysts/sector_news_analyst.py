@@ -6,6 +6,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 from AI.templates import load_output_format
 from AI.sectorAgents.analysts.structured_list import extract_sector_structured_list
 
@@ -32,46 +33,12 @@ def create_sector_news_analyst(llm, toolkit, enable_structured_list=False):
         output_format = load_output_format("sector", "sector_news_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专注 A 股全市场板块横向对比的分析师，"
-                "从'信息面 + 资金面'两个维度扫描所有行业的强弱状态，"
-                "产出三时间级别（短线/波段/长线）的候选板块。\n\n"
-                "分析日期：{current_date}\n\n"
-                "背景上下文（来自市场层宏观分析）：\n"
-                "{sector_market_context}\n\n"
-                "## 已获取的数据\n\n"
-                "### 行业涨跌排名（近10日）\n{industry_perf}\n\n"
-                "### 行业资金流向（近5日）\n{fund_flow}\n\n"
-                "### 概念板块热度（近10日）\n{concept_heat}\n\n"
-                "### 产业政策/行业新闻\n{policy_news}\n\n"
-                "分析要点：\n"
-                "- 行业涨跌排名：哪些行业在领涨/领跌？持续多长时间了？\n"
-                "- 资金流向：主力资金进攻哪些行业？撤出哪些行业？\n"
-                "- 概念热度：热门概念的持续性如何？是否有板块内扩散效应？\n"
-                "- 板块轮动：当前是持续主线（什么主线？）还是快速轮动（无主线）？\n"
-                "- 产业政策/行业新闻事件流：逐条判断利好/利空方向与受影响的行业/概念板块，"
-                "标注影响强度与持续性；'待审核快讯'为 AI 预填分类、未经人工确认，"
-                "需结合标题/摘要自行甄别；事件流对主线判断的催化影响\n\n"
-                "★ 三级别候选板块产出（核心新增）：\n\n"
-                "短线候选板块（1-5 交易日）：\n"
-                "- 近 3 日领涨行业 + 概念热度榜 + 当日资金净流入行业\n"
-                "- 结合市场层情绪周期位置：高潮期追涨容错率低，修复期关注低位启动\n"
-                "- 每个候选标注：入选逻辑、持续性证据、操作提示（追涨/低吸/埋伏）、置信度\n\n"
-                "波段主线板块（1-4 周）：\n"
-                "- 近 20 日持续领涨 + 主力资金连续流入 + 板块内扩散（龙头→跟风）\n"
-                "- 输出'主线板块链'（龙头板块 + 扩散板块 + 潜在轮动板块）\n"
-                "- 标注轮动位置（启动/主升/加速/末端）和上车信号条件\n"
-                "- 结合市场层波段姿态（进攻/平衡/防御）给出主线容纳性判断\n\n"
-                "长线配置板块（3 月+）：\n"
-                "- 产业政策催化方向 + 景气度上行行业 + 市场层长线风格匹配\n"
-                "- 标注配置逻辑（政策驱动/景气周期/估值修复）和关注级别\n"
-                "- 提示：长线配置板块需要通过板块技术分析做多级别趋势确认\n\n"
-                "风格验证：结合市场层的大盘风格判断，验证板块层面的风格一致性\n"
-                "- 数据不可用时如实标注，不编造\n\n"
-                "输出格式（结论前置）：\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["sector:Sector News Analyst"].replace(
+                        "{output_format}", output_format
+                    ),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

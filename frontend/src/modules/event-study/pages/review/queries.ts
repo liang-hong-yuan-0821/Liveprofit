@@ -11,6 +11,7 @@ import type {
   PendingEventListData,
   PrelabelData,
   PrelabelRequest,
+  RefreshData,
   ReviewBatchData,
   ReviewBatchRequest,
 } from '../../../../api/generated';
@@ -37,6 +38,18 @@ export function usePrelabelMutation() {
       (
         await requestEnvelope<PrelabelData>(
           EventStudiesService.prelabelApiV1EventStudiesReviewPrelabelPost(request),
+          { timeoutMs: REVIEW_TIMEOUT_MS },
+        )
+      ).data,
+  });
+}
+
+export function useRefreshMutation() {
+  return useMutation({
+    mutationFn: async (): Promise<RefreshData> =>
+      (
+        await requestEnvelope<RefreshData>(
+          EventStudiesService.refreshApiV1EventStudiesReviewRefreshPost(),
           { timeoutMs: REVIEW_TIMEOUT_MS },
         )
       ).data,

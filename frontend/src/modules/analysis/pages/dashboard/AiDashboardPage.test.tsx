@@ -142,6 +142,8 @@ describe('AiDashboardPage', () => {
     renderWithRouter(<AiDashboardPage />);
 
     expect(await screen.findByText('当前没有待处理事项、进行中任务和结论')).toBeInTheDocument();
+    // 进行中区块即使为空也保留卡片占位
+    expect(screen.getByText('无进行中任务')).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: '新建分析' })[1]);
     expect(await screen.findByRole('heading', { name: '新建分析' })).toBeInTheDocument();
   });
@@ -150,5 +152,61 @@ describe('AiDashboardPage', () => {
     renderWithRouter(<AiDashboardPage />);
     await screen.findByText('行情数据暂不可用');
     expect(EventSource).not.toHaveBeenCalled();
+  });
+});
+
+
+// ---------- 双 tab（任务 | Agent，单Agent重跑与提示词编辑方案 3.5） ----------
+
+vi.mock('../../../../api/generated/services/AgentsService', () => ({
+  AgentsService: {
+    getAgentsTopologyApiV1AgentsTopologyGet: vi.fn(),
+    listAgentPromptsApiV1AgentsPromptsGet: vi.fn(),
+    upsertAgentPromptApiV1AgentsPromptsNodeIdPut: vi.fn(),
+    resetAgentPromptApiV1AgentsPromptsNodeIdDelete: vi.fn(),
+  },
+}));
+vi.mock('echarts-for-react', () => ({
+  default: vi.fn(() => <div data-testid="echarts" />),
+}));
+
+const topologyMock = (
+  await import('../../../../api/generated/services/AgentsService')
+).AgentsService.getAgentsTopologyApiV1AgentsTopologyGet as Mock;
+const promptsListMock = (
+  await import('../../../../api/generated/services/AgentsService')
+).AgentsService.listAgentPromptsApiV1AgentsPromptsGet as Mock;
+
+const ENVELOPE = (data: unknown) => ({ data, meta: { request_id: 'r', schema_version: 'v1' } });
+
+describe('AiDashboardPage 双 tab', () => {
+  beforeEach(() => {
+    fetchMock.mockResolvedValue(ENVELOPE({
+      pending_actions: [], active_tasks: [], recent_conclusions: [], generated_at: 'x',
+    }) as never);
+    topologyMock.mockResolvedValue(ENVELOPE({
+      nodes: [], edges: [], generated_at: 'x',
+    }) as never);
+    promptsListMock.mockResolvedValue(ENVELOPE({ items: [] }) as never);
+  });
+
+  it('默认渲染任务 tab（看板内容）', async () => {
+    renderWithRouter(<AiDashboardPage />, { initialEntries: ['/ai'] });
+    expect(await screen.findByText(/此刻该做什么/)).toBeInTheDocument();
+  });
+
+  it('URL ?tab=agents 直接进入 Agent 拓扑页', async () => {
+    renderWithRouter(<AiDashboardPage />, { initialEntries: ['/ai?tab=agents'] });
+    expect(await screen.findByText('Agent 架构拓扑')).toBeInTheDocument();
+  });
+
+  it('点击 Agent tab 按钮切换到拓扑页，点击任务切回', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<AiDashboardPage />, { initialEntries: ['/ai'] });
+    await screen.findByText(/此刻该做什么/);
+    await user.click(screen.getByRole('button', { name: 'Agent' }));
+    expect(await screen.findByText('Agent 架构拓扑')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '任务' }));
+    expect(await screen.findByText(/此刻该做什么/)).toBeInTheDocument();
   });
 });

@@ -24,6 +24,8 @@ export const queryKeys = {
     graphTopology: (taskId: string) => ['analysis-task', 'graph-topology', taskId] as const,
   },
   analysisReport: makeQueryKeys('analysis-report'),
+  agentsTopology: makeQueryKeys('agents-topology'),
+  agentPrompts: makeQueryKeys('agent-prompts'),
   watchlists: makeQueryKeys('watchlists'),
   portfolios: makeQueryKeys('portfolios'),
   eventStudyAssets: makeQueryKeys('event-study-assets'),

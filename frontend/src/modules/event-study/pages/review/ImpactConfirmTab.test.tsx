@@ -116,4 +116,15 @@ describe('ImpactConfirmTab', () => {
     renderWithRouter(<ImpactConfirmTab />);
     expect(await screen.findByText('暂无影响结果草稿')).toBeInTheDocument();
   });
+
+  it('error 行禁勾选且全选排除', async () => {
+    const user = userEvent.setup();
+    impactMock.mockResolvedValue(envelope({ items: impactFixture() }));
+    renderWithRouter(<ImpactConfirmTab />);
+    await screen.findAllByText('CPI 公布');
+    expect(screen.getByLabelText('勾选 101:000001.SH:post_event_5d')).toBeDisabled();
+    await user.click(screen.getByLabelText('全选'));
+    expect(screen.getByLabelText('勾选 101:000001.SH:pre_event_5d')).toBeChecked();
+    expect(screen.getByLabelText('勾选 101:000001.SH:post_event_5d')).not.toBeChecked();
+  });
 });

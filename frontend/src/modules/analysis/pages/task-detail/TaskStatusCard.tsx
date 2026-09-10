@@ -44,6 +44,14 @@ export function TaskStatusCard({ task, cancelPending, onCancel }: TaskStatusCard
           )}
           <dt style={{ color: 'var(--color-fg-muted)' }}>尝试次数</dt>
           <dd>第 {task.attempt_no} 次</dd>
+          {task.rerun_from_node_id && (
+            <>
+              <dt style={{ color: 'var(--color-fg-muted)' }}>本次重跑</dt>
+              <dd>
+                从节点 {task.rerun_from_node_id} 续跑（复用第 {task.attempt_no - 1} 次结果）
+              </dd>
+            </>
+          )}
           {task.status === 'RETRYING' && task.next_retry_at && (
             <>
               <dt style={{ color: 'var(--color-fg-muted)' }}>下次重试</dt>

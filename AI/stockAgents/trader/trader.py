@@ -8,6 +8,7 @@ LiveProfit 交易员 (简化版)
 import functools
 import logging
 
+from AI.utils.prompts import get_system_prompt
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,9 @@ def create_trader(llm, memory):
         messages = [
             {
                 "role": "system",
-                "content": f"""你是一位专业的交易员，负责分析市场数据并做出三级别交易决策。
+                "content": get_system_prompt(
+                    state.get("_current_node_id"),
+                    lambda: f"""你是一位专业的交易员，负责分析市场数据并做出三级别交易决策。
 
 当前分析的股票：{ticker}，使用货币：{currency}（{currency_symbol}）
 {instrument_context}
@@ -90,6 +93,7 @@ def create_trader(llm, memory):
 请用中文撰写分析内容，并以'最终交易建议: **买入/持有/卖出**'结束你的回应。
 
 历史交易反思和经验教训: {past_memory_str}""",
+                ),
             },
             context,
         ]

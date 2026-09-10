@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Navigate, createBrowserRouter } from 'react-router';
+import { Navigate, createBrowserRouter, useLocation } from 'react-router';
 import { AppErrorBoundary } from '../app/AppErrorBoundary';
 import { AppShell } from '../app/AppShell';
 import { RouteErrorBoundary } from '../app/RouteErrorBoundary';
@@ -12,11 +12,16 @@ const WatchlistPage = lazy(() => import('../modules/watchlist/pages/WatchlistPag
 const AiDashboardPage = lazy(() => import('../modules/analysis/pages/dashboard/AiDashboardPage'));
 const AiTasksPage = lazy(() => import('../modules/analysis/pages/tasks/AiTasksPage'));
 const AiTaskDetailPage = lazy(() => import('../modules/analysis/pages/task-detail/AiTaskDetailPage'));
-const AiEventStudyPage = lazy(() => import('../modules/event-study/pages/AiEventStudyPage'));
-const EventStudyReviewPage = lazy(() => import('../modules/event-study/pages/review/EventStudyReviewPage'));
+const EventStudyPage = lazy(() => import('../modules/event-study/pages/EventStudyPage'));
 
 function page(node: ReactNode) {
   return <Suspense fallback={<LoadingState label="页面加载中…" />}>{node}</Suspense>;
+}
+
+// /ai/event-study 旧入口 → /event-study，透传 query（如宏观卡片跳转的 ?event_id=101）
+function LegacyEventStudyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/event-study${location.search}`} replace />;
 }
 
 export const router = createBrowserRouter([
@@ -32,8 +37,9 @@ export const router = createBrowserRouter([
       { path: 'ai', element: page(<AiDashboardPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/tasks', element: page(<AiTasksPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/tasks/:taskId', element: page(<AiTaskDetailPage />), errorElement: <RouteErrorBoundary /> },
-      { path: 'ai/event-study', element: page(<AiEventStudyPage />), errorElement: <RouteErrorBoundary /> },
-      { path: 'ai/event-study/review', element: page(<EventStudyReviewPage />), errorElement: <RouteErrorBoundary /> },
+      { path: 'event-study', element: page(<EventStudyPage />), errorElement: <RouteErrorBoundary /> },
+      { path: 'ai/event-study', element: <LegacyEventStudyRedirect /> },
+      { path: 'ai/event-study/review', element: <Navigate to="/event-study?tab=review" replace /> },
       { path: '*', element: <NotFoundState to="/market" label="返回大盘" /> },
     ],
   },

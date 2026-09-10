@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from backend.modules.event_study.application.review_contracts import ReviewRowCommand
+from backend.modules.event_study.application.review_contracts import RefreshResult, ReviewRowCommand
 from backend.modules.event_study.application.review_errors import (
     ReviewComputeFailedError,
     ReviewDraftNotFoundError,
@@ -46,6 +46,15 @@ class FakeAdapter:
         self.confirm_return = 0
         self.confirm_error: Exception | None = None
         self.confirm_calls: list[tuple] = []
+        self.fetch_events: list[dict] = []
+        self.fetch_error: Exception | None = None
+        self.fetch_calls = 0
+        self.save_return: list[int] = []
+        self.save_error: Exception | None = None
+        self.save_calls: list[tuple] = []
+        self.lock_acquire_ok = True
+        self.lock_acquires: list[tuple] = []
+        self.lock_releases: list[tuple] = []
 
     # ---- 适配器接口 ----
     def open_connection(self):
@@ -78,11 +87,34 @@ class FakeAdapter:
             raise self.compute_error
         if self.compute_return is not None:
             return self.compute_return
-        return {"event_id": event_id, "assets": {}}
+        # 默认含一个正常窗口，使折叠判定为 ok；空 assets / 全 error 语义由专用用例覆盖
+        return {
+            "event_id": event_id,
+            "assets": {"000001.SH": {"event_day": {"window_days": 1, "cumulative_abnormal_return": 0.0}}},
+        }
 
     def prelabel(self, drafts):
         self.prelabel_batches.append(drafts)
         return self.prelabel_return
+
+    def fetch_latest_events(self):
+        self.fetch_calls += 1
+        if self.fetch_error is not None:
+            raise self.fetch_error
+        return self.fetch_events
+
+    def save_pending_events(self, events, conn):
+        self.save_calls.append((events, conn))
+        if self.save_error is not None:
+            raise self.save_error
+        return self.save_return
+
+    def try_acquire_refresh_lock(self, key, token, ttl_ms):
+        self.lock_acquires.append((key, token, ttl_ms))
+        return self.lock_acquire_ok
+
+    def release_refresh_lock(self, key, token):
+        self.lock_releases.append((key, token))
 
     def list_impact_drafts(self):
         return self.impact_drafts
@@ -164,6 +196,58 @@ def test_prelabel_redis_unavailable_raises_503(svc):
         service.prelabel(50)
 
 
+# ==================== 最新事件拉取 ====================
+
+def test_refresh_events_fetches_saves_and_returns_counts(svc):
+    adapter, service = svc
+    adapter.fetch_events = [{"title": "A"}, {"title": "B"}]
+    adapter.save_return = [501, 502]
+    result = service.refresh_events()
+    assert result == RefreshResult(fetched=2, new_drafts=2, skipped_reason=None)
+    events, conn = adapter.save_calls[0]
+    assert events == adapter.fetch_events and conn is adapter.conn
+    assert adapter.conn.closed
+    lock_key, token, ttl_ms = adapter.lock_acquires[0]
+    assert lock_key == "events:refresh_lock" and ttl_ms == 120_000
+    assert adapter.lock_releases == [(lock_key, token)]  # 释放携带同一次调用的 token
+
+
+def test_refresh_events_lock_held_skips_fetch(svc):
+    adapter, service = svc
+    adapter.lock_acquire_ok = False
+    result = service.refresh_events()
+    assert result == RefreshResult(fetched=0, new_drafts=0, skipped_reason="locked")
+    assert adapter.fetch_calls == 0 and adapter.save_calls == []
+    assert adapter.lock_releases == []  # 未持锁不释放
+
+
+def test_refresh_events_redis_unavailable_raises_503(svc):
+    adapter, service = svc
+    adapter.redis_ok = False
+    with pytest.raises(ReviewUpstreamUnavailableError):
+        service.refresh_events()
+    assert adapter.fetch_calls == 0
+
+
+def test_refresh_events_fetch_error_degrades_and_releases_lock(svc):
+    adapter, service = svc
+    adapter.fetch_error = RuntimeError("network down")
+    result = service.refresh_events()
+    assert result == RefreshResult(fetched=0, new_drafts=0, skipped_reason="failed")
+    assert adapter.save_calls == []
+    assert adapter.lock_releases == [adapter.lock_acquires[0][:2]]
+
+
+def test_refresh_events_save_error_degrades_closes_conn_releases_lock(svc):
+    adapter, service = svc
+    adapter.fetch_events = [{"title": "A"}]
+    adapter.save_error = RuntimeError("pg down")
+    result = service.refresh_events()
+    assert result == RefreshResult(fetched=0, new_drafts=0, skipped_reason="failed")
+    assert adapter.conn.closed
+    assert adapter.lock_releases == [adapter.lock_acquires[0][:2]]
+
+
 # ==================== 批量提交 ====================
 
 def test_submit_batch_approve_fields_only_non_none_keys_and_compute_ok(svc):
@@ -238,6 +322,25 @@ def test_submit_batch_compute_failure_keeps_row_ok_and_rollback(svc):
     assert result.approved == 1 and result.computed == 0
 
 
+def test_submit_batch_approve_all_windows_failed_marks_failed(svc):
+    adapter, service = svc
+    adapter.compute_return = {
+        "event_id": 101,
+        "assets": {"000001.SH": {"pre_event_5d": {"error": "no data"}}},
+    }
+    result = service.submit_batch([ReviewRowCommand(draft_id=1, action="approve")])
+    row_result = result.results[0]
+    assert row_result.ok and row_result.compute_status == "failed"  # 与补算端点同一判定
+    assert result.computed == 0
+
+
+def test_submit_batch_approve_no_windows_marks_failed(svc):
+    adapter, service = svc
+    adapter.compute_return = {"event_id": 101, "assets": {}}  # 资产未初始化：什么都没算
+    result = service.submit_batch([ReviewRowCommand(draft_id=1, action="approve")])
+    assert result.results[0].compute_status == "failed"
+
+
 def test_submit_batch_unknown_action_defensive_row_failed(svc):
     adapter, service = svc
     result = service.submit_batch([ReviewRowCommand(draft_id=1, action="bogus")])
@@ -295,6 +398,13 @@ def test_compute_for_event_partial_errors_still_ok(svc):
         "assets": {"000001.SH": {"pre_event_5d": {"error": "x"}, "event_day": {"cumulative_abnormal_return": 0.1}}},
     }
     assert service.compute_for_event(7, operator="admin").status == "ok"
+
+
+def test_compute_for_event_no_windows_returns_failed(svc):
+    adapter, service = svc
+    adapter.compute_return = {"event_id": 7, "assets": {}}  # 资产未初始化：不误报成功
+    result = service.compute_for_event(7, operator="admin")
+    assert result.status == "failed" and "资产" in (result.message or "")
 
 
 # ==================== 影响草稿与确认 ====================

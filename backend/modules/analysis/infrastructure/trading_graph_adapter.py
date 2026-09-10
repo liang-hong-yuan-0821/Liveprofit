@@ -16,9 +16,17 @@ ProgressCallback = Callable[[str], None]
 
 
 class GraphPort(Protocol):
-    """AI 图最小契约：propagate(init_state, progress_callback) -> final_state。"""
+    """AI 图最小契约：propagate / rerun_from_node（单Agent重跑）。"""
 
     def propagate(self, init_state: dict, progress_callback: ProgressCallback) -> Any: ...
+
+    def rerun_from_node(
+        self,
+        init_state: dict,
+        checkpoint_state: dict,
+        node_id: str,
+        progress_callback: ProgressCallback,
+    ) -> Any: ...
 
 
 class TradingGraphAdapter:
@@ -31,10 +39,22 @@ class TradingGraphAdapter:
         self._graph_factory = graph_factory
         self._initial_state_factory = initial_state_factory or _default_initial_state
 
-    def execute(self, task: ClaimedTask, on_progress: ProgressCallback) -> Any:
-        """执行 AI 图；返回 final_state（Artifact 提取由 artifact_builder 完成）。"""
+    def execute(
+        self,
+        task: ClaimedTask,
+        on_progress: ProgressCallback,
+        rerun_from: str | None = None,
+    ) -> Any:
+        """执行 AI 图；返回 final_state（Artifact 提取由 artifact_builder 完成）。
+
+        判定依据 = rerun_from 参数（消息级触发源，不读 init_state/task 行）：
+        非 None → 走 rerun_from_node（checkpoint_state 由 initial_state_factory 注入）。
+        """
         graph = self._graph_factory(list(task.selected_layers))  # 每次新建，禁止跨任务复用
         init_state = self._initial_state_factory(task)
+        if rerun_from is not None:
+            checkpoint_state = init_state.pop("checkpoint_state")
+            return graph.rerun_from_node(init_state, checkpoint_state, rerun_from, on_progress)
         return graph.propagate(init_state, on_progress)
 
 

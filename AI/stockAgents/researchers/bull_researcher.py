@@ -7,6 +7,8 @@ LiveProfit 看涨研究员 (简化版)
 
 import logging
 
+from AI.utils.prompts import get_system_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +48,9 @@ def create_bull_researcher(llm, memory):
                 if isinstance(rec, str):
                     past_memory_str += rec + "\n\n"
 
-        prompt = f"""你是一位看涨分析师，负责为股票 {company_name}（{ticker}）建立强有力的看涨论证。
+        prompt = get_system_prompt(
+            state.get("_current_node_id"),
+            lambda: f"""你是一位看涨分析师，负责为股票 {company_name}（{ticker}）建立强有力的看涨论证。
 
 当前分析的是中国A股，所有价格和估值请使用 {currency}（{currency_symbol}）作为单位。
 在你的分析中，请始终使用公司名称"{company_name}"。
@@ -75,6 +79,7 @@ def create_bull_researcher(llm, memory):
 历史反思：{past_memory_str}
 
 请使用中文，以对话风格呈现你的看涨论点。"""
+        )
 
         response = llm.invoke(prompt)
         argument = f"Bull Analyst: {response.content}"

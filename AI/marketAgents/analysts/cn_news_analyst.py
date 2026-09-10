@@ -8,6 +8,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -41,44 +42,12 @@ def create_cn_news_analyst(llm, toolkit):
         output_format = load_output_format("market", "cn_news_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专注 A 股市场微观结构的分析师，聚焦资金日历事件对三个时间级别资金面的影响。\n\n"
-                + date_line + "\n"
-                "## 已获取的数据\n\n"
-                "### IPO日历\n{ipo_calendar}\n\n"
-                "### 限售股解禁日历\n{share_unlock}\n\n"
-                "### 期指/期权交割日\n{futures_expiry}\n\n"
-                "### 两融余额\n{margin_balance}\n\n"
-                "分析要点：\n"
-                "- 大盘 IPO/新股上市 → 打新资金抽血/虹吸效应，标注大市值新股\n"
-                "- 限售股解禁 → 潜在抛压来源，标注解禁市值规模\n"
-                "- 期货/期权交割日 → 到期日效应，警惕尾盘异常波动\n"
-                "- 两融余额变化 → 杠杆资金松紧信号\n"
-                "- 季节效应 → 季末排名调仓冲击、长假前避险效应\n"
-                "- 数据不可用时如实标注，不编造\n\n"
-                "三时间级别分析框架：\n\n"
-                "短线日历（未来 1-5 交易日）：\n"
-                "- 近 5 日 IPO 抽血强度（大市值新股数量）\n"
-                "- 近 5 日限售股解禁抛压（解禁市值规模）\n"
-                "- 期货/期权交割日临近程度\n"
-                "- 两融余额异动（单日大增/大减）\n"
-                "- 短线风险评级（高/中/低）+ 关键时点清单\n\n"
-                "波段日历（未来 1-4 周 ≈ 20 交易日）：\n"
-                "- 解禁高峰窗口（集中解禁期）\n"
-                "- 季报/年报披露窗口（业绩雷/惊喜）\n"
-                "- 重大政策会议/事件窗口\n"
-                "- 季末调仓冲击\n"
-                "- 波段风险评级（高/中/低）+ 关键窗口清单\n\n"
-                "长线日历（未来 1-3 月 ≈ 60 交易日）：\n"
-                "- 宏观数据发布窗口（CPI/PMI/社融等）\n"
-                "- 流动性政策预期（降准/降息窗口）\n"
-                "- 年报季/分红季\n"
-                "- 长线风险评级（高/中/低）+ 关键窗口清单\n\n"
-                "每个级别输出：事件密度（高/中/低）+ 资金面压力评分（1-5）\n\n"
-                "输出格式（结论前置）：\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:CN News Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

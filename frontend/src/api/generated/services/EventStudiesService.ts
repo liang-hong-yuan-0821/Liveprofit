@@ -11,6 +11,7 @@ import type { Envelope_ImpactDraftListData_ } from '../models/Envelope_ImpactDra
 import type { Envelope_PendingEventListData_ } from '../models/Envelope_PendingEventListData_';
 import type { Envelope_PredictionData_ } from '../models/Envelope_PredictionData_';
 import type { Envelope_PrelabelData_ } from '../models/Envelope_PrelabelData_';
+import type { Envelope_RefreshData_ } from '../models/Envelope_RefreshData_';
 import type { Envelope_ReviewBatchData_ } from '../models/Envelope_ReviewBatchData_';
 import type { PredictionRequest } from '../models/PredictionRequest';
 import type { PrelabelRequest } from '../models/PrelabelRequest';
@@ -77,6 +78,17 @@ export class EventStudiesService {
             errors: {
                 422: `Validation Error`,
             },
+        });
+    }
+    /**
+     * Refresh
+     * @returns Envelope_RefreshData_ Successful Response
+     * @throws ApiError
+     */
+    public static refreshApiV1EventStudiesReviewRefreshPost(): CancelablePromise<Envelope_RefreshData_> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/event-studies/review/refresh',
         });
     }
     /**

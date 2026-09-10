@@ -48,6 +48,13 @@ class PrelabelResult:
 
 
 @dataclass(frozen=True)
+class RefreshResult:
+    fetched: int  # 爬虫实际抓回条数（各源合并去重后）
+    new_drafts: int  # 新写入 Redis 待审草稿数（PG + Redis 标题去重后）
+    skipped_reason: str | None = None  # None=正常完成；"locked"=锁占用跳过；"failed"=采集/保存异常降级
+
+
+@dataclass(frozen=True)
 class ComputeResult:
     event_id: int
     status: str  # "ok" | "failed"

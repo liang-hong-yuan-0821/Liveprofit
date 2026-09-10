@@ -22,6 +22,9 @@ class TopologyNodeDTO(BaseModel):
     status: TopologyNodeStatus = Field(description='未执行/已执行/执行中/出错')
     invocation_count: int = Field(description="匹配到的节点日志目录数（LLM 目录 + 纯代码节点预测目录）")
     dirs: list[str] = Field(description='相对任务目录的节点目录路径，按名（seq）排序，如 ["stock/005_Bull_Researcher"]')
+    rerun_available: bool = Field(
+        default=False,
+        description="是否可从该节点重跑（终态任务且 attempt 链存在 entry checkpoint；screening 任务 stock 层恒 false）")
 
 
 class TopologyEdgeDTO(BaseModel):

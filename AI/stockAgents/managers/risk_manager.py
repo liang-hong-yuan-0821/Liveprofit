@@ -7,6 +7,7 @@ LiveProfit 风险经理 (简化版)
 
 import logging
 
+from AI.utils.prompts import get_system_prompt
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,9 @@ def create_risk_manager(llm, memory):
                 if isinstance(rec, str):
                     past_memory_str += rec + "\n\n"
 
-        prompt = f"""作为风险管理委员会主席，评估三位风险分析师（激进、中性、保守）之间的辩论，做出最终明确的三级别交易决策：买入、卖出或持有。
+        prompt = get_system_prompt(
+            state.get("_current_node_id"),
+            lambda: f"""作为风险管理委员会主席，评估三位风险分析师（激进、中性、保守）之间的辩论，做出最终明确的三级别交易决策：买入、卖出或持有。
 
 大盘与板块环境（来自市场层+板块层分析）：
 {cross_ctx}
@@ -71,6 +74,7 @@ def create_risk_manager(llm, memory):
 {trader_plan}
 
 请用中文撰写最终决策，包含明确建议（波段为主）、止损止盈位、三级别风险提示。"""
+        )
 
         response = llm.invoke(prompt)
         response_content = response.content

@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -28,23 +29,16 @@ def create_social_media_analyst(llm, toolkit):
 
         company_name = _get_company_name(ticker)
 
+        date_line = f"分析日期：{current_date}\n"
         output_format = load_output_format("stock", "social_media_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专业的市场情绪分析师。\n\n"
-                "分析对象：{company_name}（{ticker}），{market_name}\n"
-                "分析日期：{current_date}\n"
-                "{instrument_context}\n\n"
-                "注意：当前系统仅支持 Tushare 数据源，暂无专门的社交媒体情绪数据接口。\n"
-                "请基于以下可用信息进行综合情绪评估：\n"
-                "1. 如果当前状态中有市场报告、新闻报告、基本面报告，请从中提取市场情绪信号\n"
-                "2. 分析成交量变化、涨跌幅、换手率等指标反映的市场情绪\n"
-                "3. 从新闻标题和内容中判断舆论倾向\n\n"
-                "输出格式：\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["stock:Social Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

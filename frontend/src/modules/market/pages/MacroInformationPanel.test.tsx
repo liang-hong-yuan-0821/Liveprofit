@@ -59,7 +59,7 @@ describe('MacroInformationPanel', () => {
     expect(screen.getByText(/研究状态：已审核/)).toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: '宏观事件标题' });
-    expect(link).toHaveAttribute('href', '/ai/event-study?event_id=101');
+    expect(link).toHaveAttribute('href', '/event-study?event_id=101');
   });
 
   it('无 event_id 时跳转事件研究不携带参数', async () => {
@@ -67,7 +67,7 @@ describe('MacroInformationPanel', () => {
     renderWithRouter(<MacroInformationPanel />);
 
     expect(await screen.findByText('宏观事件标题')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '宏观事件标题' })).toHaveAttribute('href', '/ai/event-study');
+    expect(screen.getByRole('link', { name: '宏观事件标题' })).toHaveAttribute('href', '/event-study');
   });
 
   it('market/topic 筛选以服务端参数刷新', async () => {

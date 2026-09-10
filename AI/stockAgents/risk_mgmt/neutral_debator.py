@@ -5,6 +5,8 @@ LiveProfit 中性风险分析师 (简化版)
 
 import logging
 
+from AI.utils.prompts import get_system_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,9 @@ def create_neutral_debator(llm):
         from AI.stockAgents.utils.agent_utils import build_cross_layer_context
         cross_ctx = build_cross_layer_context(state)
 
-        prompt = f"""作为中性风险分析师，你的角色是提供平衡的视角，权衡交易员决策的潜在收益和风险。
+        prompt = get_system_prompt(
+            state.get("_current_node_id"),
+            lambda: f"""作为中性风险分析师，你的角色是提供平衡的视角，权衡交易员决策的潜在收益和风险。
 
 大盘与板块环境（来自市场层+板块层分析）：
 {cross_ctx}
@@ -49,6 +53,7 @@ def create_neutral_debator(llm):
 
 如果其他观点没有回应，请不要虚构，只需提出你的观点。
 请用中文以对话方式输出，批判性地分析双方，倡导更平衡的方法。"""
+        )
 
         response = llm.invoke(prompt)
         argument = f"Neutral Analyst: {response.content}"

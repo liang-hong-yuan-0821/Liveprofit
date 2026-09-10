@@ -1,6 +1,5 @@
 import { Link } from 'react-router';
 import { ErrorState } from '../../../../shared/feedback/ErrorState';
-import { EmptyState } from '../../../../shared/feedback/EmptyState';
 import { LoadingState } from '../../../../shared/feedback/LoadingState';
 import { Badge } from '../../../../shared/ui/badge';
 import { Button } from '../../../../shared/ui/button';
@@ -18,7 +17,21 @@ export function ActiveTasksPanel() {
   if (query.isError) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
   const items = query.data;
-  if (!items || items.length === 0) return <EmptyState title="当前没有进行中的任务" />;
+  // 空态也保留卡片占位，保持三列布局完整
+  if (!items || items.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>进行中</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="py-4 text-center text-sm" style={{ color: 'var(--color-fg-muted)' }}>
+            无进行中任务
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

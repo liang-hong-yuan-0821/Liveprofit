@@ -13,6 +13,7 @@ vi.mock('../../../../api/generated/services/EventStudiesService', () => ({
     computeApiV1EventStudiesReviewEventsEventIdComputePost: vi.fn(),
     listImpactDraftsApiV1EventStudiesReviewImpactDraftsGet: vi.fn(),
     confirmImpactsApiV1EventStudiesReviewImpactDraftsEventIdConfirmPost: vi.fn(),
+    refreshApiV1EventStudiesReviewRefreshPost: vi.fn(),
   },
 }));
 
@@ -23,6 +24,7 @@ const prelabelMock = EventStudiesService.prelabelApiV1EventStudiesReviewPrelabel
 const batchMock = EventStudiesService.submitBatchApiV1EventStudiesReviewBatchPost as Mock;
 const computeMock = EventStudiesService.computeApiV1EventStudiesReviewEventsEventIdComputePost as Mock;
 const impactMock = EventStudiesService.listImpactDraftsApiV1EventStudiesReviewImpactDraftsGet as Mock;
+const refreshMock = EventStudiesService.refreshApiV1EventStudiesReviewRefreshPost as Mock;
 
 function envelope(data: unknown) {
   return { data, meta: { request_id: 'r', schema_version: 'v1' } };
@@ -57,10 +59,14 @@ function setupPending(items: unknown[], options: { items?: unknown[] } = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
+  // 默认：拉取完成但无新草稿——挂载自动拉取不触发预填，不干扰既有用例
+  refreshMock.mockResolvedValue(envelope({ fetched: 0, new_drafts: 0, skipped_reason: null }));
 });
 
 afterEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
 });
 
 describe('PendingEventsTab', () => {
@@ -187,5 +193,66 @@ describe('PendingEventsTab', () => {
     await user.click(screen.getByRole('button', { name: '🤖 AI 预填全部待审事件' }));
     expect(await screen.findByText(/LLM 不可用或全部预填失败，已停止/)).toBeInTheDocument();
     expect(prelabelMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('挂载自动拉取：新增事件后自动 AI 预填', async () => {
+    refreshMock.mockResolvedValue(envelope({ fetched: 2, new_drafts: 2, skipped_reason: null }));
+    prelabelMock.mockResolvedValue(envelope({ prelabeled: 2, remaining: 0 }));
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    expect(await screen.findByText('新增 2 条事件，开始 AI 预填…')).toBeInTheDocument();
+    expect(await screen.findByText('已预填 2 条')).toBeInTheDocument();
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(prelabelMock).toHaveBeenCalledTimes(1);
+    // 预填后列表已刷新（invalidate 触发 pending-events 重新请求）
+    await waitFor(() => expect(pendingMock.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  it('30 分钟内重复进入不自动拉取（sessionStorage 节流）', async () => {
+    sessionStorage.setItem('eventStudyReview.lastAutoRefresh', String(Date.now()));
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    await waitFor(() => expect(pendingMock).toHaveBeenCalled());
+    expect(refreshMock).not.toHaveBeenCalled();
+  });
+
+  it('手动刷新按钮不受节流限制', async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem('eventStudyReview.lastAutoRefresh', String(Date.now()));
+    refreshMock.mockResolvedValue(envelope({ fetched: 3, new_drafts: 1, skipped_reason: null }));
+    prelabelMock.mockResolvedValue(envelope({ prelabeled: 1, remaining: 0 }));
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    expect(refreshMock).not.toHaveBeenCalled(); // 挂载自动被节流跳过
+
+    await user.click(screen.getByRole('button', { name: '🔄 重新拉取最新事件' }));
+    expect(await screen.findByText('新增 1 条事件，开始 AI 预填…')).toBeInTheDocument();
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('拉取请求失败：提示可重试，不触发预填', async () => {
+    refreshMock.mockRejectedValue(
+      new ApiError({ code: 'INTERNAL_ERROR', message: '服务不可用', retryable: false, status: 500 }),
+    );
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    expect(await screen.findByText(/拉取失败：服务不可用/)).toBeInTheDocument();
+    expect(prelabelMock).not.toHaveBeenCalled();
+  });
+
+  it('锁占用降级：提示拉取进行中且不预填', async () => {
+    refreshMock.mockResolvedValue(envelope({ fetched: 0, new_drafts: 0, skipped_reason: 'locked' }));
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    expect(await screen.findByText('已有拉取正在进行中，本次跳过')).toBeInTheDocument();
+    expect(prelabelMock).not.toHaveBeenCalled();
+  });
+
+  it('拉取降级失败：提示稍后重试且不预填', async () => {
+    refreshMock.mockResolvedValue(envelope({ fetched: 0, new_drafts: 0, skipped_reason: 'failed' }));
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    expect(await screen.findByText('拉取失败，可稍后重试')).toBeInTheDocument();
+    expect(prelabelMock).not.toHaveBeenCalled();
   });
 });

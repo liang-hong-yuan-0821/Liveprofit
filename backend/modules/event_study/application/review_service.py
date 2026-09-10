@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 
 from backend.modules.event_study.application.review_contracts import (
     ConfirmImpactsResult,
@@ -19,6 +20,7 @@ from backend.modules.event_study.application.review_contracts import (
     ImpactDraftDTO,
     PendingEventDTO,
     PrelabelResult,
+    RefreshResult,
     ReviewBatchResult,
     ReviewRowCommand,
     ReviewRowResult,
@@ -34,6 +36,9 @@ logger = logging.getLogger(__name__)
 
 _ROW_ERROR_DRAFT_NOT_FOUND = "REVIEW_DRAFT_NOT_FOUND"
 _ROW_ERROR_FAILED = "REVIEW_ROW_FAILED"  # 行级信息码：不抛 HTTP、不进 _CODE_MAP
+
+_REFRESH_LOCK_KEY = "events:refresh_lock"
+_REFRESH_LOCK_TTL_MS = 120_000  # 覆盖启用源串行抓取最坏 ~75s（财联社 v1 失败回退 nodeapi）+ 去重扫描
 
 
 class EventStudyReviewService:
@@ -71,6 +76,32 @@ class EventStudyReviewService:
         # remaining = 执行后重新列草稿、仍无建议的数量（前端循环收敛依据）
         remaining = sum(1 for d in self._adapter.list_pending_events() if not d.get("ai_suggestions"))
         return PrelabelResult(prelabeled=prelabeled, remaining=remaining)
+
+    def refresh_events(self) -> RefreshResult:
+        """采集各源最新事件写入待审草稿（审核页自动拉取）。
+
+        失败语义：Redis 不可用 → 抛 503（与其余端点一致）；锁占用 →
+        skipped_reason="locked"（另一拉取进行中，幂等跳过）；抓取/保存异常 →
+        记 warning skipped_reason="failed"（列表仍可用）；正常完成 → None。
+        """
+        self._require_redis()
+        token = uuid.uuid4().hex  # 每次调用独立 token：释放时 Lua 比对，防误删后继持锁方
+        if not self._adapter.try_acquire_refresh_lock(_REFRESH_LOCK_KEY, token, _REFRESH_LOCK_TTL_MS):
+            logger.info("最新事件拉取进行中（锁占用），本次跳过")
+            return RefreshResult(fetched=0, new_drafts=0, skipped_reason="locked")
+        try:
+            events = self._adapter.fetch_latest_events()
+            conn = self._adapter.open_connection()
+            try:
+                new_ids = self._adapter.save_pending_events(events, conn=conn)
+            finally:
+                conn.close()
+            return RefreshResult(fetched=len(events), new_drafts=len(new_ids))
+        except Exception as e:
+            logger.warning("最新事件拉取失败: %s", e)
+            return RefreshResult(fetched=0, new_drafts=0, skipped_reason="failed")
+        finally:
+            self._adapter.release_refresh_lock(_REFRESH_LOCK_KEY, token)
 
     # ==================== 批量提交 ====================
 

@@ -12,6 +12,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -69,27 +70,12 @@ def create_international_news_analyst(llm, toolkit):
         output_format = load_output_format("market", "international_news_analyst")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位资深国际宏观策略分析师，专注于分析宏观事件的市场影响。\n\n"
-                + date_line + "\n"
-                "## 上游事件提取结果（含历史案例）\n"
-                "{event_report}\n\n"
-                "## 事件研究系统：历史相似事件影响数据\n"
-                "{event_study_data}\n\n"
-                "任务：基于上述事件提取结果，分析事件对全球金融市场的传导链条和系统性风险。\n\n"
-                "分析要求：\n"
-                "- 完整传导链条：事件 → 中间变量（利率/汇率/大宗商品）→ 受影响行业方向\n"
-                "- 必须考虑存量资金下的'逻辑利好 vs 资金利空'背离（资金虹吸/跷跷板效应）\n"
-                "- 历史案例类比需给出相似度 + 当时市场反应 + 对当下的参考意义\n"
-                "- 事件研究系统数据为历史相似事件对 A 股指数的统计影响（平均 CAR/胜率/"
-                "加权预测），可作定量参考；事件库暂无相似结果时按自身知识继续分析，不阻塞报告\n"
-                "- 明确标注系统性风险等级（低/中/高）和流动性危机信号\n"
-                "- 数据不可用时如实标注，不编造\n"
-                "- ⚠️ 宏观事件解读属于定性分析，应明确标注'基于公开信息的方向性判断，不构成投资建议'\n\n"
-                "输出格式（结论前置）：\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:International News Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

@@ -38,6 +38,10 @@ export type TopologyNodeDTO = {
      * 相对任务目录的节点目录路径，按名（seq）排序，如 ["stock/005_Bull_Researcher"]
      */
     dirs: Array<string>;
+    /**
+     * 是否可从该节点重跑（终态任务且 attempt 链存在 entry checkpoint；screening 任务 stock 层恒 false）
+     */
+    rerun_available?: boolean;
 };
 export namespace TopologyNodeDTO {
     /**

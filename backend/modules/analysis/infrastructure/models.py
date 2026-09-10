@@ -17,6 +17,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -56,6 +57,9 @@ class AnalysisTask(Base, TimestampMixin):
     config_snapshot: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # 脱敏 hash
     core_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
+    # 单Agent重跑：当前 attempt 为重跑时记录起点节点 id（仅展示；触发源为消息级参数）
+    rerun_from_node_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -66,6 +70,15 @@ class AnalysisTask(Base, TimestampMixin):
         # 列表 keyset 分页排序：updated_at DESC, id DESC
         Index("ix_analysis_tasks_updated_id", "updated_at", "id"),
     )
+
+
+class AgentPromptOverride(Base, TimestampMixin):
+    """Agent 提示词覆盖（单Agent重跑与提示词编辑方案 2.1.1）。"""
+
+    __tablename__ = "agent_prompt_overrides"
+
+    node_id: Mapped[str] = mapped_column(String(64), primary_key=True)  # 拓扑节点 id，如 "market:CN News Analyst"
+    prompt_text: Mapped[str] = mapped_column(Text, nullable=False)  # 覆盖提示词全文（原样生效，不做插值）
 
 
 class TaskOutbox(Base, TimestampMixin):

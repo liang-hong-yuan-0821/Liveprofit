@@ -125,7 +125,7 @@ class AnalysisExecutor:
         self._sequence = 0
         self._cancel_flag = False
 
-    def execute(self, claimed: ClaimedTask) -> None:
+    def execute(self, claimed: ClaimedTask, rerun_from: str | None = None) -> None:
         self._claimed = claimed
         with self._bundles.open() as bundle:
             bundle.events.publish(
@@ -144,16 +144,16 @@ class AnalysisExecutor:
         )
         heartbeat.start()
         try:
-            self._run_graph(claimed)
+            self._run_graph(claimed, rerun_from=rerun_from)
         finally:
             heartbeat.stop()
             heartbeat.join(timeout=self._heartbeat_interval * 2 + 5)
 
     # ---- 内部流程 ----
 
-    def _run_graph(self, claimed: ClaimedTask) -> None:
+    def _run_graph(self, claimed: ClaimedTask, rerun_from: str | None = None) -> None:
         try:
-            final_state = self._adapter.execute(claimed, self._on_progress)
+            final_state = self._adapter.execute(claimed, self._on_progress, rerun_from=rerun_from)
         except CooperativeCancelledError:
             return  # 回调中已完成 mark_cancelled
         except FencingLostError:

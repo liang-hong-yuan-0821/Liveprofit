@@ -21,6 +21,7 @@ from backend.api.schemas.event_study_review import (
     PendingEventListData,
     PrelabelData,
     PrelabelRequest,
+    RefreshData,
     ReviewBatchData,
     ReviewBatchRequest,
     ReviewRowResult,
@@ -51,6 +52,16 @@ async def prelabel(payload: PrelabelRequest, request: Request, trace_id: str = D
     service = _service(request)
     result = await request.app.state.analysis_services.run(lambda: service.prelabel(payload.limit))
     data = PrelabelData(prelabeled=result.prelabeled, remaining=result.remaining)
+    return Envelope(data=data, meta=_meta(request)).model_dump()
+
+
+@router.post("/refresh", response_model=Envelope[RefreshData])
+async def refresh(request: Request, trace_id: str = Depends(ensure_trace_context)):
+    service = _service(request)
+    result = await request.app.state.analysis_services.run(service.refresh_events)
+    data = RefreshData(
+        fetched=result.fetched, new_drafts=result.new_drafts, skipped_reason=result.skipped_reason
+    )
     return Envelope(data=data, meta=_meta(request)).model_dump()
 
 

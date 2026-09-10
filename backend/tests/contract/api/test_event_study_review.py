@@ -111,10 +111,21 @@ def _review_test_env(client, monkeypatch):
         conn.execute(text("TRUNCATE events, event_impacts"))
     engine.dispose()
 
-    # 默认替身：批量 approve 触发的影响计算不跑真实 OLS；用例内可再次 monkeypatch 覆盖
+    # 默认替身：批量 approve 触发的影响计算不跑真实 OLS；含一个正常窗口使折叠判定为 ok
+    # （全 error / 空 assets 的折叠语义由专用用例另行 monkeypatch 覆盖）
     monkeypatch.setattr(
         "AI.eventStudy.processing.event_study.compute_all_windows",
-        lambda conn, event_id: {"event_id": event_id, "assets": {}},
+        lambda conn, event_id: {
+            "event_id": event_id,
+            "assets": {
+                "000001.SH": {
+                    "event_day": {
+                        "window_days": 1, "cumulative_abnormal_return": 0.0,
+                        "t_stat": 0.0, "direction": 0, "is_contaminated": False,
+                    },
+                },
+            },
+        },
     )
     yield
 
@@ -466,3 +477,113 @@ def test_validation_errors(client):
     # limit 越界
     resp = client.http.post("/api/v1/event-studies/review/prelabel", json={"limit": 201})
     assert resp.status_code == 422
+
+
+# ==================== 12. 最新事件拉取 ====================
+
+def _refresh_events_fixture() -> list[dict]:
+    return [
+        {
+            "title": "央行宣布降准0.5个百分点",
+            "content": "央行决定下调金融机构存款准备金率0.5个百分点",
+            "source_url": "https://www.cls.cn/detail/9001",
+            "announced_at": "2026-09-08T09:00:00+08:00",
+            "importance_hint": 5,
+            "source": "财联社电报",
+        },
+        {
+            "title": "9月LPR报价维持不变",
+            "content": "1年期LPR为3.1%",
+            "source_url": "https://www.jin10.com/flash/9002",
+            "announced_at": "2026-09-08T09:30:00+08:00",
+            "importance_hint": 4,
+            "source": "金十数据",
+        },
+    ]
+
+
+def test_refresh_fetches_and_writes_drafts(client, monkeypatch):
+    monkeypatch.setattr(
+        "AI.eventStudy.collectors.event_crawler.fetch_events_from_crawler",
+        _refresh_events_fixture,
+    )
+    resp = client.http.post("/api/v1/event-studies/review/refresh")
+    assert resp.status_code == 200
+    assert resp.json()["data"] == {"fetched": 2, "new_drafts": 2, "skipped_reason": None}
+    # 草稿入列，pending-events 可见，announced_at 降序
+    items = client.http.get("/api/v1/event-studies/review/pending-events").json()["data"]["items"]
+    assert [i["title"] for i in items] == ["9月LPR报价维持不变", "央行宣布降准0.5个百分点"]
+    assert items[0]["source"] == "金十数据" and items[1]["importance_hint"] == 5
+    # 锁已释放（未残留 events:refresh_lock）
+    assert client.redis.exists("events:refresh_lock") == 0
+
+
+def test_refresh_second_run_dedups_by_title(client, monkeypatch):
+    monkeypatch.setattr(
+        "AI.eventStudy.collectors.event_crawler.fetch_events_from_crawler",
+        _refresh_events_fixture,
+    )
+    first = client.http.post("/api/v1/event-studies/review/refresh").json()["data"]
+    assert first == {"fetched": 2, "new_drafts": 2, "skipped_reason": None}
+    second = client.http.post("/api/v1/event-studies/review/refresh").json()["data"]
+    assert second == {"fetched": 2, "new_drafts": 0, "skipped_reason": None}  # Redis 草稿标题去重
+    items = client.http.get("/api/v1/event-studies/review/pending-events").json()["data"]["items"]
+    assert len(items) == 2  # 无重复草稿
+
+
+def test_refresh_lock_held_skips_with_reason(client, monkeypatch):
+    from AI.eventStudy.collectors import config as es_config
+
+    monkeypatch.setattr(
+        "AI.eventStudy.collectors.event_crawler.fetch_events_from_crawler",
+        _refresh_events_fixture,
+    )
+    es_config.get_redis_client().set("events:refresh_lock", "1")
+    resp = client.http.post("/api/v1/event-studies/review/refresh")
+    assert resp.status_code == 200
+    assert resp.json()["data"] == {"fetched": 0, "new_drafts": 0, "skipped_reason": "locked"}
+    # 锁占用时未执行采集：无新草稿入列；预置锁未被误删（未持锁不释放）
+    pending = client.http.get("/api/v1/event-studies/review/pending-events").json()["data"]["items"]
+    assert pending == []
+    assert es_config.get_redis_client().exists("events:refresh_lock") == 1
+    # 删锁后恢复正常
+    es_config.get_redis_client().delete("events:refresh_lock")
+    resp2 = client.http.post("/api/v1/event-studies/review/refresh")
+    assert resp2.json()["data"]["new_drafts"] == 2
+
+
+def test_refresh_fetch_error_degrades_and_releases_lock(client, monkeypatch):
+    from AI.eventStudy.collectors import config as es_config
+
+    def _boom():
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr("AI.eventStudy.collectors.event_crawler.fetch_events_from_crawler", _boom)
+    resp = client.http.post("/api/v1/event-studies/review/refresh")
+    assert resp.status_code == 200  # 降级不 500
+    assert resp.json()["data"] == {"fetched": 0, "new_drafts": 0, "skipped_reason": "failed"}
+    # 锁已释放：后续可正常拉取
+    assert es_config.get_redis_client().exists("events:refresh_lock") == 0
+    monkeypatch.setattr(
+        "AI.eventStudy.collectors.event_crawler.fetch_events_from_crawler",
+        _refresh_events_fixture,
+    )
+    resp2 = client.http.post("/api/v1/event-studies/review/refresh")
+    assert resp2.json()["data"]["new_drafts"] == 2
+
+
+def test_refresh_lock_release_compares_token(client):
+    """释放走 Lua 比对删除：锁被他人持有（值不同）时不误删（防 TTL 过期误删后继锁）。"""
+    from AI.eventStudy.collectors import config as es_config
+
+    from backend.modules.event_study.infrastructure.review_adapter import EventStudyReviewAdapter
+
+    adapter = EventStudyReviewAdapter()
+    r = es_config.get_redis_client()  # decode_responses=True：get 返回 str
+    r.set("events:refresh_lock", "other-token")
+    # token 不符：Lua 比对失败，锁保留（前一次运行过期后不得误删后继持锁方）
+    adapter.release_refresh_lock("events:refresh_lock", "my-token")
+    assert r.get("events:refresh_lock") == "other-token"
+    # token 匹配：正常删除
+    adapter.release_refresh_lock("events:refresh_lock", "other-token")
+    assert r.exists("events:refresh_lock") == 0

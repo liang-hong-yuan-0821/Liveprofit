@@ -94,3 +94,49 @@ def test_topology_status_overlay(client, monkeypatch, tmp_path):
 def test_task_dto_contains_graph_topology_url(client):
     task = _create_task(client)
     assert task["graph_topology_url"] == f"/api/v1/analysis-tasks/{task['task_id']}/graph-topology"
+
+
+# ---------- rerun_available（单Agent重跑与提示词编辑方案 3.4） ----------
+
+def _to_terminal(client, task_id: str, status: str = "FAILED") -> None:
+    with client.http.app.state.analysis_services.open() as bundle:
+        ok = bundle.uow.tasks.conditional_update(
+            task_id, expect={"attempt_no": 1}, changes={"status": status})
+        bundle.uow.commit()
+        assert ok
+
+
+def _make_complete_attempt(root, task_id: str, attempt_no: int = 1) -> None:
+    run_dir = root / "tasks" / task_id / str(attempt_no)
+    (run_dir / "checkpoints" / "market").mkdir(parents=True)
+    (run_dir / "complete.json").write_text('{"completed_at": "x"}', encoding="utf-8")
+    (run_dir / "checkpoints" / "market" / "CN_News_Analyst.json").write_text(
+        '{"saved_at": "x", "node_id": "market:CN News Analyst", "state": {"messages": []}}',
+        encoding="utf-8",
+    )
+
+
+def test_rerun_available_false_for_non_terminal(client):
+    task = _create_task(client)
+    response = client.http.get(f"/api/v1/analysis-tasks/{task['task_id']}/graph-topology")
+    assert response.status_code == 200
+    assert all(n["rerun_available"] is False for n in response.json()["data"]["nodes"])
+
+
+def test_rerun_available_true_when_entry_exists_false_without(client, monkeypatch, tmp_path):
+    """终态任务：有 entry checkpoint 的节点 true；无（旧 attempt）全 false。"""
+    task = _create_task(client)
+    _to_terminal(client, task["task_id"], "FAILED")
+    _point_logs_root(client, monkeypatch, tmp_path)
+
+    # 无 attempt 目录 → 全 false
+    response = client.http.get(f"/api/v1/analysis-tasks/{task['task_id']}/graph-topology")
+    assert all(n["rerun_available"] is False for n in response.json()["data"]["nodes"])
+
+    # 完整 attempt 目录：CN Tech 前驱（CN News cp）存在 → CN Tech true
+    _make_complete_attempt(tmp_path, task["task_id"], attempt_no=1)
+    response = client.http.get(f"/api/v1/analysis-tasks/{task['task_id']}/graph-topology")
+    by_id = {n["id"]: n["rerun_available"] for n in response.json()["data"]["nodes"]}
+    assert by_id["market:CN Tech Analyst"] is True
+    # 首节点无前驱且无 __init__.json → false
+    assert by_id["market:International Event Extraction Analyst"] is False

@@ -18,6 +18,10 @@ export type TaskDTO = {
     created_at: string;
     updated_at: string;
     /**
+     * 当前 attempt 为重跑时记录起点节点 id（仅展示，触发源为消息级参数）；普通执行 null
+     */
+    rerun_from_node_id: (string | null);
+    /**
      * 恒等于 /api/v1/analysis-tasks/{id}/events
      */
     events_url: string;

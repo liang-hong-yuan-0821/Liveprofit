@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
 from AI.dataflows import interface as dataflow
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -46,24 +47,12 @@ def create_international_event_extraction(llm, toolkit):
 
         # 2. 第一次 LLM：识别重大事件
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位资深国际宏观策略分析师，专注于从宏观数据中识别重大事件。\n\n"
-                + date_line + "\n"
-                "## 已获取的数据\n\n"
-                "### 全球宏观新闻\n{macro_news}\n\n"
-                "### 央行利率决议日历\n{central_bank}\n\n"
-                "### 宏观经济指标\n{macro_indicators}\n\n"
-                "### 大宗商品与汇率概览\n{commodity_fx}\n\n"
-                "任务：\n"
-                "1. 识别当前最重要的宏观事件（3-5个）\n"
-                "2. 对每个事件，给出：事件名称、事件类型（央行政策/地缘政治/经济数据/商品价格/其他）、"
-                "一句话事件描述、利好/利空/中性判断、影响方向\n"
-                "3. 在报告末尾，输出一个【事件描述摘要】块，包含所有事件的简洁关键词描述"
-                "（用于检索相似历史案例，每行一个事件）\n\n"
-                "输出格式：\n"
-                + fmt1
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:International Event Extraction Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", fmt1),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

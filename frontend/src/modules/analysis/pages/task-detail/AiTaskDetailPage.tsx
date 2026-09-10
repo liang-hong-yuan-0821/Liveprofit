@@ -17,7 +17,8 @@ import { ExecutionLogsPanel } from './ExecutionLogsPanel';
 import { ReportContent } from './ReportContent';
 import { toReportViewModel } from './reportMappers/toReportViewModels';
 import { canonicalEventsUrl, useTaskEvents } from './useTaskEvents';
-import { isTerminalStatus, useCancelTaskMutation, useDeleteTaskMutation, useReportQuery, useTaskQuery } from './queries';
+import { isTerminalStatus, useCancelTaskMutation, useDeleteTaskMutation, useReportQuery, useRerunTaskMutation, useTaskQuery } from './queries';
+import { PromptEditDialog } from '../../components/PromptEditDialog';
 
 // 任务详情：运行中任务的唯一 canonical URL，成功任务阅读最新结构化报告的唯一页面。
 // 严格顺序：GET Task → 404 只显示资源不存在页；非终态且 events_url 满足 canonical 规则
@@ -43,7 +44,11 @@ export default function AiTaskDetailPage() {
   const reportQuery = useReportQuery(taskId, task?.status === 'SUCCEEDED');
   const cancelMutation = useCancelTaskMutation(taskId);
   const deleteMutation = useDeleteTaskMutation(taskId);
+  const rerunMutation = useRerunTaskMutation(taskId);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  // 单Agent重跑与提示词编辑（方案 3.6）：节点弹窗内两动作的状态
+  const [editPromptNode, setEditPromptNode] = useState<{ node_id: string; label: string } | null>(null);
+  const [rerunConfirmNodeId, setRerunConfirmNodeId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // 收到 completed/failed/cancelled 业务帧 → 立即失效 Task Query（REST 终态收口并关闭流）
@@ -151,9 +156,45 @@ export default function AiTaskDetailPage() {
         </>
       )}
 
-      <GraphTopologyPanel taskId={taskId} terminal={terminal} taskFailed={task.status === 'FAILED'} />
+      <GraphTopologyPanel
+        taskId={taskId}
+        terminal={terminal}
+        taskFailed={task.status === 'FAILED'}
+        taskType={task.task_type}
+        onEditPrompt={(nodeId) => {
+          if (nodeId.startsWith('screening:')) return; // 纯代码节点无可编辑提示词（同 Agent 页守卫）
+          const node = { node_id: nodeId, label: nodeId.split(':')[1] ?? nodeId };
+          setEditPromptNode(node);
+        }}
+        onRerun={(nodeId) => setRerunConfirmNodeId(nodeId)}
+        rerunPending={rerunMutation.isPending}
+      />
 
       <ExecutionLogsPanel taskId={taskId} terminal={terminal} />
+
+      {/* 节点弹窗动作：编辑提示词（全局覆盖，对新建任务生效）+ 重跑确认 */}
+      <PromptEditDialog
+        node={editPromptNode}
+        onClose={() => setEditPromptNode(null)}
+        contextNote="对本次任务不生效"
+      />
+      <ConfirmDialog
+        open={rerunConfirmNodeId !== null}
+        title="重跑此Agent"
+        description={`将重新执行该节点及全部下游分析并重新生成报告（上游复用上次结果）`}
+        confirmLabel="开始重跑"
+        pending={rerunMutation.isPending}
+        error={rerunMutation.isError ? toApiError(rerunMutation.error).message : null}
+        onConfirm={() => {
+          // 失败保持弹窗打开展示错误（服务端 409/404 兜底）；成功才关闭
+          if (rerunConfirmNodeId) {
+            rerunMutation.mutate(rerunConfirmNodeId, {
+              onSuccess: () => setRerunConfirmNodeId(null),
+            });
+          }
+        }}
+        onCancel={() => setRerunConfirmNodeId(null)}
+      />
 
       {task.status === 'SUCCEEDED' && (
         <section id="report" ref={reportSectionRef}>

@@ -33,15 +33,19 @@ def _ensure_configured():
 
 
 @dramatiq.actor(actor_name="analysis_task", max_retries=0)
-def analysis_task_actor(task_id: str, attempt_no: int) -> None:
-    """Dramatiq 入口：只消费消息；执行编排在 run_analysis_task。"""
-    run_analysis_task(task_id, attempt_no)
+def analysis_task_actor(task_id: str, attempt_no: int, rerun_from: str | None = None) -> None:
+    """Dramatiq 入口：只消费消息；执行编排在 run_analysis_task。
+
+    rerun_from：单Agent重跑起点节点 id（消息级触发源；None=全图执行）。
+    """
+    run_analysis_task(task_id, attempt_no, rerun_from=rerun_from)
 
 
 def run_analysis_task(
     task_id: str,
     attempt_no: int,
     *,
+    rerun_from: str | None = None,
     bundle_factory=None,
     executor: AnalysisExecutor | None = None,
 ) -> None:
@@ -53,7 +57,8 @@ def run_analysis_task(
 
     task_uuid = uuid.UUID(task_id)
     with bundles.open() as bundle:
-        claimed = bundle.tasks.claim_for_execution(task_uuid, attempt_no, worker_id=worker_id())
+        claimed = bundle.tasks.claim_for_execution(
+            task_uuid, attempt_no, worker_id=worker_id(), rerun_from=rerun_from)
     if claimed is None:
         # 重复消息、过期 attempt 或已终态：安全退出（幂等由条件领取保证）
         logger.info("领取失败（重复/过期/终态），安全退出：task=%s attempt=%s", task_id, attempt_no)
@@ -64,5 +69,5 @@ def run_analysis_task(
 
         executor = get_worker_executor()
 
-    executor.execute(claimed)
+    executor.execute(claimed, rerun_from=rerun_from)
     logger.info("分析任务执行收口完成：task=%s attempt=%s", task_id, attempt_no)

@@ -84,7 +84,7 @@ export function MacroInformationPanel() {
               <Card>
                 <CardContent>
                   <Link
-                    to={item.event_id !== null ? `/ai/event-study?event_id=${item.event_id}` : '/ai/event-study'}
+                    to={item.event_id !== null ? `/event-study?event_id=${item.event_id}` : '/event-study'}
                     state={
                       item.event_id !== null
                         ? {

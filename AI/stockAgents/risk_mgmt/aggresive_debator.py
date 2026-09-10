@@ -5,6 +5,8 @@ LiveProfit 激进风险分析师 (简化版)
 
 import logging
 
+from AI.utils.prompts import get_system_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,9 @@ def create_risky_debator(llm):
         from AI.stockAgents.utils.agent_utils import build_cross_layer_context
         cross_ctx = build_cross_layer_context(state)
 
-        prompt = f"""作为激进风险分析师，你的职责是积极倡导高回报、高风险的投资机会，强调大胆策略和竞争优势。
+        prompt = get_system_prompt(
+            state.get("_current_node_id"),
+            lambda: f"""作为激进风险分析师，你的职责是积极倡导高回报、高风险的投资机会，强调大胆策略和竞争优势。
 
 在评估交易员的决策时，请重点关注潜在的上涨空间、增长潜力和创新收益。
 
@@ -51,6 +55,7 @@ def create_risky_debator(llm):
 
 如果其他观点没有回应，请不要虚构，只需提出你的观点。
 请用中文以对话方式输出，专注于辩论和说服，而不仅仅是呈现数据。"""
+        )
 
         response = llm.invoke(prompt)
         argument = f"Risky Analyst: {response.content}"

@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, TypeVar
 
 from backend.bootstrap.container import ApiContainer
+from backend.modules.analysis.application.agent_prompts import AgentPromptService
 from backend.modules.analysis.application.reporting import ReportService
 from backend.modules.analysis.application.task_events import TaskEventService
 from backend.modules.analysis.application.task_lifecycle import TaskService
@@ -44,6 +45,7 @@ class ApiAnalysisBundle:
             retry=self._container.settings.core,
         )
         self.reports = ReportService(clock=clock)
+        self.prompts = AgentPromptService(self._uow, clock=clock)
         self.uow = self._uow
         return self
 

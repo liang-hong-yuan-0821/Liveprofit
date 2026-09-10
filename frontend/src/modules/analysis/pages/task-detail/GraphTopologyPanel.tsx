@@ -7,17 +7,14 @@ import { LoadingState } from '../../../../shared/feedback/LoadingState';
 import { toApiError } from '../../../../api/client';
 import { useGraphTopologyQuery } from './queries';
 import { NodeLogsDialog } from './NodeLogsDialog';
+import { buildTopologyChartOption, TOPOLOGY_Y_STEP } from '../../components/topologyChartOption';
 
 // 执行拓扑面板：echarts graph 展示静态图拓扑（三层 + 层内主节点）叠加本次运行状态。
 // 固定网格布局（row=层行、order=层内列），状态着色（灰/蓝/琥珀/红），
 // 点击节点打开 NodeLogsDialog（复用 execution-logs 同 query 缓存）。
 // 非终态由 useGraphTopologyQuery 每 5s 轮询，终态停止；taskFailed 且无节点级错误时
 // 显示任务级失败提示（错误可能发生在图外或首个 DP 调用前）。
-
-const X_STEP = 170;
-const Y_STEP = 120;
-const X_ORIGIN = 70; // 左侧留行标签宽度
-const Y_ORIGIN = 30;
+// option 构建复用共享构造器 topologyChartOption.ts（Agent 静态拓扑同源）。
 
 export const STATUS_META = {
   not_executed: { label: '未执行', color: '#475569' },
@@ -26,28 +23,27 @@ export const STATUS_META = {
   error: { label: '出错', color: '#ef4444' },
 } as const;
 
-const EDGE_COLOR = '#475569';
-const LABEL_COLOR = '#cbd5e1';
-const LAYER_LABELS: Record<string, string> = {
-  market: '市场层',
-  sector: '板块层',
-  stock: '个股层',
-  screening: '选股',
-};
-
 interface GraphTopologyPanelProps {
   taskId: string;
   terminal: boolean;
   taskFailed: boolean;
+  /** 任务类型（重跑不可用文案区分全市场逐票循环 vs 旧版本运行） */
+  taskType?: string;
+  /** 节点弹窗动作（单Agent重跑与提示词编辑方案 3.6）；不传则隐藏对应按钮 */
+  onEditPrompt?: (nodeId: string) => void;
+  onRerun?: (nodeId: string) => void;
+  rerunPending?: boolean;
 }
 
-// echarts 点击/悬停回调参数（graph 系列 node/edge 均含 data 载荷，只取需要的字段）
+// echarts 点击回调参数（graph 系列 node/edge 均含 data 载荷，只取需要的字段）
 interface TopologyChartParams {
   dataType?: string;
   data?: { id?: string; source?: string; target?: string };
 }
 
-export function GraphTopologyPanel({ taskId, terminal, taskFailed }: GraphTopologyPanelProps) {
+export function GraphTopologyPanel({
+  taskId, terminal, taskFailed, taskType, onEditPrompt, onRerun, rerunPending,
+}: GraphTopologyPanelProps) {
   const query = useGraphTopologyQuery(taskId, true, terminal);
   const data = query.data;
   // 只存选中节点 id：弹窗内容从最新 data 实时派生（5s 轮询/终态补拉后状态与 dirs
@@ -61,81 +57,32 @@ export function GraphTopologyPanel({ taskId, terminal, taskFailed }: GraphTopolo
   const height = useMemo(() => {
     if (!data || data.nodes.length === 0) return 240;
     const maxRow = Math.max(...data.nodes.map((n) => n.row));
-    return (maxRow + 1) * Y_STEP + 120;
+    return (maxRow + 1) * TOPOLOGY_Y_STEP + 120;
   }, [data]);
 
   const option = useMemo(() => {
     if (!data) return null;
-    const nodes = data.nodes.map((n) => ({
-      id: n.id,
-      name: n.id,
-      x: X_ORIGIN + n.order * X_STEP,
-      y: Y_ORIGIN + n.row * Y_STEP,
-      symbolSize: 16,
-      itemStyle: { color: STATUS_META[n.status].color },
-      label: {
-        show: true,
-        position: 'bottom' as const,
-        fontSize: 11,
-        color: LABEL_COLOR,
-        formatter: `${n.label}${n.invocation_count > 1 ? ` ×${n.invocation_count}` : ''}${
-          n.status === 'running' ? ' · 执行中' : ''
-        }`,
-      },
-    }));
-    const links = data.edges.map((e) => ({
-      source: e.source,
-      target: e.target,
-      lineStyle: {
-        color: EDGE_COLOR,
-        width: 1.5,
-        type: e.kind === 'direct' ? ('solid' as const) : ('dashed' as const),
-        curveness: e.parallel ? 0.25 : 0,
-      },
-      label: e.kind === 'loop' ? { show: true, formatter: '逐票循环', fontSize: 10, color: '#8b95a1' } : undefined,
-    }));
-    const rows = [...new Set(data.nodes.map((n) => n.row))].sort((a, b) => a - b);
-    const rowLayers = rows.map((row) => {
-      const sample = data.nodes.find((n) => n.row === row);
-      return { row, layer: sample?.layer ?? '' };
-    });
-    return {
-      backgroundColor: 'transparent',
-      series: [
-        {
-          type: 'graph',
-          layout: 'none',
-          data: nodes,
-          links,
-          edgeSymbol: ['none', 'arrow'],
-          edgeSymbolSize: 7,
-          emphasis: { focus: 'adjacency' },
-          // 注意：series 级 tooltip 会整体覆盖全局 tooltip（echarts 级联模型），
-          // 不得在此配置 show:false——悬停提示走顶层全局 tooltip
-        },
-      ],
-      graphic: rowLayers.map(({ row, layer }) => ({
-        type: 'text',
-        left: 0,
-        top: Y_ORIGIN + row * Y_STEP - 6,
-        style: { text: LAYER_LABELS[layer] ?? layer, fontSize: 12, fill: '#8b95a1', fontWeight: 'bold' },
+    return buildTopologyChartOption(
+      data.nodes.map((n) => ({
+        id: n.id,
+        label: n.label,
+        layer: n.layer,
+        row: n.row,
+        order: n.order,
+        color: STATUS_META[n.status].color,
+        labelExtra:
+          `${n.invocation_count > 1 ? ` ×${n.invocation_count}` : ''}${
+            n.status === 'running' ? ' · 执行中' : ''
+          }`,
       })),
-      tooltip: {
-        trigger: 'item',
-        confine: true,
-        formatter: (params: TopologyChartParams) => {
-          if (params.dataType === 'edge' && params.data?.source && params.data?.target) {
-            return `${params.data.source} → ${params.data.target}`;
-          }
-          if (params.dataType !== 'node' || !params.data?.id) return '';
-          const id: string = params.data.id;
-          const node = data.nodes.find((n) => n.id === id);
-          if (!node) return '';
-          const meta = STATUS_META[node.status];
-          return `${node.label}<br/>状态：${meta.label}<br/>调用次数：${node.invocation_count}`;
-        },
+      data.edges,
+      (id: string) => {
+        const node = data.nodes.find((n) => n.id === id);
+        if (!node) return '';
+        const meta = STATUS_META[node.status];
+        return `${node.label}<br/>状态：${meta.label}<br/>调用次数：${node.invocation_count}`;
       },
-    };
+    );
   }, [data]);
 
   const handleChartEvents = useMemo(
@@ -210,8 +157,12 @@ export function GraphTopologyPanel({ taskId, terminal, taskFailed }: GraphTopolo
       <NodeLogsDialog
         taskId={taskId}
         terminal={terminal}
+        taskType={taskType}
         node={selectedNode}
         onClose={() => setSelectedNodeId(null)}
+        onEditPrompt={onEditPrompt ? () => selectedNode && onEditPrompt(selectedNode.id) : undefined}
+        onRerun={onRerun ? () => selectedNode && onRerun(selectedNode.id) : undefined}
+        rerunPending={rerunPending}
       />
     </Card>
   );

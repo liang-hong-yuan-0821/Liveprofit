@@ -54,7 +54,11 @@ from backend.modules.analysis.domain.ports import (
     TaskOutboxRepository,
     TradeDateCalendarPort,
 )
-from backend.modules.analysis.domain.state_machine import PENDING_CANCELLABLE_STATUSES
+from backend.modules.analysis.domain.state_machine import (
+    PENDING_CANCELLABLE_STATUSES,
+    TERMINAL_STATUSES,
+    is_terminal,
+)
 from backend.modules.analysis.infrastructure.models import AnalysisReport, AnalysisTask, TaskOutbox
 from backend.shared.ids import new_token, new_uuid
 
@@ -331,9 +335,75 @@ class TaskService:
             self._events.publish(record.task_id, TaskEventType.QUEUED, attempt_no=record.attempt_no)
         return True
 
+    # ---------- 单Agent重跑（终态 → PENDING，唯一入口） ----------
+
+    def rerun_task(self, task_id: uuid.UUID, node_id: str) -> TaskDTO:
+        """终态任务从指定节点重跑（单Agent重跑与提示词编辑方案 3.4）。
+
+        终态 → PENDING（attempt_no+1）+ 同事务插入 Outbox（payload 携带
+        rerun_from/base_attempt）；重跑触发源 = Outbox payload → actor kwarg
+        的消息级参数，rerun_from_node_id 列仅作展示。
+        """
+        task = self._uow.tasks.get(task_id)
+        if task is None:
+            raise TaskNotFoundError(f"任务不存在：{task_id}")
+        if not is_terminal(TaskStatus(task.status)):
+            raise TaskNotTerminalError("仅终态任务可重跑")
+
+        now = self._clock.now()
+        base_attempt = task.attempt_no
+        ok = self._uow.tasks.conditional_update(
+            task_id,
+            expect={
+                "status": {t.value for t in TERMINAL_STATUSES},
+                "attempt_no": base_attempt,
+            },
+            changes={
+                "status": TaskStatus.PENDING.value,
+                "attempt_no": base_attempt + 1,
+                "rerun_from_node_id": node_id,
+                "error_code": None,
+                "error_summary": None,
+                "next_retry_at": None,
+                "started_at": None,
+                "finished_at": None,
+                "lease_token": None,
+                "lease_expires_at": None,
+                "heartbeat_at": None,
+                "cancel_requested_at": None,
+                "updated_at": now,
+            },
+        )
+        if not ok:
+            raise InvalidStateConflictError("任务状态已变化，请刷新后重试")
+
+        self._uow.outbox.add(TaskOutbox(
+            task_id=task_id,
+            attempt_no=base_attempt + 1,
+            message_type="analysis_task",
+            payload={
+                "task_id": str(task_id),
+                "attempt_no": base_attempt + 1,
+                "rerun_from": node_id,
+                "base_attempt": base_attempt,
+            },
+            status="PENDING",
+            retry_count=0,
+        ))
+        self._uow.commit()
+        task = self._uow.tasks.get(task_id)
+        assert task is not None
+        return self._to_task_dto(task)
+
     # ---------- Worker 执行（租约 fencing） ----------
 
-    def claim_for_execution(self, task_id: uuid.UUID, attempt_no: int, worker_id: str) -> ClaimedTask | None:
+    def claim_for_execution(
+        self,
+        task_id: uuid.UUID,
+        attempt_no: int,
+        worker_id: str,
+        rerun_from: str | None = None,
+    ) -> ClaimedTask | None:
         now = self._clock.now()
         lease_token = new_token()
         ok = self._uow.tasks.conditional_update(
@@ -347,6 +417,8 @@ class TaskService:
                 "worker_id": worker_id,
                 "started_at": now,
                 "updated_at": now,
+                # 单Agent重跑：列仅作展示；rerun 消息写列、普通/重试消息清列
+                "rerun_from_node_id": rerun_from or None,
             },
         )
         if not ok:
@@ -363,6 +435,7 @@ class TaskService:
             selected_layers=tuple(task.selected_layers or []),
             effective_trade_date=task.effective_trade_date,
             request_params=task.request_params or {},
+            rerun_from_node_id=rerun_from,  # 取自消息 kwarg（非任务行）
         )
 
     def renew_lease(self, task_id: uuid.UUID, attempt_no: int, lease_token: str) -> bool:
@@ -724,6 +797,7 @@ class TaskService:
             error_summary=task.error_summary,
             created_at=task.created_at,
             updated_at=task.updated_at,
+            rerun_from_node_id=task.rerun_from_node_id,
         )
 
     @staticmethod
@@ -776,7 +850,9 @@ class OutboxDispatcherService:
         dispatched = 0
         for record in claimed:
             try:
-                self._publisher.publish({"task_id": str(record.task_id), "attempt_no": record.attempt_no})
+                # 透传完整 payload（单Agent重跑携带 rerun_from/base_attempt；
+                # 普通任务 payload 即 {task_id, attempt_no}，行为不变）
+                self._publisher.publish(dict(record.payload))
             except Exception:  # noqa: BLE001 - Broker 投递失败：标记投递失败，允许后续重试
                 self._mark_dispatch_failed(record)
                 continue

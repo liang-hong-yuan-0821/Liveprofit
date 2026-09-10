@@ -7,6 +7,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +39,12 @@ def create_kr_tech_analyst(llm, toolkit):
         output_format = load_output_format("market", "tech_common")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专注韩国市场的技术分析师。\n\n"
-                + date_line + "\n"
-                "## 已获取的数据\n\n"
-                "### 全球科技指数（含韩国部分）\n{tech_indices}\n\n"
-                "### 外资流向\n{foreign_flow}\n\n"
-                "分析维度：\n"
-                "- KOSPI / KOSDAQ：趋势方向、均线系统(MA5/10/20/60)、量能、RSI/MACD\n"
-                "- 外资流向（韩国市场外资占比高，是重要信号）\n"
-                "- 与美股科技的相关性（韩股 = 美股科技beta）\n\n"
-                "数据不可用时标注'数据暂不可用'\n\n"
-                "输出格式：\n"
-                "# 韩国市场技术分析报告\n\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:KR Tech Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

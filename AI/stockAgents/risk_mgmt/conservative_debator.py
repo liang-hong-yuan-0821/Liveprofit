@@ -5,6 +5,8 @@ LiveProfit 保守风险分析师 (简化版)
 
 import logging
 
+from AI.utils.prompts import get_system_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,9 @@ def create_safe_debator(llm):
         from AI.stockAgents.utils.agent_utils import build_cross_layer_context
         cross_ctx = build_cross_layer_context(state)
 
-        prompt = f"""作为安全/保守风险分析师，你的主要目标是保护资产、最小化波动性，并确保稳定、可靠的增长。
+        prompt = get_system_prompt(
+            state.get("_current_node_id"),
+            lambda: f"""作为安全/保守风险分析师，你的主要目标是保护资产、最小化波动性，并确保稳定、可靠的增长。
 
 在评估交易员的决策时，请批判性地审查高风险要素，指出决策可能使公司面临不当风险的地方。
 
@@ -51,6 +55,7 @@ def create_safe_debator(llm):
 
 如果其他观点没有回应，请不要虚构，只需提出你的观点。
 请用中文以对话方式输出，专注于辩论和批评，展示保守立场的优势。"""
+        )
 
         response = llm.invoke(prompt)
         argument = f"Safe Analyst: {response.content}"

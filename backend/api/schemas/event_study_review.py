@@ -54,6 +54,12 @@ class PrelabelData(BaseModel):
     remaining: int
 
 
+class RefreshData(BaseModel):
+    fetched: int
+    new_drafts: int
+    skipped_reason: Literal["locked", "failed"] | None = None
+
+
 class ComputeRequest(BaseModel):
     operator: str = Field(default="admin", max_length=64)
 

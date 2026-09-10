@@ -14,6 +14,15 @@ vi.mock('../../../../api/generated/services/AnalysisTasksService', () => ({
     getExecutionLogsApiV1AnalysisTasksTaskIdExecutionLogsGet: vi.fn(),
     getExecutionLogContentApiV1AnalysisTasksTaskIdExecutionLogsContentGet: vi.fn(),
     getGraphTopologyApiV1AnalysisTasksTaskIdGraphTopologyGet: vi.fn(),
+    rerunTaskApiV1AnalysisTasksTaskIdRerunPost: vi.fn(),
+  },
+}));
+vi.mock('../../../../api/generated/services/AgentsService', () => ({
+  AgentsService: {
+    getAgentsTopologyApiV1AgentsTopologyGet: vi.fn(),
+    listAgentPromptsApiV1AgentsPromptsGet: vi.fn(),
+    upsertAgentPromptApiV1AgentsPromptsNodeIdPut: vi.fn(),
+    resetAgentPromptApiV1AgentsPromptsNodeIdDelete: vi.fn(),
   },
 }));
 vi.mock('../../../../api/generated/services/ReportsService', () => ({
@@ -33,6 +42,7 @@ const deleteMock = AnalysisTasksService.deleteTaskApiV1AnalysisTasksTaskIdDelete
 const getReportMock = ReportsService.getReportApiV1AnalysisTasksTaskIdReportGet as Mock;
 const getLogsMock = AnalysisTasksService.getExecutionLogsApiV1AnalysisTasksTaskIdExecutionLogsGet as Mock;
 const getTopologyMock = AnalysisTasksService.getGraphTopologyApiV1AnalysisTasksTaskIdGraphTopologyGet as Mock;
+const rerunMock = AnalysisTasksService.rerunTaskApiV1AnalysisTasksTaskIdRerunPost as Mock;
 
 const TASK_ID = 'task-1';
 
@@ -318,5 +328,111 @@ describe('AiTaskDetailPage 执行调用日志区块', () => {
 
     // 翻转瞬间 graphTopology key 被失效 → 主动补拉一次（防尾部滞留，与 executionLogs 同理由）
     await waitFor(() => expect(getTopologyMock).toHaveBeenCalledTimes(2));
+  });
+});
+
+
+// ---------- 单Agent重跑（单Agent重跑与提示词编辑方案 3.6） ----------
+
+const RERUN_DTO = {
+  ...makeTask('PENDING'),
+  attempt_no: 2,
+  rerun_from_node_id: 'market:CN Tech Analyst',
+};
+
+describe('单Agent重跑', () => {
+  beforeEach(() => {
+    getTaskMock.mockResolvedValue(envelope(makeTask('FAILED')));
+    getTopologyMock.mockResolvedValue(envelope({
+      task_id: TASK_ID, attempt_no: 1, available: true,
+      generated_at: '2026-09-09T10:00:00Z',
+      nodes: [
+        { id: 'market:CN Tech Analyst', label: 'CN Tech Analyst', layer: 'market', row: 0, order: 3, status: 'executed', invocation_count: 1, dirs: [], rerun_available: true },
+        { id: 'market:CN News Analyst', label: 'CN News Analyst', layer: 'market', row: 0, order: 2, status: 'executed', invocation_count: 1, dirs: [], rerun_available: false },
+      ],
+      edges: [],
+    }));
+    getLogsMock.mockResolvedValue(envelope({
+      task_id: TASK_ID, attempt_no: 1, available: true, generated_at: 'x', layers: [],
+    }));
+  });
+
+  it('终态任务节点弹窗显示「重跑此Agent」，rerun_available=false 禁用并提示', async () => {
+    renderPage();
+    await screen.findByText('任务状态');
+
+    // 点击 rerun_available=false 的节点（通过拓扑图 mock 注入 click）
+    const { default: ReactECharts } = await import('echarts-for-react');
+    const mockedChart = ReactECharts as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(mockedChart.mock.calls.length).toBeGreaterThan(0));
+    const onEvents = mockedChart.mock.calls.at(-1)![0].onEvents as {
+      click: (p: { dataType: string; data: { id: string } }) => void;
+    };
+    act(() => onEvents.click({ dataType: 'node', data: { id: 'market:CN News Analyst' } }));
+    await screen.findByText(/该节点无检查点/);
+    expect(screen.getByRole('button', { name: '重跑此Agent' })).toBeDisabled();
+
+    act(() => onEvents.click({ dataType: 'node', data: { id: 'market:CN Tech Analyst' } }));
+    await screen.findByText(/重跑将重新执行该节点及全部下游/);
+    expect(screen.getByRole('button', { name: '重跑此Agent' })).toBeEnabled();
+  });
+
+  it('确认重跑 → POST rerun → setQueryData 恢复轮询（终态→非终态翻转）', async () => {
+    const user = userEvent.setup();
+    rerunMock.mockResolvedValue(envelope(RERUN_DTO));
+    const { queryClient } = renderPage();
+    await screen.findByText('任务状态');
+
+    const { default: ReactECharts } = await import('echarts-for-react');
+    const mockedChart = ReactECharts as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(mockedChart.mock.calls.length).toBeGreaterThan(0));
+    const onEvents = mockedChart.mock.calls.at(-1)![0].onEvents as {
+      click: (p: { dataType: string; data: { id: string } }) => void;
+    };
+    act(() => onEvents.click({ dataType: 'node', data: { id: 'market:CN Tech Analyst' } }));
+    await screen.findByText(/重跑将重新执行该节点及全部下游/);
+    await user.click(screen.getByRole('button', { name: '重跑此Agent' }));
+
+    await screen.findByText('开始重跑');
+    await user.click(screen.getByRole('button', { name: '开始重跑' }));
+
+    await waitFor(() => {
+      expect(rerunMock).toHaveBeenCalledWith(TASK_ID, { node_id: 'market:CN Tech Analyst' });
+    });
+    // setQueryData 后 status=PENDING：缓存中任务为非终态
+    const cached = queryClient.getQueryData(['analysis-task', 'detail', TASK_ID]) as { status: string };
+    expect(cached.status).toBe('PENDING');
+    // 状态卡展示"本次从节点续跑"行
+    await screen.findByText(/从节点 market:CN Tech Analyst 续跑/);
+  });
+
+  it('重跑后轮询恢复：Task Query 的 refetchInterval 按状态回调（PENDING→5000，终态→false）', async () => {
+    rerunMock.mockResolvedValue(envelope(RERUN_DTO));
+    const { queryClient } = renderPage();
+    await screen.findByText('任务状态');
+
+    const observer = queryClient
+      .getQueryCache()
+      .find({ queryKey: ['analysis-task', 'detail', TASK_ID] })
+      ?.observers[0];
+    const interval = observer?.options.refetchInterval;
+    // refetchInterval 为回调函数（queries.ts）：非终态 5000 / 终态 false
+    expect(typeof interval).toBe('function');
+    const fn = interval as (
+      q: { state: { data?: { status?: string } | null } | null }
+    ) => number | false;
+    // setQueryData(PENDING) 后：真实 Query 对象（react-query 回调签名）即非终态 → 5000
+    const query = queryClient
+      .getQueryCache()
+      .find({ queryKey: ['analysis-task', 'detail', TASK_ID] })!;
+    act(() => {
+      queryClient.setQueryData(['analysis-task', 'detail', TASK_ID], RERUN_DTO);
+    });
+    expect(fn(query as unknown as Parameters<typeof fn>[0])).toBe(5000);
+    // 终态数据则返回 false（轮询停止）
+    act(() => {
+      queryClient.setQueryData(['analysis-task', 'detail', TASK_ID], makeTask('SUCCEEDED'));
+    });
+    expect(fn(query as unknown as Parameters<typeof fn>[0])).toBe(false);
   });
 });

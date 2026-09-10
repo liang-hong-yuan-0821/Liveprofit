@@ -27,10 +27,14 @@ def test_transition_map_matches_plan_state_machine():
     )
     assert ALLOWED_TRANSITIONS[TaskStatus.RETRYING] == frozenset({TaskStatus.QUEUED})
     assert ALLOWED_TRANSITIONS[TaskStatus.CANCEL_REQUESTED] == frozenset({TaskStatus.CANCELLED})
+    # 终态 → PENDING：单Agent重跑方案（产品确认的偏离）——唯一入口为
+    # TaskService.rerun_task；is_terminal 判定独立于转移表（TERMINAL_STATUSES），
+    # generic 路径仍按终态收口
     for terminal in (TaskStatus.SUCCEEDED, TaskStatus.FAILED, TaskStatus.CANCELLED):
-        assert ALLOWED_TRANSITIONS[terminal] == frozenset()
+        assert ALLOWED_TRANSITIONS[terminal] == frozenset({TaskStatus.PENDING})
         assert is_terminal(terminal)
-    # 终态不可回退
+    # 终态仅可经重跑回到 PENDING，不可回退其他状态
+    assert can_transition(TaskStatus.SUCCEEDED, TaskStatus.PENDING)
     assert not can_transition(TaskStatus.SUCCEEDED, TaskStatus.RUNNING)
     with pytest.raises(InvalidStateTransitionError):
         from backend.modules.analysis.domain.state_machine import assert_transition

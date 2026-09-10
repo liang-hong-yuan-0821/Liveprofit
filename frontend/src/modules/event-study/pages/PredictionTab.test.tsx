@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ApiError } from '../../../api/client';
 import { renderWithRouter } from '../../../test/utils';
-import AiEventStudyPage from './AiEventStudyPage';
+import { PredictionTab } from './PredictionTab';
 
 vi.mock('../../../api/generated/services/EventStudiesService', () => ({
   EventStudiesService: {
@@ -47,10 +47,10 @@ async function fillValidInputs(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('目标资产'), '000001.SH');
 }
 
-describe('AiEventStudyPage', () => {
+describe('PredictionTab', () => {
   it('事件文本必填与超长校验：阻止提交并保留输入', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
     await screen.findByLabelText('事件文本');
 
     await user.click(screen.getByRole('button', { name: '预测' }));
@@ -65,7 +65,7 @@ describe('AiEventStudyPage', () => {
 
   it('成功预测：原页展示结果，不跳转任务详情；表单输入保留', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
     await fillValidInputs(user);
 
     await user.click(screen.getByRole('button', { name: '预测' }));
@@ -90,7 +90,7 @@ describe('AiEventStudyPage', () => {
     predictMock.mockRejectedValue(
       new ApiError({ code: 'EVENT_STUDY_BUSY', message: '事件研究请求繁忙，请稍后重试', retryable: true, status: 503 }),
     );
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
     await fillValidInputs(user);
 
     await user.click(screen.getByRole('button', { name: '预测' }));
@@ -109,7 +109,7 @@ describe('AiEventStudyPage', () => {
     predictMock.mockRejectedValue(
       new ApiError({ code: 'EVENT_STUDY_TIMEOUT', message: '本次等待超时', retryable: true, status: 504 }),
     );
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
     await fillValidInputs(user);
 
     await user.click(screen.getByRole('button', { name: '预测' }));
@@ -128,7 +128,7 @@ describe('AiEventStudyPage', () => {
         note: '事件库暂无相似事件',
       }),
     );
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
     await fillValidInputs(user);
 
     await user.click(screen.getByRole('button', { name: '预测' }));
@@ -137,10 +137,10 @@ describe('AiEventStudyPage', () => {
   });
 
   it('从宏观信息跳转：URL 携带 event_id + 站内 state 预填输入草稿，不自动提交', async () => {
-    renderWithRouter(<AiEventStudyPage />, {
+    renderWithRouter(<PredictionTab />, {
       initialEntries: [
         {
-          pathname: '/ai/event-study',
+          pathname: '/event-study',
           search: '?event_id=101',
           state: {
             prefill: {
@@ -166,7 +166,7 @@ describe('AiEventStudyPage', () => {
       new ApiError({ code: 'INTERNAL_ERROR', message: '资产清单不可用', retryable: false, status: 500 }),
     );
     const user = userEvent.setup();
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
     await fillValidInputs(user);
 
     expect(screen.getByText('资产清单暂不可用，可自由输入目标资产代码')).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe('AiEventStudyPage', () => {
   });
 
   it('资产下拉来自 assets 接口，不硬编码名单', async () => {
-    renderWithRouter(<AiEventStudyPage />);
+    renderWithRouter(<PredictionTab />);
 
     const datalist = await screen.findByRole('listbox', { hidden: true });
     expect(datalist).toBeTruthy();

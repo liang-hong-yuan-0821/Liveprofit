@@ -47,6 +47,24 @@ class LeaseConflictError(DomainError):
     code = "TASK_LEASE_CONFLICT"
 
 
+class AgentNodeNotFoundError(NotFoundError):
+    """node_id 不在拓扑节点集合内（API 映射 404）。"""
+
+    code = "AGENT_NODE_NOT_FOUND"
+
+
+class AgentPromptNotEditableError(DomainError):
+    """拓扑存在但为纯代码节点（screening:Screening），无提示词可编辑（API 映射 422）。"""
+
+    code = "AGENT_PROMPT_NOT_EDITABLE"
+
+
+class RerunNotAvailableError(DomainError):
+    """重跑前置不满足：attempt 链无 entry checkpoint / v1 限制（API 映射 409）。"""
+
+    code = "RERUN_NOT_AVAILABLE"
+
+
 # ---- 执行层异常分类（Worker 使用；图/Adapter 抛出的异常经 classify_error 归一化） ----
 
 

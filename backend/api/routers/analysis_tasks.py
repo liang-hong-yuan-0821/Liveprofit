@@ -15,6 +15,7 @@ from backend.api.schemas.envelope import DeleteResultData, Envelope, EnvelopeMet
 from backend.api.schemas.problem import ProblemError
 from backend.api.schemas.tasks import (
     CreateAnalysisTaskRequest,
+    RerunTaskRequest,
     TaskCreatedData,
     TaskDTO,
     TaskListData,
@@ -171,6 +172,61 @@ async def cancel_task(
     return Envelope(data=data, meta=_meta(request)).model_dump()
 
 
+@router.post("/analysis-tasks/{task_id}/rerun", response_model=Envelope[TaskDTO])
+async def rerun_task(
+    task_id: uuid.UUID,
+    body: RerunTaskRequest,
+    request: Request,
+    trace_id: str = Depends(ensure_trace_context),
+):
+    """终态任务从指定节点重跑（单Agent重跑与提示词编辑方案 3.4）。
+
+    路由层前置校验（FS/拓扑，服务保持 DB 纯净）：节点在任务拓扑内（404）、
+    screening 任务个股层 v1 限制（409）、entry checkpoint 存在（409）。
+    """
+    services = request.app.state.analysis_services
+
+    def _validate(task_id) -> dict:
+        with services.open() as bundle:
+            task = bundle.tasks.get_task(task_id)  # 404 TASK_NOT_FOUND
+            from backend.modules.analysis.application.errors import (
+                AgentNodeNotFoundError,
+                RerunNotAvailableError,
+                TaskNotTerminalError,
+            )
+            from backend.modules.analysis.application.graph_topology import attempt_chain_dirs
+            from backend.modules.analysis.domain.state_machine import is_terminal
+            from backend.modules.analysis.domain.enums import TaskStatus
+            from AI.graph.topology import build_topology
+            from AI.utils.checkpoint import resolve_entry_checkpoint
+
+            if not is_terminal(TaskStatus(task.status)):
+                raise TaskNotTerminalError("仅终态任务可重跑")
+            topology = build_topology(tuple(task.selected_layers))
+            node_ids = {n.id: n for n in topology.nodes}
+            if body.node_id not in node_ids:
+                raise AgentNodeNotFoundError(f"节点不在任务拓扑内: {body.node_id}")
+            node = node_ids[body.node_id]
+            if "screening" in (task.selected_layers or []) and node.layer == "stock":
+                raise RerunNotAvailableError("全市场逐票循环暂不支持从个股层节点重跑")
+            root = resolve_execution_logs_root(request.app.state.settings.core)
+            run_dirs = attempt_chain_dirs(root, task_id=task.id, attempt_no=task.attempt_no)
+            if resolve_entry_checkpoint(
+                run_dirs, topology, body.node_id, ticker=task.ticker) is None:
+                raise RerunNotAvailableError("该节点无检查点，无法重跑（旧版本运行）")
+            return task
+
+    await services.run(lambda: _validate(task_id))
+
+    def _do():
+        with services.open() as bundle:
+            return bundle.tasks.rerun_task(task_id, body.node_id)
+
+    dto = await services.run(_do)
+    data = _to_task_dto(dto)
+    return Envelope(data=data, meta=_meta(request)).model_dump()
+
+
 def _to_list_item(item) -> TaskListItemDTO:
     return TaskListItemDTO(
         id=item.id,
@@ -202,6 +258,7 @@ def _to_task_dto(dto) -> TaskDTO:
         error_summary=dto.error_summary,
         created_at=dto.created_at,
         updated_at=dto.updated_at,
+        rerun_from_node_id=dto.rerun_from_node_id,
         events_url=_EVENTS_URL.format(task_id=dto.id),
         report_url=_REPORT_URL.format(task_id=dto.id),
         execution_logs_url=_EXECUTION_LOGS_URL.format(task_id=dto.id),

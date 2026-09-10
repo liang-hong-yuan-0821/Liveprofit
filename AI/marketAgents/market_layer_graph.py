@@ -13,6 +13,7 @@ from langgraph.prebuilt import ToolNode
 from AI.stockAgents.utils.agent_states import AgentState
 from AI.stockAgents.utils.agent_utils import create_msg_delete
 from AI.utils.dataprovider_log import track_node
+from AI.utils.checkpoint import guard_checkpoint
 from AI.marketAgents.analysts.international_event_extraction import create_international_event_extraction
 from AI.marketAgents.analysts.international_news_analyst import create_international_news_analyst
 from AI.marketAgents.analysts.us_news_analyst import create_us_news_analyst
@@ -81,7 +82,8 @@ class MarketLayerGraph:
             # Analyst 节点
             workflow.add_node(
                 f"{label} Analyst",
-                track_node(f"{label} Analyst")(factory(self.llm, self.toolkit)),
+                guard_checkpoint(f"{label} Analyst")(
+                    track_node(f"{label} Analyst")(factory(self.llm, self.toolkit))),
             )
             # Msg Clear 节点
             workflow.add_node(f"Msg Clear {label}", create_msg_delete())

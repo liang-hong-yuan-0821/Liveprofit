@@ -13,6 +13,7 @@ from langgraph.prebuilt import ToolNode
 from AI.stockAgents.utils.agent_states import AgentState
 from AI.stockAgents.utils.agent_utils import create_msg_delete
 from AI.utils.dataprovider_log import track_node
+from AI.utils.checkpoint import guard_checkpoint
 from AI.sectorAgents.analysts.sector_news_analyst import create_sector_news_analyst
 from AI.sectorAgents.analysts.sector_tech_analyst import create_sector_tech_analyst
 from AI.sectorAgents.analysts.sector_rotation_analyst import create_sector_rotation_analyst
@@ -62,7 +63,8 @@ class SectorLayerGraph:
             # Analyst 节点
             workflow.add_node(
                 f"{label} Analyst",
-                track_node(f"{label} Analyst")(factory(self.llm, self.toolkit)),
+                guard_checkpoint(f"{label} Analyst")(
+                    track_node(f"{label} Analyst")(factory(self.llm, self.toolkit))),
             )
             # Msg Clear 节点
             workflow.add_node(f"Msg Clear {label}", create_msg_delete())

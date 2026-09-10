@@ -14,7 +14,12 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.modules.analysis.domain.enums import TaskStatus
-from backend.modules.analysis.infrastructure.models import AnalysisReport, AnalysisTask, TaskOutbox
+from backend.modules.analysis.infrastructure.models import (
+    AgentPromptOverride,
+    AnalysisReport,
+    AnalysisTask,
+    TaskOutbox,
+)
 
 # Outbox 可被取消/可被 claim 的状态
 _OUTBOX_CANCELLABLE = ("PENDING", "DISPATCHING")
@@ -252,6 +257,40 @@ def _expect_clauses(model, expect: dict) -> list:
     return clauses
 
 
+class SqlAlchemyPromptOverrideRepository:
+    """Agent 提示词覆盖仓库（单Agent重跑与提示词编辑方案 3.3）。"""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def get(self, node_id: str) -> AgentPromptOverride | None:
+        return self._session.get(AgentPromptOverride, node_id)
+
+    def list_as_map(self) -> dict[str, str]:
+        """全部覆盖 node_id → prompt_text（worker 执行开始快照用）。"""
+        rows = self._session.execute(select(AgentPromptOverride)).scalars().all()
+        return {row.node_id: row.prompt_text for row in rows}
+
+    def upsert(self, node_id: str, prompt_text: str, now: datetime) -> AgentPromptOverride:
+        """get + add 短事务 upsert（PK 约束防重复；并发双写由唯一键收口）。"""
+        row = self._session.get(AgentPromptOverride, node_id)
+        if row is None:
+            row = AgentPromptOverride(node_id=node_id, prompt_text=prompt_text)
+            self._session.add(row)
+        else:
+            row.prompt_text = prompt_text
+            row.updated_at = now
+        return row
+
+    def delete(self, node_id: str) -> bool:
+        """删除覆盖（恢复默认）；幂等——不存在返回 False 不抛错。"""
+        row = self._session.get(AgentPromptOverride, node_id)
+        if row is None:
+            return False
+        self._session.delete(row)
+        return True
+
+
 class SqlAlchemyAnalysisUnitOfWork:
     """Application Service 的数据库事务边界（同步）。
 
@@ -265,12 +304,14 @@ class SqlAlchemyAnalysisUnitOfWork:
         self.tasks: SqlAlchemyTaskRepository | None = None
         self.outbox: SqlAlchemyTaskOutboxRepository | None = None
         self.reports: SqlAlchemyReportRepository | None = None
+        self.prompts: SqlAlchemyPromptOverrideRepository | None = None
 
     def __enter__(self) -> "SqlAlchemyAnalysisUnitOfWork":
         self._session = self._session_factory()
         self.tasks = SqlAlchemyTaskRepository(self._session)
         self.outbox = SqlAlchemyTaskOutboxRepository(self._session)
         self.reports = SqlAlchemyReportRepository(self._session)
+        self.prompts = SqlAlchemyPromptOverrideRepository(self._session)
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:

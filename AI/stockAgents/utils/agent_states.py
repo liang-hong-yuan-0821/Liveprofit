@@ -116,3 +116,12 @@ class AgentState(MessagesState):
     # 风险管理
     risk_debate_state: Annotated[RiskDebateState, "风险讨论状态"]
     final_trade_decision: Annotated[str, "最终交易决策"]
+
+    # 平台保留 key（单Agent重跑方案 3.2；须在 schema 内否则 LangGraph 按
+    # channels 白名单丢弃、快进 guard 失效；checkpoint 序列化会丢弃 `_` 前缀键）
+    _rerun_from: Annotated[str, "重跑起点节点 id（快进 guard 用；空串=普通执行）"]
+    _current_node_id: Annotated[str, "当前执行节点 id（提示词覆盖解析用）"]
+    # selected_layers 亦须在 schema 内：checkpoint 的 screening 模式 stock 层
+    # 跳过落盘判定读它，白名单外输入键会被 langgraph 静默丢弃（2026-09-10
+    # Code Review 实测：未声明时 state.get("selected_layers") 恒空）
+    selected_layers: Annotated[list, "选中的分析层（平台元数据；checkpoint 落盘）"]

@@ -102,11 +102,29 @@ def get_worker_executor():
     )
     from backend.bootstrap.settings import resolve_execution_logs_root
     from backend.modules.analysis.infrastructure.real_graph_factory import build_real_initial_state
+    from backend.modules.analysis.infrastructure.repositories import (
+        SqlAlchemyPromptOverrideRepository,
+    )
+
+    def _initial_state_factory(task):
+        """执行开始快照：提示词覆盖读库 + 重跑 entry checkpoint 注入。
+
+        rerun 判定单源：ClaimedTask.rerun_from_node_id 与 executor 收到的
+        rerun_from kwarg 同源（均取自消息），此处仅透传该值，不读任务行列
+        作第二判定源。
+        """
+        with _worker_container.sync_session_factory() as session:
+            overrides = SqlAlchemyPromptOverrideRepository(session).list_as_map()
+        return build_real_initial_state(
+            task,
+            execution_logs_root=resolve_execution_logs_root(settings.core),
+            prompt_overrides=overrides,
+            rerun_from_node_id=task.rerun_from_node_id,
+        )
 
     adapter = TradingGraphAdapter(
         _graph_factory,
-        initial_state_factory=lambda task: build_real_initial_state(
-            task, execution_logs_root=resolve_execution_logs_root(settings.core)),
+        initial_state_factory=_initial_state_factory,
     )
     return AnalysisExecutor(
         graph_adapter=adapter,

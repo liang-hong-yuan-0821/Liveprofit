@@ -49,6 +49,31 @@ export function useExecutionLogsQuery(taskId: string, enabled: boolean, terminal
   });
 }
 
+// 单Agent重跑：终态任务从指定节点续跑（上游复用 checkpoint、目标+下游重算）。
+// onSuccess setQueryData 后 status 变 PENDING → useTaskQuery 的 refetchInterval
+// 回调读 query.state.data?.status 自动恢复 5s 轮询（终态→非终态翻转）；同时
+// invalidate 拓扑/日志（新 attempt 目录）与列表/看板。
+export function useRerunTaskMutation(taskId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (nodeId: string): Promise<TaskDTO> =>
+      (
+        await requestEnvelope<TaskDTO>(
+          AnalysisTasksService.rerunTaskApiV1AnalysisTasksTaskIdRerunPost(taskId, {
+            node_id: nodeId,
+          }),
+        )
+      ).data,
+    onSuccess: (dto) => {
+      queryClient.setQueryData(queryKeys.analysisTask.detail(taskId), dto);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisTask.graphTopology(taskId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisTask.executionLogs(taskId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisTasks.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisDashboard.all });
+    },
+  });
+}
+
 // 图拓扑（静态结构 + 运行状态叠加）：与执行日志同节奏轮询，终态停止。
 export function useGraphTopologyQuery(taskId: string, enabled: boolean, terminal: boolean) {
   return useQuery({

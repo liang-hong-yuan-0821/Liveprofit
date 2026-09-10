@@ -21,6 +21,7 @@ from langgraph.prebuilt import ToolNode
 from AI.stockAgents.utils.agent_states import AgentState
 from AI.stockAgents.utils.agent_utils import create_msg_delete
 from AI.utils.dataprovider_log import track_node
+from AI.utils.checkpoint import guard_checkpoint
 from AI.stockAgents.analysts.market_analyst import create_market_analyst
 from AI.stockAgents.analysts.fundamentals_analyst import create_fundamentals_analyst
 from AI.stockAgents.analysts.news_analyst import create_news_analyst
@@ -97,7 +98,8 @@ class StockLayerGraph:
             # Analyst 节点
             workflow.add_node(
                 f"{label} Analyst",
-                track_node(f"{label} Analyst")(factory(self.quick_llm, self.toolkit)),
+                guard_checkpoint(f"{label} Analyst")(
+                    track_node(f"{label} Analyst")(factory(self.quick_llm, self.toolkit))),
             )
             # Msg Clear 节点
             workflow.add_node(f"Msg Clear {label}", create_msg_delete())
@@ -123,24 +125,32 @@ class StockLayerGraph:
                 workflow.add_edge(f"{label} Analyst", f"Msg Clear {label}")
 
         # ---- 辩论 & 交易节点 ----
-        workflow.add_node("Bull Researcher", track_node("Bull Researcher")(
-            create_bull_researcher(self.quick_llm, self.bull_memory)))
-        workflow.add_node("Bear Researcher", track_node("Bear Researcher")(
-            create_bear_researcher(self.quick_llm, self.bear_memory)))
-        workflow.add_node("Research Manager", track_node("Research Manager")(
-            create_research_manager(self.deep_llm, self.invest_judge_memory)))
-        workflow.add_node("Trader", track_node("Trader")(
-            create_trader(self.quick_llm, self.trader_memory)))
+        workflow.add_node("Bull Researcher", guard_checkpoint("Bull Researcher")(
+            track_node("Bull Researcher")(
+                create_bull_researcher(self.quick_llm, self.bull_memory))))
+        workflow.add_node("Bear Researcher", guard_checkpoint("Bear Researcher")(
+            track_node("Bear Researcher")(
+                create_bear_researcher(self.quick_llm, self.bear_memory))))
+        workflow.add_node("Research Manager", guard_checkpoint("Research Manager")(
+            track_node("Research Manager")(
+                create_research_manager(self.deep_llm, self.invest_judge_memory))))
+        workflow.add_node("Trader", guard_checkpoint("Trader")(
+            track_node("Trader")(
+                create_trader(self.quick_llm, self.trader_memory))))
 
         # ---- 风险分析节点 ----
-        workflow.add_node("Risky Analyst", track_node("Risky Analyst")(
-            create_risky_debator(self.quick_llm)))
-        workflow.add_node("Safe Analyst", track_node("Safe Analyst")(
-            create_safe_debator(self.quick_llm)))
-        workflow.add_node("Neutral Analyst", track_node("Neutral Analyst")(
-            create_neutral_debator(self.quick_llm)))
-        workflow.add_node("Risk Judge", track_node("Risk Judge")(
-            create_risk_manager(self.deep_llm, self.risk_manager_memory)))
+        workflow.add_node("Risky Analyst", guard_checkpoint("Risky Analyst")(
+            track_node("Risky Analyst")(
+                create_risky_debator(self.quick_llm))))
+        workflow.add_node("Safe Analyst", guard_checkpoint("Safe Analyst")(
+            track_node("Safe Analyst")(
+                create_safe_debator(self.quick_llm))))
+        workflow.add_node("Neutral Analyst", guard_checkpoint("Neutral Analyst")(
+            track_node("Neutral Analyst")(
+                create_neutral_debator(self.quick_llm))))
+        workflow.add_node("Risk Judge", guard_checkpoint("Risk Judge")(
+            track_node("Risk Judge")(
+                create_risk_manager(self.deep_llm, self.risk_manager_memory))))
 
         # ---- 连线 ----
         # 入口：第一个个股分析师（无分析师时直接进入辩论）

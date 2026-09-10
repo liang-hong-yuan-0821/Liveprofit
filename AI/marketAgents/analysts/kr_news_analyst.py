@@ -8,6 +8,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -39,22 +40,12 @@ def create_kr_news_analyst(llm, toolkit):
         output_format = load_output_format("market", "news_common")
 
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专注韩国市场的宏观分析师。\n\n"
-                + date_line + "\n"
-                "## 已获取的数据\n\n"
-                "### 韩国财经要闻\n{macro_news}\n\n"
-                "### 韩国出口数据\n{export_data}\n\n"
-                "注意事项：\n"
-                "- 一期韩国数据源有限，工具可能返回'数据不可用'——此时请基于你的训练知识做方向性判断\n"
-                "- 关注韩国央行利率决议、半导体/汽车出口数据、三星/SK海力士等权重股动态\n"
-                "- 关注韩元汇率波动对出口企业的影响\n"
-                "- 数据不可用时如实标注\n\n"
-                "输出格式：\n"
-                "# 韩国市场新闻分析报告\n\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["market:KR News Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

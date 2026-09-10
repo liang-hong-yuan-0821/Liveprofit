@@ -9,6 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
 from AI.templates import load_output_format
+from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 
 logger = logging.getLogger(__name__)
 
@@ -42,21 +43,17 @@ def create_market_analyst(llm, toolkit):
         # 直接调用 dataflows 函数获取行情数据
         market_data = dataflow.get_china_stock_data(ticker, start_date, end_date)
 
+        date_line = f"分析日期：{current_date}\n"
         output_format = load_output_format("stock", "market_analyst")
 
         # 构建提示词
         prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "你是一位专业的股票技术分析师。\n\n"
-                "分析对象：{company_name}（{ticker}），{market_name}，货币：{currency_name}（{currency_symbol}）\n"
-                "分析日期：{current_date}\n"
-                "{instrument_context}\n\n"
-                "## 已获取的数据\n\n"
-                "### 股票行情数据（{start_date} ~ {end_date}）\n{market_data}\n\n"
-                "输出格式：\n"
-                + output_format
-            ),
+                system_message(
+                    state.get("_current_node_id"),
+                    lambda: DEFAULT_PROMPTS["stock:Stock Tech Analyst"]
+                    .replace("{date_line}", date_line)
+                    .replace("{output_format}", output_format),
+                ),
             MessagesPlaceholder(variable_name="messages"),
         ])
 

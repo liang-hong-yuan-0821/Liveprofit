@@ -70,6 +70,144 @@
         }
       }
     },
+    "/api/v1/agents/topology": {
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Get Agents Topology",
+        "description": "静态全局拓扑（全层形态）+ 节点提示词编辑性/已自定义标注。",
+        "operationId": "get_agents_topology_api_v1_agents_topology_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AgentTopologyDTO_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/prompts": {
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "List Agent Prompts",
+        "description": "全部可编辑节点的默认提示词 + 覆盖叠加列表。",
+        "operationId": "list_agent_prompts_api_v1_agents_prompts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AgentPromptListData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/prompts/{node_id}": {
+      "put": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Upsert Agent Prompt",
+        "description": "保存/更新单 Agent 提示词覆盖（对新建任务生效；进行中任务不受影响）。",
+        "operationId": "upsert_agent_prompt_api_v1_agents_prompts__node_id__put",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAgentPromptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AgentPromptDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Reset Agent Prompt",
+        "description": "恢复默认提示词（删除覆盖；幂等）。",
+        "operationId": "reset_agent_prompt_api_v1_agents_prompts__node_id__delete",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AgentPromptDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analysis-tasks": {
       "post": {
         "tags": [
@@ -317,6 +455,60 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/rerun": {
+      "post": {
+        "tags": [
+          "analysis-tasks"
+        ],
+        "summary": "Rerun Task",
+        "description": "终态任务从指定节点重跑（单Agent重跑与提示词编辑方案 3.4）。\n\n路由层前置校验（FS/拓扑，服务保持 DB 纯净）：节点在任务拓扑内（404）、\nscreening 任务个股层 v1 限制（409）、entry checkpoint 存在（409）。",
+        "operationId": "rerun_task_api_v1_analysis_tasks__task_id__rerun_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RerunTaskRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -737,6 +929,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/event-studies/review/refresh": {
+      "post": {
+        "tags": [
+          "event-studies"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_api_v1_event_studies_review_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RefreshData_"
                 }
               }
             }
@@ -2111,6 +2324,167 @@
         ],
         "title": "ActiveTaskDTO"
       },
+      "AgentPromptDTO": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id",
+            "description": "\"{layer}:{label}\"，如 \"market:CN News Analyst\""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer"
+          },
+          "default_prompt": {
+            "type": "string",
+            "title": "Default Prompt",
+            "description": "默认提示词（展示版：输出格式已展开、日期行移除）"
+          },
+          "override_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Prompt",
+            "description": "覆盖提示词全文；无覆盖为 null"
+          },
+          "has_override": {
+            "type": "boolean",
+            "title": "Has Override"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "覆盖最近更新时间；无覆盖为 null"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id",
+          "label",
+          "layer",
+          "default_prompt",
+          "override_prompt",
+          "has_override",
+          "updated_at"
+        ],
+        "title": "AgentPromptDTO"
+      },
+      "AgentPromptListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentPromptDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AgentPromptListData"
+      },
+      "AgentTopologyDTO": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/AgentTopologyNodeDTO"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/TopologyEdgeDTO"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At",
+            "description": "组装时间"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nodes",
+          "edges",
+          "generated_at"
+        ],
+        "title": "AgentTopologyDTO",
+        "description": "静态全局拓扑（全层形态，build_topology 单一事实来源）。"
+      },
+      "AgentTopologyNodeDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\"{layer}:{label}\"，如 \"market:CN News Analyst\""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "图节点显示名（含 \" Analyst\" 后缀）"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer",
+            "description": "所属层目录名，如 market / sector / stock / screening"
+          },
+          "row": {
+            "type": "integer",
+            "title": "Row",
+            "description": "行号（= 层执行序）"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "层内主节点序"
+          },
+          "has_prompt": {
+            "type": "boolean",
+            "title": "Has Prompt",
+            "description": "是否有可编辑提示词（Screening 纯代码节点为 false）"
+          },
+          "has_override": {
+            "type": "boolean",
+            "title": "Has Override",
+            "description": "是否已自定义提示词（前端标记「已自定义」）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "layer",
+          "row",
+          "order",
+          "has_prompt",
+          "has_override"
+        ],
+        "title": "AgentTopologyNodeDTO",
+        "description": "静态全局拓扑节点（含提示词可编辑性标注）。"
+      },
       "AnalysisDashboardDTO": {
         "properties": {
           "pending_actions": {
@@ -2768,6 +3142,54 @@
         ],
         "title": "EnvelopeMeta"
       },
+      "Envelope_AgentPromptDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AgentPromptDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AgentPromptDTO]"
+      },
+      "Envelope_AgentPromptListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AgentPromptListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AgentPromptListData]"
+      },
+      "Envelope_AgentTopologyDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AgentTopologyDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AgentTopologyDTO]"
+      },
       "Envelope_AnalysisDashboardDTO_": {
         "properties": {
           "data": {
@@ -3087,6 +3509,22 @@
           "meta"
         ],
         "title": "Envelope[PrelabelData]"
+      },
+      "Envelope_RefreshData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RefreshData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RefreshData]"
       },
       "Envelope_ReportDTO_": {
         "properties": {
@@ -5019,6 +5457,39 @@
         ],
         "title": "RecentConclusionDTO"
       },
+      "RefreshData": {
+        "properties": {
+          "fetched": {
+            "type": "integer",
+            "title": "Fetched"
+          },
+          "new_drafts": {
+            "type": "integer",
+            "title": "New Drafts"
+          },
+          "skipped_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "locked",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fetched",
+          "new_drafts"
+        ],
+        "title": "RefreshData"
+      },
       "ReportDTO": {
         "properties": {
           "schema_version": {
@@ -5237,6 +5708,20 @@
           "effective_trade_date"
         ],
         "title": "ReportTaskInfo"
+      },
+      "RerunTaskRequest": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id",
+            "description": "重跑起点节点 id，如 \"market:CN News Analyst\""
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id"
+        ],
+        "title": "RerunTaskRequest"
       },
       "ResetEventData": {
         "properties": {
@@ -5780,6 +6265,18 @@
             "format": "date-time",
             "title": "Updated At"
           },
+          "rerun_from_node_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerun From Node Id",
+            "description": "当前 attempt 为重跑时记录起点节点 id（仅展示，触发源为消息级参数）；普通执行 null"
+          },
           "events_url": {
             "type": "string",
             "title": "Events Url",
@@ -5817,6 +6314,7 @@
           "error_summary",
           "created_at",
           "updated_at",
+          "rerun_from_node_id",
           "events_url",
           "report_url",
           "execution_logs_url",
@@ -6031,6 +6529,12 @@
             "type": "array",
             "title": "Dirs",
             "description": "相对任务目录的节点目录路径，按名（seq）排序，如 [\"stock/005_Bull_Researcher\"]"
+          },
+          "rerun_available": {
+            "type": "boolean",
+            "title": "Rerun Available",
+            "description": "是否可从该节点重跑（终态任务且 attempt 链存在 entry checkpoint；screening 任务 stock 层恒 false）",
+            "default": false
           }
         },
         "type": "object",
@@ -6081,6 +6585,20 @@
           "block"
         ],
         "title": "UnavailableBlockDTO"
+      },
+      "UpsertAgentPromptRequest": {
+        "properties": {
+          "prompt_text": {
+            "type": "string",
+            "title": "Prompt Text",
+            "description": "覆盖提示词全文（原样生效，不做插值）；1..20000 字符"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt_text"
+        ],
+        "title": "UpsertAgentPromptRequest"
       },
       "ValidationError": {
         "properties": {

@@ -18,6 +18,7 @@ from prometheus_client import REGISTRY
 from backend.api.analysis_services import build_api_analysis_services
 from backend.api.exception_handlers import register_exception_handlers
 from backend.api.routers import (
+    agents,
     analysis_dashboard,
     analysis_events,
     analysis_tasks,
@@ -168,6 +169,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(metrics.router)
+    app.include_router(agents.router)
     app.include_router(analysis_tasks.router)
     app.include_router(execution_logs.router)
     app.include_router(graph_topology.router)

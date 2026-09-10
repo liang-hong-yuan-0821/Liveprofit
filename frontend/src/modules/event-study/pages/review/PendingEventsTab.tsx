@@ -12,9 +12,12 @@ import type { ReviewRowRequest, ReviewRowResult } from '../../../../api/generate
 import { EventDetailDialog } from './EventDetailDialog';
 import { PendingEventRow, PENDING_ROW_GRID } from './PendingEventRow';
 import { toPendingEventRowVM, type PendingEventRowVM } from './mappers/toPendingEventRowVM';
-import { useBatchMutation, useComputeMutation, usePendingEventsQuery, usePrelabelMutation } from './queries';
+import { useBatchMutation, useComputeMutation, usePendingEventsQuery, usePrelabelMutation, useRefreshMutation } from './queries';
 
 const CHUNK_SIZE = 10;
+// 挂载自动拉取的节流：30 分钟内重复进入不重复采集（手动按钮不受限）
+const AUTO_REFRESH_THROTTLE_MS = 30 * 60 * 1000;
+const AUTO_REFRESH_KEY = 'eventStudyReview.lastAutoRefresh';
 
 // Tab1 待审核事件：批量可编辑表格 + AI 预填循环 + 分块提交。
 // 分块与预填循环均为页面编排（不进 mutation），规避 45s 默认超时（batch/prelabel 用 300s）。
@@ -24,8 +27,11 @@ export function PendingEventsTab() {
   const prelabelMutation = usePrelabelMutation();
   const batchMutation = useBatchMutation();
   const computeMutation = useComputeMutation();
+  const refreshMutation = useRefreshMutation();
 
   const [rows, setRows] = useState<Record<number, PendingEventRowVM>>({});
+  // 本地编辑过的行在 refetch 时保留本地值（预填/批量后的 invalidate 不清空用户输入）
+  const [editedDraftIds, setEditedDraftIds] = useState<Set<number>>(new Set());
   const [detailDraftId, setDetailDraftId] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [prelabelMsg, setPrelabelMsg] = useState<string | null>(null);
@@ -34,12 +40,35 @@ export function PendingEventsTab() {
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<ReviewRowResult[]>([]);
   const [computeRetryMsg, setComputeRetryMsg] = useState<Record<number, string>>({});
+  const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (query.data) {
-      setRows(Object.fromEntries(query.data.items.map((d) => [d.draft_id, toPendingEventRowVM(d)])));
+      // 增量合并：本地编辑过的行保留本地值，其余用服务器最新值重建
+      setRows((prev) => {
+        const next: Record<number, PendingEventRowVM> = {};
+        for (const item of query.data!.items) {
+          const prevRow = prev[item.draft_id];
+          next[item.draft_id] =
+            prevRow && editedDraftIds.has(item.draft_id) ? prevRow : toPendingEventRowVM(item);
+        }
+        return next;
+      });
     }
+    // editedDraftIds 只在 patchRow 时变化，此处刻意不作为依赖——以 query.data 变化时的最新值合并
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data]);
+
+  // 挂载自动拉取最新事件（30 分钟 sessionStorage 节流）；手动按钮不受节流。
+  // 必须位于早期 return 之前，保证各渲染路径 hooks 数量一致。
+  useEffect(() => {
+    const last = Number(sessionStorage.getItem(AUTO_REFRESH_KEY) || 0);
+    if (Date.now() - last < AUTO_REFRESH_THROTTLE_MS) return;
+    sessionStorage.setItem(AUTO_REFRESH_KEY, String(Date.now()));
+    void runRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (query.isPending) return <LoadingState label="加载待审事件…" />;
   if (query.isError) {
@@ -47,8 +76,10 @@ export function PendingEventsTab() {
   }
   const items = query.data?.items ?? [];
 
-  const patchRow = (draftId: number, patch: Partial<PendingEventRowVM>) =>
+  const patchRow = (draftId: number, patch: Partial<PendingEventRowVM>) => {
+    setEditedDraftIds((prev) => new Set(prev).add(draftId));
     setRows((prev) => (prev[draftId] ? { ...prev, [draftId]: { ...prev[draftId], ...patch } } : prev));
+  };
 
   function rowToRequest(vm: PendingEventRowVM): ReviewRowRequest {
     return {
@@ -88,6 +119,36 @@ export function PendingEventsTab() {
       setPrelabelMsg(`预填失败：${toApiError(err).message}`);
     } finally {
       setPrelabeling(false);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.eventStudyReview.all });
+    }
+  }
+
+  async function runRefresh() {
+    setRefreshing(true);
+    setRefreshMsg('正在拉取最新事件…');
+    try {
+      const r = await refreshMutation.mutateAsync();
+      // skipped_reason 区分锁占用/降级失败，避免与"没有新事件"正常语义混用
+      // 实测生成形态：union 类型（'locked' | 'failed' | null），非 enum namespace——字符串比较类型安全
+      if (r.skipped_reason === 'locked') {
+        setRefreshMsg('已有拉取正在进行中，本次跳过');
+        return;
+      }
+      if (r.skipped_reason === 'failed') {
+        setRefreshMsg('拉取失败，可稍后重试');
+        return;
+      }
+      if (r.new_drafts === 0) {
+        setRefreshMsg('没有新事件（各源最新快讯均已存在）');
+        return;
+      }
+      setRefreshMsg(`新增 ${r.new_drafts} 条事件，开始 AI 预填…`);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.eventStudyReview.all });
+      await runPrelabel(); // 复用 AI 预填循环（含 prelabeled===0 护栏与消息）
+    } catch (err) {
+      setRefreshMsg(`拉取失败：${toApiError(err).message}`);
+    } finally {
+      setRefreshing(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.eventStudyReview.all });
     }
   }
@@ -149,11 +210,24 @@ export function PendingEventsTab() {
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="outline"
           size="sm"
-          disabled={prelabeling || items.length === 0}
+          disabled={refreshing || prelabeling}
+          onClick={() => void runRefresh()}
+        >
+          {refreshing ? '拉取中…' : '🔄 重新拉取最新事件'}
+        </Button>
+        {refreshMsg && (
+          <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+            {refreshMsg}
+          </p>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={prelabeling || refreshing || items.length === 0}
           onClick={() => void runPrelabel()}
         >
           {prelabeling ? 'AI 预填中…' : '🤖 AI 预填全部待审事件'}
@@ -198,7 +272,7 @@ export function PendingEventsTab() {
             预期/实际/前值默认取 AI 提取值；清空 = 该字段不落值。数值 0 是合法值。
           </p>
           <div className="flex items-center gap-3">
-            <Button disabled={submitting || prelabeling} onClick={() => setConfirmOpen(true)}>
+            <Button disabled={submitting || prelabeling || refreshing} onClick={() => setConfirmOpen(true)}>
               {submitting ? '提交中…' : '🚀 批量提交'}
             </Button>
             {batchMsg && (

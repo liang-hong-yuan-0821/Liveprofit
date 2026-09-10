@@ -168,7 +168,17 @@ docs/
 - **langgraph 1.2.10 的 `get_graph()` 不能用于确定性顺序提取**：返回 langchain_core Graph，`edges` 是 set（无序），且 draw 模拟（apply_writes）对无 reducer 的 dict state 抛并发写冲突。要确定性拓扑（含条件边声明序）用 `compiled.builder`：`builder.nodes`（dict 声明序、不含 __start__/__end__）、`builder.edges`（set，直接边）、`builder.branches[src][router_key].ends`（dict 保留条件目标声明序，如 Risky 的 Safe 在 Risk Judge 前）——实现见 AI/graph/topology.py
 - **openapi 重导出链条**：backend 新增/修改路由后必须 `python -m backend.scripts.export_openapi` + `pnpm run generate:api` 再动前端消费代码；并发编辑下他人前端代码依赖新枚举（如 action approve/ignore）时，未重导出会导致其 typecheck 失败（2026-09-08 实测）
 - **openapi-typescript-codegen 把 Literal 生成 enum namespace**（如 `TopologyNodeDTO.status.EXECUTED`），测试/组件需值导入（不能 import type），mock 数据用枚举成员不用字符串字面量
+- **可选 Literal（`Literal[...] | None`）生成 union 类型而非 enum namespace**（2026-09-08 实测）：pydantic `Literal[...] | None` 进 OpenAPI 为 anyOf → codegen 落为 `'x' | 'y' | null`（如 `RefreshData.skipped_reason`），无枚举成员可导入，字符串比较即类型安全；与必选 Literal 的 enum namespace 形态不同，写 mock/断言时勿套用枚举成员写法
 - **React Query refetchOnMount 默认 true**：同 query key 的观察者晚于首个观察者挂载（如弹窗在数据到达后才挂载）会触发一次额外 refetch（staleTime 0 下数据即陈旧）——弹窗类共享缓存订阅用 `enabled` 门控（打开才订阅），见 NodeLogsDialog
+
+### 单Agent重跑与提示词编辑（2026-09-10）
+
+- **提示词注册表**：`AI/utils/prompts.py` 是 23 个 LLM 节点默认提示词的单一事实来源（`DEFAULT_PROMPTS`，键 = 拓扑节点 id；US/KR 4 分析师为折叠节点仍入表、v1 不可编辑）。A 类 15 工厂（ChatPromptTemplate）走 `system_message(node_id, lambda: 模板)`——覆盖命中返回**静态 SystemMessage**（花括号原样进 LLM；langchain 元组 `("system", 文本)` 会被当模板解析，含 `{xxx}`/JSON 示例即 KeyError，实测 1.5.3）；B 类 8 工厂（f-string 纯字符串 `llm.invoke`）走 `get_system_prompt`。覆盖注册表经 `init_state["prompt_overrides"]` 快照注入（propagate 入口 set_overrides），执行开始读库 → 排队/运行中任务不受后续编辑影响
+- **checkpoint 存档**：`AI/utils/checkpoint.py`——guard_checkpoint 包装器在层构建器接线处统一注入（快进 + `_current_node_id` + 节点后落盘）；`{run_dir}/checkpoints/{layer}[/{ticker}]/{Sanitized}.json` + `__init__.json` + `complete.json`（成功收尾原子写，**resolve 目录链只接受含 complete.json 的目录**——部分执行目录的环中态 checkpoint 会让被跳过环成员出口路由无限循环）+ `rerun.json`
+- **AgentState 白名单坑**：langgraph 按 schema channels 白名单**静默丢弃**未声明输入键——`_rerun_from`/`_current_node_id`/`selected_layers` 等平台保留 key 必须在 AgentState 声明，否则快进 guard 失效/跳过落盘判定恒空（Code Review 实测）
+- **环入口上移**：重跑目标为辩论/风险环成员（Bull/Bear/Risky/Safe/Neutral）时 entry 与 `_rerun_from` 上移环入口（`_LOOP_ENTRY`，键为完整 node_id）——环整体重演，否则被跳过环成员出口路由返回 map 外目标 KeyError 崩溃
+- **重跑触发源**：消息级参数（outbox payload → actor kwarg），`analysis_tasks.rerun_from_node_id` 列仅展示（claim 时非 rerun 消息清列）；entry 查找沿 attempt 目录链回溯（worker 侧链起点 = attempt_no-1，claim 时已递增）；attempt 链构造共享 `attempt_chain_dirs`（三处消费，禁止各自内联）
+- **前端坑**：`RegExp.test` 不得带 `g` 标志（lastIndex 跨求值残留）；弹窗回填用显式 `userEditedRef` 标记交互（不得以 text 是否为空推断——清空后 entry refetch 会回写服务端文本）
 
 ### 前端包管理器（pnpm）
 
@@ -220,6 +230,9 @@ docs/
 - **Alembic 迁移内 raw SQL**：必须 `text()` 包装（SQLAlchemy 2.0 拒绝裸字符串 + params）；ORM 模型 Python 端 `default=uuid.uuid4` 不作用于迁移 SQL——INSERT 需显式 `gen_random_uuid()`（PG13+ 内置）
 - **SQLAlchemy 条件 UPDATE 含比较运算**：WHERE 用 `<`/`>` 比较时，默认 synchronize_session="auto"→evaluate 会在 Python 层比较 naive/aware datetime 抛 TypeError；一律显式 `synchronize_session="fetch"`（既避免异常又保持会话内对象新鲜；False 会让后续 get 读到旧状态）
 - **module 级共享 DB 的集成测试**：必须 autouse fixture 逐用例 TRUNCATE + flushdb 隔离（否则前用例遗留 Outbox/任务被后用例 claim，如 dispatch 数量断言翻倍）；pytest 输出经管道时用 `-o faulthandler_timeout` 或写文件排查挂起
+- **契约测试复用 AI 侧全局 config 的注入点（2026-09-08 起，事件研究审核平台集成引入）**：AI 侧 `AI.eventStudy.collectors.config` 的 `pg_dsn()`/`redis_uri()` 在**调用时读模块全局**（env 仅导入时捕获进模块常量），故契约测试可 `monkeypatch.setattr(es_config, "PG_CONNECTION_STRING"/"REDIS_CONNECTION_STRING", 测试串)` + `es_config._redis_client = None`（懒加载客户端重建指向 db 11）把 AI 侧连接切到契约测试库；配合 AI 侧函数级 import，补丁在调用时生效。先例：`backend/tests/contract/api/test_event_study_review.py` 的 `_review_test_env` fixture（含 events/assets/event_impacts 最小列集 DDL + 逐用例 TRUNCATE）
+- **E2E/脚本向真实 Redis 写草稿前必须先检查现存 key（2026-09-08 踩坑，曾覆盖 3 条真实草稿）**：爬虫 `events:draft_seq` 已分配大量号段，`SET events:pending:<id>` 无条件覆盖会毁掉真实待审草稿（当日靠 dump.rdb 快照 + 临时容器恢复）。安全做法：先 `SCAN events:pending:*` + 读 `events:draft_seq`，用**远高于 seq 的 draft_id**（如 9001+）并事后 `DELETE` 清理；向真实 PG 写行同理先确认无同标题行、事后按明确条件 DELETE
+- **Redis 数据误覆盖恢复手法（2026-09-08 验证有效）**：`docker cp liveprofit-redis:/data/dump.rdb <本地目录>` → `docker run --rm -v <本地目录>:/data -p 6390:6379 redis:7-alpine redis-server --appendonly no --save ""` → `docker exec redis-cli -p 6390 --raw GET <key>`。两个坑：Git Bash 的 `/tmp` 路径 Docker Desktop 挂载无效（必须 Windows 形式 `C:/Users/...`）；Windows GBK locale 下 Python subprocess 读中文输出必须显式 `encoding="utf-8"`
 
 ## 项目结构约定
 

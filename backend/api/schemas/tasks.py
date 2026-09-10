@@ -54,6 +54,10 @@ class TaskCreatedData(BaseModel):
     graph_topology_url: str = Field(description="服务端派生的图拓扑相对 URL")
 
 
+class RerunTaskRequest(BaseModel):
+    node_id: str = Field(description='重跑起点节点 id，如 "market:CN News Analyst"')
+
+
 class TaskListItemDTO(BaseModel):
     id: UUID
     task_type: TaskTypeValue
@@ -86,6 +90,8 @@ class TaskDTO(BaseModel):
     error_summary: str | None
     created_at: datetime
     updated_at: datetime
+    rerun_from_node_id: str | None = Field(
+        description="当前 attempt 为重跑时记录起点节点 id（仅展示，触发源为消息级参数）；普通执行 null")
     events_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/events")
     report_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/report")
     execution_logs_url: str = Field(description="恒等于 /api/v1/analysis-tasks/{id}/execution-logs")

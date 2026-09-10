@@ -72,25 +72,45 @@ class RealTradingGraphFactory:
 
 
 class _RealGraphAdapter:
-    """包装内核图：propagate 返回合并后的最终状态（内核只返回信号字典，完整状态在 curr_state）。"""
+    """包装内核图：propagate/rerun_from_node 返回合并后的最终状态
+    （内核只返回信号字典，完整状态在 curr_state）。"""
 
     def __init__(self, graph) -> None:
         self._graph = graph
 
     def propagate(self, init_state, progress_callback):
         signal = self._graph.propagate(init_state, progress_callback)
+        return self._merged_state(signal)
+
+    def rerun_from_node(self, init_state, checkpoint_state, node_id, progress_callback):
+        signal = self._graph.rerun_from_node(
+            init_state, checkpoint_state, node_id, progress_callback)
+        return self._merged_state(signal)
+
+    def _merged_state(self, signal) -> dict:
         state = dict(getattr(self._graph, "curr_state", None) or {})
         state["signal"] = signal  # 决策信号并入 state，供 artifact_builder 提取
         return state
 
 
-def build_real_initial_state(task, execution_logs_root: Path | None = None) -> dict:
+def build_real_initial_state(
+    task,
+    execution_logs_root: Path | None = None,
+    prompt_overrides: dict[str, str] | None = None,
+    rerun_from_node_id: str | None = None,
+) -> dict:
     """用内核 Propagator.create_initial_state 构造初始 State（交易日校正在内核完成）。
 
     task: ClaimedTask（ticker/effective_trade_date/selected_layers）。
     execution_logs_root: 平台日志根目录；非 None 时注入 platform_log_dir
     （{root}/tasks/{task_id}/{attempt_no}），内核写确定性任务目录。
     fake/测试路径传 None → 不注入，内核回退 logs/{时间戳}。
+    prompt_overrides: 执行开始快照的提示词覆盖（node_id → text），
+    注入 init_state 后由内核 propagate 入口 set_overrides。
+    rerun_from_node_id: 单Agent重跑起点（claim 时行 attempt_no 已递增为
+    base+1，链起点 = attempt_no-1（=base）至 1，仅含 complete.json 标记目录）；
+    非 None 时解析 entry checkpoint 注入 init_state["checkpoint_state"]，
+    缺失/坏 JSON → FatalAnalysisError(RERUN_CHECKPOINT_MISSING)。
     """
     from AI.graph.propagation import Propagator  # 延迟导入：平台进程专属
 
@@ -105,7 +125,38 @@ def build_real_initial_state(task, execution_logs_root: Path | None = None) -> d
     if execution_logs_root is not None:
         init_state["platform_log_dir"] = str(
             execution_logs_root / "tasks" / str(task.task_id) / str(task.attempt_no))
+    if prompt_overrides is not None:
+        init_state["prompt_overrides"] = dict(prompt_overrides)
+    if rerun_from_node_id is not None:
+        init_state["checkpoint_state"] = _load_rerun_checkpoint(
+            task, execution_logs_root, rerun_from_node_id)
     return init_state
+
+
+def _load_rerun_checkpoint(task, execution_logs_root, node_id: str) -> dict:
+    from backend.modules.analysis.application.errors import FatalAnalysisError
+    from backend.modules.analysis.application.graph_topology import attempt_chain_dirs
+    from AI.graph.topology import build_topology
+    from AI.utils.checkpoint import deserialize_checkpoint, resolve_entry_checkpoint
+
+    assert execution_logs_root is not None
+    # claim 时行 attempt_no 已递增为 base+1，链起点 = attempt_no-1（=base）
+    run_dirs = attempt_chain_dirs(
+        execution_logs_root, task.task_id, task.attempt_no - 1)
+    topology = build_topology(tuple(task.selected_layers))
+    path = resolve_entry_checkpoint(run_dirs, topology, node_id, ticker=task.ticker)
+    if path is None:
+        raise FatalAnalysisError(
+            f"重跑 entry checkpoint 缺失：task={task.task_id} node={node_id}",
+            code="RERUN_CHECKPOINT_MISSING",
+        )
+    try:
+        return deserialize_checkpoint(path)
+    except Exception as exc:  # 坏 JSON：明确报错而非静默退化（与 API 校验结论一致）
+        raise FatalAnalysisError(
+            f"重跑 entry checkpoint 解析失败：{path}",
+            code="RERUN_CHECKPOINT_MISSING",
+        ) from exc
 
 
 def make_real_graph_factory(settings) -> Callable[[], Any]:

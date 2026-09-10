@@ -7,6 +7,7 @@ LiveProfit 研究经理 (简化版)
 
 import logging
 
+from AI.utils.prompts import get_system_prompt
 from AI.stockAgents.utils.instrument_utils import build_instrument_context
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,9 @@ def create_research_manager(llm, memory):
                 if isinstance(rec, str):
                     past_memory_str += rec + "\n\n"
 
-        prompt = f"""作为投资组合经理和辩论主持人，你的职责是批判性地评估这轮辩论并做出明确的三级别投资决策。
+        prompt = get_system_prompt(
+            state.get("_current_node_id"),
+            lambda: f"""作为投资组合经理和辩论主持人，你的职责是批判性地评估这轮辩论并做出明确的三级别投资决策。
 
 大盘与板块环境（来自市场层+板块层分析）：
 {cross_ctx}
@@ -89,6 +92,7 @@ def create_research_manager(llm, memory):
 {history}
 
 请用中文撰写所有分析内容。"""
+        )
 
         response = llm.invoke(prompt)
         logger.info(f"[研究经理] 投资计划生成完成，长度: {len(response.content)}")

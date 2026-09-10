@@ -9,6 +9,10 @@
 
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class EventStudyReviewAdapter:
     def open_connection(self):
@@ -25,6 +29,34 @@ class EventStudyReviewAdapter:
         from AI.eventStudy.review import review_dao
 
         return review_dao.get_pending_events()
+
+    def fetch_latest_events(self) -> list[dict]:
+        from AI.eventStudy.collectors import event_crawler
+
+        return event_crawler.fetch_events_from_crawler()
+
+    def save_pending_events(self, events: list[dict], conn) -> list[int]:
+        from AI.eventStudy.collectors import event_crawler
+
+        return event_crawler.save_pending_events(events, conn=conn)
+
+    def try_acquire_refresh_lock(self, key: str, token: str, ttl_ms: int) -> bool:
+        from AI.eventStudy.collectors.config import get_redis_client
+
+        return bool(get_redis_client().set(key, token, nx=True, px=ttl_ms))
+
+    def release_refresh_lock(self, key: str, token: str) -> None:
+        from AI.eventStudy.collectors.config import get_redis_client
+
+        try:
+            # Lua 比对删除：仅锁值仍为本方 token 时释放，防 TTL 过期后被后继请求占用时误删
+            get_redis_client().eval(
+                "if redis.call('get', KEYS[1]) == ARGV[1] then "
+                "return redis.call('del', KEYS[1]) else return 0 end",
+                1, key, token,
+            )
+        except Exception as e:
+            logger.warning(f"拉取锁释放失败: {e}")
 
     def approve(self, conn, draft_id: int, fields: dict, operator: str) -> int:
         from AI.eventStudy.review import review_dao

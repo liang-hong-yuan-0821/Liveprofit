@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router';
-import { BarChart3, Bot, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { BarChart3, Bot, ChevronLeft, ChevronRight, FlaskConical, Star } from 'lucide-react';
 import { useUiPreferenceStore } from '../../stores/uiPreferenceStore';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/market', label: '大盘', icon: BarChart3 },
   { to: '/watchlist', label: '自选', icon: Star },
   { to: '/ai', label: 'AI', icon: Bot },
+  { to: '/event-study', label: '事件研究', icon: FlaskConical },
 ] as const;
 
 export function SidebarNav() {

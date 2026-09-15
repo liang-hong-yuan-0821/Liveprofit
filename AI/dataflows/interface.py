@@ -142,6 +142,15 @@ def get_china_stock_data(ticker: str, start_date: str, end_date: str) -> str:
     return data
 
 
+def get_stock_factor_df(ticker: str, start_date: str, end_date: str):
+    """获取个股每日技术面因子（stk_factor_pro）→ 结构化 DataFrame（技术指标数据源切换方案 §3.4）。
+
+    技术指标不自算（2026-09-12 决策）：因子值取自 Tushare 端点。
+    无缓存层（1 次调用/报告，非高频路径）；AKShare 数据源下基类默认 None → 消费方降级 N/A。
+    """
+    return _get_provider().get_stock_factor_df(ticker, start_date, end_date)
+
+
 @dataprovider_log
 def get_china_stock_info(ticker: str) -> str:
     """获取股票基本信息（公司名称、行业、地区、上市日期）"""
@@ -849,3 +858,138 @@ def get_market_fund_flow(curr_date: str) -> str:
     if hasattr(prov, 'get_market_fund_flow'):
         return prov.get_market_fund_flow(curr_date)
     return "当前数据源不支持资金流向数据，请切换到 akshare。"
+
+
+# ==================== 市场特征层 — 结构化接口（T5） ====================
+# 供 AI/dataflows/market_features.py 消费的结构化接口组（方案第四章接口表）。
+# 契约（规则 8）：不支持/失败返回 None（绝不返回展示用字符串），
+# 序列按 trade_date 升序、YYYY-MM-DD、已按 curr_date 截断，
+# 每个 dict 含 as_of_date / missing（{名称: 原因}）/ notes。
+# 保持 hasattr 动态检测模式：AKShare 未覆写时自然降级为 None。
+
+
+@dataprovider_log
+def get_market_index_features(curr_date: str, lookbacks=(5, 20, 60, 120, 250)):
+    """结构化：核心指数 OHLCV 全窗口序列（趋势/风格特征）"""
+    curr_date = _correct_trade_date(curr_date, caller="get_market_index_features")
+    prov = _get_provider()
+    if hasattr(prov, 'get_market_index_features'):
+        return prov.get_market_index_features(curr_date, lookbacks)
+    return None
+
+
+@dataprovider_log
+def get_market_breadth_history(curr_date: str, days: int = 20):
+    """结构化：宽度（涨跌家数/成交额）与高标情绪（涨停/连板/晋级率）序列
+
+    注意：`market_breadth_history` 为核心数据集（`market_data_quality` 判据）。
+    """
+    curr_date = _correct_trade_date(curr_date, caller="get_market_breadth_history")
+    prov = _get_provider()
+    if hasattr(prov, 'get_market_breadth_history'):
+        return prov.get_market_breadth_history(curr_date, days)
+    return None
+
+
+@dataprovider_log
+def get_market_fund_flow_history(curr_date: str, days: int = 20):
+    """结构化：主力净流入/北向资金序列（单位统一为万元）
+
+    注意：`market_fund_flow_history` 为核心数据集（`market_data_quality` 判据）。
+    """
+    curr_date = _correct_trade_date(curr_date, caller="get_market_fund_flow_history")
+    prov = _get_provider()
+    if hasattr(prov, 'get_market_fund_flow_history'):
+        return prov.get_market_fund_flow_history(curr_date, days)
+    return None
+
+
+@dataprovider_log
+def get_margin_trading_history(curr_date: str, days: int = 20):
+    """结构化：两融余额（rzye/rqye）历史序列（单位：元）"""
+    curr_date = _correct_trade_date(curr_date, caller="get_margin_trading_history")
+    prov = _get_provider()
+    if hasattr(prov, 'get_margin_trading_history'):
+        return prov.get_margin_trading_history(curr_date, days)
+    return None
+
+
+@dataprovider_log
+def get_market_valuation(curr_date: str, years: int = 5):
+    """结构化：指数 PE/PB 历史序列 + 全 A 单日快照（长线估值分位）"""
+    curr_date = _correct_trade_date(curr_date, caller="get_market_valuation")
+    prov = _get_provider()
+    if hasattr(prov, 'get_market_valuation'):
+        return prov.get_market_valuation(curr_date, years)
+    return None
+
+
+@dataprovider_log
+def get_cn_liquidity_indicators(curr_date: str, days: int = 20):
+    """结构化：Shibor/LPR/M1·M2 流动性指标（10Y/DR007 缺权限已降级）"""
+    curr_date = _correct_trade_date(curr_date, caller="get_cn_liquidity_indicators")
+    prov = _get_provider()
+    if hasattr(prov, 'get_cn_liquidity_indicators'):
+        return prov.get_cn_liquidity_indicators(curr_date, days)
+    return None
+
+
+@dataprovider_log
+def get_cn_event_calendar(curr_date: str, windows=(5, 20, 60)):
+    """结构化：资金日历（IPO/解禁/交割/长假；只给日历事实）"""
+    curr_date = _correct_trade_date(curr_date, caller="get_cn_event_calendar")
+    prov = _get_provider()
+    if hasattr(prov, 'get_cn_event_calendar'):
+        return prov.get_cn_event_calendar(curr_date, windows)
+    return None
+
+
+@dataprovider_log
+def get_global_risk_indicators(curr_date: str, days: int = 20):
+    """结构化：全球风险价格（美债/全球指数/汇率/商品）
+
+    注意：`global_risk_indicators` 为核心数据集（`market_data_quality` 判据）。
+    """
+    curr_date = _correct_trade_date(curr_date, caller="get_global_risk_indicators")
+    prov = _get_provider()
+    if hasattr(prov, 'get_global_risk_indicators'):
+        return prov.get_global_risk_indicators(curr_date, days)
+    return None
+
+
+def market_dataset_support() -> dict:
+    """当前数据源对 8 个市场特征结构化接口的覆写能力快照（零 API 调用）。
+
+    仅做类级方法覆写检测：不实例化 Provider、不发起任何请求、不读缓存。
+    供 `market_features.probe_dataset_availability()` 在 graph 起点构建
+    `market_data_quality`（能力存在 ≠ 当日有数据；实测缺失由节点级
+    `data_quality` 子字段描述）。
+
+    Returns:
+        `{数据集名: bool}`（数据集名同 `market_features.MARKET_DATASETS`）
+    """
+    from .market_features import MARKET_DATASETS
+    from .providers.base_provider import BaseStockDataProvider
+
+    try:
+        if _get_data_source() == "akshare":
+            from .providers.cn.akshare import AKShareProvider as provider_cls
+        else:
+            from .providers.cn.tushare import TushareProvider as provider_cls
+    except Exception as e:
+        logger.warning(f"市场特征能力探测失败（Provider 导入异常）: {e}")
+        provider_cls = None
+
+    support = {}
+    for name, meta in MARKET_DATASETS.items():
+        interface_name = meta.get("interface")
+        supported = False
+        if provider_cls is not None and interface_name:
+            impl = getattr(provider_cls, interface_name, None)
+            base_impl = getattr(BaseStockDataProvider, interface_name, None)
+            supported = impl is not None and (
+                base_impl is None or getattr(impl, "__func__", impl)
+                is not getattr(base_impl, "__func__", base_impl)
+            )
+        support[name] = supported
+    return support

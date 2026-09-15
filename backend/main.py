@@ -28,7 +28,6 @@ from backend.api.routers import (
     graph_topology,
     health,
     macro_information,
-    market_assets,
     market_data,
     metrics,
     portfolios,
@@ -57,6 +56,9 @@ async def lifespan(app: FastAPI):
     app.state.event_study_executor = app.state.event_study_service._executor
     app.state.event_study_review_service = _build_event_study_review_service()
     app.state.market_calendar = _build_market_calendar()
+    # market_conn 注入链的生产端（market_data 路由依赖；漏赋值则 get_bars 首次调用 AttributeError）
+    from db.instrument.db import get_connection as market_get_connection
+    app.state.market_conn = market_get_connection
     metrics_collector, metrics_cache, refresh_task = await _install_metrics(app, container)
     try:
         yield
@@ -181,7 +183,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(macro_information.router)
     app.include_router(watchlists.router)
     app.include_router(portfolios.router)
-    app.include_router(market_assets.router)
     app.include_router(market_data.router)
     register_exception_handlers(app)
 

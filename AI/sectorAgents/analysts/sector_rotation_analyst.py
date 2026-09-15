@@ -7,6 +7,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.dataflows import market_features as mf
 from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 from AI.templates import load_output_format
 
@@ -124,15 +125,20 @@ def create_sector_rotation_analyst(llm, toolkit):
 def _build_sector_context(state) -> str:
     """组装上游板块层上下文摘要，供轮动预测参考。
 
-    优先消费结构化短字段（market_regime），
+    T6：`market_regime` 为结构化 dict（原 str 原地替换），经 `market_features`
+    紧凑渲染器注入（空/缺失返回空串，不做 `len(str) > 10` 判定）；
     板块层完整报告取前 600 字摘要。
     """
     parts = []
 
-    # 优先：大盘环境结构化短字段（完整，不截断）
-    market_regime = state.get("market_regime", "")
-    if market_regime and len(market_regime) > 10:
-        parts.append(f"## 大盘环境\n{market_regime}")
+    # 优先：大盘环境结构化字段（dict → 紧凑 Markdown；渲染失败降级空串）
+    try:
+        market_regime = mf.format_market_regime_summary(state.get("market_regime"))
+    except Exception as e:  # 评审 m17/第2轮 finding 4：嵌套字段类型异常不阻断上下文组装
+        logger.warning(f"[板块轮动预测] 大盘环境渲染失败（降级空串）: {e}")
+        market_regime = ""
+    if market_regime:
+        parts.append(market_regime)
 
     # 板块新闻报告（截取前 600 字）
     sector_news = state.get("sector_news_report", "")

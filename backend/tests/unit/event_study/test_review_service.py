@@ -55,6 +55,11 @@ class FakeAdapter:
         self.lock_acquire_ok = True
         self.lock_acquires: list[tuple] = []
         self.lock_releases: list[tuple] = []
+        # 作用域前置校验：默认通过（None），置为错误文案即模拟行级校验失败；
+        # scope_errors 为逐行脚本（按调用序出队），None 表示该行校验通过
+        self.scope_error: str | None = None
+        self.scope_errors: list[str | None] = []
+        self.scope_calls: list[tuple] = []
 
     # ---- 适配器接口 ----
     def open_connection(self):
@@ -70,6 +75,12 @@ class FakeAdapter:
         idx = min(self.pending_calls, len(self.pending_script) - 1)
         self.pending_calls += 1
         return self.pending_script[idx]
+
+    def validate_scope(self, conn, fields) -> str | None:
+        self.scope_calls.append((conn, dict(fields)))
+        if self.scope_errors:
+            return self.scope_errors.pop(0)
+        return self.scope_error
 
     def approve(self, conn, draft_id, fields, operator):
         self.approve_calls.append((conn, draft_id, fields, operator))
@@ -339,6 +350,80 @@ def test_submit_batch_approve_no_windows_marks_failed(svc):
     adapter.compute_return = {"event_id": 101, "assets": {}}  # 资产未初始化：什么都没算
     result = service.submit_batch([ReviewRowCommand(draft_id=1, action="approve")])
     assert result.results[0].compute_status == "failed"
+
+
+def test_submit_batch_scope_precheck_failed_maps_row_failed_and_rollback(svc):
+    """作用域前置校验失败：行级 REVIEW_ROW_FAILED（非 DRAFT_NOT_FOUND），rollback 后继续。"""
+    adapter, service = svc
+    adapter.scope_errors = ["sector 作用域至少需要一个目标引用", None]
+    rows = [
+        ReviewRowCommand(draft_id=1, action="approve", event_scope="sector"),
+        ReviewRowCommand(draft_id=2, action="approve", event_scope="sector",
+                         affected_scope_refs=["SW:801080"]),
+    ]
+    result = service.submit_batch(rows)
+    failed, ok_row = result.results
+    assert failed.ok is False
+    assert failed.error_code == "REVIEW_ROW_FAILED"
+    assert failed.error_code != "REVIEW_DRAFT_NOT_FOUND"
+    assert "至少需要一个目标引用" in failed.error_message
+    assert [c[1] for c in adapter.approve_calls] == [2]  # 失败行未进 approve
+    assert adapter.conn.rollbacks == 1  # 校验失败也 rollback，避免毒化后续行
+    assert ok_row.ok and result.approved == 1
+
+
+def test_submit_batch_scope_ref_count_deduped_before_limit(svc):
+    """引用数量按**去重后**条数判定（评审残留）：21 条重复引用不得误伤该行。
+
+    同一目标写两次（多来源表单/拼接）经 `normalize_scope_refs` 去重后只有 1 个
+    目标；按原始条数判定会把合法输入挡在行级失败上。
+    """
+    adapter, service = svc
+    result = service.submit_batch([
+        ReviewRowCommand(draft_id=1, action="approve", event_scope="sector",
+                         affected_scope_refs=["SW:801080"] * 21),
+    ])
+    assert result.results[0].ok, result.results[0].error_message
+    assert result.approved == 1
+    assert [c[1] for c in adapter.approve_calls] == [1]
+
+    # 去重后仍超上限（21 个不同目标）→ 行级 REVIEW_ROW_FAILED，且不进 approve
+    distinct = [f"SW:80{n:04d}" for n in range(1000, 1021)]
+    result = service.submit_batch([
+        ReviewRowCommand(draft_id=2, action="approve", event_scope="sector",
+                         affected_scope_refs=distinct),
+    ])
+    failed = result.results[0]
+    assert failed.ok is False
+    assert failed.error_code == "REVIEW_ROW_FAILED"
+    assert failed.error_code != "REVIEW_DRAFT_NOT_FOUND"
+    assert "上限" in failed.error_message
+    assert [c[1] for c in adapter.approve_calls] == [1]  # 失败行未进 approve
+    # 长度/数量校验是纯内存前置检查（未执行语句）→ 无需 rollback
+    assert adapter.conn.rollbacks == 0
+
+
+def test_submit_batch_scope_precheck_receives_route_fields(svc):
+    """前置校验拿到归一前的路由字段（DAO 负责归一；None 键不传，交默认链）。"""
+    adapter, service = svc
+    service.submit_batch([
+        ReviewRowCommand(draft_id=1, action="approve", event_scope="sector",
+                         affected_scope_refs=["801080", "BK1753.DC"]),
+        ReviewRowCommand(draft_id=2, action="approve", event_scope="market"),
+        ReviewRowCommand(draft_id=3, action="approve"),  # 未携带路由字段（旧前端）
+    ])
+    assert adapter.scope_calls[0][1]["event_scope"] == "sector"
+    assert adapter.scope_calls[0][1]["affected_scope_refs"] == ["801080", "BK1753.DC"]
+    assert adapter.scope_calls[1][1]["event_scope"] == "market"
+    assert "affected_scope_refs" not in adapter.scope_calls[1][1]
+    assert "event_scope" not in adapter.scope_calls[2][1]  # 缺字段 → DAO 回退 market
+    assert len(adapter.approve_calls) == 3
+
+
+def test_submit_batch_ignore_skips_scope_precheck(svc):
+    adapter, service = svc
+    service.submit_batch([ReviewRowCommand(draft_id=1, action="ignore", event_scope="sector")])
+    assert adapter.scope_calls == []  # ignored 不参与检索，不做路由校验
 
 
 def test_submit_batch_unknown_action_defensive_row_failed(svc):

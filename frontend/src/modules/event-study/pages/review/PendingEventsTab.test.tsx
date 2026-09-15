@@ -30,7 +30,11 @@ function envelope(data: unknown) {
   return { data, meta: { request_id: 'r', schema_version: 'v1' } };
 }
 
-function draftItem(draftId: number, title = `事件 ${draftId}`) {
+function draftItem(
+  draftId: number,
+  title = `事件 ${draftId}`,
+  suggestions: Record<string, unknown> = {},
+) {
   return {
     draft_id: draftId,
     title,
@@ -47,6 +51,9 @@ function draftItem(draftId: number, title = `事件 ${draftId}`) {
       expected_value: 1.9,
       actual_value: 2.1,
       previous_value: 1.5,
+      event_scope: 'market',
+      affected_scope_refs: [],
+      ...suggestions,
     },
   };
 }
@@ -78,7 +85,79 @@ describe('PendingEventsTab', () => {
     expect(screen.getByLabelText('第1行-重要性')).toHaveValue('5');
     expect(screen.getByLabelText('第1行-预期值')).toHaveValue(1.9);
     expect(screen.getByLabelText('第1行-操作')).toHaveValue('skip');
+    expect(screen.getByLabelText('第1行-作用域')).toHaveValue('market');
+    expect(screen.getByLabelText('第1行-目标')).toHaveValue('');
     expect(screen.getByText('事件 1')).toBeInTheDocument();
+    expect(screen.getByText(/AI 预填，请确认/)).toBeInTheDocument();
+  });
+
+  it('路由字段回填：sector 建议回填作用域与目标，提交 payload 含路由字段', async () => {
+    const user = userEvent.setup();
+    setupPending([
+      draftItem(1, '半导体政策', {
+        event_scope: 'sector',
+        affected_scope_refs: ['SW:801080', 'CONCEPT:BK1753.DC'],
+      }),
+    ]);
+    expect(await screen.findByLabelText('第1行-作用域')).toHaveValue('sector');
+    expect(screen.getByLabelText('第1行-目标')).toHaveValue('SW:801080, CONCEPT:BK1753.DC');
+
+    await user.selectOptions(screen.getByLabelText('第1行-操作'), 'approve');
+    batchMock.mockResolvedValue(
+      envelope({
+        results: [{ draft_id: 1, ok: true, event_id: 10, error_code: null, error_message: null, compute_status: 'ok' }],
+        summary: { approved: 1, ignored: 0, computed: 1 },
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: '🚀 批量提交' }));
+    await user.click(screen.getByRole('button', { name: '提交' }));
+    await screen.findByText('已处理 1/1 行');
+    const [payload] = batchMock.mock.calls[0];
+    expect(payload.items[0]).toMatchObject({
+      draft_id: 1,
+      action: 'approve',
+      event_scope: 'sector',
+      affected_scope_refs: ['SW:801080', 'CONCEPT:BK1753.DC'],
+    });
+  });
+
+  it('下层作用域缺目标：阻止提交（不开确认框、不调 batch），提示可回退 market', async () => {
+    const user = userEvent.setup();
+    setupPending([draftItem(1, '某行业政策', { event_scope: 'sector', affected_scope_refs: [] })]);
+    await screen.findByLabelText('第1行-操作');
+    expect(screen.getByLabelText('第1行-作用域')).toHaveValue('sector');
+
+    await user.selectOptions(screen.getByLabelText('第1行-操作'), 'approve');
+    await user.click(screen.getByRole('button', { name: '🚀 批量提交' }));
+    expect(await screen.findByText(/作用域为 sector\/stock 但未填目标引用/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '提交' })).not.toBeInTheDocument();
+    expect(batchMock).not.toHaveBeenCalled();
+
+    // 补目标后放行；market 回退路径同样放行
+    fireEvent.change(screen.getByLabelText('第1行-目标'), { target: { value: 'SW:801080' } });
+    await user.click(screen.getByRole('button', { name: '🚀 批量提交' }));
+    expect(await screen.findByRole('button', { name: '提交' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '取消' }));
+  });
+
+  it('market 作用域提交空数组（表单残留目标文本不落库）', async () => {
+    const user = userEvent.setup();
+    setupPending([draftItem(1)]);
+    await screen.findByLabelText('第1行-操作');
+    fireEvent.change(screen.getByLabelText('第1行-目标'), { target: { value: 'SW:801080' } });
+    await user.selectOptions(screen.getByLabelText('第1行-操作'), 'approve');
+    batchMock.mockResolvedValue(
+      envelope({
+        results: [{ draft_id: 1, ok: true, event_id: 10, error_code: null, error_message: null, compute_status: 'ok' }],
+        summary: { approved: 1, ignored: 0, computed: 1 },
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: '🚀 批量提交' }));
+    await user.click(screen.getByRole('button', { name: '提交' }));
+    await screen.findByText('已处理 1/1 行');
+    const [payload] = batchMock.mock.calls[0];
+    expect(payload.items[0].event_scope).toBe('market');
+    expect(payload.items[0].affected_scope_refs).toEqual([]);
   });
 
   it('空态：无草稿时不渲染表格与预填按钮可用性', async () => {

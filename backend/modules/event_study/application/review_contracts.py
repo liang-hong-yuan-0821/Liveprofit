@@ -20,6 +20,9 @@ class ReviewRowCommand:
     expected_value: float | None = None
     actual_value: float | None = None
     previous_value: float | None = None
+    # 三级路由（方案第三章）：None → 省略键，review_dao 归一化为 market + []
+    event_scope: str | None = None  # market / sector / stock
+    affected_scope_refs: list[str] | None = None  # SW:/CONCEPT:/stock: 规范形态引用
     operator: str = "admin"
 
 

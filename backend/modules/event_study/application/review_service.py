@@ -6,7 +6,10 @@
 - approve 成功即同 conn 计算影响窗口，compute 失败仅记 compute_status="failed"
   （daily_job 步骤 6 兜底重算）。
 - review_fields 仅含非 None 键：键缺失委托 review_dao 既有默认链
-  （importance → importance_hint 或 3；数值键 → 落 NULL）。
+  （importance → importance_hint 或 3；数值键 → 落 NULL；路由字段 → market + []）。
+- approve 行提交前先做作用域/引用前置校验（与 review_dao 内校验同一规则，双保险）：
+  校验失败 = 行级 REVIEW_ROW_FAILED（草稿保留、表单可修正后重提），
+  不得映射 REVIEW_DRAFT_NOT_FOUND。
 """
 
 from __future__ import annotations
@@ -36,6 +39,19 @@ logger = logging.getLogger(__name__)
 
 _ROW_ERROR_DRAFT_NOT_FOUND = "REVIEW_DRAFT_NOT_FOUND"
 _ROW_ERROR_FAILED = "REVIEW_ROW_FAILED"  # 行级信息码：不抛 HTTP、不进 _CODE_MAP
+
+# 行级字段长度上限（评审 m18）：与 AI/eventStudy/db/schema.sql 的 events 列宽一致。
+# 长度约束不下沉到 API Schema（Schema 级 max_length 失败 = 整批 422，单行超长会
+# 拖垮同批其余合法行）；此处逐行判定 → 该行 REVIEW_ROW_FAILED，其余行照常提交。
+_ROW_TEXT_LIMITS = (
+    ("event_type", 64, "事件类型"),
+    ("event_subtype", 64, "事件子类型"),
+    ("event_condition", 32, "事件条件"),
+    ("event_scope", 16, "作用域"),
+    ("operator", 64, "操作人"),
+)
+_MAX_SCOPE_REFS = 20        # 与 review_dao.MAX_SCOPE_REFS 一致
+_MAX_SCOPE_REF_LEN = 64     # 单条引用上限（规范形态最长 CONCEPT:BK9999.DC 等）
 
 _REFRESH_LOCK_KEY = "events:refresh_lock"
 _REFRESH_LOCK_TTL_MS = 120_000  # 覆盖启用源串行抓取最坏 ~75s（财联社 v1 失败回退 nodeapi）+ 去重扫描
@@ -107,7 +123,11 @@ class EventStudyReviewService:
 
     @staticmethod
     def _review_fields(row: ReviewRowCommand) -> dict:
-        """仅含非 None 键——键缺失委托 review_dao 默认链（importance_hint 或 3 / 落 NULL）。"""
+        """仅含非 None 键——键缺失委托 review_dao 默认链
+        （importance_hint 或 3 / 落 NULL / 路由字段 market + []）。
+
+        空列表是合法值（market 作用域的 affected_scope_refs=[]），同样保留。
+        """
         return {
             k: v
             for k, v in {
@@ -118,6 +138,8 @@ class EventStudyReviewService:
                 "expected_value": row.expected_value,
                 "actual_value": row.actual_value,
                 "previous_value": row.previous_value,
+                "event_scope": row.event_scope,
+                "affected_scope_refs": row.affected_scope_refs,
             }.items()
             if v is not None
         }
@@ -139,6 +161,31 @@ class EventStudyReviewService:
             computed=sum(1 for r in results if r.compute_status == "ok"),
         )
 
+    @staticmethod
+    def _validate_row_lengths(row: ReviewRowCommand) -> str | None:
+        """行级字段长度校验（评审 m18）：超限 → 返回错误信息（该行行级失败）。
+
+        与 API Schema 的分工：Schema 只留宽松上限防超大 payload，业务长度在
+        行级判定——这样单个超长字段不会让整批 422（行级失败语义，草稿保留可
+        修正后重提）。上限与 `events` 表列宽一致。
+        """
+        for field, limit, label in _ROW_TEXT_LIMITS:
+            value = getattr(row, field, None)
+            if isinstance(value, str) and len(value) > limit:
+                return f"{label}长度超限（{len(value)} > {limit}）"
+        refs = getattr(row, "affected_scope_refs", None)
+        if refs:
+            # 数量按**去重后**条数判定（评审残留）：合法重复引用（同一目标写两次）
+            # 经 `normalize_scope_refs` 去重，原始条数超限不得误伤该行
+            unique_count = len({str(r).strip() for r in refs})
+            if unique_count > _MAX_SCOPE_REFS:
+                return f"目标引用数量超出上限 {_MAX_SCOPE_REFS}: {unique_count}"
+            for ref in refs:
+                if isinstance(ref, str) and len(ref) > _MAX_SCOPE_REF_LEN:
+                    return (f"目标引用长度超限（{len(ref)} > {_MAX_SCOPE_REF_LEN}）: "
+                            f"{ref[:32]}…")
+        return None
+
     def _submit_row(self, conn, row: ReviewRowCommand) -> ReviewRowResult:
         if row.action not in ("approve", "ignore"):
             return ReviewRowResult(
@@ -146,6 +193,24 @@ class EventStudyReviewService:
                 error_code=_ROW_ERROR_FAILED, error_message=f"未知操作: {row.action}",
             )
         fields = self._review_fields(row)
+        if row.action == "approve":
+            # 提交前前置校验（长度 → 作用域/引用格式/引用存在性/作用域—目标组合）：
+            # 失败即行级失败 REVIEW_ROW_FAILED（草稿保留可修正重提），
+            # 不得映射 REVIEW_DRAFT_NOT_FOUND；review_dao.approve_event 内同一
+            # 规则再校验一次（双保险）。
+            length_error = self._validate_row_lengths(row)
+            if length_error:
+                return ReviewRowResult(
+                    row.draft_id, ok=False,
+                    error_code=_ROW_ERROR_FAILED, error_message=length_error,
+                )
+            scope_error = self._adapter.validate_scope(conn, fields)
+            if scope_error:
+                conn.rollback()  # 校验可能留下 aborted 事务，恢复干净状态再处理后续行
+                return ReviewRowResult(
+                    row.draft_id, ok=False,
+                    error_code=_ROW_ERROR_FAILED, error_message=scope_error,
+                )
         try:
             if row.action == "approve":
                 event_id = self._adapter.approve(conn, row.draft_id, fields, row.operator)

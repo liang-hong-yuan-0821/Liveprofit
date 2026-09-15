@@ -1,6 +1,6 @@
 """scan_run_status 状态推导单测（纯文件系统构造，无网络/DB）。
 
-夹具对应 docs/plans/任务拓扑图方案.md §3.4 测试表第 2 行。
+夹具对应 docs/requirements/archive/任务拓扑图方案.md §3.4 测试表第 2 行。
 """
 
 from __future__ import annotations

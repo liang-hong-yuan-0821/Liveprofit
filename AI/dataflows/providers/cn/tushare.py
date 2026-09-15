@@ -29,6 +29,22 @@ logger = logging.getLogger(__name__)
 # Tushare API 单次调用超时上限（秒），可通过环境变量 TUSHARE_TIMEOUT 覆盖
 _TUSHARE_TIMEOUT = int(os.getenv("TUSHARE_TIMEOUT", "30"))
 
+# 技术因子端点字段集合（不自算决策，2026-09-12；技术指标数据源切换方案 §3.1.1）。
+# INDEX：大盘页契约消费的 10 因子 + close（入库前与 bars 对齐自检用，mapper 不落库）。
+# STOCK：AI 个股报告消费——比 INDEX 多 ma_bfq_250 与 rsi_bfq_6/12/24。
+# 常量分开定义避免未来改一处漏一处；新增指标时同步扩展两处并评估消费方。
+INDEX_FACTOR_FIELDS = (
+    "ts_code,trade_date,close,ma_bfq_5,ma_bfq_10,ma_bfq_20,ma_bfq_60,"
+    "boll_mid_bfq,boll_upper_bfq,boll_lower_bfq,"
+    "macd_dif_bfq,macd_dea_bfq,macd_bfq"
+)
+STOCK_FACTOR_FIELDS = (
+    "ts_code,trade_date,ma_bfq_5,ma_bfq_10,ma_bfq_20,ma_bfq_60,ma_bfq_250,"
+    "boll_mid_bfq,boll_upper_bfq,boll_lower_bfq,"
+    "macd_dif_bfq,macd_dea_bfq,macd_bfq,"
+    "rsi_bfq_6,rsi_bfq_12,rsi_bfq_24"
+)
+
 try:
     import tushare as ts
     TUSHARE_AVAILABLE = True
@@ -160,6 +176,10 @@ class TushareProvider(BaseStockDataProvider):
         "CSI_SEMI":("中华半导体", "csi_semi"),
         "CSI_AI":  ("人工智能", "csi_ai"),
     }
+
+    # index_global 端点非 CN 指数映射（2026-09-14 US/KR 上线实测验收）：
+    # 键 = 平台 symbol（INDEX_TARGETS/前端目录口径），值 = index_global 的 ts_code
+    GLOBAL_INDEX_CODE_MAP = {".INX": "SPX", ".DJI": "DJI", ".IXIC": "IXIC", "KS11": "KS11"}
 
     AI_INDUSTRY_CHAIN = {
         "存储芯片": "memory_chip",
@@ -1899,12 +1919,18 @@ class TushareProvider(BaseStockDataProvider):
 
         与展示用 get_index_data 不同：不截断（limit 5），按时间窗口分页
         循环拉取，保证事件研究所需的完整估计窗口 + 事件窗口数据。
-        返回标准列：trade_date / open / high / low / close / vol / amount。
+        返回标准列（2026-09-13 扩列，证券市场数据库统一方案 3.5.1）：
+        trade_date / open / high / low / close / pre_close / change / pct_chg /
+        vol / amount——pre_close/change/pct_chg 存上游原值不自算；上游帧缺列时
+        对应列留 NULL 并告警（缺列降级不阻断）。
         获取失败返回 None。
         """
         if not self.connected:
             logger.warning("Tushare 未连接，无法获取结构化指数行情。")
             return None
+        if index_code in self.GLOBAL_INDEX_CODE_MAP:
+            return self._get_global_index_df(
+                self.GLOBAL_INDEX_CODE_MAP[index_code], start_date, end_date)
         code = self._normalize_code(index_code)
         try:
             start_dt = datetime.strptime(start_date.replace("-", ""), "%Y%m%d")
@@ -1940,16 +1966,179 @@ class TushareProvider(BaseStockDataProvider):
         df = pd.concat(frames, ignore_index=True)
         df = df.drop_duplicates(subset=["trade_date"]).sort_values("trade_date")
 
-        # 标准化列：trade_date(YYYY-MM-DD str，与 AKShare 输出一致) / open / high / low / close / vol / amount
+        # 标准化列：trade_date(YYYY-MM-DD str，与 AKShare 输出一致) / open / high /
+        # low / close / pre_close / change / pct_chg / vol / amount（扩列三列存上游原值；
+        # 缺列降级——上游帧缺列时对应列留 NULL 并告警，不阻断）
+        for extra in ("pre_close", "change", "pct_chg"):
+            if extra not in df.columns:
+                logger.warning("get_index_data_df: 上游帧缺 %s 列，该列留 NULL", extra)
         std = pd.DataFrame({
             "trade_date": pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d"),
             "open": pd.to_numeric(df.get("open"), errors="coerce"),
             "high": pd.to_numeric(df.get("high"), errors="coerce"),
             "low": pd.to_numeric(df.get("low"), errors="coerce"),
             "close": pd.to_numeric(df.get("close"), errors="coerce"),
+            "pre_close": pd.to_numeric(df.get("pre_close"), errors="coerce"),
+            "change": pd.to_numeric(df.get("change"), errors="coerce"),
+            "pct_chg": pd.to_numeric(df.get("pct_chg"), errors="coerce"),
             "vol": pd.to_numeric(df.get("vol"), errors="coerce"),
             "amount": pd.to_numeric(df.get("amount"), errors="coerce"),
         })
+        return std
+
+    def _get_global_index_df(self, ts_global_code: str, start_date: str, end_date: str):
+        """非 CN 指数日线（index_global 端点）→ 10 列标准帧（2026-09-14 US/KR 上线）。
+
+        - 上游自带 pre_close/change/pct_chg：直取原值不自算（与 CN index_daily
+          扩列三列"存上游原值"同口径）；amount 上游无此列 → 恒 NaN（与 AKShare
+          兜底行 amount 恒 NaN 同口径）；swing 丢弃
+        - 单次调用不内部再分页：调用方窗口已受限（回填 1825 天/段——实测 8.7 年
+          单次 OK、1900 年起超大窗口 ReadTimeout；增量 3 个交易日）
+        - 端点返回降序，升序归一后输出（"日线消费必须升序"不变量）
+        - 异常/空/未连接返回 None（契约：失败不抛，触发采集链换兜底源）
+        """
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取全球指数行情。")
+            return None
+        try:
+            df = self._api_call(
+                self.api.index_global,
+                ts_code=ts_global_code,
+                start_date=start_date.replace("-", ""),
+                end_date=end_date.replace("-", ""),
+            )
+            if df is None or df.empty:
+                return None
+            df = _sort_asc_by_trade_date(df)
+            return pd.DataFrame({
+                "trade_date": pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d"),
+                "open": pd.to_numeric(df.get("open"), errors="coerce"),
+                "high": pd.to_numeric(df.get("high"), errors="coerce"),
+                "low": pd.to_numeric(df.get("low"), errors="coerce"),
+                "close": pd.to_numeric(df.get("close"), errors="coerce"),
+                "pre_close": pd.to_numeric(df.get("pre_close"), errors="coerce"),
+                "change": pd.to_numeric(df.get("change"), errors="coerce"),
+                "pct_chg": pd.to_numeric(df.get("pct_chg"), errors="coerce"),
+                "vol": pd.to_numeric(df.get("vol"), errors="coerce"),
+                # index_global 上游无 amount 列，恒 NaN（入库 NULL 属事实）
+                "amount": float("nan"),
+            })
+        except Exception as e:
+            # 拉取/构帧/缺列任何失败一律 None（契约：不抛，触发采集链换兜底源）
+            logger.warning("全球指数 %s 拉取失败 [%s ~ %s]: %s",
+                           ts_global_code, start_date, end_date, e)
+            return None
+
+    # ==================== 技术因子 — 结构化接口（不自算，2026-09-12 决策） ====================
+
+    def get_index_factor_df(self, index_code: str, start_date: str, end_date: str, fields: str | None = None):
+        """指数每日技术面因子（idx_factor_pro）→ DataFrame，分页保证完整区间。
+
+        官方单次上限 8000 行（实测全历史 8715 行不截断，但设计仍按上限分页保险）：
+        按 1825 天（≈5 年）一段循环（≈1220 行/段 ≪ 8000）。返回列：trade_date（升序，
+        YYYY-MM-DD str）+ 各因子列（to_numeric）。任一页失败记 warning 继续；全部失败返回 None。
+        返回 DataFrame 携带 attrs["missing_chunks"] = 真实缺段数（异常/超时段 + 与数据跨度
+        重叠的空段；基日前合法空段不计），消费方据此拒绝部分入库。
+        """
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取指数技术因子。")
+            return None
+        code = self._normalize_code(index_code)
+        try:
+            start_dt = datetime.strptime(start_date.replace("-", ""), "%Y%m%d")
+            end_dt = datetime.strptime(end_date.replace("-", ""), "%Y%m%d")
+        except ValueError:
+            logger.warning("日期格式错误: %s / %s", start_date, end_date)
+            return None
+
+        frames = []
+        empty_windows: list[tuple[datetime, datetime]] = []
+        failed_chunks = 0
+        chunk_start = start_dt
+        while chunk_start <= end_dt:
+            # 1825 天（≈5 年）/段：≈1220 交易日 ≪ 8000 官方单次上限；边界 +1 天续段不重叠不漏日
+            chunk_end = min(chunk_start + timedelta(days=5 * 365), end_dt)
+            try:
+                df = self._api_call(
+                    self.api.idx_factor_pro,
+                    ts_code=code,
+                    start_date=chunk_start.strftime("%Y%m%d"),
+                    end_date=chunk_end.strftime("%Y%m%d"),
+                    fields=fields or INDEX_FACTOR_FIELDS,
+                )
+                if df is not None and not df.empty:
+                    frames.append(_sort_asc_by_trade_date(df))
+                elif df is not None:
+                    # 空段：可能是基日前的合法空（如 000688 科创50 基日 2019-12-31，
+                    # 更早段必然无数据），也可能是真洞——与成功帧日期跨度比较后归类
+                    empty_windows.append((chunk_start, chunk_end))
+                else:
+                    failed_chunks += 1
+            except Exception as e:
+                failed_chunks += 1
+                logger.warning(
+                    "指数 %s 因子分段拉取失败 [%s ~ %s]: %s",
+                    code, chunk_start.date(), chunk_end.date(), e,
+                )
+            chunk_start = chunk_end + timedelta(days=1)
+
+        if not frames:
+            return None
+
+        df = pd.concat(frames, ignore_index=True)
+        df = df.drop_duplicates(subset=["trade_date"]).sort_values("trade_date")
+
+        # 空段归类：窗口完全落在数据跨度之外（早于最早交易日/晚于最晚交易日）为合法空，
+        # 与跨度重叠的空段才是真洞（区间中间缺数据）
+        missing_chunks = failed_chunks
+        data_min = pd.to_datetime(df["trade_date"]).min()
+        data_max = pd.to_datetime(df["trade_date"]).max()
+        for cs, ce in empty_windows:
+            if not (ce < data_min or cs > data_max):
+                missing_chunks += 1
+
+        std = pd.DataFrame({
+            "trade_date": pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d"),
+        })
+        for col in df.columns:
+            if col not in ("ts_code", "trade_date"):
+                std[col] = pd.to_numeric(df[col], errors="coerce")
+        # 真实缺段数透传给消费方（ingestion 据此拒绝部分入库——回填缺段会静默
+        # 导致该区间指标全 null，与"数据缺失是事实"无法区分；基日前合法空段不计）
+        std.attrs["missing_chunks"] = missing_chunks
+        return std
+
+    def get_stock_factor_df(self, ts_code: str, start_date: str, end_date: str, fields: str | None = None):
+        """个股每日技术面因子（stk_factor_pro）→ DataFrame，单次调用。
+
+        消费方传入短区间（AI 个股报告 ≤30 天），行数远小于 8000 上限，不分页。
+        返回列：trade_date（升序，YYYY-MM-DD str）+ 各因子列（to_numeric）。失败返回 None。
+        """
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取个股技术因子。")
+            return None
+        code = self._normalize_code(ts_code)
+        try:
+            df = self._api_call(
+                self.api.stk_factor_pro,
+                ts_code=code,
+                start_date=start_date.replace("-", ""),
+                end_date=end_date.replace("-", ""),
+                fields=fields or STOCK_FACTOR_FIELDS,
+            )
+        except Exception as e:
+            logger.warning("个股 %s 因子拉取失败: %s", code, e)
+            return None
+        if df is None or df.empty:
+            return None
+
+        df = _sort_asc_by_trade_date(df)
+        std = pd.DataFrame({
+            "trade_date": pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d"),
+        })
+        for col in df.columns:
+            if col not in ("ts_code", "trade_date"):
+                std[col] = pd.to_numeric(df[col], errors="coerce")
         return std
 
     def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
@@ -2014,7 +2203,7 @@ class TushareProvider(BaseStockDataProvider):
             logger.warning("Tushare 10 年期国债收益率获取失败 [%s]: %s", date, e)
         return result
 
-    # ==================== 全市场日线本地库（store）— 结构化接口 ====================
+    # ==================== 证券市场数据库（db.instrument ingest）— 结构化接口 ====================
 
     # 日线标准列序（3.2.1）：实测 fund_daily 列序为
     # ts_code,trade_date,pre_close,open,high,low,close,change,pct_chg,vol,amount，
@@ -2161,8 +2350,9 @@ class TushareProvider(BaseStockDataProvider):
 
     def get_concept_members_df(self, concept_code: str, source: str = "ths",
                                trade_date: str = None):
-        """单个概念的全部成分，统一归一为 [concept_code, ts_code]（来源的
-        con_name 丢弃，决策 12；6 位代码补交易所后缀与 stock_basic 对齐）。
+        """单个概念的全部成分，统一归一为 [sector_code, ts_code]（来源的
+        con_name 丢弃；决策 12 字段改名落点——DAO/采集层契约列名 sector_code；
+        6 位代码补交易所后缀与 stock_basic 对齐）。
 
         ths：ths_member(ts_code=概念代码)——必须用 ts_code= 参数：实测代理端点
         忽略 code= 参数（返回全量截断 6000 行），ts_code= 过滤精确生效；
@@ -2198,7 +2388,7 @@ class TushareProvider(BaseStockDataProvider):
             return None
         codes = df["con_code"].dropna().astype(str)
         out = pd.DataFrame({
-            "concept_code": concept_code,
+            "sector_code": concept_code,
             "ts_code": codes.map(self._normalize_store_member_code),
         })
         # 非 A 股成分（美股/港股等）drop（V1 范围外，实测 ths 概念含境外标的）
@@ -2206,3 +2396,953 @@ class TushareProvider(BaseStockDataProvider):
         # 实测 dc_member 响应含重复 con_code——同一 INSERT 批次提出两行相同 PK
         # 会报 ON CONFLICT DO UPDATE cannot affect row a second time，必须去重
         return out.drop_duplicates(subset=["ts_code"]).reset_index(drop=True)
+
+    def get_sector_daily_df(self, source: str, ts_code: str, start_date: str,
+                            end_date: str):
+        """单板块指数日线（板块概念Treemap方案 3.1；base_provider 契约，
+        日期参数 YYYYMMDD）。返回升序 DataFrame；失败/不支持返回 None。
+
+        - dc：dc_daily 端点（窗口型数据源——实测仅回最近 33 交易日，更早区间 0 行，
+          2026-09-13；不可用于历史回填，采集层按每日增量使用）
+        - ths：ths_daily 端点（全历史单请求能力已实测：老板块 4,642 行、首行=上市日；
+          TODO 暂缓采集——用户拍板"先存 dc"，启用时加分支即可）
+        """
+        if not self.connected:
+            return None
+        if source not in ("dc", "ths"):
+            logger.warning("get_sector_daily_df: 未知 source=%s", source)
+            return None
+        try:
+            if source == "dc":
+                df = self._api_call(self.api.dc_daily, ts_code=ts_code,
+                                    start_date=start_date, end_date=end_date,
+                                    idx_type="概念板块")
+            else:
+                # ths 暂缓（TODO 板块概念Treemap方案 3.1：启用时走
+                # self.api.ths_daily 同参数区间查询）
+                return None
+        except Exception as e:
+            logger.warning("板块日线拉取失败 [%s/%s]: %s", source, ts_code, e)
+            return None
+        if df is None or df.empty:
+            return df
+        # 日线行序升序归一（dc_daily 降序返回，实测；踩坑见 tushare-endpoints.md）
+        return _sort_asc_by_trade_date(df).reset_index(drop=True)
+
+    # ==================== 市场特征层 — 结构化接口（T5） ====================
+    # 契约见 AI/dataflows/market_features.py 模块头部；实现约束来自 T1 POC 实测
+    # （logs/poc_market_features.log）：
+    # - 无 ts_code 的全市场区间查询被代理端点静默截断（6000 行）→ 只做单日查询；
+    # - 单标的区间查询可用（index_daily / index_global / fx_daily / fut_daily /
+    #   margin / index_dailybasic）；
+    # - fx_daily 单日（无 ts_code）= 0 行，必须按 ts_code + 区间；
+    # - shibor / shibor_lpr / cn_m 必须 start_date/end_date（date= 返回 0 行）；
+    # - 失败/无权限 → 返回 None 或写入 missing，绝不抛异常。
+
+    # 指数特征抓取清单（与 market_features.INDEX_UNIVERSE 一致，单测比对防漂移）
+    _MARKET_INDEX_CODES = (
+        "000001.SH", "399001.SZ", "399006.SZ", "000688.SH",
+        "000016.SH", "000852.SH", "000015.SH",
+    )
+    # 全球指数清单（POC：VIX/SOX/UDI/USDX/DXY/STI 无数据，不列入）
+    _GLOBAL_INDEX_CODES = ("SPX", "IXIC", "DJI", "N225", "HKAH", "HKTECH",
+                           "GDAXI", "FTSE")
+    # 商品对照（国内价，非 WTI/伦金——POC：USOil/Copper.FXCM 停更于 2023-06-01）
+    _COMMODITY_CODES = ("SC.INE", "AU.SHF", "CU.SHF")
+    # 估值分位的指数清单（POC：index_dailybasic 支持 ts_code + 区间）
+    _VALUATION_INDEX_CODES = ("000300.SH", "000001.SH", "000905.SH",
+                              "399006.SZ", "000852.SH")
+    # 代理端点无 ts_code 单日查询的静默截断阈值（方案 3.2.2 硬性约束）：
+    # 与 `db.instrument.ingest.frames.TRUNCATION_ROWS` 同口径同值（frames 反向
+    # 依赖本模块，不能反向 import，故此处重复常量并保持同步）。
+    _TRUNCATION_ROWS = 6000
+
+    @classmethod
+    def _truncated_rows(cls, df) -> int:
+        """单日全市场 DataFrame 行数 ≥ 截断阈值 → 返回行数，否则 0（评审 M9）。
+
+        代理端点在 6000 行处**静默**截断（不报错）：若直接按残缺样本计算宽度/
+        资金/估值统计，会得到看似正常实则偏误的数值。命中阈值时调用方必须
+        丢弃该日样本并把截断事实写入 `missing`/`notes`（→ 接口 data_quality）。
+        """
+        if df is None:
+            return 0
+        try:
+            rows = int(len(df))
+        except TypeError:
+            return 0
+        return rows if rows >= cls._TRUNCATION_ROWS else 0
+
+    @staticmethod
+    def _series_to_list(series) -> list:
+        """DataFrame 列 → list（NaN → None，供特征层判缺失）。"""
+        if series is None:
+            return []
+        out = []
+        for value in series:
+            try:
+                fv = float(value)
+            except (TypeError, ValueError):
+                out.append(None)
+                continue
+            out.append(None if pd.isna(fv) else fv)
+        return out
+
+    @staticmethod
+    def _to_num(value):
+        """单值安全转 float（NaN/空/非数值 → None）。"""
+        if value is None:
+            return None
+        try:
+            fv = float(value)
+        except (TypeError, ValueError):
+            return None
+        return None if pd.isna(fv) else fv
+
+    @staticmethod
+    def _norm_date_value(value):
+        """日期值 → YYYY-MM-DD（失败返回 None）。"""
+        if value is None:
+            return None
+        try:
+            text = str(value).strip()
+            if not text or text.lower() in ("nan", "nat", "none"):
+                return None
+            return pd.to_datetime(text).strftime("%Y-%m-%d")
+        except Exception:
+            return None
+
+    def _trade_dates_in_range(self, start_date: str, end_date: str) -> list:
+        """区间内交易日（YYYY-MM-DD，升序，含首尾）；日历不可用返回 []。
+
+        交易日历为非行情端点，允许区间查询（与 POC 一致）。
+        """
+        start = self._norm_date_value(self._normalize_date(start_date))
+        end = self._norm_date_value(self._normalize_date(end_date))
+        if not start or not end or start > end:
+            return []
+        cal = self.get_trade_cal(start.replace("-", ""), end.replace("-", ""))
+        if cal is None or cal.empty:
+            return []
+        dates = []
+        for value in cal["trade_date"]:
+            text = value.strftime("%Y-%m-%d") if hasattr(value, "strftime") \
+                else self._norm_date_value(value)
+            if text:
+                dates.append(text)
+        return sorted(set(dates))
+
+    def _recent_trade_dates(self, days: int, end_date: str) -> list:
+        """`end_date`（含）向前最近 `days` 个交易日（YYYY-MM-DD，升序）。"""
+        try:
+            end_dt = datetime.strptime(self._normalize_date(end_date), "%Y%m%d")
+        except (ValueError, TypeError):
+            return []
+        days = max(int(days), 1)
+        start_dt = end_dt - timedelta(days=days * 2 + 30)
+        dates = self._trade_dates_in_range(
+            start_dt.strftime("%Y%m%d"), end_dt.strftime("%Y%m%d"))
+        return dates[-days:]
+
+    def _paged_range_fetch(self, fn, ts_code: str, start_date: str, end_date: str,
+                           chunk_days: int = 120):
+        """单标的区间分页拉取（升序去重）。失败/无数据返回 None。"""
+        frames = []
+        try:
+            cursor = datetime.strptime(start_date, "%Y%m%d")
+            end_dt = datetime.strptime(end_date, "%Y%m%d")
+        except (ValueError, TypeError):
+            return None
+        while cursor <= end_dt:
+            chunk_end = min(cursor + timedelta(days=chunk_days - 1), end_dt)
+            try:
+                df = self._api_call(
+                    fn, ts_code=ts_code,
+                    start_date=cursor.strftime("%Y%m%d"),
+                    end_date=chunk_end.strftime("%Y%m%d"),
+                )
+            except Exception as e:
+                logger.warning("区间分页拉取失败 [%s %s~%s]: %s", ts_code,
+                               cursor.date(), chunk_end.date(), e)
+                df = None
+            if df is not None and not df.empty:
+                frames.append(df)
+            cursor = chunk_end + timedelta(days=1)
+        if not frames:
+            return None
+        df = pd.concat(frames, ignore_index=True)
+        date_col = "trade_date" if "trade_date" in df.columns else (
+            "date" if "date" in df.columns else None)
+        if date_col:
+            df = df.drop_duplicates(subset=[date_col]).sort_values(date_col)
+        return df
+
+    def _macro_series(self, df, field: str, source: str, unit: str = ""):
+        """宏观 DataFrame → 结构化序列 dict（特征层 `_group_series` 消费）。"""
+        if df is None or df.empty or field not in df.columns:
+            return None
+        date_col = "date" if "date" in df.columns else (
+            "trade_date" if "trade_date" in df.columns else None)
+        if date_col is None:
+            return None
+        work = df.dropna(subset=[date_col]).sort_values(date_col)
+        dates, values = [], []
+        for raw_date, raw_value in zip(work[date_col], work[field]):
+            date_text = self._norm_date_value(raw_date)
+            if not date_text:
+                continue
+            dates.append(date_text)
+            values.append(self._to_num(raw_value))
+        if not dates:
+            return None
+        return {"trade_dates": dates, "field": field, field: values,
+                "source": source, "unit": unit}
+
+    # ---- 1) 指数特征 ----
+
+    def get_market_index_features(self, curr_date: str,
+                                  lookbacks=(5, 20, 60, 120, 250)):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取指数特征序列。")
+            return None
+        try:
+            end = self._normalize_date(curr_date)
+            end_dt = datetime.strptime(end, "%Y%m%d")
+            need = max(int(w) for w in lookbacks) + 5
+        except (ValueError, TypeError):
+            return None
+        start = (end_dt - timedelta(days=need * 2 + 40)).strftime("%Y%m%d")
+        end_dash = end_dt.strftime("%Y-%m-%d")
+
+        indices, missing, notes = {}, {}, []
+        for code in self._MARKET_INDEX_CODES:
+            df = self.get_index_data_df(code, start, end)
+            if df is None or df.empty:
+                missing[code] = "index_daily 无数据"
+                continue
+            df = df[df["trade_date"] <= end_dash].tail(need)
+            if df.empty:
+                missing[code] = "窗口内无数据"
+                continue
+            trade_dates = [str(d) for d in df["trade_date"]]
+            indices[code] = {
+                "trade_dates": trade_dates,
+                "open": self._series_to_list(df["open"]),
+                "high": self._series_to_list(df["high"]),
+                "low": self._series_to_list(df["low"]),
+                "close": self._series_to_list(df["close"]),
+                "vol": self._series_to_list(df["vol"]),
+                "amount": self._series_to_list(df["amount"]),
+                "rows": len(df),
+                "first_date": trade_dates[0] if trade_dates else None,
+                "last_date": trade_dates[-1] if trade_dates else None,
+            }
+        if not indices:
+            logger.warning("get_market_index_features: 指数数据全部不可用。")
+            return None
+        notes.append("index_daily 按 ts_code 区间分页拉取（POC：区间查询对单标的可用，"
+                     "无 ts_code 的全市场区间查询会被截断）；amount 单位：千元。")
+        if missing:
+            notes.append("缺失指数：" + "、".join(f"{k}({v})" for k, v in missing.items()))
+        return {
+            "as_of_date": max(v["last_date"] for v in indices.values() if v["last_date"]),
+            "requested_date": end_dash,
+            "source": "tushare:index_daily",
+            "lookbacks": [int(w) for w in lookbacks],
+            "indices": indices,
+            "missing": missing,
+            "notes": notes,
+        }
+
+    # ---- 2) 市场宽度 + 高标情绪序列 ----
+
+    def get_market_breadth_history(self, curr_date: str, days: int = 20):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取市场宽度序列。")
+            return None
+        curr = self._normalize_date(curr_date)
+        try:
+            curr_dash = datetime.strptime(curr, "%Y%m%d").strftime("%Y-%m-%d")
+        except (ValueError, TypeError):
+            return None
+        dates = self._recent_trade_dates(days, curr)
+        if not dates:
+            logger.warning("get_market_breadth_history: 交易日历不可用。")
+            return None
+
+        today = datetime.now().strftime("%Y%m%d")
+        series, ladder_records, missing = [], [], {}
+        truncated_days = []
+        prev_up_codes: set = set()
+        for d in dates:
+            compact = d.replace("-", "")
+            row = {"trade_date": d, "up": None, "down": None, "flat": None,
+                   "total": None, "up_ratio": None, "limit_up": None,
+                   "limit_down": None, "broken_board_rate": None, "max_board": None,
+                   "promotion_rate": None, "premium_rate": None,
+                   "market_amount": None}
+            # 全市场单日日线（单日查询；≥6000 行视为代理端点静默截断，评审 M9）
+            day_df = self._api_call(self.api.daily, trade_date=compact)
+            truncated = self._truncated_rows(day_df)
+            if truncated:
+                day_df = None  # 不按残缺样本出宽度/溢价统计
+                truncated_days.append(f"{d}({truncated} 行)")
+                missing.setdefault(
+                    "daily",
+                    f"{d} 单日全市场日线 {truncated} 行 ≥ {self._TRUNCATION_ROWS}"
+                    "：代理端点静默截断，该日宽度/溢价统计降级为缺失")
+            if day_df is not None and not day_df.empty:
+                pct = pd.to_numeric(day_df.get("pct_chg"), errors="coerce")
+                up = int((pct > 0).sum())
+                down = int((pct < 0).sum())
+                flat = int((pct == 0).sum())
+                total = int(pct.notna().sum())
+                row.update({
+                    "up": up, "down": down, "flat": flat, "total": total,
+                    "up_ratio": round(up / total, 4) if total else None,
+                })
+                amount = pd.to_numeric(day_df.get("amount"), errors="coerce")
+                row["market_amount"] = float(amount.sum()) if amount.notna().any() else None
+                if prev_up_codes and "ts_code" in day_df.columns:
+                    prev_df = day_df[day_df["ts_code"].isin(prev_up_codes)]
+                    prev_pct = pd.to_numeric(prev_df.get("pct_chg"),
+                                             errors="coerce").dropna()
+                    row["premium_rate"] = round(float(prev_pct.mean()), 4) \
+                        if len(prev_pct) else None
+            else:
+                missing.setdefault("daily", f"{d} 单日全市场日线无数据（宽度降级）")
+
+            # 高标情绪（limit_list_d 单日；复用日缓存与归一化函数）
+            if compact in self._LIMIT_LIST_D_DAILY_CACHE:
+                ldf = self._LIMIT_LIST_D_DAILY_CACHE[compact]
+            else:
+                ldf = self._api_call(self.api.limit_list_d, trade_date=compact)
+                if ldf is not None and not ldf.empty and compact != today:
+                    self._LIMIT_LIST_D_DAILY_CACHE[compact] = ldf
+                    _prune_daily_cache(self._LIMIT_LIST_D_DAILY_CACHE, cap=40)
+            record = self._normalize_ladder_day(compact, ldf) \
+                if (ldf is not None and not ldf.empty) else None
+            if record:
+                ladder_records.append(record)
+                zt, zb = record["zt_total"], record["zb_total"]
+                row["limit_up"] = zt
+                row["limit_down"] = record["dt_total"]
+                row["broken_board_rate"] = round(zb / (zt + zb), 4) if (zt + zb) else None
+                row["max_board"] = max(record["stock_boards"].values()) \
+                    if record["stock_boards"] else 0
+                prev_up_codes = set(record["stock_boards"].keys())
+            else:
+                prev_up_codes = set()
+                missing.setdefault("limit_list_d", f"{d} 无涨停梯队数据（高标情绪降级）")
+            series.append(row)
+
+        # 晋级率（跨日，复用共享纯函数：需连续交易日按序输入）
+        if ladder_records:
+            promo_map = {}
+            for item in calc_promotion_rates(ladder_records):
+                promo_map[item.get("date")] = self._promotion_rate_of(item)
+            for row in series:
+                compact = row["trade_date"].replace("-", "")
+                if compact in promo_map:
+                    row["promotion_rate"] = promo_map[compact]
+
+        notes = [
+            "宽度来自 daily 单日全市场（pct_chg）；高标情绪来自 limit_list_d 单日；",
+            "昨日涨停溢价 = 昨日涨停股今日 pct_chg 均值（替代口径）；",
+            "晋级率由连板梯队跨日精确匹配计算（共享纯函数）。",
+        ]
+        if truncated_days:
+            notes.append(
+                f"⚠️ 截断降级：{'、'.join(truncated_days)} 单日行数 ≥ "
+                f"{self._TRUNCATION_ROWS}（代理端点静默截断），该日样本已丢弃，"
+                "不按残缺样本出数（评审 M9）。")
+        if missing:
+            notes.append("缺失：" + "；".join(f"{k}({v})" for k, v in missing.items()))
+        return {
+            "as_of_date": series[-1]["trade_date"] if series else None,
+            "days": len(series),
+            "series": series,
+            "missing": missing,
+            "notes": notes,
+        }
+
+    @staticmethod
+    def _promotion_rate_of(promo_row: dict):
+        """晋级率行（"1→2": "3/8" 等）→ 合计晋级率（num/den）。"""
+        num = den = 0
+        for key, value in (promo_row or {}).items():
+            if key == "date" or not isinstance(value, str) or "/" not in value:
+                continue
+            left, _, right = value.partition("/")
+            try:
+                num += int(left)
+                den += int(right)
+            except ValueError:
+                continue
+        return round(num / den, 4) if den else None
+
+    # ---- 3) 主力/北向资金序列 ----
+
+    def get_market_fund_flow_history(self, curr_date: str, days: int = 20):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取资金流序列。")
+            return None
+        curr = self._normalize_date(curr_date)
+        dates = self._recent_trade_dates(days, curr)
+        if not dates:
+            return None
+        series, missing = [], {}
+        truncated_days = []
+        for d in dates:
+            compact = d.replace("-", "")
+            row = {"trade_date": d, "main_net_amount": None, "northbound_net": None}
+            df = self._api_call(self.api.moneyflow, trade_date=compact)
+            truncated = self._truncated_rows(df)
+            if truncated:
+                df = None  # 不按残缺样本出主力净额（评审 M9）
+                truncated_days.append(f"{d}({truncated} 行)")
+                missing.setdefault(
+                    "moneyflow",
+                    f"{d} 单日全市场资金流 {truncated} 行 ≥ {self._TRUNCATION_ROWS}"
+                    "：代理端点静默截断，该日主力净额统计降级为缺失")
+            if df is not None and not df.empty:
+                amount = pd.to_numeric(df.get("net_mf_amount"), errors="coerce")
+                row["main_net_amount"] = float(amount.sum()) if amount.notna().any() else None
+            else:
+                missing.setdefault("moneyflow", f"{d} 无资金流数据")
+            hdf = self._api_call(self.api.moneyflow_hsgt, trade_date=compact)
+            if hdf is not None and not hdf.empty and "north_money" in hdf.columns:
+                north = pd.to_numeric(hdf["north_money"], errors="coerce").dropna()
+                if len(north):
+                    # moneyflow_hsgt.north_money 单位百万元 → 统一为万元
+                    row["northbound_net"] = float(north.sum()) * 100.0
+            else:
+                missing.setdefault(
+                    "northbound", "moneyflow_hsgt 无数据（北向资金已停更或无权）")
+            series.append(row)
+        notes = ["main_net_amount 单位万元（全市场 net_mf_amount 合计）；"
+                 "northbound_net 已统一为万元。"]
+        if truncated_days:
+            notes.append(
+                f"⚠️ 截断降级：{'、'.join(truncated_days)} 单日行数 ≥ "
+                f"{self._TRUNCATION_ROWS}（代理端点静默截断），该日样本已丢弃，"
+                "不按残缺样本出数（评审 M9）。")
+        if missing:
+            notes.append("缺失：" + "；".join(f"{k}({v})" for k, v in missing.items()))
+        return {
+            "as_of_date": series[-1]["trade_date"] if series else None,
+            "days": len(series),
+            "series": series,
+            "missing": missing,
+            "notes": notes,
+        }
+
+    # ---- 4) 两融余额历史 ----
+
+    def get_margin_trading_history(self, curr_date: str, days: int = 20):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取两融历史。")
+            return None
+        curr = self._normalize_date(curr_date)
+        dates = self._recent_trade_dates(days, curr)
+        if not dates:
+            return None
+        series, missing = [], {}
+        for d in dates:
+            compact = d.replace("-", "")
+            df = self._api_call(self.api.margin, trade_date=compact)
+            if df is None or df.empty:
+                # 新交易日入库前 0 行（POC 结论）：跳过该日，不视为故障
+                missing.setdefault("margin", f"{d} 无两融数据（未入库）")
+                continue
+            rzye = pd.to_numeric(df.get("rzye"), errors="coerce").sum()
+            rqye = pd.to_numeric(df.get("rqye"), errors="coerce").sum()
+            series.append({
+                "trade_date": d,
+                "rzye": float(rzye),
+                "rqye": float(rqye),
+                "rows": int(len(df)),
+            })
+        if not series:
+            logger.warning("get_margin_trading_history: 全部交易日无两融数据。")
+            return None
+        notes = ["rzye/rqye 单位为元（交易所合计，POC：单日 3 行 = SSE/SZSE/BSE）。"]
+        return {
+            "as_of_date": series[-1]["trade_date"],
+            "days": len(series),
+            "series": series,
+            "missing": missing,
+            "notes": notes,
+        }
+
+    # ---- 5) 估值（指数分位序列 + 全 A 快照） ----
+
+    def get_market_valuation(self, curr_date: str, years: int = 5):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取估值序列。")
+            return None
+        try:
+            end = self._normalize_date(curr_date)
+            end_dt = datetime.strptime(end, "%Y%m%d")
+        except (ValueError, TypeError):
+            return None
+        start = (end_dt - timedelta(days=int(years) * 365 + 20)).strftime("%Y%m%d")
+        end_dash = end_dt.strftime("%Y-%m-%d")
+
+        index_valuation, missing = {}, {}
+        for code in self._VALUATION_INDEX_CODES:
+            df = self._api_call(self.api.index_dailybasic, ts_code=code,
+                                start_date=start, end_date=end)
+            if df is None or df.empty:
+                missing[code] = "index_dailybasic 无数据"
+                continue
+            df = df.drop_duplicates(subset=["trade_date"]).sort_values("trade_date")
+            dates = [self._norm_date_value(v) for v in df["trade_date"]]
+            kept = [(d, i) for i, d in enumerate(dates) if d and d <= end_dash]
+            if not kept:
+                missing[code] = "窗口内无数据"
+                continue
+            idx = [i for _, i in kept]
+            pe_all = self._series_to_list(df.get("pe_ttm"))
+            pb_all = self._series_to_list(df.get("pb"))
+            index_valuation[code] = {
+                "trade_dates": [dates[i] for i in idx],
+                "pe_ttm": [pe_all[i] if i < len(pe_all) else None for i in idx],
+                "pb": [pb_all[i] if i < len(pb_all) else None for i in idx],
+                "first_date": dates[idx[0]],
+                "last_date": dates[idx[-1]],
+            }
+
+        # 全 A 快照：daily_basic 单日（无 ts_code 区间查询会被截断，POC 约束）
+        all_a_snapshot = None
+        for d in reversed(self._recent_trade_dates(4, end_dash)):
+            df = self._api_call(self.api.daily_basic, trade_date=d.replace("-", ""),
+                                fields="ts_code,trade_date,pe_ttm,pb")
+            truncated = self._truncated_rows(df)
+            if truncated:
+                # 代理端点静默截断 → 中位数不可用（评审 M9）：该日跳过，截断事实
+                # 写入 data_quality，继续尝试更早交易日
+                missing["all_a_snapshot_truncated"] = (
+                    f"{d} daily_basic 单日全 A {truncated} 行 ≥ {self._TRUNCATION_ROWS}"
+                    "：代理端点静默截断，该日快照中位数不可用（不按残缺样本出数）")
+                continue
+            if df is None or df.empty:
+                continue
+            pe = pd.to_numeric(df.get("pe_ttm"), errors="coerce").dropna()
+            if not len(pe):
+                continue
+            pb = pd.to_numeric(df.get("pb"), errors="coerce").dropna()
+            all_a_snapshot = {
+                "trade_date": d,
+                "pe_ttm_median": round(float(pe.median()), 4),
+                "pb_median": round(float(pb.median()), 4) if len(pb) else None,
+                "rows": int(len(df)),
+            }
+            break
+        if all_a_snapshot is None:
+            missing["all_a_snapshot"] = "daily_basic 单日全 A 快照无数据"
+
+        if not index_valuation and all_a_snapshot is None:
+            logger.warning("get_market_valuation: 指数与全 A 估值均不可用。")
+            return None
+        as_of_candidates = [v["last_date"] for v in index_valuation.values()] + \
+            ([all_a_snapshot["trade_date"]] if all_a_snapshot else [])
+        return {
+            "as_of_date": max(as_of_candidates),
+            "requested_date": end_dash,
+            "years": int(years),
+            "index_valuation": index_valuation,
+            "all_a_snapshot": all_a_snapshot,
+            "missing": missing,
+            "notes": [
+                "index_dailybasic 按 ts_code 区间可用（POC：000300.SH 5 年 = 1211 行）；",
+                "全 A 首期仅单日快照中位数（5 年逐日分位需按日单日拉取，成本高）。",
+            ],
+        }
+
+    # ---- 6) 中国流动性指标 ----
+
+    def get_cn_liquidity_indicators(self, curr_date: str, days: int = 20):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取流动性指标。")
+            return None
+        try:
+            end = self._normalize_date(curr_date)
+            end_dt = datetime.strptime(end, "%Y%m%d")
+        except (ValueError, TypeError):
+            return None
+        end_dash = end_dt.strftime("%Y-%m-%d")
+        start = (end_dt - timedelta(days=max(int(days), 20) * 2 + 40)).strftime("%Y%m%d")
+        missing, notes = {}, []
+
+        shibor = {}
+        sdf = self._api_call(self.api.shibor, start_date=start, end_date=end)
+        if sdf is not None and not sdf.empty:
+            sdf = sdf.sort_values("date")
+            dates = [self._norm_date_value(v) for v in sdf["date"]]
+            kept = [i for i, d in enumerate(dates) if d and d <= end_dash]
+            cols = {"on": "on", "1w": "1w", "1m": "1m", "3m": "3m", "1y": "1y"}
+            shibor = {"trade_dates": [dates[i] for i in kept]}
+            for out_key, col in cols.items():
+                values = self._series_to_list(sdf.get(col))
+                shibor[out_key] = [values[i] if i < len(values) else None for i in kept]
+        else:
+            missing["shibor"] = "shibor 区间无数据（须传 start_date/end_date）"
+
+        lpr = {}
+        ldf = self._api_call(self.api.shibor_lpr,
+                             start_date=(end_dt - timedelta(days=5 * 365)).strftime("%Y%m%d"),
+                             end_date=end)
+        if ldf is not None and not ldf.empty:
+            ldf = ldf.sort_values("date")
+            dates = [self._norm_date_value(v) for v in ldf["date"]]
+            kept = [i for i, d in enumerate(dates) if d and d <= end_dash]
+            lpr = {"trade_dates": [dates[i] for i in kept]}
+            for out_key, col in (("1y", "1y"), ("5y", "5y")):
+                values = self._series_to_list(ldf.get(col))
+                lpr[out_key] = [values[i] if i < len(values) else None for i in kept]
+        else:
+            missing["lpr"] = "shibor_lpr 无数据"
+
+        money_supply = {}
+        mdf = self._api_call(self.api.cn_m,
+                             start_date=(end_dt - timedelta(days=800)).strftime("%Y%m%d"),
+                             end_date=end)
+        if mdf is not None and not mdf.empty:
+            mdf = mdf.sort_values("month")
+            money_supply = {
+                "months": [str(v) for v in mdf["month"]],
+                "m1_yoy": self._series_to_list(mdf.get("m1_yoy")),
+                "m2_yoy": self._series_to_list(mdf.get("m2_yoy")),
+                "m1_mom": self._series_to_list(mdf.get("m1_mom")),
+                "m2_mom": self._series_to_list(mdf.get("m2_mom")),
+            }
+        else:
+            missing["money_supply"] = "cn_m 无数据"
+
+        shibor_end = shibor.get("trade_dates", [None])[-1] if shibor else None
+        money_end = money_supply.get("months", [None])[-1] if money_supply else None
+        notes.extend([
+            "10Y 国债收益率不可用：yc_cb 无接口权限、yield_curve 接口名无效（POC）；",
+            "DR007/MLF/OMO/净投放 无接口：以 Shibor 1W 替代短端利率（非 DR007）；",
+            "LPR 为月度报价（POC：最新 20260720，约 7 周滞后）；M1/M2 为月度数据（POC：最新 202607）。",
+        ])
+        if missing:
+            notes.append("缺失：" + "；".join(f"{k}({v})" for k, v in missing.items()))
+        return {
+            "as_of_date": shibor_end or money_end,
+            "requested_date": end_dash,
+            "shibor": shibor,
+            "lpr": lpr,
+            "money_supply": money_supply,
+            "missing": missing,
+            "notes": notes,
+        }
+
+    # ---- 7) 资金日历（IPO/解禁/交割/长假） ----
+
+    @staticmethod
+    def _third_friday(year: int, month: int):
+        """每月第三个周五（股指期货交割日规则）。"""
+        fridays = []
+        for day in range(1, 32):
+            try:
+                d = datetime(year, month, day)
+            except ValueError:
+                break
+            if d.weekday() == 4:
+                fridays.append(d)
+        return fridays[2].date() if len(fridays) >= 3 else None
+
+    @staticmethod
+    def _fourth_wednesday(year: int, month: int):
+        """每月第四个周三（ETF 期权到期日规则）。"""
+        wednesdays = []
+        for day in range(1, 32):
+            try:
+                d = datetime(year, month, day)
+            except ValueError:
+                break
+            if d.weekday() == 2:
+                wednesdays.append(d)
+        return wednesdays[3].date() if len(wednesdays) >= 4 else None
+
+    def _rule_based_expiry_calendar(self, curr_date: str, months: int = 3) -> list:
+        """规则日历：股指期货（第三个周五）+ ETF 期权（第四个周三）。
+
+        未接交易所日历，法定节假日顺延未处理（notes 标注）。
+        """
+        base = datetime.strptime(curr_date, "%Y-%m-%d").date()
+        out = []
+        year, month = base.year, base.month
+        for _ in range(months + 1):
+            for value, kind in (
+                (self._third_friday(year, month),
+                 "股指期货交割日（每月第三个周五，规则推导）"),
+                (self._fourth_wednesday(year, month),
+                 "ETF 期权到期日（每月第四个周三，规则推导）"),
+            ):
+                if value is not None and value >= base:
+                    out.append({"date": value.strftime("%Y-%m-%d"), "kind": kind})
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
+        out.sort(key=lambda item: item["date"])
+        return out
+
+    def _holiday_windows(self, curr_date: str, end_date: str,
+                         min_gap_days: int = 5) -> list:
+        """由交易日历断档推导长假窗口（自然日间隔 ≥5 → 非纯周末休市）。"""
+        dates = self._trade_dates_in_range(curr_date, end_date)
+        windows = []
+        for prev_text, next_text in zip(dates, dates[1:]):
+            try:
+                prev_dt = datetime.strptime(prev_text, "%Y-%m-%d")
+                next_dt = datetime.strptime(next_text, "%Y-%m-%d")
+            except ValueError:
+                continue
+            gap = (next_dt - prev_dt).days
+            if gap >= min_gap_days:
+                windows.append({
+                    "start": (prev_dt + timedelta(days=1)).strftime("%Y-%m-%d"),
+                    "end": (next_dt - timedelta(days=1)).strftime("%Y-%m-%d"),
+                    "days": gap - 1,
+                })
+        return windows
+
+    def get_cn_event_calendar(self, curr_date: str, windows=(5, 20, 60)):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取资金日历。")
+            return None
+        try:
+            curr = self._normalize_date(curr_date)
+            curr_dash = datetime.strptime(curr, "%Y%m%d").strftime("%Y-%m-%d")
+            horizon = max(int(w) for w in windows)
+        except (ValueError, TypeError):
+            return None
+        forward_end = (datetime.strptime(curr_dash, "%Y-%m-%d")
+                       + timedelta(days=horizon * 2 + 45)).strftime("%Y%m%d")
+        trade_dates = self._trade_dates_in_range(curr, forward_end)
+        window_end = trade_dates[horizon] if len(trade_dates) > horizon else (
+            trade_dates[-1] if trade_dates else curr_dash)
+        fetch_end = (datetime.strptime(window_end, "%Y-%m-%d")
+                     + timedelta(days=7)).strftime("%Y%m%d")
+
+        missing, notes = {}, []
+        ipo_items = []
+        ndf = self._api_call(self.api.new_share, start_date=curr, end_date=fetch_end)
+        if ndf is not None and not ndf.empty:
+            for _, row in ndf.iterrows():
+                subscribe = next((self._norm_date_value(row.get(k)) for k in
+                                  ("ipo_date", "online_date", "subscribe_date")
+                                  if self._norm_date_value(row.get(k))), None)
+                list_date = next((self._norm_date_value(row.get(k)) for k in
+                                  ("issue_date", "list_date", "up_date")
+                                  if self._norm_date_value(row.get(k))), None)
+                if not subscribe and not list_date:
+                    continue
+                market_amount = self._to_num(row.get("market_amount"))
+                if market_amount is None:
+                    market_amount = self._to_num(row.get("funds"))
+                if market_amount is None:
+                    price = self._to_num(row.get("price"))
+                    shares = self._to_num(row.get("amount"))
+                    if price is not None and shares is not None:
+                        # price(元/股) × amount(万股) = 万元 → 亿元
+                        market_amount = round(price * shares / 1e4, 4)
+                ipo_items.append({
+                    "ts_code": str(row.get("ts_code") or "").strip() or None,
+                    "name": str(row.get("name") or "").strip() or None,
+                    "subscribe_date": subscribe,
+                    "list_date": list_date,
+                    "price": self._to_num(row.get("price")),
+                    "market_amount": market_amount,
+                    "market": str(row.get("market") or "").strip() or None,
+                })
+        else:
+            missing["ipo"] = "new_share 区间无数据"
+
+        unlock_items = []
+        sdf = self._api_call(self.api.share_float, start_date=curr, end_date=fetch_end)
+        if sdf is not None and not sdf.empty:
+            for _, row in sdf.iterrows():
+                float_date = self._norm_date_value(row.get("float_date"))
+                if not float_date:
+                    continue
+                unlock_items.append({
+                    "ts_code": str(row.get("ts_code") or "").strip() or None,
+                    "name": str(row.get("name") or "").strip() or None,
+                    "float_date": float_date,
+                    "float_share": self._to_num(row.get("float_share")),
+                    "float_ratio": self._to_num(row.get("float_ratio")),
+                    "share_type": str(row.get("share_type") or "").strip() or None,
+                })
+        else:
+            missing["unlock"] = "share_float 区间无数据"
+
+        notes.extend([
+            "解禁市值需逐股价格（share_float 无价格列）→ 以数量/占流通比评估并降置信度；",
+            "交割日为规则推导（第三个周五/第四个周三），未接交易所日历、未处理节假日顺延；",
+            "财报/LPR/MLF/宏观发布日历无可用接口 → 不输出（macro_releases 为空）；",
+        ])
+        if missing:
+            notes.append("缺失：" + "；".join(f"{k}({v})" for k, v in missing.items()))
+        return {
+            "as_of_date": curr_dash,
+            "requested_date": curr_dash,
+            "windows": [int(w) for w in windows],
+            "window_end": window_end,
+            "ipo": ipo_items,
+            "unlocks": unlock_items,
+            "expiry": self._rule_based_expiry_calendar(curr_dash, months=3),
+            "holiday_windows": self._holiday_windows(curr_dash, fetch_end),
+            "macro_releases": [],
+            "missing": missing,
+            "notes": notes,
+        }
+
+    # ---- 8) 全球风险价格 ----
+
+    def get_global_risk_indicators(self, curr_date: str, days: int = 20):
+        if not self.connected:
+            logger.warning("Tushare 未连接，无法获取全球风险价格。")
+            return None
+        try:
+            end = self._normalize_date(curr_date)
+            end_dt = datetime.strptime(end, "%Y%m%d")
+            need = max(int(days), 20) + 10
+        except (ValueError, TypeError):
+            return None
+        end_dash = end_dt.strftime("%Y-%m-%d")
+        start = (end_dt - timedelta(days=need * 2 + 60)).strftime("%Y%m%d")
+
+        missing, notes = {}, []
+        us_treasury, us_real_yield, us_long_rate = {}, {}, {}
+        tycr = self._api_call(self.api.us_tycr, start_date=start, end_date=end)
+        if tycr is not None and not tycr.empty:
+            for code, field in (("y10", "y10"), ("y2", "y2")):
+                series = self._macro_series(tycr, field, "us_tycr（美国国债收益率曲线）", "%")
+                if series:
+                    series = self._trim_series(series, need, end_dash)
+                    us_treasury[code] = series
+        else:
+            missing["us_treasury"] = "us_tycr 无数据"
+        trycr = self._api_call(self.api.us_trycr, start_date=start, end_date=end)
+        if trycr is not None and not trycr.empty:
+            series = self._macro_series(trycr, "y10", "us_trycr（美国国债实际收益率）", "%")
+            if series:
+                us_real_yield["y10"] = self._trim_series(series, need, end_dash)
+        trltr = self._api_call(self.api.us_trltr, start_date=start, end_date=end)
+        if trltr is not None and not trltr.empty:
+            series = self._macro_series(trltr, "ltr_avg", "us_trltr（美国国债长期利率）", "%")
+            if series:
+                us_long_rate["ltr"] = self._trim_series(series, need, end_dash)
+
+        global_indices = {}
+        for code in self._GLOBAL_INDEX_CODES:
+            df = self._paged_range_fetch(self.api.index_global, code, start, end)
+            if df is None or df.empty:
+                missing[f"index_global:{code}"] = "无数据"
+                continue
+            entry = self._module_frame_entry(df, code, "index_global", end_dash, need)
+            if entry:
+                global_indices[code] = entry
+            else:
+                missing[f"index_global:{code}"] = "字段缺失"
+
+        fx = {}
+        for code in ("USDCNH.FXCM", "XAUUSD.FXCM"):
+            df = self._paged_range_fetch(self.api.fx_daily, code, start, end)
+            if df is None or df.empty:
+                missing[f"fx_daily:{code}"] = "无数据"
+                continue
+            entry = self._module_frame_entry(df, code, "fx_daily", end_dash, need,
+                                            field="bid_close")
+            if entry:
+                fx[code] = entry
+            else:
+                missing[f"fx_daily:{code}"] = "字段缺失"
+        if "USDCNH.FXCM" not in fx:
+            missing["usdcnh"] = "USDCNH.FXCM 不可用（美元指数代码 DXY/USDX 均无数据）"
+
+        commodities = {}
+        for code in self._COMMODITY_CODES:
+            df = self._paged_range_fetch(self.api.fut_daily, code, start, end)
+            if df is None or df.empty:
+                missing[f"fut_daily:{code}"] = "无数据"
+                continue
+            entry = self._module_frame_entry(df, code, "fut_daily", end_dash, need)
+            if entry:
+                commodities[code] = entry
+            else:
+                missing[f"fut_daily:{code}"] = "字段缺失"
+
+        if not (us_treasury or global_indices or fx or commodities):
+            logger.warning("get_global_risk_indicators: 全部风险价格不可用。")
+            return None
+        notes.extend([
+            "无 VIX/SOX/美元指数代码（POC 实测 0 行）：波动率以美股指数已实现波动率替代"
+            "（特征层计算），美元以 USDCNH 替代；",
+            "商品为国内期货价（SC.INE/AU.SHF/CU.SHF），非 WTI/伦金；",
+            "美债收益率（us_tycr）为日频，实际收益率/长期利率为辅助分组。",
+        ])
+        if missing:
+            notes.append("缺失：" + "；".join(f"{k}({v})" for k, v in missing.items()))
+        return {
+            "as_of_date": end_dash,
+            "requested_date": end_dash,
+            "days": need,
+            "us_treasury": us_treasury,
+            "us_real_yield": us_real_yield,
+            "us_long_rate": us_long_rate,
+            "global_indices": global_indices,
+            "fx": fx,
+            "commodities": commodities,
+            "missing": missing,
+            "notes": notes,
+        }
+
+    @staticmethod
+    def _trim_series(series: dict, need: int, end_dash: str) -> dict:
+        """序列截断到 `end_dash` 及最近 `need` 个点（升序）。"""
+        if not series:
+            return series
+        field = series.get("field")
+        dates = series.get("trade_dates") or []
+        values = series.get(field) or [] if field else []
+        pairs = [(d, v) for d, v in zip(dates, values) if d and d <= end_dash]
+        pairs = pairs[-need:]
+        out = dict(series)
+        out["trade_dates"] = [d for d, _ in pairs]
+        if field:
+            out[field] = [v for _, v in pairs]
+        return out
+
+    def _module_frame_entry(self, df, code: str, source: str, end_dash: str,
+                            need: int, field: str = "close"):
+        """指数/汇率/商品的 DataFrame → 结构化序列条目（截断到 end_dash）。"""
+        if df is None or df.empty:
+            return None
+        date_col = "trade_date" if "trade_date" in df.columns else (
+            "date" if "date" in df.columns else None)
+        if date_col is None or field not in df.columns:
+            return None
+        work = df.dropna(subset=[date_col]).sort_values(date_col)
+        pairs = []
+        for raw_date, raw_value in zip(work[date_col], work[field]):
+            date_text = self._norm_date_value(raw_date)
+            value = self._to_num(raw_value)
+            if date_text and date_text <= end_dash:
+                pairs.append((date_text, value))
+        pairs = pairs[-need:]
+        if not pairs:
+            return None
+        return {
+            "trade_dates": [d for d, _ in pairs],
+            "field": field,
+            field: [v for _, v in pairs],
+            "source": f"{source}:{code}",
+            "unit": "点" if source in ("index_global", "fut_daily") else "",
+            "note": "国内价、非 WTI/伦金" if source == "fut_daily" else None,
+        }

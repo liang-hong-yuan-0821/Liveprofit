@@ -12,7 +12,14 @@ def _global_state():
         "messages": [MagicMock()],
         "company_of_interest": "000001.SZ",
         "trade_date": "2026-08-14",
-        "market_regime": "短线: 正常",
+        # T6：market_regime 为结构化 dict（原 str 原地替换）
+        "market_regime": {
+            "short_term": {"level": "适合"},
+            "wave": {"level": "进攻"},
+            "long_term": {"level": "配置窗口"},
+        },
+        # 纯代码门控节点产出的熔断开关同样逐票继承
+        "risk_gate": "caution",
         "sector_shortlist_structured": ["白酒"],
         "candidate_stock_pool": [],
         "stock_tech_report": "上一只票的技术报告",
@@ -44,9 +51,10 @@ def test_build_sub_state_resets_per_stock_fields():
         else:
             assert field not in sub or sub[field] == ""
 
-    # 全局态保留
+    # 全局态保留（含 dict 型 market_regime 与 risk_gate，逐票只读继承）
     assert sub["trade_date"] == "2026-08-14"
-    assert sub["market_regime"] == "短线: 正常"
+    assert sub["market_regime"]["short_term"]["level"] == "适合"
+    assert sub["risk_gate"] == "caution"
     assert sub["sector_shortlist_structured"] == ["白酒"]
 
     # messages 为全新初始消息（不携带上一只票/历史层对话）

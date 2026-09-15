@@ -11,7 +11,9 @@ import { queryKeys } from '../../../../api/queryKeys';
 import type { ReviewRowRequest, ReviewRowResult } from '../../../../api/generated';
 import { EventDetailDialog } from './EventDetailDialog';
 import { PendingEventRow, PENDING_ROW_GRID } from './PendingEventRow';
-import { toPendingEventRowVM, type PendingEventRowVM } from './mappers/toPendingEventRowVM';
+import {
+  parseScopeRefs, routeTargetMissing, toPendingEventRowVM, type PendingEventRowVM,
+} from './mappers/toPendingEventRowVM';
 import { useBatchMutation, useComputeMutation, usePendingEventsQuery, usePrelabelMutation, useRefreshMutation } from './queries';
 
 const CHUNK_SIZE = 10;
@@ -89,6 +91,9 @@ export function PendingEventsTab() {
       event_subtype: vm.eventSubtype || null,
       event_condition: vm.eventCondition || null,
       importance: vm.importance,
+      // 路由字段：market 固定空数组（表单残留文本不落库）；下层作用域缺目标已在上层阻止
+      event_scope: vm.eventScope,
+      affected_scope_refs: vm.eventScope === 'market' ? [] : parseScopeRefs(vm.affectedScopeRefs),
       expected_value: vm.expectedValue === '' ? null : Number(vm.expectedValue),
       actual_value: vm.actualValue === '' ? null : Number(vm.actualValue),
       previous_value: vm.previousValue === '' ? null : Number(vm.previousValue),
@@ -153,10 +158,24 @@ export function PendingEventsTab() {
     }
   }
 
+  // 下层作用域（sector/stock）缺目标阻止通过（含回退 market 的重提路径）
+  function routeBlockMessage(): string | null {
+    const blocked = Object.values(rows).filter((r) => r.action === 'approve' && routeTargetMissing(r));
+    if (blocked.length === 0) return null;
+    return `${blocked.map((r) => `#${r.draftId}`).join('、')} 作用域为 sector/stock 但未填目标引用，`
+      + '请补目标（SW:801080 / CONCEPT:BK1753.DC / stock:600519.SH）或回退 market';
+  }
+
   async function runBatch() {
     const targets = Object.values(rows).filter((r) => r.action !== 'skip');
     if (targets.length === 0) {
       setBatchMsg('请至少将一行「操作」设为通过或忽略');
+      setConfirmOpen(false);
+      return;
+    }
+    const routeBlock = routeBlockMessage();
+    if (routeBlock) {
+      setBatchMsg(routeBlock);
       setConfirmOpen(false);
       return;
     }
@@ -253,6 +272,8 @@ export function PendingEventsTab() {
               <span>事件子类型</span>
               <span>关键条件</span>
               <span>重要性</span>
+              <span>作用域</span>
+              <span>目标</span>
               <span>预期</span>
               <span>实际</span>
               <span>前值</span>
@@ -269,10 +290,24 @@ export function PendingEventsTab() {
             ))}
           </div>
           <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+            作用域/目标为 AI 预填建议（<span style={{ color: 'var(--color-accent)' }}>AI 预填，请确认</span>），
+            人工可改；sector/stock 必须至少一个目标引用（缺目标阻止提交，可回退 market）。
+          </p>
+          <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
             预期/实际/前值默认取 AI 提取值；清空 = 该字段不落值。数值 0 是合法值。
           </p>
           <div className="flex items-center gap-3">
-            <Button disabled={submitting || prelabeling || refreshing} onClick={() => setConfirmOpen(true)}>
+            <Button
+              disabled={submitting || prelabeling || refreshing}
+              onClick={() => {
+                const routeBlock = routeBlockMessage();
+                if (routeBlock) {
+                  setBatchMsg(routeBlock);
+                  return;
+                }
+                setConfirmOpen(true);
+              }}
+            >
               {submitting ? '提交中…' : '🚀 批量提交'}
             </Button>
             {batchMsg && (

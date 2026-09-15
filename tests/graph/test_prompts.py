@@ -26,7 +26,10 @@ def _reset_overrides():
 def _topology_llm_node_ids() -> set[str]:
     """全形态拓扑中除纯代码节点外的全部主节点 id。"""
     topology = build_topology(("market", "sector", "screening", "stock"))
-    return {n.id for n in topology.nodes if n.id != "screening:Screening"}
+    return {
+        n.id for n in topology.nodes
+        if n.id not in ("screening:Screening", "market:Risk Gate")
+    }
 
 
 def test_default_prompt_keys_cover_topology_llm_nodes():
@@ -86,18 +89,45 @@ def test_anchor_replace_restores_full_prompt():
     )
     assert "{date_line}" not in rendered
     assert "{output_format}" not in rendered
-    # langchain partial 数据占位符保留
-    for placeholder in ("{ipo_calendar}", "{share_unlock}", "{futures_expiry}", "{margin_balance}"):
-        assert placeholder in rendered
+    # langchain partial 数据占位符保留（T6 特征层单槽位）
+    assert "{calendar_features}" in rendered
 
 
 def test_cn_news_default_text_features():
-    """抽关键节点默认文案特征（与迁移前内联字符串一致，字节级）。"""
+    """抽关键节点默认文案特征（T6 特征层单槽位 + 固定枚举，字节级）。"""
     text = DEFAULT_PROMPTS["market:CN News Analyst"]
     assert text.startswith("你是一位专注 A 股市场微观结构的分析师")
-    assert "三时间级别分析框架：\n\n短线日历（未来 1-5 交易日）：" in text
-    assert "每个级别输出：事件密度（高/中/低）+ 资金面压力评分（1-5）" in text
-    assert text.endswith("输出格式（结论前置）：\n{output_format}")
+    assert "## 已获取的数据（特征层：资金日历，窗口为交易日口径）\n{calendar_features}" in text
+    assert "三时间级别分析框架（每级给出压力等级 + 1-5 分压力评分 + 驱动项 + 关键日期）" in text
+    assert "每级压力等级只能是：高 / 中 / 低 / 信息不足" in text
+    assert "未纳入（无数据）" in text
+    assert text.endswith("输出格式（结论前置，含结构化 JSON 结论块；键名与枚举原样保留）：\n{output_format}")
+
+
+def test_market_prompt_rules_features():
+    """T6 市场提示词关键规则特征（事件证据来源/技术隔离/覆盖不足降级/数据不足模板）。"""
+    intl_events = DEFAULT_PROMPTS["market:International Event Extraction Analyst"]
+    assert "{event_study_prefetch}" in intl_events
+    assert "【事件描述摘要】" in intl_events
+
+    intl_news = DEFAULT_PROMPTS["market:International News Analyst"]
+    assert "{international_events}" in intl_news
+    assert "{global_risk_features}" in intl_news
+    assert "本节点唯一的事件类证据来源" in intl_news
+    assert "缺失超过一半时，风险偏好必须为“信息不足”、systemic_risk 必须为 insufficient" in intl_news
+    assert "{international_event_report}" not in intl_news  # 全文报告仅展示，不进提示词
+
+    cn_tech = DEFAULT_PROMPTS["market:CN Tech Analyst"]
+    assert "{technical_features}" in cn_tech
+    assert "适合 / 谨慎 / 回避 / 信息不足" in cn_tech
+
+    for node_id, marker in (
+        ("market:US News Analyst", "美国市场数据不足，未纳入 A 股风险判断"),
+        ("market:US Tech Analyst", "美国市场数据不足，未纳入 A 股风险判断"),
+        ("market:KR News Analyst", "韩国市场状态：未纳入判断"),
+        ("market:KR Tech Analyst", "韩国市场状态：未纳入判断"),
+    ):
+        assert marker in DEFAULT_PROMPTS[node_id], node_id
 
 
 def test_anchor_shape_consistent():
@@ -152,3 +182,43 @@ def test_system_message_default_returns_template_tuple():
     messages = prompt.partial(data="注入值").format_messages(
         messages=[HumanMessage(content="hi")])
     assert messages[0].content == "默认 注入值"
+
+
+# 输出格式模板含 JSON 结论块的市场节点（`{output_format}` 必须走 partial 值注入：
+# 文本替换会把模板内容并入 langchain 模板再解析 → JSON 单花括号 KeyError）
+_JSON_FORMAT_NODES = (
+    ("market:CN Tech Analyst", "cn_tech_analyst", '"short_term"'),
+    ("market:CN News Analyst", "cn_news_analyst", '"key_dates"'),
+    ("market:International News Analyst", "international_news_analyst", '"risk_appetite"'),
+)
+
+
+@pytest.mark.parametrize("node_id,template_name,marker", _JSON_FORMAT_NODES)
+def test_json_output_format_partial_injection_renders(node_id, template_name, marker):
+    """模拟运行时组装：锚点 + partial 注入输出格式（含 JSON）→ 渲染不抛且 JSON 原样。
+
+    锁契约：模板/注册表内保留单花括号（不写 `{{`），显示与运行一致。
+    """
+    import re
+
+    from langchain_core.messages import HumanMessage
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+    from AI.templates import load_output_format
+
+    output_format = load_output_format("market", template_name)
+    assert "{{" not in output_format, "模板不得用双花括号转义（partial 值不参与解析）"
+    text = DEFAULT_PROMPTS[node_id].replace("{date_line}", "")
+    assert "{output_format}" in text
+
+    placeholders = set(re.findall(r"\{(\w+)\}", text)) - {"output_format"}
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", text),
+        MessagesPlaceholder(variable_name="messages"),
+    ])
+    filled = prompt.partial(**{name: "X" for name in placeholders},
+                            output_format=output_format)
+    messages = filled.format_messages(messages=[HumanMessage(content="hi")])
+    content = messages[0].content
+    assert marker in content, f"{node_id}: 输出格式未注入"
+    assert "{output_format}" not in content

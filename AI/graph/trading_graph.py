@@ -47,6 +47,22 @@ from AI.utils import step_gate
 logger = logging.getLogger(__name__)
 
 
+def _log_event_list(events, limit: int = 5) -> list:
+    """结构化事件列表 → 状态日志副本（≤ limit 条，dict 直接序列化；评审 m11）。
+
+    `international_events` / `sector_events` / `stock_events` 均为 dict 列表，
+    可直接 json.dump；上限与预取上限（`MAX_PREFETCH_CANDIDATES`）同口径，
+    防日志膨胀。非 list / 非 dict 项静默丢弃（日志不得因脏数据失败）。
+    """
+    if not isinstance(events, list):
+        return []
+    items = [e for e in events if isinstance(e, dict)]
+    if len(items) > limit:
+        logger.warning("状态日志：结构化事件 %d 条超上限 %d，仅记录前 %d 条",
+                       len(items), limit, limit)
+    return items[:limit]
+
+
 def resolve_run_log_dir(init_state: dict, now: datetime | None = None) -> Path:
     """本次运行的日志目录。
 
@@ -567,8 +583,17 @@ class TradingAgentsGraph:
                 "kr_tech_report": final_state.get("kr_tech_report", ""),
                 "cn_news_report": final_state.get("cn_news_report", ""),
                 "cn_tech_report": final_state.get("cn_tech_report", ""),
-                "market_regime": final_state.get("market_regime", ""),
-                "market_event_calendar": final_state.get("market_event_calendar", ""),
+                # 结构化 dict 字段（T6 起 market_regime/market_event_calendar 为
+                # dict，json.dump 直接序列化；缺失落 {} 而非 ""，保持类型一致）
+                "market_regime": final_state.get("market_regime", {}),
+                "market_event_calendar": final_state.get("market_event_calendar", {}),
+                "global_risk_assessment": final_state.get("global_risk_assessment", {}),
+                "risk_gate": final_state.get("risk_gate", ""),
+                # 三级结构化事件（T4/m11）：dict 直存，各 ≤5 条（预取上限同口径）
+                "international_events": _log_event_list(
+                    final_state.get("international_events")),
+                "sector_events": _log_event_list(final_state.get("sector_events")),
+                "stock_events": _log_event_list(final_state.get("stock_events")),
                 "sector_news_report": final_state.get("sector_news_report", ""),
                 "sector_tech_report": final_state.get("sector_tech_report", ""),
                 "sector_shortlist": final_state.get("sector_shortlist", ""),
@@ -609,8 +634,6 @@ class TradingAgentsGraph:
             ("07", "market_cn_tech", "cn_tech_report"),
             ("08", "sector_news", "sector_news_report"),
             ("09", "sector_tech", "sector_tech_report"),
-            ("09a", "market_regime", "market_regime"),
-            ("09b", "market_event_calendar", "market_event_calendar"),
             ("09c", "sector_shortlist", "sector_shortlist"),
             ("09d", "sector_tech_confirm", "sector_tech_confirm"),
             ("09e", "sector_rotation", "rotation_prediction_report"),
@@ -633,8 +656,11 @@ class TradingAgentsGraph:
             else:
                 logger.debug(f"报告为空，跳过: {seq}_{name}")
 
-        # 结构化 dict 字段落盘为 JSON（选股池/逐票结果/交易计划）
+        # 结构化 dict 字段落盘为 JSON（市场环境/资金日历/选股池/逐票结果/交易计划）
+        # T6：09a/09b 原为 str 落 .md，dict 原地替换后改走 JSON 落盘（避免 Python repr）
         dict_reports = [
+            ("09a", "market_regime", "market_regime"),
+            ("09b", "market_event_calendar", "market_event_calendar"),
             ("17", "candidate_stock_pool", "candidate_stock_pool"),
             ("18", "stock_results", "stock_results"),
             ("19", "final_position_plan", "final_position_plan"),

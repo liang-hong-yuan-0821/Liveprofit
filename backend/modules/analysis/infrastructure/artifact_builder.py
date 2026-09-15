@@ -36,7 +36,10 @@ def build_artifact_from_state(final_state: Any) -> AnalysisArtifact:
     selected_layers = set(state.get("selected_layers") or [])
 
     for block, sources in _BLOCK_SOURCES.items():
-        content_parts = [_stringify(state.get(key)) for key in sources if _non_empty(state.get(key))]
+        content_parts = [
+            _RENDERERS.get(key, _stringify)(state.get(key))
+            for key in sources if _non_empty(state.get(key))
+        ]
         risk_gate = _stringify(state.get("risk_gate"))
         if block == "market" and risk_gate:
             content_parts.append(f"风险门控：{risk_gate}")
@@ -64,8 +67,11 @@ def build_artifact_from_state(final_state: Any) -> AnalysisArtifact:
     decision_text = _stringify(state.get("decision") or state.get("signal"))
     conclusion_summary = decision_text[:200] if decision_text else None
     risk_gate_text = _stringify(state.get("risk_gate"))
-    risk_flag = bool(risk_gate_text) and (
-        any(marker in risk_gate_text for marker in ("禁止", "高风险", "风险预警", "触发风控", "risk"))
+    # risk_gate 为市场层纯代码节点派生的固定枚举（normal/caution/block）：
+    # caution/block 即风险提示；旧文本时代 marker 匹配仅作历史数据兜底。
+    risk_flag = risk_gate_text in ("caution", "block") or (
+        bool(risk_gate_text)
+        and any(marker in risk_gate_text for marker in ("禁止", "高风险", "风险预警", "触发风控"))
         and not any(safe in risk_gate_text for safe in ("通过", "无风险", "低风险", "风险可控"))
     )
     decision_payload = None
@@ -124,3 +130,20 @@ def _stringify(value: Any) -> str:
     if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=False, default=str)
     return str(value)
+
+
+def _render_market_regime(value: Any) -> str:
+    """`market_regime` dict → 紧凑 Markdown 摘要（不落裸 JSON）。
+
+    渲染器与 AI 侧单一实现同步（`market_features.format_market_regime_summary`）；
+    历史运行的 str 值/渲染为空时退化 `_stringify`（兼容旧 artifact 状态）。
+    """
+    from AI.dataflows import market_features as mf  # 延迟导入：平台进程专属
+
+    return mf.format_market_regime_summary(value) or _stringify(value)
+
+
+# 字段 → 渲染器（缺省 `_stringify`）；`market_event_calendar` 不在本文件消费点，不新增渲染项
+_RENDERERS = {
+    "market_regime": _render_market_regime,
+}

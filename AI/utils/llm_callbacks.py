@@ -94,6 +94,8 @@ _NODE_LAYER = {
     "KR Tech Analyst": "market",
     "CN News Analyst": "market",
     "CN Tech Analyst": "market",
+    # 纯代码风险门控节点（无 LLM；derive_risk_gate，市场子图末尾）
+    "Risk Gate": "market",
     # ---- Sector Layer ----
     "Sector News Analyst": "sector",
     "Sector Tech Analyst": "sector",

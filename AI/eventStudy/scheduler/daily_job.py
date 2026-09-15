@@ -3,11 +3,11 @@
 
 每天早间由 Windows 任务计划程序触发（schtasks，见 scheduler_setup.md），流程：
 1. 采集前一日/当日事件（爬虫）→ Redis 待审草稿
-2. 拉取最新行情（Provider 层）→ market_data
-3. 全市场日线本地库增量（store 包）→ stock_daily / adj_factor 等六表
-4. 更新市场上下文 → market_context
-5. 向量化新增 approved 事件（bge-m3）
-6. 对 PG 中无 Redis 影响草稿的 approved 事件执行事件研究（幂等，草稿过期可重算）
+2. 统一市场采集（db.instrument.ingest.incremental）→ market schema
+   （原步骤 2 market_data 与步骤 3 store 合并，证券市场数据库统一方案 3.4.1）
+3. 更新市场上下文 → market_context
+4. 向量化新增 approved 事件（bge-m3）
+5. 对 PG 中无 Redis 影响草稿的 approved 事件执行事件研究（幂等，草稿过期可重算）
 
 步骤间相互独立，单步失败不影响后续（记录错误日志继续）。
 """
@@ -17,7 +17,7 @@ import logging
 import sys
 from datetime import datetime, timedelta
 
-from AI.eventStudy.collectors import event_crawler, market_data_collector
+from AI.eventStudy.collectors import event_crawler
 from AI.eventStudy.db import market_data_dao
 from AI.eventStudy.db.connection import get_connection, init_schema
 from AI.eventStudy.processing import event_study, impact_writer, market_context
@@ -47,34 +47,34 @@ def step_crawl_events(conn):
     return len(ids)
 
 
-def step_collect_market_data(conn, start_date, end_date):
-    """步骤 2：拉取最新行情 → market_data。"""
-    result = market_data_collector.collect_index_market_data(
-        conn, start_date=start_date, end_date=end_date
-    )
-    logger.info(f"[2/6] 行情采集完成: {result}")
-    return result
+def step_collect_market(conn):
+    """步骤 2：统一市场采集 → market schema（指数日线+因子、个股基金日线+复权、
+    板块周刷；原步骤 2 market_data 与步骤 3 store 合并，统一方案 3.4.1）。"""
+    from AI.eventStudy.collectors.config import get_provider
+    from db.instrument.ingest.incremental import collect_incremental, _providers_from_env
 
+    # 双源兜底接线（CR BLOCKER 2）：get_provider 只按 env 返回主源实例，
+    # 兜底源经公共装配传入
+    def fallback_factory():
+        _, fallback_cls = _providers_from_env()
+        return fallback_cls()
 
-def step_collect_stock_daily(conn):
-    """步骤 3：全市场日线本地库增量（store 包，DO UPDATE 覆盖 tushare 日终修正）。"""
-    from AI.dataflows.store import incremental
-    result = incremental.collect_incremental(conn)
-    logger.info(f"[3/6] 全市场日线本地库增量完成: {result}")
+    result = collect_incremental(conn, get_provider, fallback_factory)
+    logger.info(f"[2/5] 统一市场采集完成: {result}")
     return result
 
 
 def step_update_market_context(conn, start_date, end_date):
-    """步骤 4：更新市场环境快照。"""
+    """步骤 3：更新市场环境快照。"""
     n = market_context.update_market_context(conn, start_date, end_date)
-    logger.info(f"[4/6] 市场上下文更新完成: {n} 行")
+    logger.info(f"[3/5] 市场上下文更新完成: {n} 行")
     return n
 
 
 def step_vectorize(conn):
-    """步骤 5：为新增 approved 事件生成向量。"""
+    """步骤 4：为新增 approved 事件生成向量。"""
     n = event_vectorizer.vectorize_unembedded(conn)
-    logger.info(f"[5/6] 事件向量化完成: {n} 条")
+    logger.info(f"[4/5] 事件向量化完成: {n} 条")
     return n
 
 
@@ -88,7 +88,7 @@ def _draft_has_error(draft: dict) -> bool:
 
 
 def step_event_study(conn):
-    """步骤 6：对无影响草稿的 approved 事件执行事件研究（幂等）。
+    """步骤 5：对无影响草稿的 approved 事件执行事件研究（幂等）。
 
     跳过规则：
     - 草稿存在且所有窗口计算成功 → 跳过（草稿 TTL 过期后可重算）
@@ -123,7 +123,7 @@ def step_event_study(conn):
             done += 1
         except Exception as e:
             logger.error(f"[6/6] 事件 {event_id} 影响计算失败: {e}")
-    logger.info(f"[6/6] 事件研究完成: 新计算 {done} 个事件（共 {len(rows)} 个 approved）")
+    logger.info(f"[5/5] 事件研究完成: 新计算 {done} 个事件（共 {len(rows)} 个 approved）")
     return done
 
 
@@ -132,7 +132,7 @@ def run_daily_job():
     parser.add_argument("--start-date", default=None, help="行情/上下文起始日期 YYYY-MM-DD，默认 2 年前")
     parser.add_argument("--end-date", default=None, help="截止日期 YYYY-MM-DD，默认今天")
     parser.add_argument("--skip", nargs="*", default=[],
-                        choices=["crawl", "market", "store", "context", "vectorize", "study"],
+                        choices=["crawl", "market", "context", "vectorize", "study"],
                         help="跳过的步骤")
     args = parser.parse_args()
 
@@ -153,8 +153,7 @@ def run_daily_job():
 
         steps = [
             ("crawl", lambda: step_crawl_events(conn)),
-            ("market", lambda: step_collect_market_data(conn, start_date, end_date)),
-            ("store", lambda: step_collect_stock_daily(conn)),
+            ("market", lambda: step_collect_market(conn)),
             ("context", lambda: step_update_market_context(conn, start_date, end_date)),
             ("vectorize", lambda: step_vectorize(conn)),
             ("study", lambda: step_event_study(conn)),

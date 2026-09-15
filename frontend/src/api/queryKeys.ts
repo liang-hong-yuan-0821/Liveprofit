@@ -12,9 +12,10 @@ export function makeQueryKeys(domain: string) {
 }
 
 export const queryKeys = {
-  marketAssets: makeQueryKeys('market-assets'),
   marketBars: makeQueryKeys('market-bars'),
-  hotConcepts: makeQueryKeys('hot-concepts'),
+  conceptTree: makeQueryKeys('concept-tree'),
+  conceptBars: makeQueryKeys('concept-bars'),
+  stockBars: makeQueryKeys('stock-bars'),
   macroInformation: makeQueryKeys('macro-information'),
   analysisDashboard: makeQueryKeys('analysis-dashboard'),
   analysisTasks: makeQueryKeys('analysis-tasks'),

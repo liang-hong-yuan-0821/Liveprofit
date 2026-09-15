@@ -12,6 +12,8 @@ export type ReviewRowRequest = {
     expected_value?: (number | null);
     actual_value?: (number | null);
     previous_value?: (number | null);
+    event_scope?: (string | null);
+    affected_scope_refs?: (Array<string> | null);
     operator?: string;
 };
 export namespace ReviewRowRequest {

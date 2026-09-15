@@ -28,13 +28,16 @@ def test_market_layer_primary_nodes_and_edges():
         "International News Analyst",
         "CN News Analyst",
         "CN Tech Analyst",
+        # T6：纯代码风险门控节点（无 LLM），市场子图末尾
+        "Risk Gate",
     ]
     assert topo.edges == (
         ("International Event Extraction Analyst", "International News Analyst", False, False),
-        # intl_news 无条件注册事件研究工具 → dummy 图中恒有 tools_intl_news 循环，
-        # 出 Analyst 的条件路由保留 conditional 标记；工具循环自环被折叠丢弃
-        ("International News Analyst", "CN News Analyst", True, False),
+        # T6：intl_news 不再注册事件研究工具 → dummy 图中为直接边
+        # （真实运行图仍按 toolkit 建条件循环，LLM 未 bind_tools → 恒走 Msg Clear）
+        ("International News Analyst", "CN News Analyst", False, False),
         ("CN News Analyst", "CN Tech Analyst", False, False),
+        ("CN Tech Analyst", "Risk Gate", False, False),
     )
     # 无自环边（工具循环回源路径丢弃）
     assert not any(s == t for s, t, _, _ in _edge_set(topo))
@@ -105,8 +108,8 @@ def test_build_topology_single_stock_mode():
     assert rows["market:International Event Extraction Analyst"] == 0
     assert rows["sector:Sector News Analyst"] == 1
     assert rows["stock:Stock Tech Analyst"] == 2
-    # 层间链：market 最后主节点 → sector 首主节点 → stock 首主节点
-    assert ("market:CN Tech Analyst", "sector:Sector News Analyst", "direct", False) in _edge_set(topo)
+    # 层间链：market 最后主节点（纯代码 Risk Gate）→ sector 首主节点 → stock 首主节点
+    assert ("market:Risk Gate", "sector:Sector News Analyst", "direct", False) in _edge_set(topo)
     assert ("sector:Sector Rotation Analyst", "stock:Stock Tech Analyst", "direct", False) in _edge_set(topo)
     assert not any(e.kind == "loop" for e in topo.edges)
 

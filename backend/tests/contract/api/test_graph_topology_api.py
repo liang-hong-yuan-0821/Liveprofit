@@ -50,12 +50,12 @@ def test_topology_available_false_static_structure(client, monkeypatch, tmp_path
     assert data["available"] is False
     assert data["generated_at"] is not None
     # 静态结构：三层节点齐全（_create 默认 selected_layers=["market","sector","stock"]）
-    assert len(data["nodes"]) == 4 + 3 + 12
+    assert len(data["nodes"]) == 5 + 3 + 12
     assert all(n["status"] == "not_executed" for n in data["nodes"])
     assert all(n["dirs"] == [] and n["invocation_count"] == 0 for n in data["nodes"])
-    # 层间链边存在
+    # 层间链边存在（market 末节点 = 纯代码门控 Risk Gate）
     edge_keys = {(e["source"], e["target"], e["kind"]) for e in data["edges"]}
-    assert ("market:CN Tech Analyst", "sector:Sector News Analyst", "direct") in edge_keys
+    assert ("market:Risk Gate", "sector:Sector News Analyst", "direct") in edge_keys
     assert ("sector:Sector Rotation Analyst", "stock:Stock Tech Analyst", "direct") in edge_keys
 
 
@@ -86,9 +86,11 @@ def test_topology_status_overlay(client, monkeypatch, tmp_path):
     assert by_id["market:International News Analyst"]["invocation_count"] == 1
     assert by_id["market:International News Analyst"]["dirs"] == ["market/001_International_News_Analyst"]
     assert by_id["market:International Event Extraction Analyst"]["status"] == "not_executed"
-    # 条件边标记（intl_news 工具循环 → 出边 conditional）
+    # 边 kind 标记：market 层 intl_news 已移除事件研究工具（直接边）；
+    # 条件边取 stock 辩论环（声明序保留）
     edges = {(e["source"], e["target"]): e for e in data["edges"]}
-    assert edges[("market:International News Analyst", "market:CN News Analyst")]["kind"] == "conditional"
+    assert edges[("market:International News Analyst", "market:CN News Analyst")]["kind"] == "direct"
+    assert edges[("stock:Bull Researcher", "stock:Bear Researcher")]["kind"] == "conditional"
 
 
 def test_task_dto_contains_graph_topology_url(client):

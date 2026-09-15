@@ -365,8 +365,8 @@ class AKShareProvider(BaseStockDataProvider):
     def _fetch_global_index(self, ak_key: str, start: str, end: str):
         """根据键名调用不同的 akshare 函数获取全球指数（多接口回退）
 
-        注意：index_us_stock_sina / index_global_hist_em 不接受 start_date/end_date，
-        调用后由 get_global_index 通过 tail() 截取所需天数。
+        注意：index_us_stock_sina / index_global_hist_em / index_global_hist_sina
+        不接受 start_date/end_date，调用后由 get_global_index 通过 tail() 截取所需天数。
         """
         # 美股指数 — 优先使用新浪财经接口（仅接受 symbol）
         if ak_key in ("nasdaq", "nasdaq_100"):
@@ -399,6 +399,12 @@ class AKShareProvider(BaseStockDataProvider):
 
         # 韩国指数
         if ak_key == "kospi":
+            # 2026-09-14 修复：东财 KS11 本机实测返回空表，改走新浪源
+            # （与采集链兜底分支同源；akshare 内部 map 以中文名为 key）
+            try:
+                return ak.index_global_hist_sina(symbol="首尔综合指数")
+            except Exception:
+                pass
             return ak.stock_zh_index_daily_em(symbol="KS11")
         if ak_key == "kosdaq":
             return ak.stock_zh_index_daily_em(symbol="KQ11")
@@ -1833,6 +1839,176 @@ class AKShareProvider(BaseStockDataProvider):
             return f"行业相对强度计算失败: {e}"
 
 
+
+    # ==================== 事件研究系统 — 结构化接口 ====================
+
+    def get_index_data_df(self, index_code: str, start_date: str, end_date: str):
+        """获取指数日线结构化行情（DataFrame，完整区间）。
+
+        返回标准列（2026-09-13 扩列，证券市场数据库统一方案 3.5.1）：
+        trade_date / open / high / low / close / pre_close / change / pct_chg /
+        vol / amount——AKShare 指数日线无成交额与 pre_close/change/pct_chg 字段，
+        amount 与扩列三列恒 NaN（双源兜底时兜底行三列 NULL 属事实）。
+        获取失败返回 None。
+        """
+        if not AKSHARE_AVAILABLE:
+            return None
+        if index_code.startswith(".") or index_code == "KS11":
+            return self._get_non_cn_index_data_df(index_code, start_date, end_date)
+        symbol = self._index_symbol(index_code)
+        try:
+            df = _call_with_timeout(
+                lambda: ak.stock_zh_index_daily(symbol=symbol),
+                timeout=_AKSHARE_TIMEOUT * 2,
+            )
+            if df is None or df.empty:
+                return None
+            # 过滤日期区间：上游 date 实测为 datetime.date 对象（2026-09-14 实测
+            # stock_zh_index_daily 返回 date(2026,9,14)），原字符串比较对真实数据
+            # TypeError → None（死代码期从未暴露）；统一 pd.to_datetime 归一后比较
+            dates = pd.to_datetime(df["date"], errors="coerce")
+            start_ts = pd.Timestamp(start_date.replace("-", ""))
+            end_ts = pd.Timestamp(end_date.replace("-", ""))
+            df = df.assign(_dt=dates)
+            df = df[(df["_dt"] >= start_ts) & (df["_dt"] <= end_ts)]
+            if df.empty:
+                return None
+            df = df.sort_values("_dt")
+            std = pd.DataFrame({
+                "trade_date": df["_dt"].dt.strftime("%Y-%m-%d"),
+                "open": pd.to_numeric(df.get("open"), errors="coerce"),
+                "high": pd.to_numeric(df.get("high"), errors="coerce"),
+                "low": pd.to_numeric(df.get("low"), errors="coerce"),
+                "close": pd.to_numeric(df.get("close"), errors="coerce"),
+                # 扩列三列：AKShare 上游无 pre_close/change/pct_chg，恒 NaN
+                # （与 amount 现状恒 NaN 同模式——兜底行三列 NULL 属事实）
+                "pre_close": float("nan"),
+                "change": float("nan"),
+                "pct_chg": float("nan"),
+                "vol": pd.to_numeric(df.get("volume"), errors="coerce"),
+                "amount": float("nan"),
+            })
+            return std
+        except Exception as e:
+            logger.warning("AKShare 结构化指数行情获取失败 [%s]: %s", index_code, e)
+            return None
+
+    def _get_non_cn_index_data_df(self, index_code: str, start_date: str,
+                                  end_date: str):
+        """非 CN 指数结构化日线（新浪源，2026-09-14 US/KR 上线兜底分支）。
+
+        - US（.INX/.DJI/.IXIC）：ak.index_us_stock_sina(symbol=code) 全历史
+          ~5712 行，列 date/open/high/low/close/volume/amount（amount 恒 0）
+        - KS11：ak.index_global_hist_sina(symbol='首尔综合指数') ~1000 行
+          （接口上限约 4 年；注意 akshare 内部 map 以中文名为 key），列无 amount
+
+        上游无 pre_close/change/pct_chg：在**全历史帧上先算**
+        （pre_close=close.shift(1)、change=close-pre_close、
+        pct_chg=(close/pre_close-1)*100）再按 [start_date, end_date] 过滤——
+        分块回填下每块首行 pre_close 仍有值，断点"缺列重跑"探测不会因
+        每块首行 NULL 永远重跑。全历史首行 pre_close 仍 NaN（入库 NULL 属事实，
+        与 CN 指数基日行同口径）。amount 统一 None（US 恒 0 无信息量 /
+        KS11 无列，与 CN 兜底行 amount 恒 NaN 同口径）。失败/空/区间无行返回 None。
+        """
+        if index_code.startswith("."):
+            def fetch():
+                return ak.index_us_stock_sina(symbol=index_code)
+        elif index_code == "KS11":
+            def fetch():
+                return ak.index_global_hist_sina(symbol="首尔综合指数")
+        else:
+            return None
+        try:
+            raw = _call_with_timeout(fetch, timeout=_AKSHARE_TIMEOUT * 2)
+            if raw is None or raw.empty:
+                return None
+            dates = pd.to_datetime(raw["date"], errors="coerce")
+            raw = raw.assign(_dt=dates).sort_values("_dt")
+            close = pd.to_numeric(raw["close"], errors="coerce")
+            pre_close = close.shift(1)
+            std = pd.DataFrame({
+                "trade_date": raw["_dt"].dt.strftime("%Y-%m-%d"),
+                "open": pd.to_numeric(raw.get("open"), errors="coerce"),
+                "high": pd.to_numeric(raw.get("high"), errors="coerce"),
+                "low": pd.to_numeric(raw.get("low"), errors="coerce"),
+                "close": close,
+                "pre_close": pre_close,
+                "change": close - pre_close,
+                "pct_chg": (close / pre_close - 1.0) * 100.0,
+                "vol": pd.to_numeric(raw.get("volume"), errors="coerce"),
+                # amount 统一 None（与 CN 兜底行 float("nan") 经 _clean_frame 后
+                # 同落 DB NULL，行为等价）
+                "amount": None,
+            })
+            # 边界归一：增量传 YYYYMMDD、回填传 YYYY-MM-DD 均兼容
+            start_s = pd.Timestamp(start_date).strftime("%Y-%m-%d")
+            end_s = pd.Timestamp(end_date).strftime("%Y-%m-%d")
+            std = std[(std["trade_date"] >= start_s) & (std["trade_date"] <= end_s)]
+            return None if std.empty else std.reset_index(drop=True)
+        except Exception as e:
+            # 拉取/构帧/缺列任何失败一律 None（契约：不抛，触发采集链换兜底源）
+            logger.warning("AKShare 非 CN 指数行情获取失败 [%s]: %s", index_code, e)
+            return None
+
+    @staticmethod
+    def _index_symbol(index_code: str) -> str:
+        """将 000001.SH 格式代码转为 AKShare symbol（sh000001）。"""
+        code = index_code.strip()
+        if "." in code:
+            num, exch = code.split(".")
+            return f"{exch.lower()}{num}"
+        if code.startswith("000") or code.startswith("600") or code.startswith("68"):
+            return f"sh{code}"
+        return f"sz{code}"
+
+    def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
+        """获取交易日历（DataFrame：trade_date, is_open）。V1 仅支持 CN。"""
+        if market != "CN" or not AKSHARE_AVAILABLE:
+            return None
+        try:
+            df = _call_with_timeout(
+                lambda: ak.tool_trade_date_hist_sina(),
+                timeout=_AKSHARE_TIMEOUT * 2,
+            )
+            if df is None or df.empty or "trade_date" not in df.columns:
+                return None
+            dates = pd.to_datetime(df["trade_date"])
+            start_ts = pd.Timestamp(start_date.replace("-", ""))
+            end_ts = pd.Timestamp(end_date.replace("-", ""))
+            mask = (dates >= start_ts) & (dates <= end_ts)
+            return pd.DataFrame({
+                "trade_date": dates[mask].reset_index(drop=True),
+                "is_open": 1,
+            })
+        except Exception as e:
+            logger.warning("AKShare 交易日历获取失败: %s", e)
+            return None
+
+    def get_macro_context(self, date: str, market: str = "CN") -> dict:
+        """获取指定日期 CN 宏观环境指标（10 年期国债收益率）。失败返回空 dict。"""
+        if market != "CN" or not AKSHARE_AVAILABLE:
+            return {}
+        result = {}
+        try:
+            end_dt = datetime.strptime(date.replace("-", ""), "%Y%m%d")
+            start_dt = end_dt - timedelta(days=10)
+            df = _call_with_timeout(
+                lambda: ak.bond_china_yield(
+                    start_date=start_dt.strftime("%Y%m%d"),
+                    end_date=end_dt.strftime("%Y%m%d"),
+                ),
+                timeout=_AKSHARE_TIMEOUT * 2,
+            )
+            if df is None or df.empty or "10年" not in df.columns:
+                return result
+            value = pd.to_numeric(df.iloc[-1]["10年"], errors="coerce")
+            if pd.notna(value):
+                result["rate_10y"] = float(value)
+        except Exception as e:
+            logger.warning("AKShare 10 年期国债收益率获取失败 [%s]: %s", date, e)
+        return result
+
+
 # ==================== 相关性分析 ====================
 def calculate_correlation(dataframes: dict, target_col: str = "close") -> str:
     """
@@ -1938,100 +2114,3 @@ def predict_tomorrow_trend(hist_data: dict) -> str:
     lines.append("")
     lines.append("⚠️ 此预测基于历史数据的统计相关性，不构成投资建议。")
     return "\n".join(lines)
-
-    # ==================== 事件研究系统 — 结构化接口 ====================
-
-    def get_index_data_df(self, index_code: str, start_date: str, end_date: str):
-        """获取指数日线结构化行情（DataFrame，完整区间）。
-
-        返回标准列：trade_date / open / high / low / close / vol / amount
-        （AKShare 指数日线无成交额字段，amount 置 NaN）。
-        获取失败返回 None。
-        """
-        if not AKSHARE_AVAILABLE:
-            return None
-        symbol = self._index_symbol(index_code)
-        try:
-            df = _call_with_timeout(
-                lambda: ak.stock_zh_index_daily(symbol=symbol),
-                timeout=_AKSHARE_TIMEOUT * 2,
-            )
-            if df is None or df.empty:
-                return None
-            # 过滤日期区间
-            df = df[(df["date"] >= start_date.replace("-", ""))
-                    & (df["date"] <= end_date.replace("-", ""))]
-            if df.empty:
-                return None
-            df = df.sort_values("date")
-            std = pd.DataFrame({
-                "trade_date": df["date"].astype(str),
-                "open": pd.to_numeric(df.get("open"), errors="coerce"),
-                "high": pd.to_numeric(df.get("high"), errors="coerce"),
-                "low": pd.to_numeric(df.get("low"), errors="coerce"),
-                "close": pd.to_numeric(df.get("close"), errors="coerce"),
-                "vol": pd.to_numeric(df.get("volume"), errors="coerce"),
-                "amount": float("nan"),
-            })
-            return std
-        except Exception as e:
-            logger.warning("AKShare 结构化指数行情获取失败 [%s]: %s", index_code, e)
-            return None
-
-    @staticmethod
-    def _index_symbol(index_code: str) -> str:
-        """将 000001.SH 格式代码转为 AKShare symbol（sh000001）。"""
-        code = index_code.strip()
-        if "." in code:
-            num, exch = code.split(".")
-            return f"{exch.lower()}{num}"
-        if code.startswith("000") or code.startswith("600") or code.startswith("68"):
-            return f"sh{code}"
-        return f"sz{code}"
-
-    def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
-        """获取交易日历（DataFrame：trade_date, is_open）。V1 仅支持 CN。"""
-        if market != "CN" or not AKSHARE_AVAILABLE:
-            return None
-        try:
-            df = _call_with_timeout(
-                lambda: ak.tool_trade_date_hist_sina(),
-                timeout=_AKSHARE_TIMEOUT * 2,
-            )
-            if df is None or df.empty or "trade_date" not in df.columns:
-                return None
-            dates = pd.to_datetime(df["trade_date"])
-            start_ts = pd.Timestamp(start_date.replace("-", ""))
-            end_ts = pd.Timestamp(end_date.replace("-", ""))
-            mask = (dates >= start_ts) & (dates <= end_ts)
-            return pd.DataFrame({
-                "trade_date": dates[mask].reset_index(drop=True),
-                "is_open": 1,
-            })
-        except Exception as e:
-            logger.warning("AKShare 交易日历获取失败: %s", e)
-            return None
-
-    def get_macro_context(self, date: str, market: str = "CN") -> dict:
-        """获取指定日期 CN 宏观环境指标（10 年期国债收益率）。失败返回空 dict。"""
-        if market != "CN" or not AKSHARE_AVAILABLE:
-            return {}
-        result = {}
-        try:
-            end_dt = datetime.strptime(date.replace("-", ""), "%Y%m%d")
-            start_dt = end_dt - timedelta(days=10)
-            df = _call_with_timeout(
-                lambda: ak.bond_china_yield(
-                    start_date=start_dt.strftime("%Y%m%d"),
-                    end_date=end_dt.strftime("%Y%m%d"),
-                ),
-                timeout=_AKSHARE_TIMEOUT * 2,
-            )
-            if df is None or df.empty or "10年" not in df.columns:
-                return result
-            value = pd.to_numeric(df.iloc[-1]["10年"], errors="coerce")
-            if pd.notna(value):
-                result["rate_10y"] = float(value)
-        except Exception as e:
-            logger.warning("AKShare 10 年期国债收益率获取失败 [%s]: %s", date, e)
-        return result

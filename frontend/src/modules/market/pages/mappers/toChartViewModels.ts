@@ -1,24 +1,8 @@
-import type { BarDTO, IndicatorsDTO, MarketAssetDTO } from '../../../../api/generated';
+import type { BarDTO, IndicatorsDTO } from '../../../../api/generated';
 import type { CandlestickChartViewModel } from '../../../../shared/charts/CandlestickChart';
 
 // DTO → 图表 ViewModel（图表只接收 ViewModel，不识别市场代码/OHLC 字段/报告 DTO）。
-
-/** 固定产品组序 US → KR → CN；组内按服务端 display_order ASC；不补充前端资产 */
-export const MARKET_GROUP_ORDER = ['US', 'KR', 'CN'] as const;
-
-export interface MarketGroup {
-  market: (typeof MARKET_GROUP_ORDER)[number];
-  assets: MarketAssetDTO[];
-}
-
-export function groupAssetsByMarket(items: MarketAssetDTO[]): MarketGroup[] {
-  return MARKET_GROUP_ORDER.map((market) => ({
-    market,
-    assets: items
-      .filter((asset) => asset.market === market)
-      .sort((a, b) => a.display_order - b.display_order),
-  }));
-}
+// groupAssetsByMarket 随目录端点删除（目录前端写死 MARKET_INDEX_CATALOG，组序固化）。
 
 /** bars 升序序列 → K 线图 ViewModel；无 bars 返回 null（调用方不渲染空壳图）。
  *  indicators 可选（旧后端/降级无此字段）：各数组长度与 bars 不一致时整体丢弃（不渲染错位指标）。
@@ -44,6 +28,13 @@ export function barsToCandlestickViewModel(
       upper: indicators.boll.upper,
       lower: indicators.boll.lower,
     };
+    if (indicators.macd && macdAligned(indicators.macd, sorted.length)) {
+      viewModel.macd = {
+        dif: indicators.macd.dif,
+        dea: indicators.macd.dea,
+        hist: indicators.macd.hist,
+      };
+    }
   }
   return viewModel;
 }
@@ -56,4 +47,14 @@ function indicatorsAligned(indicators: IndicatorsDTO, barCount: number): boolean
     boll.upper.length === barCount &&
     boll.lower.length === barCount
   );
+}
+
+/** macd 两类防御：① 任一数组与 bars 不等长 → 整体丢弃（不渲染错位副图）；
+ * ② 三数组全 null → 整体丢弃（视为无副图，不白白让出主图高度）。 */
+function macdAligned(macd: NonNullable<IndicatorsDTO['macd']>, barCount: number): boolean {
+  const { dif, dea, hist } = macd;
+  if (dif.length !== barCount || dea.length !== barCount || hist.length !== barCount) return false;
+  const allNull = (values: (number | null)[]) => values.every((value) => value === null);
+  if (allNull(dif) && allNull(dea) && allNull(hist)) return false;
+  return true;
 }

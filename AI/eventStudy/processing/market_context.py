@@ -90,8 +90,8 @@ def update_market_context(conn, start_date: str, end_date: str) -> int:
     """
     rows = conn.execute(
         """
-        SELECT DISTINCT ts::date AS d FROM market_data
-        WHERE ts >= %s::date AND ts <= %s::date + interval '1 day'
+        SELECT DISTINCT trade_date AS d FROM market.instrument_daily
+        WHERE trade_date >= %s::date AND trade_date <= %s::date + interval '1 day'
         ORDER BY d
         """,
         (start_date, end_date),

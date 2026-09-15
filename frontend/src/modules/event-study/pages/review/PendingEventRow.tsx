@@ -1,11 +1,14 @@
 import { Button } from '../../../../shared/ui/button';
 import { Input } from '../../../../shared/ui/input';
 import { formatDateTime } from '../../../../shared/format/dateTime';
-import { ACTION_CHOICES, CONDITION_OPTIONS, type PendingEventRowVM } from './mappers/toPendingEventRowVM';
+import {
+  ACTION_CHOICES, CONDITION_OPTIONS, SCOPE_CHOICES,
+  type PendingEventRowVM, type PendingScope,
+} from './mappers/toPendingEventRowVM';
 
 // 待审事件单行：批量可编辑表格的行（grid 行 div，先例 WatchlistItemList）。
 export const PENDING_ROW_GRID =
-  'grid grid-cols-[3rem_9rem_7rem_minmax(0,1.2fr)_7rem_7rem_8rem_5rem_7rem_7rem_7rem_6rem] items-center gap-2';
+  'grid grid-cols-[3rem_9rem_7rem_minmax(0,1.2fr)_7rem_7rem_8rem_5rem_8rem_12rem_7rem_7rem_7rem_6rem] items-center gap-2';
 
 const selectClass =
   'h-9 w-full rounded-md border bg-transparent px-2 text-sm outline-none focus-visible:border-[var(--color-accent)]';
@@ -81,6 +84,30 @@ export function PendingEventRow({
           </option>
         ))}
       </select>
+      <select
+        aria-label={label('作用域')}
+        className={selectClass}
+        style={{ borderColor: 'var(--color-border)', color: 'var(--color-fg)' }}
+        value={vm.eventScope}
+        disabled={disabled}
+        title="AI 预填，请确认（人工可改）"
+        onChange={(e) => onChange({ eventScope: e.target.value as PendingScope })}
+      >
+        {SCOPE_CHOICES.map((c) => (
+          <option key={c.value} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+      <Input
+        aria-label={label('目标')}
+        value={vm.affectedScopeRefs}
+        disabled={disabled}
+        // 目标引用为逗号分隔文本：SW:801080 / CONCEPT:BK1753.DC / stock:600519.SH
+        title="AI 预填，请确认（人工可改）：行业 SW:801080 / 概念 CONCEPT:BK1753.DC / 个股 stock:600519.SH"
+        placeholder={vm.eventScope === 'market' ? 'market 无目标' : 'SW:801080, stock:600519.SH'}
+        onChange={(e) => onChange({ affectedScopeRefs: e.target.value })}
+      />
       <Input
         aria-label={label('预期值')}
         type="number"

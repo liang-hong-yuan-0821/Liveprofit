@@ -81,7 +81,7 @@ docker-compose --profile management up -d     # 含管理界面 (Redis Commander
 
 ## 平台模式启动（Web 后端：API / Worker / Dispatcher）
 
-平台后端提供统一 Web API（REST + SSE，契约见 [docs/API契约.md](docs/API契约.md)），
+平台后端提供统一 Web API（REST + SSE，契约见 [docs/knowledge/backend/API契约.md](docs/knowledge/backend/API契约.md)），
 与经典 CLI 分析共用 AI 内核。**仅本机 loopback 使用**（首期不支持 LAN/公网访问）。
 
 ### 方式一：一键脚本（推荐）
@@ -142,7 +142,7 @@ liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试�
 ## 前端（Web 投研工作台）
 
 `frontend/` 是独立的 React + TypeScript 工程（Node 22+ / pnpm），与平台后端通过版本化 OpenAPI
-（`backend/openapi/openapi.v1.json` → `frontend/src/api/generated/`，契约见 [docs/API契约.md](docs/API契约.md)）对接。
+（`backend/openapi/openapi.v1.json` → `frontend/src/api/generated/`，契约见 [docs/knowledge/backend/API契约.md](docs/knowledge/backend/API契约.md)）对接。
 
 | 页面 | 路由 | 说明 |
 |------|------|------|

@@ -63,6 +63,17 @@ class EventStudyReviewAdapter:
 
         return review_dao.approve_event(conn, draft_id, fields, operator)
 
+    def validate_scope(self, conn, fields: dict) -> str | None:
+        """作用域/引用提交前前置校验（透传）：合法返回 None，失败返回错误信息。
+
+        AI 侧 EventScopeValidationError（"行级失败"语义）与存在性数据源异常
+        都在 AI 侧翻译为错误信息，异常类型不跨防腐边界；服务层据此映射
+        REVIEW_ROW_FAILED，不得映射 REVIEW_DRAFT_NOT_FOUND。
+        """
+        from AI.eventStudy.review import review_dao
+
+        return review_dao.check_scope_fields(fields, conn)
+
     def ignore(self, conn, draft_id: int, operator: str) -> int:
         from AI.eventStudy.review import review_dao
 

@@ -1,18 +1,24 @@
 """
-行情数据访问对象（market_data 表）
+行情数据访问对象（包装 db.instrument.dao.instrument_daily，统一方案 3.3.1）
 
-职责（方案 3.4）：
-- insert_market_data: 批量插入指数日线（幂等 upsert）
-- get_daily_returns: 返回日收益率（收盘价计算，指数无需复权）
-- 其余查询接口：按资产/区间取行情、资产映射、事件窗口数据
+分工定稿：
+- get_market_data / get_daily_returns 包装 db.instrument（内部先经 assets.ticker
+  映射 ts_code，读 market.instrument_daily）
+- get_asset_id / list_assets 保持读 public.assets 不变（语义是 asset_id 维度——
+  assets 表按方案 2.2 保留）
+- insert_market_data 已删除（采集由 db.instrument.ingest 接管，退役后是指向
+  已删表的死代码）
+- 返回 DataFrame 列保持 ts/open/high/low/adj_close/vol/amount 兼容
+  （adj_close=close 别名；ts 归一为 datetime64——消费方 .dt.date 依赖）
 """
 
 import logging
 
 import pandas as pd
-from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
+
+_COMPAT_COLS = ["ts", "open", "high", "low", "adj_close", "vol", "amount"]
 
 
 def get_asset_id(conn, ticker: str):
@@ -25,6 +31,8 @@ def get_asset_id(conn, ticker: str):
 
 def list_assets(conn) -> list[dict]:
     """列出全部资产。"""
+    from psycopg.rows import dict_row
+
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
             "SELECT asset_id, ticker, name, asset_class, market FROM assets ORDER BY asset_id"
@@ -32,65 +40,39 @@ def list_assets(conn) -> list[dict]:
         return cur.fetchall()
 
 
-def insert_market_data(conn, asset_id: int, df: pd.DataFrame) -> int:
-    """批量插入（upsert）行情数据，返回实际写入行数。
-
-    df 标准列：trade_date(YYYY-MM-DD str) / open / high / low / close / vol / amount。
-    已存在的主键 (asset_id, ts) 自动跳过（ON CONFLICT DO NOTHING）。
-    """
-    if df is None or df.empty:
-        return 0
-    records = []
-    for _, row in df.iterrows():
-        if pd.isna(row.get("close")):
-            continue
-        records.append((
-            asset_id,
-            str(row["trade_date"]),
-            _to_num(row.get("open")),
-            _to_num(row.get("high")),
-            _to_num(row.get("low")),
-            _to_num(row.get("close")),
-            _to_num(row.get("vol")),
-            _to_num(row.get("amount")),
-        ))
-    if not records:
-        return 0
-    with conn.cursor() as cur:
-        cur.executemany(
-            """
-            INSERT INTO market_data (asset_id, ts, open, high, low, adj_close, vol, amount)
-            VALUES (%s, %s::timestamptz, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (asset_id, ts) DO NOTHING
-            """,
-            records,
-        )
-    return len(records)
-
-
-def _to_num(value):
-    """NaN/None → None，其余转 float。"""
-    if value is None or pd.isna(value):
-        return None
-    return float(value)
+def _to_frame(rows: list, cols: list) -> pd.DataFrame:
+    """行集 → 兼容 DataFrame：ts 归一为 datetime64（消费方 .dt.date 依赖；
+    market.instrument_daily.trade_date 是 DATE，psycopg 返 datetime.date →
+    object dtype，不归一则 event_study.py:158 的 df["ts"].dt.date 抛
+    AttributeError）。"""
+    df = pd.DataFrame(rows, columns=cols)
+    if not df.empty and "ts" in df.columns:
+        df["ts"] = pd.to_datetime(df["ts"])
+    return df
 
 
 def get_market_data(conn, asset_id: int, start_date: str, end_date: str) -> pd.DataFrame:
-    """按区间查询行情（含开高低收/量/额），按 ts 升序。"""
-    rows = conn.execute(
-        """
-        SELECT ts, open, high, low, adj_close, vol, amount
-        FROM market_data
-        WHERE asset_id = %s AND ts >= %s::date AND ts <= %s::date + interval '1 day'
-        ORDER BY ts
-        """,
-        (asset_id, start_date, end_date),
-    ).fetchall()
-    if not rows:
-        return pd.DataFrame(columns=["ts", "adj_close"])
-    return pd.DataFrame(
-        rows, columns=["ts", "open", "high", "low", "adj_close", "vol", "amount"]
-    )
+    """按区间查询行情（内部先查 assets.ticker → market.instrument_daily），按 ts 升序。"""
+    ticker = conn.execute(
+        "SELECT ticker FROM assets WHERE asset_id = %s", (asset_id,)
+    ).fetchone()
+    if ticker is None:
+        return pd.DataFrame(columns=_COMPAT_COLS)
+    from db.instrument.dao import instrument_daily
+
+    df = instrument_daily.query_range(conn, ticker[0], start_date, end_date)
+    if df.empty:
+        return pd.DataFrame(columns=_COMPAT_COLS)
+    out = pd.DataFrame({
+        "ts": df["trade_date"],
+        "open": df["open"],
+        "high": df["high"],
+        "low": df["low"],
+        "adj_close": df["close"],  # 指数无复权：adj_close=close 别名（兼容列）
+        "vol": df["vol"],
+        "amount": df["amount"],
+    })
+    return _to_frame(out.to_dict("records") or [], _COMPAT_COLS)
 
 
 def get_daily_returns(conn, asset_id: int, start_date: str, end_date: str) -> pd.DataFrame:

@@ -2016,49 +2016,6 @@
         }
       }
     },
-    "/api/v1/market-assets": {
-      "get": {
-        "tags": [
-          "market-assets"
-        ],
-        "summary": "List Market Assets",
-        "operationId": "list_market_assets_api_v1_market_assets_get",
-        "parameters": [
-          {
-            "name": "enabled",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": true,
-              "title": "Enabled"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_MarketAssetsData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/market-data/indices/{symbol}/bars": {
       "get": {
         "tags": [
@@ -2122,6 +2079,278 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_BarsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/stocks/{symbol}/bars": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Stock Bars",
+        "description": "个股 K 线（板块概念Treemap方案 3.3）：复用 get_bars（instrument_type 放宽 stock）。",
+        "operationId": "stock_bars_api_v1_market_data_stocks__symbol__bars_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_BarsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/concepts/{sector_code}/bars": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Sector Bars",
+        "description": "概念 K 线（板块概念Treemap方案 3.3）：读 market.sector_daily（source 缺省 'dc'）。",
+        "operationId": "sector_bars_api_v1_market_data_concepts__sector_code__bars_get",
+        "parameters": [
+          {
+            "name": "sector_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sector Code"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "dc",
+              "title": "Source"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_BarsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/concepts/tree": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Concept Tree",
+        "description": "概念树（板块概念Treemap方案 3.2）：热度 top N + 当日涨跌幅 + 成分股。\n\nfrom_ 作为 as_of 透传、to 忽略（m6 定稿同款口径）；limit 必填（同 hot 端点）。",
+        "operationId": "concept_tree_api_v1_market_data_concepts_tree_get",
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Market"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ConceptTreeData_"
                 }
               }
             }
@@ -2610,33 +2839,16 @@
           "name": {
             "type": "string",
             "title": "Name"
-          },
-          "currency": {
-            "type": "string",
-            "title": "Currency"
-          },
-          "market_timezone": {
-            "type": "string",
-            "title": "Market Timezone"
-          },
-          "supported_intervals": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Supported Intervals"
           }
         },
         "type": "object",
         "required": [
           "market",
           "symbol",
-          "name",
-          "currency",
-          "market_timezone",
-          "supported_intervals"
+          "name"
         ],
-        "title": "BarsAssetInfo"
+        "title": "BarsAssetInfo",
+        "description": "market = 请求 market 形参回显（非表字段，instrument 无 market 列——五轮调整定稿）。"
       },
       "BarsData": {
         "properties": {
@@ -2839,7 +3051,7 @@
           "lower"
         ],
         "title": "BollBandsDTO",
-        "description": "布林带三线：各数组与 bars 等长按 index 对齐，窗口不足处为 null。"
+        "description": "布林带三线：各数组与 bars 等长按 index 对齐，因子行缺失处为 null。"
       },
       "BusinessEventData": {
         "properties": {
@@ -3002,6 +3214,168 @@
         },
         "type": "object",
         "title": "ComputeRequest"
+      },
+      "ConceptMemberDTO": {
+        "properties": {
+          "ts_code": {
+            "type": "string",
+            "title": "Ts Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "pct_chg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Chg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ts_code",
+          "name",
+          "pct_chg"
+        ],
+        "title": "ConceptMemberDTO",
+        "description": "概念成分股（板块概念Treemap方案 3.2）：pct_chg = as_of 当日个股涨跌幅；\n停牌/无行情行为 null（前端置灰）。name 缺失时以 ts_code 兜底（契约 name 必填）。"
+      },
+      "ConceptTreeData": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "algorithm_version": {
+            "type": "string",
+            "title": "Algorithm Version"
+          },
+          "result_status": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "NO_HOT_CONCEPTS"
+            ],
+            "title": "Result Status"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConceptTreeNodeDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "source_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Updated At"
+          },
+          "freshness_status": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE"
+            ],
+            "title": "Freshness Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_of",
+          "algorithm_version",
+          "result_status",
+          "items",
+          "source",
+          "source_updated_at",
+          "freshness_status"
+        ],
+        "title": "ConceptTreeData"
+      },
+      "ConceptTreeNodeDTO": {
+        "properties": {
+          "sector_code": {
+            "type": "string",
+            "title": "Sector Code"
+          },
+          "sector_name": {
+            "type": "string",
+            "title": "Sector Name"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "heat_score": {
+            "type": "number",
+            "title": "Heat Score"
+          },
+          "pct_chg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Chg"
+          },
+          "member_total": {
+            "type": "integer",
+            "title": "Member Total"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/ConceptMemberDTO"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sector_code",
+          "sector_name",
+          "rank",
+          "heat_score",
+          "pct_chg",
+          "member_total",
+          "members"
+        ],
+        "title": "ConceptTreeNodeDTO",
+        "description": "treemap 概念节点：heat_score = 矩形大小、pct_chg = 矩形颜色（as_of 当日\n板块涨跌幅，无行情行 → null）；members = 按 |pct_chg| 降序截断 top 100，\nmember_total 标该概念成分全量数。"
       },
       "ConfirmImpactsData": {
         "properties": {
@@ -3254,6 +3628,22 @@
         ],
         "title": "Envelope[ComputeData]"
       },
+      "Envelope_ConceptTreeData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ConceptTreeData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ConceptTreeData]"
+      },
       "Envelope_ConfirmImpactsData_": {
         "properties": {
           "data": {
@@ -3381,22 +3771,6 @@
           "meta"
         ],
         "title": "Envelope[MacroInformationData]"
-      },
-      "Envelope_MarketAssetsData_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/MarketAssetsData"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/EnvelopeMeta"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data",
-          "meta"
-        ],
-        "title": "Envelope[MarketAssetsData]"
       },
       "Envelope_PendingEventListData_": {
         "properties": {
@@ -4262,13 +4636,13 @@
       },
       "HotConceptDTO": {
         "properties": {
-          "concept_code": {
+          "sector_code": {
             "type": "string",
-            "title": "Concept Code"
+            "title": "Sector Code"
           },
-          "concept_name": {
+          "sector_name": {
             "type": "string",
-            "title": "Concept Name"
+            "title": "Sector Name"
           },
           "rank": {
             "type": "integer",
@@ -4332,8 +4706,8 @@
         },
         "type": "object",
         "required": [
-          "concept_code",
-          "concept_name",
+          "sector_code",
+          "sector_name",
           "rank",
           "hotness_reason",
           "period_return",
@@ -4341,7 +4715,8 @@
           "updated_at",
           "bars"
         ],
-        "title": "HotConceptDTO"
+        "title": "HotConceptDTO",
+        "description": "字段随 sector 体系改名（决策 12 连带）：concept_code/concept_name →\nsector_code/sector_name；hotness_reason 现场计算版恒 NULL（LLM 未实现）。"
       },
       "HotConceptsData": {
         "properties": {
@@ -4495,6 +4870,16 @@
           },
           "boll": {
             "$ref": "#/components/schemas/BollBandsDTO"
+          },
+          "macd": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MacdDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4503,7 +4888,7 @@
           "boll"
         ],
         "title": "IndicatorsDTO",
-        "description": "MA/BOLL 技术指标（K线指标叠加方案 §2.1）；bars 为空时整个字段为 null。"
+        "description": "MA/BOLL/MACD 技术指标（值取自 idx_factor_pro 入库数据，不自算）。\n\nbars 为空时整个字段为 null；macd 可选——旧后端响应无此字段不破坏解析。"
       },
       "MaLineDTO": {
         "properties": {
@@ -4532,7 +4917,76 @@
           "values"
         ],
         "title": "MaLineDTO",
-        "description": "单条均线：values 与 bars 等长按 index 对齐，窗口不足处为 null。"
+        "description": "单条均线：values 与 bars 等长按 index 对齐，因子行缺失处为 null。"
+      },
+      "MacdDTO": {
+        "properties": {
+          "fast": {
+            "type": "integer",
+            "title": "Fast"
+          },
+          "slow": {
+            "type": "integer",
+            "title": "Slow"
+          },
+          "signal": {
+            "type": "integer",
+            "title": "Signal"
+          },
+          "dif": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Dif"
+          },
+          "dea": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Dea"
+          },
+          "hist": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Hist"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fast",
+          "slow",
+          "signal",
+          "dif",
+          "dea",
+          "hist"
+        ],
+        "title": "MacdDTO",
+        "description": "MACD 副图（技术指标数据源切换方案 §3.3）：dif/dea/hist 与 bars 等长对齐。\n\nhist = 上游 macd_bfq 原值（≈2×(dif−dea)，上游口径，不自算）。"
       },
       "MacroInformationData": {
         "properties": {
@@ -4663,88 +5117,6 @@
           "research_status"
         ],
         "title": "MacroInformationItemDTO"
-      },
-      "MarketAssetDTO": {
-        "properties": {
-          "market": {
-            "type": "string",
-            "enum": [
-              "US",
-              "KR",
-              "CN"
-            ],
-            "title": "Market"
-          },
-          "symbol": {
-            "type": "string",
-            "title": "Symbol"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "currency": {
-            "type": "string",
-            "title": "Currency"
-          },
-          "market_timezone": {
-            "type": "string",
-            "title": "Market Timezone"
-          },
-          "display_order": {
-            "type": "integer",
-            "title": "Display Order"
-          },
-          "enabled": {
-            "type": "boolean",
-            "title": "Enabled"
-          },
-          "supported_intervals": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Supported Intervals"
-          },
-          "availability_status": {
-            "type": "string",
-            "enum": [
-              "AVAILABLE",
-              "DISABLED",
-              "UNAVAILABLE"
-            ],
-            "title": "Availability Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "market",
-          "symbol",
-          "name",
-          "currency",
-          "market_timezone",
-          "display_order",
-          "enabled",
-          "supported_intervals",
-          "availability_status"
-        ],
-        "title": "MarketAssetDTO"
-      },
-      "MarketAssetsData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/MarketAssetDTO"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "title": "MarketAssetsData"
       },
       "MarketWideCreateRequest": {
         "properties": {
@@ -5810,7 +6182,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 64
+                "maxLength": 10000
               },
               {
                 "type": "null"
@@ -5822,7 +6194,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 64
+                "maxLength": 10000
               },
               {
                 "type": "null"
@@ -5834,7 +6206,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 32
+                "maxLength": 10000
               },
               {
                 "type": "null"
@@ -5888,9 +6260,37 @@
             ],
             "title": "Previous Value"
           },
+          "event_scope": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Scope"
+          },
+          "affected_scope_refs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "type": "array",
+                "maxItems": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affected Scope Refs"
+          },
           "operator": {
             "type": "string",
-            "maxLength": 64,
+            "maxLength": 10000,
             "title": "Operator",
             "default": "admin"
           }

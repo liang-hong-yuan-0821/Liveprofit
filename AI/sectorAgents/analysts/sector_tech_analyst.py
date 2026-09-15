@@ -7,6 +7,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
+from AI.dataflows import market_features as mf
 from AI.utils.prompts import DEFAULT_PROMPTS, system_message
 from AI.templates import load_output_format
 from AI.sectorAgents.analysts.structured_list import (
@@ -23,16 +24,14 @@ def create_sector_tech_analyst(llm, toolkit, enable_structured_list=False):
         current_date = state["trade_date"]
         logger.info(f"[板块技术分析] 开始分析 @ {current_date}")
 
-        # 组装市场层上下文摘要 + 板块新闻分析结论
+        # 组装市场层上下文摘要（技术面结构化结论；不含事件/新闻文本）
         sector_ctx = _build_sector_market_context(state)
-        # 优先消费结构化短名单（完整），完整报告作为补充
+        # 优先消费结构化短名单（完整，仅板块名/代码，非新闻正文）
         shortlist = state.get("sector_shortlist", "")
         if shortlist and len(shortlist) > 10:
             sector_ctx += f"\n\n## 候选板块短名单（完整 — 需逐一做技术确认）\n{shortlist}"
-        else:
-            news_report = state.get("sector_news_report", "")
-            if news_report and len(news_report) > 20:
-                sector_ctx += f"\n\n## 板块新闻分析结论（参考）\n{news_report[:1000]}"
+        # 技术隔离（方案第十一章 / 评审 M7）：短名单缺失时**不注入**
+        # `sector_news_report` 新闻正文——技术节点只接收技术面数据与结构化范围
 
         count = state.get("sector_tech_tool_call_count", 0)
 
@@ -88,32 +87,37 @@ def create_sector_tech_analyst(llm, toolkit, enable_structured_list=False):
 
 
 def _build_sector_market_context(state) -> str:
-    """组装市场层中与板块分析相关的上下文摘要
+    """组装市场层中与板块分析相关的上下文摘要（技术面确认用）
 
-    优先消费完整结构化字段（market_regime + market_event_calendar），
-    避免截断丢失关键结论。完整报告作为补充参考。
+    T6 + 评审 M7：消费 `market_regime`/`market_event_calendar` 结构化 dict
+    （紧凑渲染）；按方案第十一章技术隔离，**禁止事件/CAR/新闻原文进入技术判断**，
+    结构化字段缺失时只标注「数据缺失」，不再以新闻报告正文（`cn_news_report` /
+    `sector_news_report`）作降级参考。唯一允许的全文降级参考是技术面报告
+    （`cn_tech_report`）。
     """
     parts = []
 
-    # 优先：结构化结论字段（完整，不截断）
-    market_regime = state.get("market_regime", "")
-    event_calendar = state.get("market_event_calendar", "")
-    if market_regime and len(market_regime) > 10:
-        parts.append(f"## 大盘环境判定（完整）\n{market_regime}")
-    if event_calendar and len(event_calendar) > 10:
-        parts.append(f"## 资金日历（完整）\n{event_calendar}")
+    # 优先：结构化结论字段（dict → 紧凑 Markdown；渲染失败降级空串，不阻塞节点）
+    try:
+        market_regime = mf.format_market_regime_summary(state.get("market_regime"))
+        event_calendar = mf.format_market_event_calendar_summary(
+            state.get("market_event_calendar"))
+    except Exception as e:  # 评审 m17/第2轮 finding 4：嵌套字段类型异常不阻断上下文组装
+        logger.warning(f"[板块技术分析] 市场上下文渲染失败（降级空串）: {e}")
+        market_regime = event_calendar = ""
+    if market_regime:
+        parts.append(market_regime)
+    if event_calendar:
+        parts.append(event_calendar)
 
-    # 补充：完整报告的前段（参考用）
+    # 补充：全文报告降级参考——仅技术面报告（事件/信息/新闻报告一律不注入）
     cn_tech = state.get("cn_tech_report", "")
-    cn_news = state.get("cn_news_report", "")
-    intl_news = state.get("international_news_report", "")
-
     if not market_regime and cn_tech and len(cn_tech) > 20:
         parts.append(f"## 大盘环境（参考）\n{cn_tech[:800]}")
-    if not event_calendar and cn_news and len(cn_news) > 20:
-        parts.append(f"## 资金日历（参考）\n{cn_news[:500]}")
-    if intl_news and len(intl_news) > 20:
-        parts.append(f"## 国际宏观\n{intl_news[:500]}")
+    if not event_calendar:
+        # 降级只给「数据缺失」标注（评审 M7）：不注入 cn_news_report 正文
+        parts.append("## 资金日历\n（数据缺失：market_event_calendar 结构化字段不可用；"
+                     "事件/新闻文本不注入技术节点）")
 
     return "\n\n".join(parts) if parts else "（市场层数据暂不可用）"
 

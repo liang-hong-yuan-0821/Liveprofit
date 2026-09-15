@@ -18,25 +18,43 @@ import pytest
 from backend.bootstrap.settings import CoreSettings
 
 # ---- 与 AI/eventStudy/db/schema.sql 同步的最小列集 ----
-# 审核流 INSERT 的 12 列 + 关联读取列；trading_day/surprise/embedding 由 compute/vectorizer
-# 写入，契约测试 monkeypatch 掉 compute 故省略。列集漂移会直接让本文件失败（可感知）。
+# 审核流 INSERT 的 14 列（含三级路由 event_scope / affected_scope_refs）+ 关联读取列；
+# trading_day/surprise/embedding 由 compute/vectorizer 写入，契约测试 monkeypatch 掉 compute
+# 故省略。列集漂移会直接让本文件失败（可感知）。
 _EVENTS_DDL = """
 CREATE TABLE IF NOT EXISTS events (
-    event_id        BIGSERIAL PRIMARY KEY,
-    title           TEXT NOT NULL,
-    content         TEXT,
-    event_type      VARCHAR(64),
-    event_subtype   VARCHAR(64),
-    event_condition VARCHAR(32),
-    announced_at    TIMESTAMPTZ NOT NULL,
-    expected_value  NUMERIC,
-    actual_value    NUMERIC,
-    previous_value  NUMERIC,
-    importance      SMALLINT NOT NULL DEFAULT 3,
-    status          VARCHAR(16) NOT NULL,
-    source_url      TEXT
+    event_id            BIGSERIAL PRIMARY KEY,
+    title               TEXT NOT NULL,
+    content             TEXT,
+    event_type          VARCHAR(64),
+    event_subtype       VARCHAR(64),
+    event_condition     VARCHAR(32),
+    announced_at        TIMESTAMPTZ NOT NULL,
+    expected_value      NUMERIC,
+    actual_value        NUMERIC,
+    previous_value      NUMERIC,
+    importance          SMALLINT NOT NULL DEFAULT 3,
+    status              VARCHAR(16) NOT NULL,
+    source_url          TEXT,
+    event_scope         VARCHAR(16),
+    affected_scope_refs JSONB
 )
 """
+
+# ---- 目标引用存在性校验底座（market schema 真实表）----
+# 桩 DDL 已删：market 表由契约 conftest 的 db.instrument.init_schema() 建立
+# （桩 DDL 成 no-op 且按真实列集 seed——stock_info 无 name 列，原 stock_basic
+# 形态 ts_code, name 会报 column "name" does not exist；方案 3.3.3 定稿）。
+_STORE_SEED = (
+    "INSERT INTO market.stock_info (ts_code) VALUES"
+    " ('600519.SH'), ('000001.SZ')"
+    " ON CONFLICT (ts_code) DO NOTHING",
+    "INSERT INTO market.sector (source, sector_code, name) VALUES"
+    " ('dc', 'BK1753.DC', '光刻胶') ON CONFLICT (source, sector_code) DO NOTHING",
+    "INSERT INTO market.industry (source, industry_code, name) VALUES"
+    " ('SW2021', '801080', '电子'), ('SW2021', '801750', '计算机')"
+    " ON CONFLICT (source, industry_code) DO NOTHING",
+)
 
 _ASSETS_DDL = """
 CREATE TABLE IF NOT EXISTS assets (
@@ -108,6 +126,8 @@ def _review_test_env(client, monkeypatch):
         for ddl in (_EVENTS_DDL, _ASSETS_DDL, _IMPACTS_DDL):
             conn.execute(text(ddl))
         conn.execute(text(_ASSETS_SEED))
+        for seed in _STORE_SEED:
+            conn.execute(text(seed))
         conn.execute(text("TRUNCATE events, event_impacts"))
     engine.dispose()
 
@@ -357,6 +377,173 @@ def test_batch_compute_failure_keeps_row_ok(client, monkeypatch):
     assert len(_events_rows(_review_pg_url(), status="approved")) == 1
 
 
+# ==================== 6b. 路由字段（三级事件路由） ====================
+
+def _refs(row) -> object:
+    """JSONB 列读回 Python 值（不同驱动回 str/list 均可断言）。"""
+    value = row["affected_scope_refs"]
+    return json.loads(value) if isinstance(value, str) else value
+
+
+def test_batch_approve_sector_route_persists_normalized_refs(client):
+    """approve 携带作用域 + 目标引用 → 归一后落库（裸码/大小写统一为规范形态）。"""
+    _seed_pending(client, 1, _pending_draft())
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", event_scope="sector",
+                                   affected_scope_refs=["801080", "bk1753.dc"],
+                                   operator="tester")]},
+    )
+    assert resp.status_code == 200
+    row = resp.json()["data"]["results"][0]
+    assert row["ok"] is True and row["compute_status"] == "ok"
+    rows = _events_rows(_review_pg_url(), status="approved")
+    assert len(rows) == 1
+    assert rows[0]["event_scope"] == "sector"
+    assert _refs(rows[0]) == ["SW:801080", "CONCEPT:BK1753.DC"]
+    assert client.redis.exists("events:pending:1") == 0
+
+
+def test_batch_approve_stock_route_with_existing_code(client):
+    """个股作用域：带交易所后缀的代码经存在性校验（stock_basic）后落库。"""
+    _seed_pending(client, 1, _pending_draft())
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", event_scope="stock",
+                                   affected_scope_refs=["stock:600519.SH"])]},
+    )
+    row = resp.json()["data"]["results"][0]
+    assert row["ok"] is True
+    rows = _events_rows(_review_pg_url(), status="approved")
+    assert rows[0]["event_scope"] == "stock"
+    assert _refs(rows[0]) == ["stock:600519.SH"]
+
+
+def test_batch_approve_defaults_to_market_when_scope_absent(client):
+    """未携带路由字段（旧前端/未预填）→ market + []，不因缺字段失败。"""
+    _seed_pending(client, 1, _pending_draft())
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve")]},
+    )
+    assert resp.json()["data"]["results"][0]["ok"] is True
+    rows = _events_rows(_review_pg_url(), status="approved")
+    assert rows[0]["event_scope"] == "market" and _refs(rows[0]) == []
+
+
+def test_batch_approve_market_ignores_client_refs(client):
+    """market 作用域不接受目标引用（残留文本不落库，行级失败）。"""
+    _seed_pending(client, 1, _pending_draft())
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", event_scope="market",
+                                   affected_scope_refs=["SW:801080"])]},
+    )
+    row = resp.json()["data"]["results"][0]
+    assert row["ok"] is False and row["error_code"] == "REVIEW_ROW_FAILED"
+    assert "market 作用域不允许目标引用" in row["error_message"]
+    assert _events_rows(_review_pg_url(), status="approved") == []
+
+
+@pytest.mark.parametrize("fields,fragment", [
+    ({"event_scope": "GLOBAL"}, "作用域非法"),
+    ({"event_scope": "sector", "affected_scope_refs": []}, "至少需要一个目标引用"),
+    ({"event_scope": "stock", "affected_scope_refs": []}, "至少需要一个目标引用"),
+    ({"event_scope": "sector", "affected_scope_refs": ["600519"]}, "目标引用格式非法"),
+    ({"event_scope": "stock", "affected_scope_refs": ["SW:801080"]}, "stock 作用域仅支持个股引用"),
+    ({"event_scope": "sector", "affected_scope_refs": ["stock:600519.SH"]}, "sector 作用域不支持个股引用"),
+    ({"event_scope": "sector", "affected_scope_refs": ["SW:999999"]}, "目标引用不存在"),
+    ({"event_scope": "stock", "affected_scope_refs": ["600519.SZ"]}, "目标引用不存在"),
+    ({"event_scope": "sector", "affected_scope_refs": ["CONCEPT:BK9999.DC"]}, "目标引用不存在"),
+])
+def test_batch_row_scope_validation_failed_not_draft_not_found(client, fields, fragment):
+    """校验失败 = 行级 REVIEW_ROW_FAILED（非 DRAFT_NOT_FOUND）：草稿保留、可修正重提。
+
+    同一批次内后续行不受影响（失败行 rollback 未毒化事务）。
+    """
+    _seed_pending(client, 1, _pending_draft())
+    _seed_pending(client, 2, _pending_draft(title="正常草稿", announced_at="2026-08-02T09:00:00+08:00"))
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", **fields), _batch_row(2, "approve")]},
+    )
+    assert resp.status_code == 200  # 行级失败不升级为整批 4xx/5xx
+    bad, good = resp.json()["data"]["results"]
+    assert bad["ok"] is False
+    assert bad["error_code"] == "REVIEW_ROW_FAILED"
+    assert bad["error_code"] != "REVIEW_DRAFT_NOT_FOUND"
+    assert fragment in bad["error_message"]
+    assert good["ok"] is True
+    assert resp.json()["data"]["summary"] == {"approved": 1, "ignored": 0, "computed": 1}
+    # 失败行草稿保留（人工修正作用域/目标后可重提），正常行草稿已消费
+    assert client.redis.exists("events:pending:1") == 1
+    assert client.redis.exists("events:pending:2") == 0
+    rows = _events_rows(_review_pg_url(), status="approved")
+    assert len(rows) == 1 and rows[0]["importance"] >= 1
+
+
+def test_batch_row_scope_failure_then_resubmit_succeeds(client):
+    """修正后重提同一草稿 → 通过（行级失败不消耗草稿）。"""
+    _seed_pending(client, 1, _pending_draft())
+    bad = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", event_scope="sector",
+                                   affected_scope_refs=["SW:999999"])]},
+    ).json()["data"]["results"][0]
+    assert bad["ok"] is False
+    ok = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", event_scope="sector",
+                                   affected_scope_refs=["SW:801080"])]},
+    ).json()["data"]["results"][0]
+    assert ok["ok"] is True
+    assert _refs(_events_rows(_review_pg_url(), status="approved")[0]) == ["SW:801080"]
+
+
+@pytest.mark.parametrize("fields,fragment", [
+    # 作用域列宽 VARCHAR(16)
+    ({"event_scope": "x" * 17}, "作用域长度超限"),
+    # 单事件引用条数上限（与 review_dao.MAX_SCOPE_REFS 一致）
+    ({"event_scope": "sector",
+      "affected_scope_refs": [f"SW:8010{i:02d}" for i in range(21)]},
+     "目标引用数量超出上限 20"),
+    # 事件类型列宽 VARCHAR(64)
+    ({"event_type": "超长" * 40}, "事件类型长度超限"),
+])
+def test_batch_row_length_limits_are_row_level(client, fields, fragment):
+    """评审 m18：业务长度在**行级**判定，不整批 422（单行超长不拖垮同批合法行）。
+
+    Schema 只留 `_FIELD_HARD_MAX` 宽松上限防超大 payload；超长字段 → 该行
+    REVIEW_ROW_FAILED、草稿保留可修正重提，同批其余行照常提交。
+    """
+    _seed_pending(client, 1, _pending_draft())
+    _seed_pending(client, 2, _pending_draft(title="正常草稿",
+                                            announced_at="2026-08-02T09:00:00+08:00"))
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "approve", **fields), _batch_row(2, "approve")]},
+    )
+    assert resp.status_code == 200  # 不升级为整批 422
+    bad, good = resp.json()["data"]["results"]
+    assert bad["ok"] is False and bad["error_code"] == "REVIEW_ROW_FAILED"
+    assert fragment in bad["error_message"]
+    assert good["ok"] is True
+    assert client.redis.exists("events:pending:1") == 1   # 失败行草稿保留
+    assert _events_rows(_review_pg_url(), status="approved")[0]["title"] == "正常草稿"
+
+
+def test_batch_ignore_does_not_require_scope_target(client):
+    """ignore 路径不做路由校验（ignored 事件不参与检索，默认 market + []）。"""
+    _seed_pending(client, 1, _pending_draft())
+    resp = client.http.post(
+        "/api/v1/event-studies/review/batch",
+        json={"items": [_batch_row(1, "ignore", event_scope="sector")]},
+    )
+    assert resp.json()["data"]["results"][0]["ok"] is True
+    rows = _events_rows(_review_pg_url(), status="ignored")
+    assert rows[0]["event_scope"] == "market" and _refs(rows[0]) == []
+
+
 # ==================== 7. 补算端点 ====================
 
 def test_compute_endpoint_event_missing_404(client, monkeypatch):
@@ -469,6 +656,12 @@ def test_validation_errors(client):
         ({"items": [_batch_row(1, "approve", importance=6)]}, 422),
         ({"items": [_batch_row(1, "bogus")]}, 422),
         ({"items": [_batch_row(i, "approve") for i in range(51)]}, 422),
+        # 路由字段边界（评审 m18）：Schema 只留宽松硬上限防超大 payload —— 命中即整批
+        # 422；业务长度（作用域 ≤16 / 引用 ≤20 条等）走行级 REVIEW_ROW_FAILED，见
+        # test_batch_row_length_limits_are_row_level
+        ({"items": [_batch_row(1, "approve", event_scope="x" * 10_001)]}, 422),
+        ({"items": [_batch_row(1, "approve",
+                               affected_scope_refs=[f"SW:8010{i:02d}" for i in range(201)])]}, 422),
     ]
     for payload, expected in cases:
         resp = client.http.post("/api/v1/event-studies/review/batch", json=payload)

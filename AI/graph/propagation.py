@@ -44,6 +44,20 @@ class Propagator:
                 logger.warning(f"日期校正失败（使用原始日期）: {e}")
                 effective_date = raw_date
 
+        # 市场数据质量启动快照（T5，唯一写入点）：
+        # 零 API 调用的能力快照 + 数据集元信息；节点只读该键，运行中途缺失由各
+        # 节点结构化输出的 data_quality 子字段描述（第十二章判据 (a)/(b)）。
+        market_data_quality: Dict[str, Any] = {}
+        try:
+            from AI.dataflows import market_features
+
+            market_data_quality = market_features.build_data_quality_summary(
+                effective_date,
+                market_features.probe_dataset_availability(effective_date),
+            )
+        except Exception as e:  # 快照失败不阻断（门控按无快照处理 → caution 上限）
+            logger.warning(f"市场数据质量快照构建失败（按缺失处理）: {e}")
+
         # 构建 HumanMessage：如果日期被校正，在消息中说明
         if date_correction:
             msg_content = (
@@ -84,9 +98,14 @@ class Propagator:
             "sector_news_report": "",
             "sector_tech_report": "",
             # 市场层结构化结论字段
-            "market_regime": "",
-            "market_event_calendar": "",
+            "market_regime": {},
+            "market_event_calendar": {},
+            "market_data_quality": market_data_quality,
+            "global_risk_assessment": {},
             "risk_gate": "normal",
+            "international_events": [],
+            "sector_events": [],
+            "stock_events": [],
             # 板块层结构化结论字段
             "sector_shortlist": "",
             "sector_tech_confirm": "",

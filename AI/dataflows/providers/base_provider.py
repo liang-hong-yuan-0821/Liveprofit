@@ -238,7 +238,9 @@ class BaseStockDataProvider(ABC):
 
         与展示用 get_index_data 的区别：返回原始 DataFrame（含开高低收、
         成交量、成交额），且分页/limit 由子类内部处理，保证完整区间数据。
-        标准列：trade_date / open / high / low / close / vol / amount。
+        标准列（2026-09-13 扩列）：trade_date / open / high / low / close /
+        pre_close / change / pct_chg / vol / amount（tushare 存上游原值、
+        AKShare 三列恒 NaN）。
         不支持时返回 None。
         """
         logger.warning("数据不可用：%s 不支持 结构化指数行情。", self.name)
@@ -264,8 +266,35 @@ class BaseStockDataProvider(ABC):
         logger.warning("数据不可用：%s 不支持 宏观环境指标（market=%s）。", self.name, market)
         return {}
 
-    # ==================== 全市场日线本地库（store）— 结构化接口 ====================
-    # 供 AI/dataflows/store（本地库回填/增量/DAO）消费，返回 DataFrame。
+    # ==================== 技术因子 — 结构化接口 ====================
+    # 技术指标不自算（2026-09-12 决策）：指标值一律取自 Tushare 因子端点
+    # （idx_factor_pro 指数 / stk_factor_pro 个股），本地不实现任何指标算法。
+    # 结构化接口约定（规则 8）：默认返回 None，不支持/失败时返回 None。
+
+    def get_index_factor_df(self, index_code: str, start_date: str, end_date: str, fields: str | None = None):
+        """指数每日技术面因子 → pandas.DataFrame（idx_factor_pro）。
+
+        列：trade_date（YYYY-MM-DD str，升序）+ 子类覆写时决定的因子列。
+        分页/limit 由子类内部处理，保证完整区间数据。
+        契约：返回 DataFrame 必须携带 attrs["missing_chunks"] = 真实缺段数
+        （分页段失败/与数据跨度重叠的空段；基日前合法空段不计 0）——
+        消费方据此拒绝部分入库，防止缺段静默导致区间指标全 null。
+        不支持时返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 指数技术因子（idx_factor_pro）。", self.name)
+        return None
+
+    def get_stock_factor_df(self, ts_code: str, start_date: str, end_date: str, fields: str | None = None):
+        """个股每日技术面因子 → pandas.DataFrame（stk_factor_pro）。
+
+        列：trade_date（YYYY-MM-DD str，升序）+ 子类覆写时决定的因子列。
+        不支持时返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 个股技术因子（stk_factor_pro）。", self.name)
+        return None
+
+    # ==================== 证券市场数据库（db.instrument ingest）— 结构化接口 ====================
+    # 供 db.instrument.ingest（统一采集回填/增量）消费，返回 DataFrame。
     # 结构化接口约定（规则 8）：默认返回 None（不返回 _not_supported() 的 str，
     # 避免破坏 DataFrame 消费方）；不支持/失败时返回 None。
 
@@ -295,4 +324,141 @@ class BaseStockDataProvider(ABC):
                                trade_date: str = None):
         """单个概念的全部成分（按概念代码过滤，多来源）。trade_date 仅 dc 来源需要（快照式，
         调用方传最近交易日）；ths 来源忽略该参数。返回 None 表示不支持/失败。"""
+        return None
+
+    def get_sector_daily_df(self, source: str, ts_code: str, start_date: str,
+                            end_date: str):
+        """单板块指数日线（板块概念Treemap方案 3.1：sector_daily 采集数据源）。
+
+        source 参数化：'dc'=dc_daily 端点（窗口型——仅最近 33 交易日，更早区间 0 行，
+        实测 2026-09-13）；'ths'=ths_daily 端点（全历史单请求，能力已实测、暂缓采集）。
+        日期参数格式 YYYYMMDD（tushare 端点硬要求；YYYY-MM-DD 的转换由采集函数入口
+        完成）。返回 DataFrame（升序）或 None 表示不支持/失败。
+        """
+        return None
+
+    # ==================== 市场特征层 — 结构化接口（T5） ====================
+    # 供 AI/dataflows/market_features.py 消费（方案第四、十二章程结构化接口例外组）。
+    # 契约（规则 8）：返回结构化 dict/dict；不支持或失败返回 None（绝不返回
+    # _not_supported() 的 str，避免破坏结构化消费方）。
+    # 通用约定：
+    #   - 所有序列按 trade_date 升序，日期为 YYYY-MM-DD，且已按 curr_date 截断
+    #     （晚于 curr_date 的数据不得返回）；
+    #   - 每个 dict 含 as_of_date（实际数据截止日）、missing（{名称: 原因}）与 notes；
+    #   - 字段缺失/接口不可用时把该分组放入 missing 并降级，不抛异常。
+
+    def get_market_index_features(self, curr_date: str,
+                                  lookbacks=(5, 20, 60, 120, 250)):
+        """7 指数完整窗口 OHLCV → dict（宽基趋势/风格特征输入）。
+
+        Returns:
+            {"as_of_date", "requested_date", "source", "lookbacks",
+             "indices": {code: {"trade_dates", "open", "high", "low", "close",
+                                "vol", "amount", "rows", "first_date", "last_date"}},
+             "missing": {code: 原因}, "notes": [...]}
+            序列保留最近 max(lookbacks)+5 个交易日（升序）。
+            不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 指数特征序列（结构化接口）。", self.name)
+        return None
+
+    def get_market_breadth_history(self, curr_date: str, days: int = 20):
+        """市场宽度 + 高标情绪序列 → dict（短线判据组：宽度趋势/高标情绪）。
+
+        Returns:
+            {"as_of_date", "days",
+             "series": [{"trade_date", "up", "down", "flat", "total", "up_ratio",
+                         "limit_up", "limit_down", "broken_board_rate", "max_board",
+                         "promotion_rate", "premium_rate", "market_amount"}, ...],
+             "missing": {名称: 原因}, "notes": [...]}
+            缺失字段为 None（缺失不影响其余字段）。不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 市场宽度序列（结构化接口）。", self.name)
+        return None
+
+    def get_market_fund_flow_history(self, curr_date: str, days: int = 20):
+        """主力/北向资金序列 → dict（短线判据组：成交额/资金趋势）。
+
+        Returns:
+            {"as_of_date", "days",
+             "series": [{"trade_date", "main_net_amount", "northbound_net"}, ...],
+             "missing": {名称: 原因}, "notes": [...]}
+            main_net_amount 单位万元（全市场净流入合计）；北向停更/无权限时置 None
+            并写入 missing。不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 资金流序列（结构化接口）。", self.name)
+        return None
+
+    def get_margin_trading_history(self, curr_date: str, days: int = 20):
+        """两融余额历史序列 → dict（资金 1/5/20 日变化）。
+
+        Returns:
+            {"as_of_date", "days",
+             "series": [{"trade_date", "rzye", "rqye", "rows"}, ...],
+             "missing": {...}, "notes": [...]}
+            rzye/rqye 单位为元（交易所合计）。不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 两融历史序列（结构化接口）。", self.name)
+        return None
+
+    def get_market_valuation(self, curr_date: str, years: int = 5):
+        """指数估值历史分位 + 全 A 快照 → dict（长线判据组：估值）。
+
+        Returns:
+            {"as_of_date", "years",
+             "index_valuation": {code: {"trade_dates", "pe_ttm", "pb",
+                                        "first_date", "last_date"}},
+             "all_a_snapshot": {"trade_date", "pe_ttm_median", "pb_median", "rows"},
+             "missing": {...}, "notes": [...]}
+            分位由特征层计算（本接口只回历史序列）。不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 市场估值序列（结构化接口）。", self.name)
+        return None
+
+    def get_cn_liquidity_indicators(self, curr_date: str, days: int = 20):
+        """利率/流动性指标 → dict（长线判据组：流动性）。
+
+        Returns:
+            {"as_of_date",
+             "shibor": {"trade_dates", "on", "1w", "1m", "3m", "1y"},
+             "lpr": {"trade_dates", "1y", "5y"},
+             "money_supply": {"months", "m1_yoy", "m2_yoy", "m1_mom", "m2_mom"},
+             "missing": {...}, "notes": [...]}
+            无接口的能力（10Y 国债、DR007 等）写入 missing 并说明替代口径。
+            不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 中国流动性指标（结构化接口）。", self.name)
+        return None
+
+    def get_cn_event_calendar(self, curr_date: str, windows=(5, 20, 60)):
+        """资金日历（IPO/解禁/交割/长假）→ dict（CN News 资金压力）。
+
+        Returns:
+            {"as_of_date", "windows",
+             "ipo": [{"ts_code", "name", "subscribe_date", "list_date", "price",
+                      "market_amount", "market"}],
+             "unlocks": [{"ts_code", "name", "float_date", "float_share",
+                          "float_ratio"}],
+             "expiry": [{"date", "kind"}],
+             "holiday_windows": [{"start", "end", "days"}],
+             "macro_releases": [...], "missing": {...}, "notes": [...]}
+            金额缺失置 None（不可评估，不臆造）；不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 资金日历（结构化接口）。", self.name)
+        return None
+
+    def get_global_risk_indicators(self, curr_date: str, days: int = 20):
+        """全球风险价格序列 → dict（阶段 3 特征组，global_risk_assessment 证据）。
+
+        Returns:
+            {"as_of_date", "days",
+             "us_treasury": {code: {"trade_dates", "field", <field>: [...],
+                                    "source", "unit", "note"}},
+             "us_real_yield": {...}, "us_long_rate": {...},
+             "global_indices": {...}, "fx": {...}, "commodities": {...},
+             "missing": {...}, "notes": [...]}
+            无对应代码的能力（VIX/SOX/美元指数等）写入 missing 并在 notes 说明
+            替代口径（已实现波动率、USDCNH、国内商品价）。不支持/失败返回 None。
+        """
+        logger.warning("数据不可用：%s 不支持 全球风险价格序列（结构化接口）。", self.name)
         return None

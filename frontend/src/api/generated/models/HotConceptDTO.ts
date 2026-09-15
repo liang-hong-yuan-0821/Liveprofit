@@ -4,9 +4,13 @@
 /* eslint-disable */
 import type { BarDTO } from './BarDTO';
 import type { DailyChangeDTO } from './DailyChangeDTO';
+/**
+ * 字段随 sector 体系改名（决策 12 连带）：concept_code/concept_name →
+ * sector_code/sector_name；hotness_reason 现场计算版恒 NULL（LLM 未实现）。
+ */
 export type HotConceptDTO = {
-    concept_code: string;
-    concept_name: string;
+    sector_code: string;
+    sector_name: string;
     rank: number;
     hotness_reason: (string | null);
     period_return: (number | null);

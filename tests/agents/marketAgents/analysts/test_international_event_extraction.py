@@ -29,3 +29,13 @@ def test_generates_event_report(real_llm, real_toolkit, state):
     assert "international_event_report" in result
     assert len(result["international_event_report"]) > 100
     assert result["international_event_tool_call_count"] >= 1
+
+    # 结构化事件（T6：0-5 条同构事件；历史统计只引用 LLM 前预取结果）
+    events = result["international_events"]
+    assert isinstance(events, list) and len(events) <= 5
+    for event in events:
+        assert event.get("event_scope") == "market"
+        assert event.get("fact")
+        # 未匹配到预取候选时必须显式 unmatched 且无统计（不得补写）
+        if event.get("history_match_status") == "unmatched":
+            assert event.get("historical_impact") is None

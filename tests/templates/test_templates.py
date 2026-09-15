@@ -81,6 +81,37 @@ def test_rotation_template_has_mainline_tactic_sections():
     assert "缺失行业基本面" in content
 
 
+# ---- T6 市场层输出格式模板（JSON 结论块；单花括号走 partial 值注入） ----
+
+_MARKET_JSON_TEMPLATES = (
+    ("cn_tech_analyst", '"short_term"', "适合 / 谨慎 / 回避 / 信息不足"),
+    ("cn_news_analyst", '"key_dates"', "高 / 中 / 低 / 信息不足"),
+    ("international_news_analyst", '"risk_appetite"', "进攻 / 中性 / 避险 / 信息不足"),
+)
+
+
+@pytest.mark.parametrize("name,marker,level_rule", _MARKET_JSON_TEMPLATES)
+def test_market_json_conclusion_block(name, marker, level_rule):
+    """JSON 结论块模板：键名原样保留 + 枚举规则句；不得用 `{{` 转义。"""
+    content = load_output_format("market", name)
+    assert "```json" in content, f"{name}: 缺 JSON 结论块"
+    assert marker in content, f"{name}: 缺结论键 {marker}"
+    assert level_rule in content, f"{name}: 缺级别枚举规则"
+    assert "{{" not in content and "}}" not in content, (
+        f"{name}: 模板含双花括号转义（partial 值注入下显示与运行不一致）")
+
+
+def test_event_extraction_template_columns_and_prefetch_rules():
+    """事件提取模板：表格列齐备 + 历史统计只引用预取块 + 摘要块（检索入口）。"""
+    content = load_output_format("market", "international_event_extraction")
+    assert "| 事件 | 类型 | 发生时间 | 来源 | 判断 | 影响方向 | 置信度 |" in content
+    assert "只引用预取块" in content
+    assert "不得补写样本数、CAR 或胜率" in content
+    assert "不得推算" in content
+    # 摘要块保留为事件描述来源（历史案例检索已删除，评审 M8；摘要块本身仍要求输出）
+    assert "【事件描述摘要】" in content
+
+
 def test_news_template_has_policy_catalyst_section():
     """新闻模板：速览块事件催化行 + 政策/事件催化章节 + 原章节重编号"""
     content = load_output_format("sector", "sector_news_analyst")

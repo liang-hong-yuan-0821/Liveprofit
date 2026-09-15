@@ -4,6 +4,7 @@
 """
 
 import pytest
+from AI.dataflows import market_features as mf
 from AI.marketAgents.analysts.cn_tech_analyst import create_cn_tech_analyst
 
 
@@ -29,8 +30,12 @@ def test_generates_report(real_llm, real_toolkit, state):
     assert "cn_tech_report" in result
     assert len(result["cn_tech_report"]) > 100, f"报告太短: {len(result['cn_tech_report'])} 字符"
 
-    # 大盘环境结构化字段
-    assert "market_regime" in result
-    assert len(result["market_regime"]) > 0
+    # 大盘环境结构化 dict（T6：原文本字段原地替换）
+    regime = result["market_regime"]
+    assert isinstance(regime, dict) and regime
+    assert regime.get("short_term", {}).get("level") in mf.SHORT_TERM_ENUM
+
+    # 风险门控已移至纯代码节点（market:Risk Gate），本节点不再派生
+    assert "risk_gate" not in result
 
     assert result["cn_tech_tool_call_count"] >= 1

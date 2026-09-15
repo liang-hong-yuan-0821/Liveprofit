@@ -183,13 +183,14 @@ def test_members_ths_uses_ts_code_param_and_adds_suffix():
     })
     prov = _new_provider(api)
     df = prov.get_concept_members_df("883300.TI", source="ths")
-    assert list(df.columns) == ["concept_code", "ts_code"]
+    assert list(df.columns) == ["sector_code", "ts_code"]
     # 必须用 ts_code= 参数（代理端点忽略 code= 参数，方案 3.2.1 实测）
     _, kwargs = api.ths_member.call_args
     assert kwargs == {"ts_code": "883300.TI"}
-    # con_name 丢弃（决策 12）；6 位代码补交易所后缀
+    # con_name 丢弃（决策 12）；6 位代码补交易所后缀；sector_code = 概念代码
     assert df["ts_code"].tolist() == ["000001.SZ", "600000.SH",
                                       "920992.BJ", "430047.BJ"]
+    assert (df["sector_code"] == "883300.TI").all()
 
 
 def test_members_dc_requires_trade_date_combo_filter():
@@ -266,3 +267,45 @@ def test_members_deduplicates_repeated_con_code():
     df = _new_provider(api).get_concept_members_df(
         "BK1753", source="dc", trade_date="2026-08-28")
     assert df["ts_code"].tolist() == ["301630.SZ", "300750.SZ"]
+
+
+# ==================== get_sector_daily_df ====================
+
+def test_sector_daily_dc_calls_dc_daily_and_sorts_asc():
+    api = MagicMock()
+    api.dc_daily.return_value = pd.DataFrame({
+        "ts_code": ["BK1753.DC"] * 2,
+        "trade_date": ["20260911", "20260910"],   # 降序输入（端点实测行序）
+        "close": [1041.38, 986.1],
+        "open": [1047.52, 993.08],
+        "high": [1049.0, 994.63],
+        "low": [1013.3, 953.47],
+        "change": [-18.45, -13.9],
+        "pct_change": [-1.74, -1.39],
+        "vol": [6888712.0, 13305932.0],
+        "amount": [21604826788.0, 43232400230.0],
+        "swing": [3.37, 4.12],
+        "turnover_rate": [2.84, 5.93],
+        "category": ["概念板块", "概念板块"],
+    })
+    prov = _new_provider(api)
+    df = prov.get_sector_daily_df("dc", "BK1753.DC", "20260801", "20260913")
+
+    api.dc_daily.assert_called_once_with(
+        ts_code="BK1753.DC", start_date="20260801", end_date="20260913",
+        idx_type="概念板块")
+    assert list(df["trade_date"]) == ["20260910", "20260911"]   # 升序归一
+    assert df.index.tolist() == [0, 1]                          # reset_index
+
+
+def test_sector_daily_ths_deferred_and_unknown_source():
+    prov = _new_provider(MagicMock())
+    assert prov.get_sector_daily_df("ths", "883300.TI", "20100101", "20260913") is None
+    assert prov.get_sector_daily_df("xx", "BK1753.DC", "20260801", "20260913") is None
+
+
+def test_sector_daily_none_response():
+    api = MagicMock()
+    api.dc_daily.return_value = None
+    prov = _new_provider(api)
+    assert prov.get_sector_daily_df("dc", "BK1753.DC", "20260801", "20260913") is None

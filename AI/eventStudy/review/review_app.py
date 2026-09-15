@@ -50,12 +50,56 @@ def _status_line() -> None:
 
 CONDITION_OPTIONS = ["", "超预期", "符合预期", "低于预期", "利好", "利空", "中性"]
 ACTION_OPTIONS = ["跳过", "通过", "忽略"]
+# 提交结果的一次性提示（评审 m19）：提交块以 st.rerun() 结束，rerun 前渲染的
+# st.error/st.success 会被擦掉；改为写入 session_state，在 rerun 后于 Tab 顶部回显。
+_FLASH_KEY = "pending_submit_flash"
+
+
+def _set_flash(errors=(), success=None, warnings=()) -> None:
+    st.session_state[_FLASH_KEY] = {
+        "errors": [str(e) for e in errors or []],
+        "warnings": [str(w) for w in warnings or []],
+        "success": success,
+    }
+
+
+def _render_flash() -> None:
+    """回显上一轮提交结果（读取即清空，只显示一次）。"""
+    flash = st.session_state.pop(_FLASH_KEY, None)
+    if not flash:
+        return
+    for message in flash.get("errors") or []:
+        st.error(message)
+    for message in flash.get("warnings") or []:
+        st.warning(message)
+    if flash.get("success"):
+        st.success(flash["success"])
+# 三级路由作用域（方案第三章）：market 固定无目标；sector/stock 必须至少一个目标引用
+SCOPE_OPTIONS = [review_dao.SCOPE_MARKET, review_dao.SCOPE_SECTOR, review_dao.SCOPE_STOCK]
+SCOPE_HELP = ("AI 预填，请确认：market 影响全市场；sector 影响特定行业/概念（必填目标）；"
+              "stock 影响特定个股（必填目标）")
+
+
+def row_target_refs(value) -> tuple[list[str], list[str]]:
+    """表格「目标」列 → (归一引用, 未识别项)。纯函数（无 Streamlit 依赖）。
+
+    与 backend `review_dao.resolve_scope_fields` 同口径（评审 M6 残留）：
+    `normalize_scope_refs` 会**静默丢弃**未识别项，这里把被丢弃的原始项一并
+    返回，调用方按**行级失败**处理——不得静默丢项后落库一个「少目标」的事件
+    （与 backend 拦截语义分叉）。
+    """
+    raw_items = review_dao._raw_ref_items(value)
+    refs = review_dao.normalize_scope_refs(raw_items)
+    unrecognized = [str(item).strip() for item in raw_items
+                    if review_dao.normalize_scope_ref(item) is None]
+    return refs, unrecognized
 
 
 # ==================== Tab 1: 待审核事件（批量表格） ====================
 
 def render_pending_tab():
     st.subheader("待审核事件（批量）")
+    # 上一轮提交的行级失败/汇总由 main() 顶部 _render_flash() 统一回显（评审 m19）
     events = review_dao.get_pending_events()
     if not events:
         st.info("暂无待审核事件。每日定时任务采集后自动进入队列。")
@@ -69,10 +113,12 @@ def render_pending_tab():
         st.success(f"已为 {n} 条事件生成预填建议")
         st.rerun()
 
-    # 组装表格：AI 建议作为各列默认值
+    # 组装表格：AI 建议作为各列默认值（作用域/目标为 AI 预填建议，人工可改）
     rows = []
     for e in events:
         s = e.get("ai_suggestions") or {}
+        scope = review_dao.normalize_scope(s.get("event_scope")) or review_dao.SCOPE_MARKET
+        refs = review_dao.normalize_scope_refs(s.get("affected_scope_refs"))
         rows.append({
             "draft_id": e["draft_id"],
             "时间": str(e.get("announced_at", ""))[:16],
@@ -82,6 +128,8 @@ def render_pending_tab():
             "事件子类型": s.get("event_subtype") or "",
             "关键条件": s.get("event_condition") or "",
             "重要性": int(s.get("importance") or e.get("importance_hint") or 3),
+            "作用域": scope,
+            "目标": ", ".join(refs) if scope != review_dao.SCOPE_MARKET else "",
             "操作": "跳过",
         })
     df = pd.DataFrame(rows)
@@ -102,12 +150,19 @@ def render_pending_tab():
                                                       help="CPI / LPR / 降准…"),
             "关键条件": st.column_config.SelectboxColumn(options=CONDITION_OPTIONS),
             "重要性": st.column_config.NumberColumn(min_value=1, max_value=5, step=1),
+            "作用域": st.column_config.SelectboxColumn(options=SCOPE_OPTIONS, help=SCOPE_HELP),
+            "目标": st.column_config.TextColumn(
+                required=False,
+                help="AI 预填，请确认（人工可改）：行业 SW:801080 / 概念 CONCEPT:BK1753.DC / "
+                     "个股 stock:600519.SH，多个用逗号分隔；sector/stock 必填，market 留空"),
             "操作": st.column_config.SelectboxColumn(options=ACTION_OPTIONS,
                                                      help="跳过 = 本次不处理"),
         },
         key="pending_editor",
     )
 
+    st.caption("作用域/目标为 AI 预填建议（标注「AI 预填，请确认」），人工可改；"
+               "sector/stock 作用域必须至少填一个目标引用（缺目标阻止提交，可回退 market）。")
     st.caption("预期值/实际值/前值：批量审核采用 AI 提取值（如有，见详情）；"
                "需人工改数值的事件可单独在 Adminer 中修正。")
 
@@ -135,16 +190,41 @@ def render_pending_tab():
             st.error("PostgreSQL 不可用，无法审核")
             return
         from AI.eventStudy.processing import event_study
+        # 提交前拦截：下层作用域缺目标阻止通过（可补目标或回退 market）
+        blocked = []
+        for _, row in edited.iterrows():
+            if row["操作"] != "通过":
+                continue
+            if row["作用域"] in (review_dao.SCOPE_SECTOR, review_dao.SCOPE_STOCK) \
+                    and not review_dao.normalize_scope_refs(row["目标"]):
+                blocked.append(f"#{row['draft_id']}")
+        if blocked:
+            st.error(f"{'、'.join(blocked)} 作用域为 sector/stock 但未填目标引用，"
+                     "已阻止提交（请补目标或回退 market）")
+            return
         approved = ignored = computed = 0
+        errors = []    # 行级失败信息（提交块以 st.rerun() 结束，须经 session_state 回显）
+        warnings = []  # 行级告警（如即时计算失败；同样经 flash 回显，评审 m19 残留）
         for _, row in edited.iterrows():
             action = row["操作"]
             if action == "跳过":
+                continue
+            target_refs, unrecognized_refs = row_target_refs(row["目标"])
+            if row["作用域"] != review_dao.SCOPE_MARKET and unrecognized_refs:
+                # 未识别引用项按**行级失败**处理（评审 M6 残留）：静默丢项会落库
+                # 一个「少目标」的事件，与 backend 拦截语义分叉
+                errors.append(f"#{row['draft_id']} 目标引用格式非法: "
+                              f"{', '.join(unrecognized_refs)}")
                 continue
             fields = {
                 "event_type": row["事件类型"] or None,
                 "event_subtype": row["事件子类型"] or None,
                 "event_condition": row["关键条件"] or None,
                 "importance": int(row["重要性"]),
+                "event_scope": row["作用域"],
+                # market 固定无目标（表单残留文本不落库）；sector/stock 已在上方拦截缺目标
+                "affected_scope_refs": ([] if row["作用域"] == review_dao.SCOPE_MARKET
+                                        else target_refs),
             }
             # 数值三列采用 AI 提取值
             suggestion = next(
@@ -163,16 +243,20 @@ def render_pending_tab():
                         event_study.compute_all_windows(conn, event_id)
                         computed += 1
                     except Exception as e:
-                        st.warning(f"事件 {event_id} 影响即时计算失败（批处理会兜底重算）: {e}")
+                        # 经 flash 回显（评审 m19 残留）：本块以 st.rerun() 结束，
+                        # rerun 前渲染的 st.warning 会被擦除
+                        warnings.append(
+                            f"事件 {event_id} 影响即时计算失败（批处理会兜底重算）: {e}")
                 else:
                     review_dao.ignore_event(conn, int(row["draft_id"]))
                     ignored += 1
             except Exception as e:
-                st.error(f"#{row['draft_id']} 处理失败: {e}")
+                # 行级失败不打断整批；信息随 flash 在 rerun 后回显（评审 m19）
+                errors.append(f"#{row['draft_id']} 处理失败: {e}")
         msg = f"批量提交完成：通过 {approved} 条，忽略 {ignored} 条"
         if computed:
             msg += f"；影响已即时计算 {computed} 条（切到「影响结果确认」查看）"
-        st.success(msg)
+        _set_flash(errors=errors, success=msg, warnings=warnings)
         st.rerun()
     elif submit and not confirm:
         st.warning("请勾选二次确认")
@@ -249,18 +333,24 @@ def render_impacts_tab():
         for _, row in checked.iterrows():
             by_event.setdefault(int(row["event_id"]), set()).add(row["资产"])
         total = 0
+        confirm_errors = []
         for event_id, tickers in by_event.items():
             try:
                 total += review_dao.confirm_impacts(conn, event_id, sorted(tickers))
             except Exception as e:
-                st.error(f"事件 {event_id} 确认失败: {e}")
-        st.success(f"已落表 {total} 条影响记录")
+                # 经 flash 回显（评审 m19 残留）：本块以 st.rerun() 结束，
+                # rerun 前渲染的 st.error/st.success 会被擦除
+                confirm_errors.append(f"事件 {event_id} 确认失败: {e}")
+        _set_flash(errors=confirm_errors, success=f"已落表 {total} 条影响记录")
         st.rerun()
 
 
 def main():
     st.title("事件研究系统 — 人工审核")
     _status_line()
+    # flash 在 Tab 之上统一回显（评审 m19 残留）：两个 Tab 的提交块都以
+    # st.rerun() 结束，rerun 前渲染的提示会被擦除；放在此处两个 Tab 都可回显
+    _render_flash()
     tab_pending, tab_impacts = st.tabs(["待审核事件", "影响结果确认"])
     with tab_pending:
         render_pending_tab()

@@ -19,7 +19,6 @@ from backend.shared.db import Base
 from backend.modules.analysis.infrastructure import models as analysis_models  # noqa: F401
 from backend.modules.event_study.infrastructure import models as event_study_models  # noqa: F401
 from backend.modules.investment_workspace.infrastructure import models as workspace_models  # noqa: F401
-from backend.modules.market_data.infrastructure import models as market_data_models  # noqa: F401
 
 config = context.config
 

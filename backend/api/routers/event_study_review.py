@@ -68,6 +68,7 @@ async def refresh(request: Request, trace_id: str = Depends(ensure_trace_context
 @router.post("/batch", response_model=Envelope[ReviewBatchData])
 async def submit_batch(payload: ReviewBatchRequest, request: Request, trace_id: str = Depends(ensure_trace_context)):
     service = _service(request)
+    # 路由字段（event_scope / affected_scope_refs）随 model_dump 直接透传命令对象
     commands = [ReviewRowCommand(**row.model_dump()) for row in payload.items]
     result = await request.app.state.analysis_services.run(lambda: service.submit_batch(commands))
     data = ReviewBatchData(

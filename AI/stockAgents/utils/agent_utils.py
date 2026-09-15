@@ -15,6 +15,7 @@ from langchain_core.messages import HumanMessage, RemoveMessage
 from langchain_core.tools import tool
 
 import AI.dataflows.interface as dataflow
+from AI.dataflows import market_features as mf
 from AI.dataflows.technical.stockstats import StockstatsUtils
 
 logger = logging.getLogger(__name__)
@@ -95,10 +96,11 @@ class Toolkit:
     def get_stockstats_indicators_report(
         symbol: Annotated[str, "股票代码，如 000001.SZ"],
         curr_date: Annotated[str, "当前日期 YYYY-mm-dd"],
-        lookback_days: Annotated[int, "回看天数，默认365"] = 365,
+        lookback_days: Annotated[int, "兼容保留参数（指标为上游因子快照值，不参与取数）"] = 365,
     ) -> str:
         """
-        获取股票技术指标报告（均线、RSI、MACD、布林带等）。
+        获取股票技术指标报告（MA5/10/20/60/250、RSI6/12/24、MACD、布林带，共 14 项）。
+        指标值取自 Tushare 技术因子接口（不自算）。
         用于判断买卖时机、趋势强度、超买超卖状态。
         """
         return StockstatsUtils.get_indicators_report(symbol, curr_date, lookback_days)
@@ -499,14 +501,24 @@ def build_cross_layer_context(state) -> str:
     这是"市场→板块→个股"流水线的核心组装函数。
     所有下游决策节点通过此函数获取跨层上下文。
 
+    T6：`market_regime`/`market_event_calendar` 为结构化 dict（原 str 原地替换），
+    经 `market_features` 紧凑渲染器注入（空/缺失返回空串，不做 len(str) 判定）；
+    上层事件原文与全文报告不进入本上下文（原始事件不跨层透传）。
+
     返回：
         格式化的多段落上下文文本；如果所有字段为空则返回空串。
     """
     parts = []
-    if state.get("market_regime") and len(state["market_regime"]) > 10:
-        parts.append(f"## 大盘环境判定（市场层）\n{state['market_regime']}")
-    if state.get("market_event_calendar") and len(state["market_event_calendar"]) > 10:
-        parts.append(f"## 资金日历（市场层）\n{state['market_event_calendar']}")
+    try:  # 评审 m17/第2轮 finding 4：嵌套字段类型异常不阻断上下文组装
+        regime = mf.format_market_regime_summary(state.get("market_regime"))
+        calendar = mf.format_market_event_calendar_summary(state.get("market_event_calendar"))
+    except Exception as e:
+        logger.warning(f"[个股上下文] 市场结构化字段渲染失败（降级空串）: {e}")
+        regime = calendar = ""
+    if regime:
+        parts.append(regime)
+    if calendar:
+        parts.append(calendar)
     if state.get("sector_shortlist") and len(state["sector_shortlist"]) > 10:
         parts.append(f"## 候选板块短名单（板块层）\n{state['sector_shortlist']}")
     if state.get("sector_tech_confirm") and len(state["sector_tech_confirm"]) > 10:

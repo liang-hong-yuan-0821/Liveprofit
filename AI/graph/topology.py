@@ -17,9 +17,9 @@ langgraph 1.2.10 实测（var/_probe_getgraph.py 探针 + builder 结构探针�
   本模块因此不依赖 get_graph()。
 
 已知偏差（可接受，均不进入折叠视图）：
-- market 的 intl_news 无条件注册事件研究工具（market_layer_graph.py:147），
-  dummy 编译图中 International News Analyst 恒有 tools_intl_news 工具循环；
-  折叠规则把回到源节点的工具循环路径丢弃（不产自环）。
+- T6 起 intl_news 不再注册事件研究工具（market_layer_graph.py），dummy 编译图中
+  International News Analyst 为直接边；真实运行图仍按 toolkit 创建 tools_intl_news
+  条件循环（LLM 未 bind_tools → 恒走 Msg Clear，休眠不可达，折叠视图等价）。
 - 依赖 toolkit 提供工具的新闻类节点（cn_news/sector_news 等），toolkit=None 时
   tools 为空 → dummy 图中为直接边（真实运行时为条件路由）；折叠视图等价，
   仅 conditional 标记与真实图有差异（工具循环折叠进主节点的语义）。

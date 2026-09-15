@@ -66,6 +66,16 @@ AGENTS = {
             "trade_date": "2026-08-08",
             "messages": [],
             "international_news_tool_call_count": 0,
+            # T6：事件类证据只消费结构化事件（示例；真实运行由事件提取节点产出）
+            "international_events": [{
+                "event_scope": "market",
+                "fact": "美联储降息 25bp",
+                "event_time": "2026-08-07",
+                "source": "美联储",
+                "affected_scope_refs": ["A 股"],
+                "history_match_status": "unmatched",
+                "historical_impact": None,
+            }],
         },
     },
     "us_news": {
@@ -87,8 +97,17 @@ AGENTS = {
             "trade_date": "2026-08-08",
             "messages": [],
             "sector_news_tool_call_count": 0,
-            "market_regime": "",
-            "market_event_calendar": "",
+            # T6：市场层结构化字段为 dict（原 str 原地替换）
+            "market_regime": {
+                "short_term": {"level": "适合", "confidence": "中"},
+                "wave": {"level": "进攻"},
+                "long_term": {"level": "配置窗口"},
+            },
+            "market_event_calendar": {
+                "short_term": {"level": "低", "score": 1, "key_dates": []},
+                "wave": {"level": "低", "score": 1, "key_dates": []},
+                "long_term": {"level": "低", "score": 1, "key_dates": []},
+            },
         },
     },
     # ---- 个股层 ----

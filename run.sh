@@ -21,7 +21,7 @@ cd "$SCRIPT_DIR"
 #   ./run.sh frontend-check # 前端质量检查：typecheck + 单测 + 构建
 #   ./run.sh frontend-e2e   # 前端 E2E（需后端已运行；自动拉起 dev server）
 #   ./run.sh stack          # 全栈容器：构建前端产物后 compose --profile app up
-#   ./run.sh ingest-market  # 采集 CN 指数日线（大盘数据；一键启动时自动执行，幂等）
+#   ./run.sh ingest-market  # 采集 CN 市场数据（指数日线+因子、个股基金日线、板块日线增量~15-25分钟/日、板块周刷；一键启动时后台自动执行，幂等）
 # ============================================================
 
 # --------------- 颜色输出 ---------------
@@ -170,7 +170,7 @@ log_info "运行结束"
 
 # ============================================================
 # 平台模式（Web 后端：API / Worker / Dispatcher）
-# 详见 README.md「平台模式启动」与 docs/API契约.md
+# 详见 README.md「平台模式启动」与 docs/knowledge/backend/API契约.md
 # ============================================================
 PLATFORM_PID_FILE="logs/.platform.pids"
 
@@ -211,9 +211,18 @@ start_platform() {
     # 否则国内网络下 5 次超时重试会阻塞 Worker 启动/领取任务（.env 可显式设 HF_HUB_OFFLINE=0 覆盖）
     export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
 
+    # 包注册自举（幂等）：pyproject include 变更（如 db* 注册）需重装 editable
+    # 才对新进程生效，每次启动重注册包发现（--no-deps 只更新包发现不动依赖）
+    log_info "同步项目包注册（pip install -e .）..."
+    python -m pip install -e . --no-deps --quiet || log_warn "包注册同步失败（沿用已装环境继续）"
+
     # 数据库迁移（只新增平台表，不动事件研究既有表）
     log_info "执行数据库迁移 alembic upgrade head ..."
     alembic upgrade head
+
+    # market schema 建表入口（幂等；0007 落地后 alembic 不再建 market 表，全新部署靠此入口自举）
+    log_info "初始化 market schema ..."
+    python -m db.instrument.db --init-schema
 
     mkdir -p logs
     : > "$PLATFORM_PID_FILE"
@@ -272,7 +281,7 @@ stop_platform() {
 }
 
 # ============================================================
-# 市场数据采集（CN 指数日线 → market_bars_daily；幂等，可重复执行）
+# 市场数据采集（统一入口 → market schema；幂等，可重复执行）
 # ============================================================
 market_ingest() {
     if [ -f ".venv/Scripts/activate" ]; then
@@ -303,10 +312,18 @@ start_all() {
     # 后端平台（幂等：进程已在运行则跳过）
     start_platform
 
-    # 大盘数据采集（幂等；失败不阻断启动，仅告警）
-    log_info "采集 CN 指数日线（大盘数据）..."
-    if ! market_ingest; then
-        log_warn "市场数据采集未完成（可稍后手动执行 ./run.sh ingest-market）"
+    # 大盘数据采集（后台执行，不阻塞前端启动——2026-09-14 板块日线增量落地后
+    # 采集体量约 15-50 分钟/日（板块日线增量 + 周一板块周刷），前台等待不再可行；
+    # 数据新鲜度另有每日 08:30 APScheduler 批处理兜底，此处仅首启补跑/自愈。
+    # 幂等 + 防重入：采集进程已在跑则跳过；手动前台执行仍用 ./run.sh ingest-market）
+    INGEST_PIDFILE="$SCRIPT_DIR/var/market-ingest.pid"
+    if [ -f "$INGEST_PIDFILE" ] && kill -0 "$(cat "$INGEST_PIDFILE")" 2>/dev/null; then
+        log_info "市场数据采集已在后台运行（pid $(cat "$INGEST_PIDFILE")），跳过"
+    else
+        log_info "市场数据采集转后台执行（日志：logs/market-ingest.log），前端照常启动…"
+        mkdir -p "$SCRIPT_DIR/var" "$SCRIPT_DIR/logs"
+        ( nohup "$SCRIPT_DIR/run.sh" ingest-market > "$SCRIPT_DIR/logs/market-ingest.log" 2>&1 &
+          echo $! > "$INGEST_PIDFILE" )
     fi
 
     # 前端 dev server（后台拉起，幂等）
@@ -362,7 +379,7 @@ stop_all() {
 
 # ============================================================
 # 前端（React 投研工作台；frontend/ 为独立 Node 工程）
-# 详见 README.md「前端（Web 投研工作台）」与 docs/done/前端平台技术方案.md
+# 详见 README.md「前端（Web 投研工作台）」与 docs/requirements/archive/前端平台技术方案.md
 # ============================================================
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 

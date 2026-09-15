@@ -4864,22 +4864,6 @@ wheels = [
 ]
 
 [[package]]
-name = "stockstats"
-version = "0.6.8"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "pandas", version = "3.0.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/41/488779ba0a09bf1c026509afe5201711886d4d1d7e3d71b7421d1fcc3341/stockstats-0.6.8.tar.gz", hash = "sha256:5f7462162a7cc47279a77c8e015c0504aaafd8835e99d1a1482242e4d3686c51", size = 197141, upload-time = "2026-02-16T02:49:06.245Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/cd/6ff4431b1d58780885a03b67b1bb94fdb8771f79876d6f11dfdfb34e00ce/stockstats-0.6.8-py3-none-any.whl", hash = "sha256:2147bf457238a34f5af4b3fef11e7f56cd7f5e10bf8edc1da51e62237002e661", size = 32851, upload-time = "2026-02-16T02:49:04.81Z" },
-]
-
-[[package]]
 name = "streamlit"
 version = "1.61.1"
 source = { registry = "https://pypi.org/simple" }
@@ -5967,7 +5951,6 @@ dependencies = [
     { name = "requests" },
     { name = "sentence-transformers" },
     { name = "statsmodels" },
-    { name = "stockstats" },
     { name = "streamlit" },
     { name = "tushare" },
     { name = "uvicorn" },
@@ -5991,7 +5974,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.0" },
     { name = "sentence-transformers", specifier = ">=3.0.0" },
     { name = "statsmodels", specifier = ">=0.14.0" },
-    { name = "stockstats", specifier = ">=0.4.1" },
     { name = "streamlit", specifier = ">=1.40.0" },
     { name = "tushare", specifier = ">=1.4.0" },
     { name = "uvicorn", specifier = ">=0.30.0" },

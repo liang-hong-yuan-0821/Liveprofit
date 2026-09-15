@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * 布林带三线：各数组与 bars 等长按 index 对齐，窗口不足处为 null。
+ * 布林带三线：各数组与 bars 等长按 index 对齐，因子行缺失处为 null。
  */
 export type BollBandsDTO = {
     period: number;

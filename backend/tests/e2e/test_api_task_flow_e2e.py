@@ -76,7 +76,8 @@ class FakeGraph:
             "sector_news_report": "半导体景气",
             "stock_tech_report": "技术面偏多",
             "decision": "综合判断：买入评级，目标价上调。",
-            "risk_gate": "通过：无系统性风险",
+            # T6：risk_gate 为纯代码门控节点的枚举（normal/caution/block）
+            "risk_gate": "normal",
         }
 
     def propagate(self, init_state, progress_callback):

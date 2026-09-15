@@ -31,7 +31,12 @@ def state():
         "trade_date": "2026-08-19",
         "messages": [],
         "rotation_tool_call_count": 0,
-        "market_regime": "",
+        # T6：market_regime 为结构化 dict（原 str 原地替换）
+        "market_regime": {
+            "short_term": {"level": "适合"},
+            "wave": {"level": "进攻"},
+            "long_term": {"level": "配置窗口"},
+        },
         "sector_news_report": "",
         "sector_tech_report": "",
     }
@@ -150,6 +155,19 @@ def test_all_available(monkeypatch, state):
     assert "### 全市场连板梯队与情绪数据（近20日）\n" + LADDER_OK in llm.system_prompt
     assert ("### 行业基本面（近10日行业涨跌排名 + 近5日行业资金流向）\n"
             + INDUSTRY_PERF_OK + "\n\n" + INDUSTRY_FLOW_OK) in llm.system_prompt
+    # T6：结构化 dict 大盘环境经紧凑渲染注入（原 str 拼接/长度判定已删）
+    assert "## 大盘环境判定（市场层）" in llm.system_prompt
+    assert "短线(5日)：适合" in llm.system_prompt
+
+
+def test_market_regime_absent_falls_back_to_unavailable(state):
+    """market_regime 缺失/非 dict → 不注入（不以 str 长度命中），上下文判不可用。"""
+    from AI.sectorAgents.analysts.sector_rotation_analyst import _build_sector_context
+
+    for missing in ({}, "", None):
+        context = _build_sector_context({**state, "market_regime": missing})
+        assert "大盘环境判定" not in context
+        assert context == "（板块层数据暂不可用）"
 
 
 def test_industry_only_available(monkeypatch, state):

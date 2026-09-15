@@ -16,11 +16,13 @@ def test_topology_static_full_graph_with_override_annotation(client):
     assert response.status_code == 200
     data = response.json()["data"]
     assert set(data.keys()) == {"nodes", "edges", "generated_at"}
-    # 全形态：market 4 主节点 + sector 3 + screening 1 + stock 12
-    assert len(data["nodes"]) == 4 + 3 + 1 + 12
+    # 全形态：market 5 主节点（含纯代码 Risk Gate）+ sector 3 + screening 1 + stock 12
+    assert len(data["nodes"]) == 5 + 3 + 1 + 12
     by_id = {n["id"]: n for n in data["nodes"]}
     screening = by_id["screening:Screening"]
     assert screening["has_prompt"] is False and screening["has_override"] is False
+    risk_gate = by_id["market:Risk Gate"]
+    assert risk_gate["has_prompt"] is False and risk_gate["has_override"] is False
     cn_news = by_id["market:CN News Analyst"]
     assert cn_news["has_prompt"] is True and cn_news["has_override"] is False
     # 折叠节点（US/KR）不在静态拓扑

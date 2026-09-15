@@ -23,9 +23,9 @@ PLATFORM_TABLES = {
     "analysis_tasks",
     "task_outbox",
     "analysis_reports",
-    "market_assets",
-    "market_bars_daily",
-    "concept_hotness_snapshots",
+    "agent_prompt_overrides",
+    # concept_hotness_snapshots 随 0006 删除；market_assets/market_bars_daily/
+    # market_index_factors 随 0007 删除（0007 已落地）
     "macro_information",
     "watchlists",
     "watchlist_items",
@@ -52,6 +52,8 @@ ANALYSIS_REPORT_COLUMNS = {
     "conclusion_summary", "risk_flag", "risk_hint", "has_report", "decision",
     "artifact_uri", "checksum", "core_version", "generated_at", "created_at", "updated_at",
 }
+# MARKET_INDEX_FACTOR_COLUMNS 列断言已删（旧表随 0007 DROP；factor_daily 列
+# 定义在 db/instrument/schema.sql，列检查由 init_schema 建表与 DAO 测试覆盖）
 
 
 def _base_url() -> str | None:

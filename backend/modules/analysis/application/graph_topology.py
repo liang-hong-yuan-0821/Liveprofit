@@ -1,6 +1,6 @@
 """图拓扑运行状态扫描（纯函数，无 DB/IO 框架依赖）。
 
-状态推导规则见 docs/plans/任务拓扑图方案.md §2.1：
+状态推导规则见 docs/requirements/archive/任务拓扑图方案.md §2.1：
 
 - 节点目录分两类：**LLM 目录** = 含节点级 meta.json 的目录（on_llm_start 最先写，
   AI/utils/llm_callbacks.py）；**预测目录** = 无节点级 meta.json（dataprovider_log

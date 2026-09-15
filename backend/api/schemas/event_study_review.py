@@ -2,23 +2,39 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
+
+# 宽松上限：仅防超大 payload（评审 m18）。业务字段长度按**行级**校验
+# （服务层 _validate_row_lengths，与 events 表列宽一致，失败 → 该行
+# REVIEW_ROW_FAILED，同批其余行照常提交），Schema 级 max_length 一旦命中
+# 是整批 422，会让单个超长字段拖垮同批合法行。
+_FIELD_HARD_MAX = 10_000
 
 
 class ReviewRowRequest(BaseModel):
     draft_id: int
     action: Literal["approve", "ignore"]
     # 不用 Literal 约束类型/条件取值——Streamlit Selectbox 选项是 UI 层约束
-    event_type: str | None = Field(default=None, max_length=64)
-    event_subtype: str | None = Field(default=None, max_length=64)
-    event_condition: str | None = Field(default=None, max_length=32)
+    event_type: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)
+    event_subtype: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)
+    event_condition: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)
     importance: int | None = Field(default=None, ge=1, le=5)
     expected_value: float | None = None
     actual_value: float | None = None
     previous_value: float | None = None
-    operator: str = Field(default="admin", max_length=64)
+    # 三级路由（方案第三章）：作用域与目标引用。同样不用 Literal 约束
+    # （scope 非法走服务层行级校验 → REVIEW_ROW_FAILED，草稿保留可修正重提；
+    # 422 会整批失败，不符合"行级失败"语义）；缺省 None → market + []
+    event_scope: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)
+    affected_scope_refs: list[Annotated[str, Field(max_length=_FIELD_HARD_MAX)]] | None = Field(
+        default=None, max_length=200
+    )
+    # 宽松上限（评审 m18 残留）：业务 64 上限在服务层行级 `_ROW_TEXT_LIMITS`
+    # 判定（超长 → 该行 REVIEW_ROW_FAILED），Schema 级 max_length=64 会让
+    # 单行超长 operator 拖垮整批 422
+    operator: str = Field(default="admin", max_length=_FIELD_HARD_MAX)
 
 
 class ReviewBatchRequest(BaseModel):

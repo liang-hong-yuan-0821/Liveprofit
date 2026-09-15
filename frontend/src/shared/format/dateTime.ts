@@ -20,3 +20,9 @@ export function daysAgoLocalDate(days: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+export function daysBetween(a: string, b: string): number {
+  // 两个 YYYY-MM-DD 的自然日差（b − a，可为负）；纯日历日口径，不做时区换算
+  const toMs = (s: string) => Date.parse(`${s}T00:00:00Z`);
+  return Math.round((toMs(b) - toMs(a)) / 86_400_000);
+}

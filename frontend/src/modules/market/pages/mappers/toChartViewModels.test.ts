@@ -1,51 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { BarDTO, IndicatorsDTO, MarketAssetDTO } from '../../../../api/generated';
-import { barsToCandlestickViewModel, groupAssetsByMarket } from './toChartViewModels';
+import type { BarDTO, IndicatorsDTO } from '../../../../api/generated';
+import { barsToCandlestickViewModel } from './toChartViewModels';
 
-function asset(market: string, symbol: string, displayOrder: number): MarketAssetDTO {
-  return {
-    market: market as MarketAssetDTO['market'],
-    symbol,
-    name: symbol,
-    currency: 'USD',
-    market_timezone: 'UTC',
-    display_order: displayOrder,
-    enabled: true,
-    supported_intervals: ['1d'],
-    availability_status: 'AVAILABLE' as MarketAssetDTO['availability_status'],
-  };
-}
+// groupAssetsByMarket 随目录端点删除（目录写死 MARKET_INDEX_CATALOG，
+// 组序固化——"12 指数 + 组序"回归迁为 MarketIndicesPanel 测试的常量断言）。
 
 function bar(timestamp: string, o: number, h: number, l: number, c: number): BarDTO {
   return { timestamp, open: o, high: h, low: l, close: c, volume: null };
 }
-
-describe('groupAssetsByMarket', () => {
-  it('固定组序 US → KR → CN；组内按服务端 display_order ASC；乱序入参不受影响', () => {
-    const groups = groupAssetsByMarket([
-      asset('CN', '000016.SH', 30),
-      asset('US', '.DJI', 20),
-      asset('CN', '000001.SH', 10),
-      asset('US', '.INX', 10),
-      asset('KR', 'KOSDAQ', 20),
-      asset('KR', 'KOSPI', 10),
-    ]);
-
-    expect(groups.map((group) => group.market)).toEqual(['US', 'KR', 'CN']);
-    expect(groups[0].assets.map((a) => a.symbol)).toEqual(['.INX', '.DJI']);
-    expect(groups[1].assets.map((a) => a.symbol)).toEqual(['KOSPI', 'KOSDAQ']);
-    expect(groups[2].assets.map((a) => a.symbol)).toEqual(['000001.SH', '000016.SH']);
-  });
-
-  it('无资产的市场返回空组（正常空态，不补前端资产）', () => {
-    const groups = groupAssetsByMarket([asset('US', '.INX', 10)]);
-    expect(groups.map((group) => [group.market, group.assets.length])).toEqual([
-      ['US', 1],
-      ['KR', 0],
-      ['CN', 0],
-    ]);
-  });
-});
 
 describe('barsToCandlestickViewModel', () => {
   it('空 bars 返回 null（调用方不渲染空壳图）', () => {
@@ -114,5 +76,46 @@ describe('barsToCandlestickViewModel', () => {
     expect(model).not.toBeNull();
     expect(model?.ma).toBeUndefined();
     expect(model?.boll).toBeUndefined();
+  });
+
+  it('macd 与 bars 等长时透传到 ViewModel', () => {
+    const indicators: IndicatorsDTO = {
+      ma: [{ period: 5, values: [null, 1.6] }],
+      boll: { period: 20, k: 2, mid: [null, 1.6], upper: [null, 1.9], lower: [null, 1.3] },
+      macd: { fast: 12, slow: 26, signal: 9, dif: [null, 0.3], dea: [null, 0.2], hist: [null, 0.2] },
+    };
+    const model = barsToCandlestickViewModel(
+      [bar('2026-09-03T00:00:00Z', 1, 2, 0.5, 1.8), bar('2026-09-04T00:00:00Z', 4, 5, 3, 4.5)],
+      indicators,
+    );
+    expect(model?.macd).toEqual({ dif: [null, 0.3], dea: [null, 0.2], hist: [null, 0.2] });
+  });
+
+  it('macd 数组与 bars 不等长时仅丢弃 macd（ma/boll 保留）', () => {
+    const indicators: IndicatorsDTO = {
+      ma: [{ period: 5, values: [null, 1.6] }],
+      boll: { period: 20, k: 2, mid: [null, 1.6], upper: [null, 1.9], lower: [null, 1.3] },
+      macd: { fast: 12, slow: 26, signal: 9, dif: [null], dea: [null], hist: [null] },
+    };
+    const model = barsToCandlestickViewModel(
+      [bar('2026-09-03T00:00:00Z', 1, 2, 0.5, 1.8), bar('2026-09-04T00:00:00Z', 4, 5, 3, 4.5)],
+      indicators,
+    );
+    expect(model?.macd).toBeUndefined();
+    expect(model?.ma).toHaveLength(1);
+    expect(model?.boll).toBeDefined();
+  });
+
+  it('macd 三数组全 null 时整体丢弃（视为无副图，不白让主图高度）', () => {
+    const indicators: IndicatorsDTO = {
+      ma: [{ period: 5, values: [null, null] }],
+      boll: { period: 20, k: 2, mid: [null, null], upper: [null, null], lower: [null, null] },
+      macd: { fast: 12, slow: 26, signal: 9, dif: [null, null], dea: [null, null], hist: [null, null] },
+    };
+    const model = barsToCandlestickViewModel(
+      [bar('2026-09-03T00:00:00Z', 1, 2, 0.5, 1.8), bar('2026-09-04T00:00:00Z', 4, 5, 3, 4.5)],
+      indicators,
+    );
+    expect(model?.macd).toBeUndefined();
   });
 });

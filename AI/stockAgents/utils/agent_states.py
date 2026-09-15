@@ -64,9 +64,19 @@ class AgentState(MessagesState):
     sector_tech_report: Annotated[str, "板块技术分析师报告（全行业技术扫描+AI专题+风格验证）"]
 
     # 市场层结构化结论字段（下游消费用，不截断）
-    market_regime: Annotated[str, "三级别市场环境判定（短线/波段/长线）— CN Tech 产出"]
-    market_event_calendar: Annotated[str, "三级别事件日历（短线/波段/长线）— CN News 产出"]
-    risk_gate: Annotated[str, "市场层熔断开关（normal/caution/block）— CN Tech 规则派生"]
+    # market_regime / market_event_calendar：T5 起为结构化 dict（原 str 原地替换）。
+    # market_data_quality：图启动单点写入（build_data_quality_summary，无 reducer、
+    # 节点只读，节点级缺失内嵌于各自结构化输出的 data_quality 子字段）。
+    market_regime: Annotated[dict, "三级别市场环境判定 dict（level/证据/确认/失效/置信度 + style/sentiment_cycle/data_quality）— CN Tech 产出"]
+    market_event_calendar: Annotated[dict, "三级别事件日历 dict（level/score/drivers/key_dates + data_quality）— CN News 产出"]
+    market_data_quality: Annotated[dict, "市场数据质量启动快照（唯一写入点：图启动；节点只读）"]
+    global_risk_assessment: Annotated[dict, "全球风险偏好评估 dict（systemic_risk/confidence/风险价格证据）— 国际影响产出"]
+    risk_gate: Annotated[str, "市场层熔断开关（normal/caution/block）— 纯代码节点 market:Risk Gate 按有序规则表派生（derive_risk_gate）"]
+
+    # 事件研究三层结构化事件（三字段同构，各层最多 5 条；仅信息研究 Agent 写入）
+    international_events: Annotated[list, "市场层结构化事件列表（事件事实+历史统计，≤5 条）— 国际事件提取产出"]
+    sector_events: Annotated[list, "板块层结构化事件列表（命中本层作用域目标，≤5 条）— 板块信息研究产出"]
+    stock_events: Annotated[list, "个股层结构化事件列表（命中 company_of_interest，≤5 条）— 个股信息研究产出"]
 
     # 板块层结构化结论字段（下游消费用，不截断）
     sector_shortlist: Annotated[str, "三级别候选板块短名单（短线候选/波段主线/长线配置）— Sector News 产出"]

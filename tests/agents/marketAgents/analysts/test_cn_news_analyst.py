@@ -4,6 +4,7 @@
 """
 
 import pytest
+from AI.dataflows import market_features as mf
 from AI.marketAgents.analysts.cn_news_analyst import create_cn_news_analyst
 
 
@@ -31,9 +32,10 @@ def test_generates_report(real_llm, real_toolkit, state):
     assert "cn_news_report" in result
     assert len(result["cn_news_report"]) > 100, f"报告太短: {len(result['cn_news_report'])} 字符"
 
-    # 事件日历已提取
-    assert "market_event_calendar" in result
-    assert len(result["market_event_calendar"]) > 0
+    # 事件日历已提取（T6：结构化 dict，原文本字段原地替换）
+    calendar = result["market_event_calendar"]
+    assert isinstance(calendar, dict) and calendar
+    assert calendar.get("short_term", {}).get("level") in mf.CALENDAR_PRESSURE_ENUM
 
     # tool_call_count 已递增
     assert result["cn_news_tool_call_count"] >= 1

@@ -1,6 +1,6 @@
 -- ============================================================
 -- 事件研究系统数据库 Schema（PostgreSQL 16 + pgvector）
--- 依据 docs/plans/事件研究.md 最终 ER 图
+-- 依据 docs/requirements/archive/事件研究方案.md 最终 ER 图
 --
 -- 约定：
 --   - 全部表不设外键（决策 7），关联由应用层保证
@@ -49,19 +49,28 @@ CREATE INDEX IF NOT EXISTS idx_events_announced_at ON events (announced_at);
 CREATE INDEX IF NOT EXISTS idx_events_trading_day ON events (trading_day);
 -- 事件量数千条级暂不建 HNSW 索引（3.7.2），数万条后再建
 
--- ---------- 行情数据表（指数日线，无复权概念，直接收盘价） ----------
--- 未来大数据量可 create_hypertable('market_data', 'ts') 迁移 TimescaleDB
-CREATE TABLE IF NOT EXISTS market_data (
-    asset_id   BIGINT      NOT NULL,
-    ts         TIMESTAMPTZ NOT NULL,             -- 交易日（当地时区）
-    open       NUMERIC,
-    high       NUMERIC,
-    low        NUMERIC,
-    adj_close  NUMERIC NOT NULL,                 -- 复权收盘价（指数直接用收盘价）
-    vol        NUMERIC,                          -- 成交量
-    amount     NUMERIC,                          -- 成交额（市场上下文成交额指标用）
-    PRIMARY KEY (asset_id, ts)
-);
+-- ---------- 事件路由字段（三级事件路由，2026-09-11） ----------
+-- 依据 docs/requirements/archive/市场层证据驱动分析与三级事件路由改造方案.md 第三章：
+--   event_scope          最细作用层级：market / sector / stock，单事件只属一层
+--   affected_scope_refs  层内目标引用数组（market 固定 []）：
+--                          行业 SW:<6 位申万一级代码>（如 SW:801080）
+--                          概念 CONCEPT:<东财 dc 代码>（如 CONCEPT:BK1753.DC）
+--                          个股 stock:<6 位代码.SH|SZ|BJ>（如 stock:600519.SH）
+-- 物理列首期允许 NULL（兼容历史行）；写入/读取层统一归一化为 market + []。
+-- 迁移为确定性步骤：不含 LLM、可重复执行（旧事件不批量 AI 回标，未经审核
+-- 确认回标的历史行只在市场层可见）。
+ALTER TABLE events ADD COLUMN IF NOT EXISTS event_scope VARCHAR(16);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS affected_scope_refs JSONB;
+
+-- 幂等归一：历史行（含首次迁移前的全部旧事件）落 market + []，只在市场层可见
+UPDATE events SET event_scope = 'market' WHERE event_scope IS NULL;
+UPDATE events SET affected_scope_refs = '[]'::jsonb WHERE affected_scope_refs IS NULL;
+
+-- 路由查询索引：(作用域, 公布时点) B-tree 支撑 status/时点/作用域过滤，
+-- GIN 支撑 sector/stock 的 JSONB 数组查询（affected_scope_refs ?| ARRAY[...]，
+-- 命中任一目标引用即属该路由；单目标时与 @> 包含查询等价）
+CREATE INDEX IF NOT EXISTS idx_events_scope_announced ON events (event_scope, announced_at);
+CREATE INDEX IF NOT EXISTS idx_events_scope_refs ON events USING GIN (affected_scope_refs);
 
 -- ---------- 事件影响表（仅存人工确认的正式记录） ----------
 CREATE TABLE IF NOT EXISTS event_impacts (

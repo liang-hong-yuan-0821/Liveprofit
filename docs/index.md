@@ -6,13 +6,13 @@
 >
 > **状态**：市场层 ✅ 板块层 ✅ 选股层 ✅ 仓位管理层 ✅ 事件研究系统 ✅ 全市场日线本地库 ✅ 后端平台 ✅ 个股层持续更新
 >
-> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`（含 `store/`）、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`、`backend/`（平台）、`docker/`（编排）
+> **关联目录**：`AI/agents/`、`AI/marketAgents/`、`AI/sectorAgents/`、`AI/screening/`、`AI/position/`、`AI/dataflows/`、`AI/eventStudy/`、`AI/graph/`、`AI/templates/`、`backend/`（平台）、`db/instrument/`（证券市场数据库）、`docker/`（编排）
 
 ### 后端平台（2026-09-06 起）
 
-- **契约与启动**：[API 契约 v1](API契约.md)（冻结端点/字段/错误码，前端实现参照）；启动方式见 `README.md`「平台模式启动」或 `./run.sh platform`
+- **契约与启动**：[API 契约 v1](knowledge/backend/API契约.md)（冻结端点/字段/错误码，前端实现参照）；启动方式见 `README.md`「平台模式启动」或 `./run.sh platform`
 - **架构**：模块化单体（backend/ 可导入包）；API（REST/SSE）＋ Dramatiq Worker（可靠任务执行：Outbox + 租约 fencing + Redis Stream 事件流）＋ Dispatcher（发布/恢复唯一调度者）；PostgreSQL 业务真相，Redis Broker/事件流
-- **设计文档**：[后端平台技术方案（已归档）](done/后端方案.md)；产品基线：[产品需求分析](plans/产品需求分析.md)
+- **设计文档**：[后端平台技术方案（已归档）](requirements/archive/后端方案.md)；产品基线：[产品需求分析](knowledge/产品需求分析.md)
 
 ---
 
@@ -26,12 +26,11 @@
 
 | 文档 | 类型 | 内容 |
 |------|------|------|
-| [市场层](市场层.md) | 主干架构 | 市场层架构定义（已实现 ✅） |
-| [板块层](板块层.md) | 主干架构 | 板块层架构定义（已实现 ✅） |
-| [个股层](个股层.md) | 主干架构 | 个股层架构定义（持续更新） |
-| [plans/](plans/) | 施工方案 | 单次重构/新功能的临时方案（实施完归档） |
+| [requirements/](requirements/) | 任务桶 | 进行中任务（每任务一文件夹：README+plan+8 文件骨架）｜[templates](requirements/templates/骨架说明.md) 任务骨架模板｜[archive](requirements/archive/) 已归档方案 |
+| [knowledge/](knowledge/) | 知识沉淀 | [backend](knowledge/backend/)（[API 契约](knowledge/backend/API契约.md) + [数据库表结构](knowledge/backend/数据库表结构.md)）｜[frontend](knowledge/frontend/)（[前端平台](knowledge/frontend/前端平台.md)）｜[ai](knowledge/ai/)（[市场层](knowledge/ai/市场层.md) / [板块层](knowledge/ai/板块层.md) / [个股层](knowledge/ai/个股层.md)）｜[产品需求分析](knowledge/产品需求分析.md)（产品基线） |
+| [memory/](memory/) | 经验沉淀 | [index](memory/index.md)（pitfalls + best-practices 总索引） |
 
-> **约定**：主干文档随项目持续演进；`plans/` 下的方案文档实施完成后整合进主干并归档 `done/`。
+> **约定**：知识库文档（knowledge/）随项目持续演进；`requirements/<任务名>/` 下的任务实施完成后整合进 knowledge/ 并归档 `requirements/archive/`。
 
 ---
 
@@ -199,7 +198,7 @@ START
 
 ## 五、板块层（已实现 ✅）
 
-板块层作为三层金字塔的第二层，位于市场层之后、个股层之前。详见 [板块层](板块层.md) 和 [施工方案](plans/板块层技术方案.md)。
+板块层作为三层金字塔的第二层，位于市场层之后、个股层之前。详见 [板块层](knowledge/ai/板块层.md) 和 [施工方案](requirements/archive/板块层技术方案.md)。
 
 已实现内容：
 - **SectorLayerGraph** — 独立编译的 LangGraph 子图（`AI/sectorAgents/sector_layer_graph.py`）
@@ -219,7 +218,7 @@ START
 - **个股层循环**（`AI/graph/stock_loop.py`）：对候选池逐票 invoke 个股层子图（逐票态重置防污染），结果收进 `stock_results`
 - **仓位管理层**（`AI/position/`）：置信度加权/等权/凯利三种分配策略 + 单票/板块/总仓位上限裁剪 → `final_position_plan`（JSON 落盘 `logs/{ts}/reports/`）
 - **风险熔断**：市场层 `risk_gate` → `block` 只出风险提示计划、`caution` 目标仓位打 5 折
-- 详见归档方案：[done/选股层与仓位管理层技术方案.md](done/选股层与仓位管理层技术方案.md)
+- 详见归档方案：[done/选股层与仓位管理层技术方案.md](requirements/archive/选股层与仓位管理层技术方案.md)
 
 ---
 
@@ -236,19 +235,19 @@ START
 - **市场环境快照**：每日 `market_context`（20 日收益/年化波动/20 日均成交额/10 年国债收益率），事件环境按 T-1 规则匹配（禁止当日快照）
 - **AI 预测**：模板匹配（event_type+subtype+condition 的历史平均 CAR/胜率/样本数，权重 1.0）+ 向量检索（bge-m3 1024 维，pgvector 余弦，相似度<0.5 不纳入，权重=相似度×0.5）加权融合；LangGraph 工具 / REST API（`POST /predict`）/ 离线回测共用同一套确定性规则；预测仅显式保存（save=True）或回测时落库
 - **调度**：Windows 任务计划程序每日早间批处理（采集 → 行情 → 全市场日线增量 → 市场上下文 → 向量化 → 事件研究）
-- 详见归档方案：[done/事件研究方案.md](done/事件研究方案.md)
+- 详见归档方案：[done/事件研究方案.md](requirements/archive/事件研究方案.md)
 
 ---
 
-## 八、全市场日线本地库（已实现 ✅，数据层子系统）
+## 八、证券市场数据库（已实现 ✅，market schema）
 
-全市场 A 股 + 场内基金（ETF/LOF）近 10 年日线的本地 PostgreSQL 落地（`AI/dataflows/store/`），供全市场横截面（涨跌分布/选股）与本地回测消费；与事件研究同库（liveprofit public schema）不同表，现有 `market_data` 表及消费方**零改动**。
+统一证券市场数据库（2026-09-13 完成，证券市场数据库统一方案）：同库 `market` schema + 中立包 `db/instrument/`（schema.sql/DAO/ingest/migration 唯一实现），全市场个股+基金+指数日线、复权因子、技术因子、板块体系（同花顺 ths/dc 多来源）、申万行业字典与成分关系共 11 张表；旧 store 六表与 backend 读模型三表已迁移后 DROP。所有消费方（平台 API、事件研究、AI 分析）从这一个库读。
 
 **核心能力**：
 
-- **六张表**：`stock_basic` / `fund_basic`（基本信息，含退市股与基金费率/业绩基准）、`stock_daily` / `adj_factor`（日线与复权因子，股票基金**共用**，分类靠 `is_fund_ts_code()` 前缀函数判定，不冗余 asset_type）、`concept` / `concept_member`（概念体系多来源 ths=同花顺 / dc=东方财富；不存成分股名，展示一律 ts_code JOIN stock_basic 取权威名称）
-- **数据采集**：`TushareProvider` 新增 6 个结构化方法（`get_full_market_daily_df` / `get_full_market_factor_df` / `get_stock_basic_df` / `get_fund_basic_df` / `get_concept_list_df` / `get_concept_members_df`，基类默认返回 None，规则 8）；全市场拉取**只允许 trade_date 单日查询**（区间查询 6000 行静默截断，实测），单日行数 ≥6000 自动降级分批补拉（每批 100 代码逗号分隔）
-- **回填与增量**：`backfill.py` 历史回填（断点续跑以 PG 内 max(trade_date) 为天然断点；单日失败重试 3 次后跳过记 `logs/stock_backfill_failures.json`，`--retry-missing` 补拉；单日提交，库内无"半截日"）；`incremental.py` 每日增量（daily_job 步骤 3，最近 3 交易日 DO UPDATE 覆盖 tushare 日终修正；概念体系周一自动周刷，`refresh_concepts` 可手动触发）
-- **查询 DAO**：单标的区间序列（`get_daily`）、全市场横截面（`get_cross_section`）、前复权序列（`get_qfq_daily`，qfq_x = x × factor_t / factor_latest）、概念双向查询（`get_stock_concepts` / `get_concept_members`）
+- **11 张表**：`instrument`（标的主表，instrument_type 显式列：index/stock/fund）、`instrument_daily`（统一日线）、`adj_factor`、`factor_daily`（技术因子宽表，指数∪个股列并集）、`fund_info`/`stock_info`（差异信息表）、`sector`/`sector_member`（同花顺板块体系，type 区分 N/I/S）、`sector_daily`（板块日线，热度现场计算底座）、`industry`/`industry_member`（申万 SW2021，与 sector 同构）
+- **数据采集**：`db/instrument/ingest/` 唯一采集实现（incremental 每日增量 5 步骤 + backfill 四参数全历史回填 + 指数内置分项 9 目标）；全市场拉取只允许 trade_date 单日查询（6000 行截断降级分批）；双源兜底（Tushare↔AKShare 按 LIVEPROFIT_DATA_SOURCE 装配）；断点续跑按数据域过滤（instrument_type——指数行不抬高个股基金域断点）
+- **消费方**：backend MarketDataService 读 db.instrument DAO（get_bars + 热度现场计算 heat_v1：pct×0.6+vol×0.4，不落快照表不进 Redis）；eventStudy 行情经 market_data_dao 包装（assets.ticker → ts_code）；板块层热力图后续阶段切换
+- **查询 DAO**：`db/instrument/dao/` 9 模块（模块名 = 表名，成分表豁免）：单标的区间序列、全市场横截面（instrument_type 过滤）、前复权序列（qfq_x = x × factor_t / factor_latest）、板块双向查询、热度窗口查询
 - **调度**：并入事件研究每日批处理（采集 → 行情 → 全市场日线增量 → 市场上下文 → 向量化 → 事件研究），`--skip` 步骤名 `store`
-- 详见归档方案：[done/全市场日线本地库方案.md](done/全市场日线本地库方案.md)
+- 详见归档方案：[done/全市场日线本地库方案.md](requirements/archive/全市场日线本地库方案.md)

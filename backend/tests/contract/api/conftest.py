@@ -33,6 +33,20 @@ def _test_db_url(base_url: str) -> str:
     return f"{url}?{query}" if query else url
 
 
+def _psycopg_dsn(sqlalchemy_url: str) -> str:
+    """SQLAlchemy URL → psycopg conninfo（db.instrument 直连注入用）。"""
+    from sqlalchemy.engine.url import make_url
+
+    u = make_url(sqlalchemy_url)
+    parts = [f"host={u.host}", f"port={u.port or 5432}",
+             f"dbname={u.database}", f"user={u.username}",
+             f"password={u.password or ''}"]
+    sslmode = u.query.get("sslmode")
+    if sslmode:
+        parts.append(f"sslmode={sslmode}")
+    return " ".join(parts)
+
+
 def _redis_test_url() -> str | None:
     from backend.bootstrap.settings import CoreSettings
 
@@ -80,6 +94,13 @@ def client():
     cfg.set_main_option("script_location", str(PROJECT_ROOT / "backend" / "migrations"))
     cfg.cmd_opts = type("CmdOpts", (), {"x": [f"db_url={_test_db_url(base_url)}"], "name": None})()
     command.upgrade(cfg, "head")
+    # market schema 建表（次序定稿 R1 minor 12：先赋值 db.instrument.db 模块常量
+    # → 再 init_schema——注入晚于它则落到真实库建表）
+    import db.instrument.db as market_db
+    _prev_market_dsn = market_db.PG_CONNECTION_STRING
+    market_db.PG_CONNECTION_STRING = _psycopg_dsn(_test_db_url(base_url))
+    from db.instrument.db import init_schema
+    assert init_schema(), "market schema 初始化失败"
     redis_client.flushdb()
 
     settings = Settings(
@@ -95,6 +116,9 @@ def client():
 
     redis_client.flushdb()
     redis_client.close()
+    # 注入还原（CR M6）：必须在 TestClient 退出后——请求期 market_conn 读
+    # 模块全局，提前还原会让请求连回真实库
+    market_db.PG_CONNECTION_STRING = _prev_market_dsn
     admin = create_engine(base_url, isolation_level="AUTOCOMMIT")
     with admin.connect() as conn:
         conn.execute(text(f'DROP DATABASE IF EXISTS "{TEST_DB_NAME}" WITH (FORCE)'))
@@ -126,7 +150,10 @@ def _clean_platform_state(client):
                     sql_text(
                         "TRUNCATE portfolio_positions, portfolios, watchlist_items, watchlists, "
                         "macro_information, analysis_reports, task_outbox, analysis_tasks, "
-                        "concept_hotness_snapshots, market_bars_daily CASCADE"
+                        "market.instrument, market.instrument_daily, market.factor_daily, "
+                        "market.adj_factor, market.sector, market.sector_member, "
+                        "market.sector_daily, market.industry, market.industry_member, "
+                        "market.fund_info, market.stock_info CASCADE"
                     )
                 )
             break

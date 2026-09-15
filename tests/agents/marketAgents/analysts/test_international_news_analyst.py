@@ -4,6 +4,7 @@
 """
 
 import pytest
+from AI.dataflows import market_features as mf
 from AI.marketAgents.analysts.international_news_analyst import create_international_news_analyst
 
 
@@ -29,3 +30,13 @@ def test_generates_report(real_llm, real_toolkit, state):
     assert "international_news_report" in result
     assert len(result["international_news_report"]) > 100
     assert result["international_news_tool_call_count"] >= 1
+
+    # 结构化全球风险评估（T6：第六章字段；无事件/无覆盖时按枚举降级）
+    assessment = result["global_risk_assessment"]
+    assert isinstance(assessment, dict)
+    assert assessment.get("risk_appetite") in mf.RISK_APPETITE_ENUM
+    assert assessment.get("systemic_risk") in mf.SYSTEMIC_RISK_ENUM
+    assert assessment.get("confidence") in (None, *mf.CONFIDENCE_ENUM)
+    assert isinstance(assessment.get("data_quality"), dict)
+    # 事件类证据只消费上游结构化事件（本节点不产出事件列表）
+    assert "international_events" not in result

@@ -17,6 +17,8 @@ import {
 import { useBatchMutation, useComputeMutation, usePendingEventsQuery, usePrelabelMutation, useRefreshMutation } from './queries';
 
 const CHUNK_SIZE = 10;
+// 强制重填分片大小：draft_id 列表按片驱动（循环次数 = 分片数，必有界）
+const PRELABEL_CHUNK = 50;
 // 挂载自动拉取的节流：30 分钟内重复进入不重复采集（手动按钮不受限）
 const AUTO_REFRESH_THROTTLE_MS = 30 * 60 * 1000;
 const AUTO_REFRESH_KEY = 'eventStudyReview.lastAutoRefresh';
@@ -101,8 +103,43 @@ export function PendingEventsTab() {
     };
   }
 
-  async function runPrelabel() {
+  async function runPrelabel(force = false) {
     setPrelabeling(true);
+    if (force) {
+      // 强制重填：按草稿 id 分片驱动（循环次数 = 分片数，必有界；服务端覆写
+      // 指定草稿，remaining 不参与收敛）。片内 prelabeled===0 → LLM 不可用/全部
+      // 预填失败，提前终止省去剩余分片的无效调用。
+      const ids = (query.data?.items ?? []).map((item) => item.draft_id);
+      if (ids.length === 0) {
+        setPrelabelMsg('没有需要预填的草稿');
+        setPrelabeling(false);
+        return;
+      }
+      let done = 0;
+      let stopped = false;
+      try {
+        for (let i = 0; i < ids.length; i += PRELABEL_CHUNK) {
+          const chunk = ids.slice(i, i + PRELABEL_CHUNK);
+          const r = await prelabelMutation.mutateAsync({ limit: PRELABEL_CHUNK, draft_ids: chunk });
+          done += r.prelabeled;
+          if (r.prelabeled === 0) {
+            setPrelabelMsg(`已重填 ${done} 条；LLM 不可用或全部预填失败，已停止`);
+            stopped = true;
+            break;
+          }
+          setPrelabelMsg(`已重填 ${done}/${ids.length} 条…`);
+        }
+        if (!stopped) {
+          setPrelabelMsg(`已重填 ${done}/${ids.length} 条`);
+        }
+      } catch (err) {
+        setPrelabelMsg(`强制重填失败：${toApiError(err).message}`);
+      } finally {
+        setPrelabeling(false);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.eventStudyReview.all });
+      }
+      return;
+    }
     setPrelabelMsg('AI 预填中…');
     let total = 0;
     try {
@@ -251,6 +288,14 @@ export function PendingEventsTab() {
         >
           {prelabeling ? 'AI 预填中…' : '🤖 AI 预填全部待审事件'}
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={prelabeling || refreshing || items.length === 0}
+          onClick={() => void runPrelabel(true)}
+        >
+          {prelabeling ? '强制重填中…' : '🤖 强制重填全部'}
+        </Button>
         {prelabelMsg && (
           <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
             {prelabelMsg}
@@ -292,6 +337,7 @@ export function PendingEventsTab() {
           <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
             作用域/目标为 AI 预填建议（<span style={{ color: 'var(--color-accent)' }}>AI 预填，请确认</span>），
             人工可改；sector/stock 必须至少一个目标引用（缺目标阻止提交，可回退 market）。
+            板块/个股名称已自动解析为引用；未解析名称见详情弹窗。
           </p>
           <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
             预期/实际/前值默认取 AI 提取值；清空 = 该字段不落值。数值 0 是合法值。

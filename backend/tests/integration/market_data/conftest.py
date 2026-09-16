@@ -87,12 +87,12 @@ def env():
 
 @pytest.fixture(autouse=True)
 def _clean_market_state(env):
-    # 逐表列出 market 表名（11 张）——TRUNCATE 后用例自 seed（ts_code 直插）
+    # 逐表列出 market 表名（12 张）——TRUNCATE 后用例自 seed（ts_code 直插）
     with env["session_factory"]() as session:
         session.execute(text(
             "TRUNCATE market.instrument, market.instrument_daily, market.factor_daily, "
             "market.adj_factor, market.sector, market.sector_member, market.sector_daily, "
-            "market.industry, market.industry_member, market.fund_info, market.stock_info CASCADE"
+            "market.industry, market.industry_member, market.ingest_state, market.fund_info, market.stock_info CASCADE"
         ))
         session.commit()
     yield

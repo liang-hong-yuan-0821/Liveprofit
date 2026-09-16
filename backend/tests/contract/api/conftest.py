@@ -148,11 +148,12 @@ def _clean_platform_state(client):
             with test_engine.begin() as conn:
                 conn.execute(
                     sql_text(
-                        "TRUNCATE portfolio_positions, portfolios, watchlist_items, watchlists, "
+                        "TRUNCATE quant_execution_signals, quant_strategy_versions, quant_strategies, "
+                        "portfolio_positions, portfolios, watchlist_items, watchlists, "
                         "macro_information, analysis_reports, task_outbox, analysis_tasks, "
                         "market.instrument, market.instrument_daily, market.factor_daily, "
                         "market.adj_factor, market.sector, market.sector_member, "
-                        "market.sector_daily, market.industry, market.industry_member, "
+                        "market.sector_daily, market.industry, market.industry_member, market.ingest_state, "
                         "market.fund_info, market.stock_info CASCADE"
                     )
                 )

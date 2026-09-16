@@ -89,6 +89,9 @@ export default function AiDashboardPage() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/ai/tasks">任务中心</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/ai/strategies">量化策略</Link>
+            </Button>
           </>
         )}
       </div>

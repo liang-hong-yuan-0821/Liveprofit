@@ -593,8 +593,8 @@ data: {"connection_id":"...","sent_at":"2026-09-05T09:12:30Z","schema_version":"
 
 | Method/Path | 请求体 | 响应 data |
 |---|---|---|
-| GET /api/v1/event-studies/review/pending-events | — | `items: [{draft_id, title, announced_at, source, content, source_url, importance_hint, ai_suggestions}]`（announced_at 降序全量；Redis 不可用 503） |
-| POST /api/v1/event-studies/review/prelabel | `{limit: 1..200 = 50}` | `{prelabeled, remaining}`（幂等：仅预填无 ai_suggestions 的草稿；remaining=执行后仍无建议数） |
+| GET /api/v1/event-studies/review/pending-events | — | `items: [{draft_id, title, announced_at, source, content, source_url, importance_hint, ai_suggestions}]`（announced_at 降序全量；Redis 不可用 503）。ai_suggestions 为自由 dict：事件分类/数值提取 + 路由字段 `event_scope` / `affected_scope_refs`（LLM 输出的中文实体名称经字典表解析为规范引用）+ `unresolved_entities`（名称解析失败项，仅展示供人工补目标，2026-09-16 起） |
+| POST /api/v1/event-studies/review/prelabel | `{limit: 1..200 = 50, draft_ids?: [1..200]}` | `{prelabeled, remaining}`。draft_ids 缺省：幂等预填命中 needs_prelabel 谓词的草稿（无建议或缺 event_scope 的旧建议回填，2026-09-16 起）；remaining=执行后仍命中谓词的草稿数（前端循环收敛依据）。draft_ids 非空：对指定草稿**覆写**重填（强制重填分片驱动，覆写语义完全由 draft_ids 表达，请求级无 force 字段；草稿中途被提交删除的自动跳过；此路径 remaining 仅供参考）。draft_ids 200 为 Schema 硬上限，调用方分片约定 50 条/请求（前端 300s 超时预算） |
 | POST /api/v1/event-studies/review/batch | `{items: [1..50]}`，每行 `{draft_id, action: approve\|ignore, event_type?, event_subtype?, event_condition?, importance? 1..5, expected_value?, actual_value?, previous_value?, operator? = "admin"}` | `{results: [{draft_id, ok, event_id?, error_code?, error_message?, compute_status?}], summary: {approved, ignored, computed}}`（行级失败不失败整批：`REVIEW_DRAFT_NOT_FOUND` 草稿缺失 / `REVIEW_ROW_FAILED` 其他行级错误；approve 成功即内联计算影响，失败仅 `compute_status="failed"`，daily_job 兜底） |
 | POST /api/v1/event-studies/review/events/{event_id}/compute | `{operator? = "admin"}` | `{event_id, status: ok\|failed, message?}`（补算覆盖草稿刷新 TTL；事件不存在 404；全窗口失败折叠为 200 failed） |
 | GET /api/v1/event-studies/review/impact-drafts | — | `items: [{event_id, title, t0, computed_at, assets: {ticker: {window_type: {...}}}}]`（含事件标题 join） |
@@ -690,17 +690,17 @@ Query 全部必填：`market`（US/KR/CN）、`interval`（目录白名单）、
 ```
 
 - bars 按 timestamp 升序；`volume` 可选（无成交量数据整体省略）。
-- `indicators`（可选，bars 为空时整个字段为 null）：MA5/10/20/60 均线、BOLL(20,2) 布林带与 MACD(12,26,9) 副图，值取自 `idx_factor_pro` 因子接口入库数据（**技术指标不自算**，2026-09-12 决策，见 docs/requirements/archive/技术指标数据源切换方案.md）。各数组**与 bars 等长、按 index 对齐**；因子行自带全历史窗口（上游用区间前历史计算），请求区间起点处指标即有值；因子行缺失（如 bars 有而因子无）处为 null。`macd.hist` 为上游 `macd_bfq` 原值（≈2×(dif−dea)，上游口径）；`macd` 字段可选——旧后端响应无此字段时前端降级渲染纯主图。前端遇无 `indicators` 字段的旧后端响应应降级渲染纯 K 线。上方 JSON 为片段示意：实际响应中 indicators 各数组与 bars 严格等长（示例省略了其余 bars 与指标值）。**个股/板块 K 线（§8.2.1/§8.2.2）`indicators` 恒为 null**（个股因子与板块因子数据均为后续阶段，纯 K 线）。
+- `indicators`（可选，bars 为空时整个字段为 null）：MA5/10/20/60 均线、BOLL(20,2) 布林带与 MACD(12,26,9) 副图，值取自 `idx_factor_pro` 因子接口入库数据（**技术指标不自算**，2026-09-12 决策，见 docs/requirements/archive/技术指标数据源切换方案.md）。各数组**与 bars 等长、按 index 对齐**；因子行自带全历史窗口（上游用区间前历史计算），请求区间起点处指标即有值；因子行缺失（如 bars 有而因子无）处为 null。`macd.hist` 为上游 `macd_bfq` 原值（≈2×(dif−dea)，上游口径）；`macd` 字段可选——旧后端响应无此字段时前端降级渲染纯主图。前端遇无 `indicators` 字段的旧后端响应应降级渲染纯 K 线。上方 JSON 为片段示意：实际响应中 indicators 各数组与 bars 严格等长（示例省略了其余 bars 与指标值）。**个股/板块 K 线（§8.2.1/§8.2.2）m7 修订（2026-09-16 用户拍板）**：个股因子表无行时按需调 stk_factor_pro 拉真因子入库 factor_daily 缓存（拉取失败仍 indicators=null 纯 K 线）；板块指数无上游因子源，`indicators` 为后端自算值（口径沿用归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1 已批纯函数设计，预热窗口 [from−120d, to] 全段计算后切回请求窗口，板块历史不足处为 null）。
 - freshness_status 与 market_session_status **正交**：休市不是错误——返回 200 + 最近闭市 bars 并以 CLOSED + market_closed_reason 提示；休市日的收盘数据可以是 FRESH（覆盖最近收盘日）。FRESH 正常展示；STALE 保留最近成功快照 + "数据可能延迟"标注；UNAVAILABLE 无可展示时序。
 - 错误：422 INTERVAL_NOT_SUPPORTED（interval 白名单 '1d'）；422 RANGE_TOO_LARGE（from>to）；404 RESOURCE_NOT_FOUND。409/503 语义整体删除（门控列与上游不可用错误类随统一方案删除）；US/KR 资产 instrument 有行而 instrument_daily 无数据 → 200 空 bars + freshness_status=UNAVAILABLE。前端不得依据字段缺失猜测状态。
 
 ### 8.2.1 个股 K 线 GET /api/v1/market-data/stocks/{symbol}/bars
 
-与 §8.2 指数 K 线同契约（复用 `BarsData`），差异：`indicators` **恒为 null**（个股因子采集为后续阶段，因子表无行 → 纯 K 线）；`instrument_type` 白名单 index/stock（fund 等 → 404 RESOURCE_NOT_FOUND）。错误与 freshness 语义同 §8.2。
+与 §8.2 指数 K 线同契约（复用 `BarsData`）。**m7 修订（2026-09-16）**：`indicators` 不再恒 null——factor_daily 无该股因子行时按需调 stk_factor_pro 拉 [from, to] 真因子并入库 factor_daily（DO UPDATE，缓存层；下次同区间查询走表不调上游），指标逐值透传入库因子；拉取失败/上游无数据 → `indicators=null` 纯 K 线（降级不阻断 K 线响应）。`instrument_type` 白名单 index/stock（fund 等 → 404 RESOURCE_NOT_FOUND）。错误与 freshness 语义同 §8.2。
 
 ### 8.2.2 概念 K 线 GET /api/v1/market-data/concepts/{sector_code}/bars
 
-Query：`market`（回显 'CN'）、`source`（缺省 'dc'，当前唯一可采源）、`interval`（恒 '1d'）、`from`、`to`。读 `market.sector_daily`（历史 = 采集启动日起积累的长度，非全历史）。响应复用 `BarsData`：`indicators` 恒为 null（板块指数无因子表数据）；`asset` = {market, symbol=sector_code, name=sector 表名称}；`as_of` = 该板块最新 trade_date；错误同 §8.2（未知板块 404、from>to 422）。
+Query：`market`（回显 'CN'）、`source`（缺省 'dc'，当前唯一可采源）、`interval`（恒 '1d'）、`from`、`to`。读 `market.sector_daily`（历史 = 采集启动日起积累的长度，非全历史）。响应复用 `BarsData`。**m7 修订（2026-09-16）**：`indicators` 为后端自算值（板块指数无上游因子源——tushare 无板块指数因子端点，"技术指标不自算"决策的显式例外）——预热窗口 [from−120d, to] 全段计算 MA/BOLL/MACD 后各数组切回请求窗口，与 bars 等长按 index 对齐；口径沿用归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1 已批纯函数设计（MA 滚动均值前 period−1 根 null、BOLL σ 总体标准差 ddof=0、MACD EMA 前 period 根 SMA 作种子 + hist=2×(dif−dea)）。板块历史不足处指标为 null（数据缺失是事实）。`asset` = {market, symbol=sector_code, name=sector 表名称}；`as_of` = 该板块最新 trade_date；错误同 §8.2（未知板块 404、from>to 422）。
 
 ### 8.3 热门概念 GET /api/v1/market-data/concepts/hot
 

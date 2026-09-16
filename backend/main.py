@@ -31,6 +31,8 @@ from backend.api.routers import (
     market_data,
     metrics,
     portfolios,
+    quant_signals,
+    quant_strategies,
     reports,
     watchlists,
 )
@@ -183,6 +185,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(macro_information.router)
     app.include_router(watchlists.router)
     app.include_router(portfolios.router)
+    app.include_router(quant_strategies.router)
+    app.include_router(quant_signals.router)
     app.include_router(market_data.router)
     register_exception_handlers(app)
 

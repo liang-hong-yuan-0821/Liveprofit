@@ -60,11 +60,24 @@ async def create_task(
         selected_layers=tuple(payload.selected_layers),
         analysis_options=payload.analysis_options.model_dump() if payload.analysis_options else {},
         trace_id=trace_id,
+        strategy_version_id=getattr(payload, "strategy_version_id", None),
+        portfolio_id=getattr(payload, "portfolio_id", None),
+        expected_portfolio_version=getattr(payload, "expected_portfolio_version", None),
     )
     services = request.app.state.analysis_services
 
     def _do():
         with services.open() as bundle:
+            if "position" in command.selected_layers:
+                # 量化任务：提交服务（同一 Session 冻结策略/组合/持仓快照，不经图）
+                return bundle.quant_submission.submit(
+                    strategy_version_id=command.strategy_version_id,
+                    portfolio_id=command.portfolio_id,
+                    expected_portfolio_version=command.expected_portfolio_version,
+                    command=command,
+                    idempotency_key=idempotency_key,
+                    trace_id=trace_id,
+                )
             return bundle.tasks.create_task(command, idempotency_key=idempotency_key, trace_id=trace_id)
 
     result = await services.run(_do)

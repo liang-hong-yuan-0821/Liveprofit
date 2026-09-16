@@ -4,7 +4,6 @@ import { toApiError } from '../../../api/client';
 import { ErrorState } from '../../../shared/feedback/ErrorState';
 import { EmptyState } from '../../../shared/feedback/EmptyState';
 import { LoadingState } from '../../../shared/feedback/LoadingState';
-import { Badge } from '../../../shared/ui/badge';
 import { Button } from '../../../shared/ui/button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Input } from '../../../shared/ui/input';
@@ -12,8 +11,9 @@ import {
   useCreatePortfolioMutation,
   useDeletePortfolioMutation,
   usePortfoliosQuery,
-  useRenamePortfolioMutation,
 } from '../queries';
+import { Badge } from '../../../shared/ui/badge';
+import { PortfolioSettingsDialog } from './PortfolioSettingsDialog';
 
 // 组合列表：行内新建/改名 + 确认删除；非空组合阻止删除；冲突后以服务端数据重渲染。
 interface PortfolioListProps {
@@ -24,12 +24,9 @@ interface PortfolioListProps {
 export function PortfolioList({ selectedId, onSelect }: PortfolioListProps) {
   const query = usePortfoliosQuery();
   const createMutation = useCreatePortfolioMutation();
-  const renameMutation = useRenamePortfolioMutation();
   const deleteMutation = useDeletePortfolioMutation();
 
   const [newName, setNewName] = useState('');
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<PortfolioDTO | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -46,22 +43,6 @@ export function PortfolioList({ selectedId, onSelect }: PortfolioListProps) {
         setFormError(apiError.code === 'PORTFOLIO_NAME_CONFLICT' ? '组合名称已存在' : apiError.message);
       },
     });
-  }
-
-  function submitRename() {
-    setFormError(null);
-    const target = query.data?.pages.flatMap((page) => page.items).find((portfolio) => portfolio.id === renamingId);
-    if (!target || !renameValue.trim()) return;
-    renameMutation.mutate(
-      { portfolioId: target.id, name: renameValue.trim(), expectedVersion: target.version },
-      {
-        onSuccess: () => setRenamingId(null),
-        onError: (error) => {
-          const apiError = toApiError(error);
-          setFormError(apiError.code === 'PORTFOLIO_NAME_CONFLICT' ? '组合名称已存在' : apiError.message);
-        },
-      },
-    );
   }
 
   function confirmDelete() {
@@ -124,49 +105,33 @@ export function PortfolioList({ selectedId, onSelect }: PortfolioListProps) {
               }`}
               style={{ borderColor: 'var(--color-border)' }}
             >
-              {renamingId === portfolio.id ? (
-                <div className="flex flex-1 gap-2">
-                  <Input
-                    aria-label="组合改名输入"
-                    value={renameValue}
-                    onChange={(event) => setRenameValue(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') submitRename();
-                      if (event.key === 'Escape') setRenamingId(null);
-                    }}
-                  />
-                  <Button size="sm" onClick={submitRename}>
-                    保存
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setRenamingId(null)}>
-                    取消
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="flex flex-1 items-center gap-2 text-left text-sm"
-                    onClick={() => onSelect(portfolio.id === selectedId ? null : portfolio.id)}
-                  >
-                    <span className="font-medium">{portfolio.name}</span>
-                    <Badge variant="secondary">{portfolio.position_count} 个持仓</Badge>
-                  </button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setRenamingId(portfolio.id);
-                      setRenameValue(portfolio.name);
-                    }}
-                  >
-                    改名
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(portfolio)}>
-                    删除
-                  </Button>
-                </>
-              )}
+              <button
+                type="button"
+                className="flex flex-1 flex-col gap-0.5 text-left"
+                onClick={() => onSelect(portfolio.id === selectedId ? null : portfolio.id)}
+              >
+                <span className="text-sm font-medium">
+                  {portfolio.name} <Badge variant="secondary">{portfolio.position_count} 个持仓</Badge>
+                </span>
+                <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+                  资产 {portfolio.total_assets} · 现金 {portfolio.available_cash} · 风险 {portfolio.risk_per_trade_pct}
+                  （任务仅读取提交时快照）
+                </span>
+              </button>
+              <div className="flex items-center gap-2">
+                <PortfolioSettingsDialog
+                  key={portfolio.version}
+                  portfolio={portfolio}
+                  trigger={
+                    <Button size="sm" variant="outline" aria-label="组合设置">
+                      设置
+                    </Button>
+                  }
+                />
+                <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(portfolio)}>
+                  删除
+                </Button>
+              </div>
             </div>
           </li>
         ))}

@@ -50,7 +50,9 @@ async def list_pending_events(request: Request, trace_id: str = Depends(ensure_t
 @router.post("/prelabel", response_model=Envelope[PrelabelData])
 async def prelabel(payload: PrelabelRequest, request: Request, trace_id: str = Depends(ensure_trace_context)):
     service = _service(request)
-    result = await request.app.state.analysis_services.run(lambda: service.prelabel(payload.limit))
+    result = await request.app.state.analysis_services.run(
+        lambda: service.prelabel(payload.limit, payload.draft_ids)
+    )
     data = PrelabelData(prelabeled=result.prelabeled, remaining=result.remaining)
     return Envelope(data=data, meta=_meta(request)).model_dump()
 

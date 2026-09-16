@@ -293,6 +293,10 @@ docs/memory/
 - **所有 markdown 字符串内容一律经统一组件 `MarkdownView`**（`frontend/src/shared/ui/markdown.tsx`）渲染，不得手写 `whitespace-pre-wrap` pre 或 dangerouslySetInnerHTML 式注入；内容按 kind 分流（md/json/txt）
 - 统一渲染约定详见 [docs/memory/best-practices/frontend/markdown-render.md](docs/memory/best-practices/frontend/markdown-render.md)；React Query/弹窗交互坑见 [docs/memory/pitfalls/frontend/react-query-dialog.md](docs/memory/pitfalls/frontend/react-query-dialog.md)
 
+### 前端页面重排规避（2026-09-16 用户拍板）
+
+- **前端禁止页面重排**：K 线图加载数据时不得展示"加载更多数据"类提示（占文档流会挤压图表区域）；加载/提示类元素一律绝对定位或 overlay，不改变布局
+
 ### 每日批处理触发方式（2026-08-31 起）
 
 - **方案 B（推荐）：常驻自调度**——APScheduler 挂在 eventStudy FastAPI lifespan，每天 08:30 以子进程触发 `python -m AI.eventStudy.scheduler.daily_job`；睡眠/宕机靠三层补跑（cron 触发、服务启动自检、每 15 分钟周期自检）补救

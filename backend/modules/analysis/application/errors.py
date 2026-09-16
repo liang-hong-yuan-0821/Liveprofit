@@ -99,3 +99,32 @@ def classify_error(exc: Exception) -> ClassifiedError:
     if isinstance(exc, FatalAnalysisError):
         return ClassifiedError(code=exc.code, message=str(exc), retryable=False)
     return ClassifiedError(code="INTERNAL_ERROR", message=str(exc)[:512], retryable=False)
+
+
+class PortfolioSnapshotConflictError(DomainError):
+    """提交时组合 version 与 expected_portfolio_version 不符（409 可重拉）。"""
+
+    code = "PORTFOLIO_SNAPSHOT_CONFLICT"
+    retryable = True
+
+
+class PortfolioPositionLimitExceededError(DomainError):
+    """组合持仓超过 500 条上限（plan 4.3.1）。"""
+
+    code = "PORTFOLIO_POSITION_LIMIT_EXCEEDED"
+
+
+class PortfolioUnsupportedHoldingError(DomainError):
+    """V1 仅支持 CN 持仓（plan 4.3.1，提交期拒绝，不得静默忽略）。"""
+
+    code = "PORTFOLIO_UNSUPPORTED_HOLDING"
+
+
+class ArtifactSourceLeakError(FatalAnalysisError):
+    """序列化边界检出策略源码泄漏（不可重试，不以 INTERNAL_ERROR 收口）。"""
+
+    code = "ARTIFACT_SOURCE_LEAK_DETECTED"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.code = self.__class__.code

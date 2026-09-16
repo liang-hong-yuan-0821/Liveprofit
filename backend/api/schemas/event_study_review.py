@@ -63,6 +63,10 @@ class ReviewBatchData(BaseModel):
 
 class PrelabelRequest(BaseModel):
     limit: int = Field(default=50, ge=1, le=200)
+    # 强制重填分片驱动：指定草稿集合覆写重填（请求级无 force 字段——覆写语义
+    # 完全由 draft_ids 表达）；None = 走 needs_prelabel 谓词切片（含缺
+    # event_scope 的旧建议回填）
+    draft_ids: list[int] | None = Field(default=None, max_length=200)
 
 
 class PrelabelData(BaseModel):

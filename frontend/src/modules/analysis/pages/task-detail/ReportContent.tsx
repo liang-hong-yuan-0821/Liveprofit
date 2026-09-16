@@ -10,6 +10,7 @@ import {
   type ReportSectionViewModel,
   type ReportViewModel,
 } from './reportMappers/toReportViewModels';
+import { QuantExecutionPanel } from './QuantExecutionPanel';
 
 // 最新报告区：仅在 SUCCEEDED 后由页面渲染。区块按 DTO 显式 status 呈现三态；
 // 折叠策略（Q-06 已确认）：decision 默认展开，market/sector/stock 默认折叠，
@@ -47,6 +48,10 @@ export function ReportContent({ report, onRetryReport }: { report: ReportViewMod
           )}
         </CardContent>
       </Card>
+
+      {report.quantExecution && (
+        <QuantExecutionPanel taskId={report.task.task_id} quant={report.quantExecution} />
+      )}
 
       {report.sections.map((section) => (
         <ReportSectionCard

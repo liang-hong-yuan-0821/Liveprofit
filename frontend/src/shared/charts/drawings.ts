@@ -1,8 +1,10 @@
 // 画线数据模块（§3.6）：类型 + localStorage 读写 + 校验 + 命中检测纯函数。
-// 锚点一律存"日期 + 价格"数据坐标（非像素/索引）：dataZoom 缩放平移与渐进加载
-// 前插数据（只前插不移除）时画线天然跟随、不漂移。
+// 锚点存"日期 + 价格 + 小数 x"数据坐标（非像素）：dataZoom 缩放平移与渐进加载
+// 前插数据（只前插不移除）时画线天然跟随、不漂移。x = 类目小数索引（绘制时
+// mousedown/mouseup 的连续位置，线起点精确落在按点像素处）；旧数据/编辑拖拽无 x →
+// 回落 bar 中心整数索引（原行为）。
 
-export type DrawingAnchor = { date: string; price: number };
+export type DrawingAnchor = { date: string; price: number; x?: number };
 
 export type Drawing =
   | { id: string; kind: 'hline'; p1: DrawingAnchor; label?: string } // 水平线：仅 p1.price 有效
@@ -43,7 +45,12 @@ function isValidLabel(v: unknown): boolean {
 function isValidAnchor(v: unknown): v is DrawingAnchor {
   if (typeof v !== 'object' || v === null) return false;
   const a = v as Record<string, unknown>;
-  return isValidDate(a.date) && isFiniteNumber(a.price);
+  // x 可选（旧数据无 x）；有则必须为有限数（渲染时夹到所在 bar 带内，见 renderedSegment）
+  return (
+    isValidDate(a.date) &&
+    isFiniteNumber(a.price) &&
+    (a.x === undefined || isFiniteNumber(a.x))
+  );
 }
 
 // 按 kind 逐项校验（localStorage 是可手改的不可信输入，校验契约必须闭合）：
@@ -137,7 +144,7 @@ export function hitTestRect(
 // ---- 渲染几何（§3.6.1：窗口内裁切/外推 + extent 求交，纯函数可单测）----
 
 export const DRAWING_COLOR = '#38bdf8'; // sky-400，与 MA 五色/BOLL 灰/MACD 红绿均不撞色
-const EXTENT_EPS = 1e-6;
+export const EXTENT_EPS = 1e-6;
 
 export interface RenderWindow {
   /** 可见窗口类目索引（含端点） */
@@ -203,34 +210,15 @@ export function unionExtent(
   return Number.isFinite(min) ? { min, max } : null;
 }
 
-// markLine.data 的每一项本身就是两点数组（嵌套形态）；per-item 样式
-// （lineStyle/label/emphasis）必须挂在两点数组的首元素上——两点形式无"项级样式"层，
-// 包一层 {data: ...} 对象会走非数组分支、按 undefined.coord 抛 TypeError
-export type LineMarkItem = [
-  {
-    coord: [number, number];
-    symbol: 'none';
-    lineStyle: { type: 'solid'; width: number; color: string };
-    emphasis: { disabled: boolean };
-    label: { show: boolean; formatter?: () => string; color?: string };
-  },
-  { coord: [number, number]; symbol: 'none' },
-];
-
-export interface DrawingMarks {
-  markLine: LineMarkItem[];
-  markPoint: Array<{
-    name: string;
-    coord: [number, number];
-    symbol: string;
-    symbolSize: number;
-    label: { show: boolean; formatter: () => string; color: string };
-  }>;
-}
+// 画线渲染改为 zr 图元直挂（§3.6：类目轴 markLine 只支持整数索引坐标，
+// 小数锚点 x 无法经 markLine 渲染——convertToPixel 对小数索引取整到 bar 中心，实测）。
+// 渲染几何纯函数仍由 renderedSegment 承担，像素换算在组件内（需运行时轴信息）。
 
 // 单条画线的渲染端点（窗口内裁切/外推 x 先做、extent 求交 y 后做；跳过规则按线型）。
-// 渲染（buildDrawingsMarks）与编辑命中检测共用——两者几何必须同源（§3.6.1），
+// 渲染（zr 图元）与编辑命中检测共用——两者几何必须同源（§3.6.1），
 // 否则命中测试的是原始锚点、渲染的是裁切后的线段，射线外推段不可命中/截断段误命中。
+// 端点索引可为小数（锚点 x 的连续位置）：窗口裁切边界取半开带（startIdx−0.5/endIdx+0.5，
+// 与网格左右缘同像素），带内小数端点原样保留——绘制起点精确落在按点位置。
 // 返回 null = 该线按渲染规则跳过。
 export function renderedSegment(
   d: Drawing,
@@ -239,20 +227,30 @@ export function renderedSegment(
   extent: RenderExtent,
 ): { i1: number; p1: number; i2: number; p2: number } | null {
   if (window.startIdx < 0 || window.endIdx < 0 || window.startIdx > window.endIdx) return null;
-  if (d.kind === 'text') return null; // text 走 markPoint，无线段
+  if (d.kind === 'text') return null; // text 走文本图元，无线段
   if (d.kind === 'hline') {
-    // 完全越界（几何判定 + eps）→ 跳过渲染
+    // 完全越界（几何判定 + eps）→ 跳过渲染；两端 = 窗口半开带边缘（网格左右缘同像素）
     if (d.p1.price < extent.min - EXTENT_EPS || d.p1.price > extent.max + EXTENT_EPS) return null;
-    return { i1: window.startIdx, p1: d.p1.price, i2: window.endIdx, p2: d.p1.price };
+    return { i1: window.startIdx - 0.5, p1: d.p1.price, i2: window.endIdx + 0.5, p2: d.p1.price };
   }
   // trend / ray
   const i1 = anchorIndex(xAxisData, d.p1.date);
   const i2 = anchorIndex(xAxisData, d.p2.date);
   if (i1 < 0 || i2 < 0 || i1 === i2) return null; // 未命中/同索引兜底（提交与载入校验已挡，渲染双保险）
+  // 小数 x（锚点连续位置）；无 x（旧数据/编辑拖拽重置）回落 bar 中心整数索引；
+  // 夹到所在 bar 的带内 [i−0.5, i+0.5]（localStorage 手改防御）
+  const xOf = (i: number, x: number | undefined) =>
+    x === undefined ? i : Math.max(i - 0.5, Math.min(i + 0.5, x));
+  let x1 = xOf(i1, d.p1.x);
+  let x2 = xOf(i2, d.p2.x);
+  if (x1 === x2) {
+    x1 = i1;
+    x2 = i2; // 相邻 bar 都夹到同一边界（手改数据）→ 退化回中心，防除零
+  }
   const linePrice = (idx: number) =>
-    d.p1.price + ((d.p2.price - d.p1.price) * (idx - i1)) / (i2 - i1);
-  const a = Math.min(i1, i2);
-  const b = Math.max(i1, i2);
+    d.p1.price + ((d.p2.price - d.p1.price) * (idx - x1)) / (x2 - x1);
+  const a = Math.min(x1, x2);
+  const b = Math.max(x1, x2);
   if (d.kind === 'ray') {
     // 射线：跳过规则 = p1 在窗口右侧（p1→p2 向右延伸，起点 = p1 与窗口左缘中靠右者；
     // 用 p1 自身索引——右→左绘制时 min(i1,i2) 会把 p1 左侧那段误画出来）
@@ -261,8 +259,8 @@ export function renderedSegment(
     return null; // trend 两端点均在窗口同一侧（与窗口无交集）
   }
   // x 端点：起点 = 左缘与左锚点中靠右者；终点 = trend 右锚点/右缘、ray 外推到右缘（同式）
-  let sIdx = d.kind === 'ray' ? Math.max(i1, window.startIdx) : Math.max(a, window.startIdx);
-  let eIdx = d.kind === 'ray' ? window.endIdx : Math.min(b, window.endIdx);
+  let sIdx = d.kind === 'ray' ? Math.max(x1, window.startIdx - 0.5) : Math.max(a, window.startIdx - 0.5);
+  let eIdx = d.kind === 'ray' ? window.endIdx + 0.5 : Math.min(b, window.endIdx + 0.5);
   let sPrice = linePrice(sIdx);
   let ePrice = linePrice(eIdx);
   // y 求交：extent 内端点按原价渲染、仅超界端点求交（保留斜率）；无交集（几何判定 + eps）→ 跳过
@@ -284,12 +282,13 @@ export function renderedSegment(
     const sT = origSPrice < extent.min - EXTENT_EPS ? tOf(extent.min) : origSPrice > extent.max + EXTENT_EPS ? tOf(extent.max) : null;
     const eT = origEPrice < extent.min - EXTENT_EPS ? tOf(extent.min) : origEPrice > extent.max + EXTENT_EPS ? tOf(extent.max) : null;
     if (sT !== null) {
-      sIdx = Math.round(origSIdx + sT * (origEIdx - origSIdx));
+      // 交点索引保留小数（与小数锚点同粒度，像素级精确；原 Math.round 是为整数类目索引）
+      sIdx = origSIdx + sT * (origEIdx - origSIdx);
       // 落位取 extent 边界值本身（实测边界严格包含：恰等于边界出图、+1e-9 整条丢弃）
       sPrice = origSPrice < extent.min - EXTENT_EPS ? extent.min : extent.max;
     }
     if (eT !== null) {
-      eIdx = Math.round(origSIdx + eT * (origEIdx - origSIdx));
+      eIdx = origSIdx + eT * (origEIdx - origSIdx);
       ePrice = origEPrice < extent.min - EXTENT_EPS ? extent.min : extent.max;
     }
   }
@@ -297,62 +296,3 @@ export function renderedSegment(
   return { i1: sIdx, p1: sPrice, i2: eIdx, p2: ePrice };
 }
 
-// option 构建与渲染后 merge 修正共用的构建函数（§3.6.1 读取时序：两条路径一个构建函数——
-// 选中态 width 3、label formatter、样式覆盖全部由它产出，否则 merge 会抹掉选中高亮）。
-export function buildDrawingsMarks(
-  drawings: Drawing[],
-  xAxisData: string[],
-  window: RenderWindow,
-  extent: RenderExtent,
-  selectedId: string | null,
-): DrawingMarks {
-  const markLine: LineMarkItem[] = [];
-  const markPoint: DrawingMarks['markPoint'] = [];
-  for (const d of drawings) {
-    if (d.kind === 'text') {
-      const idx = anchorIndex(xAxisData, d.pos.date);
-      if (idx < 0) continue; // 锚点未命中 → 跳过渲染不删数据（§3.6.1）
-      // 锚点价格超出 extent → 不渲染（不裁剪——点无法裁剪，与 markLine 求交口径不同）
-      if (d.pos.price < extent.min - EXTENT_EPS || d.pos.price > extent.max + EXTENT_EPS) continue;
-      markPoint.push({
-        name: d.id,
-        coord: [idx, d.pos.price],
-        symbol: 'circle',
-        symbolSize: 0,
-        label: { show: true, formatter: () => d.text, color: DRAWING_COLOR },
-      });
-      continue;
-    }
-    const seg = renderedSegment(d, xAxisData, window, extent);
-    if (!seg) continue;
-    const labelFn =
-      d.kind === 'hline' ? () => d.label ?? d.p1.price.toFixed(2) : undefined;
-    markLine.push(lineMark(selectedId === d.id, seg.i1, seg.p1, seg.i2, seg.p2, labelFn));
-  }
-  return { markLine, markPoint };
-}
-
-function lineMark(
-  selected: boolean,
-  i1: number,
-  p1: number,
-  i2: number,
-  p2: number,
-  labelFn?: () => string,
-): LineMarkItem {
-  // 嵌套两点形态（实测扁平 [{coord},{coord}] 形态 setOption 抛 TypeError，必须嵌套一层）；
-  // per-item 样式（lineStyle/label/emphasis）挂在两点数组首元素上——包一层 {data:...}
-  // 对象会被 markLineFilter 按 undefined.coord 抛 TypeError
-  return [
-    {
-      coord: [i1, p1],
-      symbol: 'none', // 两端点无符号
-      lineStyle: { type: 'solid', width: selected ? 3 : 1.5, color: DRAWING_COLOR },
-      emphasis: { disabled: true }, // 关闭默认 hover 加粗，选中态 width 3 成为唯一加粗来源
-      label: labelFn
-        ? { show: true, formatter: labelFn, color: DRAWING_COLOR } // 函数 formatter：避模板语义串味
-        : { show: false },
-    },
-    { coord: [i2, p2], symbol: 'none' },
-  ];
-}

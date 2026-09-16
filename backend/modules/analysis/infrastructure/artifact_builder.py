@@ -89,6 +89,17 @@ def build_artifact_from_state(final_state: Any) -> AnalysisArtifact:
         except (TypeError, ValueError):
             decision_payload = None
 
+    # 量化执行摘要（plan 4.4.1）：decision["quant_execution"] 与 AI 旧路径并列落盘
+    if state.get("quant_execution") is not None:
+        if decision_payload is None:
+            decision_payload = {}
+        try:
+            decision_payload["quant_execution"] = json.loads(
+                json.dumps(state["quant_execution"], ensure_ascii=False, default=str)
+            )
+        except (TypeError, ValueError):
+            decision_payload["quant_execution"] = None
+
     return AnalysisArtifact(
         report_json={"sections": sections, "selected_layers": sorted(selected_layers)},
         conclusion_summary=conclusion_summary,

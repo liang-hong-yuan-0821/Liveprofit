@@ -17,6 +17,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
+from sqlalchemy import text as sa_text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -60,6 +61,16 @@ class Portfolio(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # 资金/风控列（0008）：历史组合迁移为 0 + 默认参数；
+    # 跨字段关系（single<=total、sector<=total）由服务复验，DB 只做单列 CHECK
+    total_assets: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, server_default=sa_text("0"))
+    available_cash: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, server_default=sa_text("0"))
+    risk_per_trade_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.01"))
+    min_risk_reward_ratio: Mapped[float] = mapped_column(Numeric(8, 4), nullable=False, server_default=sa_text("2"))
+    max_total_position_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.8"))
+    max_single_stock_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.1"))
+    max_sector_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.3"))
 
     positions: Mapped[list["PortfolioPosition"]] = relationship(
         back_populates="portfolio", cascade="all, delete-orphan"

@@ -14,6 +14,7 @@ from typing import Any, Callable, TypeVar
 
 from backend.bootstrap.container import ApiContainer
 from backend.modules.analysis.application.agent_prompts import AgentPromptService
+from backend.modules.analysis.application.quant_task_submission import QuantTaskSubmissionService
 from backend.modules.analysis.application.reporting import ReportService
 from backend.modules.analysis.application.task_events import TaskEventService
 from backend.modules.analysis.application.task_lifecycle import TaskService
@@ -44,6 +45,7 @@ class ApiAnalysisBundle:
             lease_ttl_seconds=self._container.settings.worker.lease_ttl_seconds,
             retry=self._container.settings.core,
         )
+        self.quant_submission = QuantTaskSubmissionService(self._container.sync_session_factory, clock=clock)
         self.reports = ReportService(clock=clock)
         self.prompts = AgentPromptService(self._uow, clock=clock)
         self.uow = self._uow

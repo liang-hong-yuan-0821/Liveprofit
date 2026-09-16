@@ -11,7 +11,8 @@ import hashlib
 import json
 import re
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Protocol
 
 from backend.modules.analysis.application.contracts import (
@@ -123,17 +124,56 @@ class TaskService:
         else:  # MARKET_WIDE
             if command.ticker:
                 raise TaskCreateInvalidError("MARKET_WIDE 禁止提供 ticker")
-            if "position" in layers and "screening" not in layers:
-                raise TaskCreateInvalidError("position 仅可随 screening 出现")
-            # 产品决策 2026-09-06 v3：全市场调研层级自由组合（非空合法子集即可），
-            # 不再要求同时包含 market/sector/screening（内核按 selectedLayer 驱动对应子图）
+            # 产品决策 2026-09-06 v3：全市场调研层级自由组合（非空合法子集即可）；
+            # 量化方案（2026-09-16）：position 独立成任务（不经 AI 图），
+            # 不再要求随 screening 出现
+        # 量化提交参数与 position 层的绑定（plan 4.2.1）
+        if "position" in layers:
+            if (
+                command.strategy_version_id is None
+                or command.portfolio_id is None
+                or command.expected_portfolio_version is None
+            ):
+                raise TaskCreateInvalidError("position 层必须提供 strategy_version_id/portfolio_id/expected_portfolio_version")
+        else:
+            if any(
+                (
+                    command.strategy_version_id,
+                    command.portfolio_id,
+                    command.expected_portfolio_version,
+                )
+            ):
+                raise TaskCreateInvalidError("未选择 position 层时禁止携带量化快照参数")
 
     def create_task(
         self, command: CreateAnalysisTaskCommand, *, idempotency_key: str | None, trace_id: str | None
     ) -> TaskCreatedResult:
+        request_params = {"analysis_options": command.analysis_options or {}}
+        if command.execution_snapshot:
+            request_params["execution_snapshot"] = command.execution_snapshot
+        input_hash = hash_canonical_input(canonical_task_input(command))
+        result = self.stage_create_task(
+            command, request_params, input_hash, idempotency_key=idempotency_key, trace_id=trace_id
+        )
+        self._uow.commit()
+        return result
+
+    def stage_create_task(
+        self,
+        command: CreateAnalysisTaskCommand,
+        request_params: dict,
+        input_hash: str,
+        *,
+        idempotency_key: str | None,
+        trace_id: str | None,
+    ) -> TaskCreatedResult:
+        """提交服务专用内部入口：只做入参校验、按预计算 hash 幂等查询/比对并暂存 task/outbox。
+
+        不 commit、**不得调用 _hash_input()**（幂等散列由提交服务在同一事务内
+        预计算后传入，禁止降级为仅散列 snapshot）。
+        """
         self.validate_layers(command)
         now = self._clock.now()
-        input_hash = _hash_input(command)
 
         if idempotency_key is not None:
             self._validate_idempotency_key(idempotency_key)
@@ -156,7 +196,7 @@ class TaskService:
             id=new_uuid(),
             task_type=command.task_type.value,
             status=TaskStatus.PENDING.value,
-            request_params={"analysis_options": command.analysis_options or {}},
+            request_params=request_params,
             selected_layers=list(command.selected_layers),
             ticker=command.ticker,
             requested_trade_date=command.requested_trade_date,
@@ -180,10 +220,9 @@ class TaskService:
             created_at=now,
             updated_at=now,
         )
-        # 同一事务写入 task(PENDING) + outbox(PENDING)
+        # 同一事务暂存 task(PENDING) + outbox(PENDING)，由调用方决定 commit 边界
         self._uow.tasks.add(task)
         self._uow.outbox.add(outbox)
-        self._uow.commit()
         return TaskCreatedResult(
             task_id=task.id,
             status=TaskStatus.PENDING,
@@ -886,19 +925,49 @@ class _DefaultRetryConfig:
     retry_base_delay_seconds = 60
 
 
-def _hash_input(command: CreateAnalysisTaskCommand) -> str:
-    canonical = json.dumps(
-        {
-            "task_type": command.task_type.value,
-            "ticker": command.ticker,
-            "requested_trade_date": command.requested_trade_date.isoformat() if command.requested_trade_date else None,
-            "selected_layers": sorted(command.selected_layers),
-            "analysis_options": command.analysis_options or {},
-        },
-        sort_keys=True,
-        ensure_ascii=False,
+def canonicalize_value(value):
+    """canonical_task_input_v1 归一（plan 4.2.1）：对象递归按 key 排序、数组保持原顺序、
+    UUID→字符串、Decimal→固定量化字符串、日期/时间→UTC ISO-8601；不支持的值拒绝。"""
+    if isinstance(value, dict):
+        return {str(k): canonicalize_value(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
+    if isinstance(value, (list, tuple)):
+        return [canonicalize_value(v) for v in value]
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, Decimal):
+        return format(value, "f")
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.isoformat() + "Z"
+        return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value, (date,)) and not isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    raise ValueError(f"canonicalize 不支持的值类型: {type(value).__name__}")
+
+
+def canonical_task_input(command: CreateAnalysisTaskCommand) -> dict:
+    """幂等散列输入（canonical_task_input_v1）：任务字段、策略/组合提交参数与完整
+    execution_snapshot 全部纳入；行情与目录不参与（见已确认决策 10）。"""
+    return {
+        "task_type": command.task_type.value,
+        "ticker": command.ticker,
+        "requested_trade_date": command.requested_trade_date.isoformat() if command.requested_trade_date else None,
+        "selected_layers": sorted(command.selected_layers),
+        "analysis_options": command.analysis_options or {},
+        "strategy_version_id": str(command.strategy_version_id) if command.strategy_version_id else None,
+        "portfolio_id": str(command.portfolio_id) if command.portfolio_id else None,
+        "expected_portfolio_version": command.expected_portfolio_version,
+        "execution_snapshot": command.execution_snapshot,
+    }
+
+
+def hash_canonical_input(canonical: dict) -> str:
+    payload = json.dumps(
+        canonicalize_value(canonical), sort_keys=True, ensure_ascii=False, separators=(",", ":")
     )
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _status_filter_to_statuses(status: str) -> set[str]:

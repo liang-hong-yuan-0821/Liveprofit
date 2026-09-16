@@ -197,14 +197,34 @@ export function useCreatePortfolioMutation() {
   });
 }
 
-export function useRenamePortfolioMutation() {
+export interface UpdatePortfolioVariables {
+  portfolioId: string;
+  name: string;
+  totalAssets: number;
+  availableCash: number;
+  riskPerTradePct: number;
+  minRiskRewardRatio: number;
+  maxTotalPositionPct: number;
+  maxSingleStockPct: number;
+  maxSectorPct: number;
+  expectedVersion: number;
+}
+
+export function useUpdatePortfolioMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { portfolioId: string; name: string; expectedVersion: number }): Promise<PortfolioDTO> =>
+    mutationFn: async (vars: UpdatePortfolioVariables): Promise<PortfolioDTO> =>
       (
         await requestEnvelope<PortfolioDTO>(
-          PortfoliosService.renamePortfolioApiV1PortfoliosPortfolioIdPatch(vars.portfolioId, {
+          PortfoliosService.updatePortfolioApiV1PortfoliosPortfolioIdPatch(vars.portfolioId, {
             name: vars.name,
+            total_assets: vars.totalAssets,
+            available_cash: vars.availableCash,
+            risk_per_trade_pct: vars.riskPerTradePct,
+            min_risk_reward_ratio: vars.minRiskRewardRatio,
+            max_total_position_pct: vars.maxTotalPositionPct,
+            max_single_stock_pct: vars.maxSingleStockPct,
+            max_sector_pct: vars.maxSectorPct,
             expected_version: vars.expectedVersion,
           }),
         )

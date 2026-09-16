@@ -64,7 +64,7 @@ def test_invalid_create_body_422_problem(client):
         headers={"Idempotency-Key": "key-no-ticker"},
     )
     assert response.status_code == 422
-    # position 仅随 screening：服务层复验
+    # position 需带量化参数（strategy_version_id/portfolio_id/expected_portfolio_version）：服务层复验 422
     response = client.http.post(
         "/api/v1/analysis-tasks",
         json={"task_type": "MARKET_WIDE", "requested_trade_date": "2026-09-04",

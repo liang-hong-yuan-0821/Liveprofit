@@ -56,3 +56,9 @@ class InstrumentInvalidError(DomainError):
     """自选标的非法 market/symbol（持仓场景映射 INVALID_POSITION，由 PortfolioService 处理）。"""
 
     code = "VALIDATION_ERROR"
+
+
+class PortfolioAccountInvalidError(DomainError):
+    """组合账户字段跨字段校验失败（0008：现金/比例/上下限关系）。"""
+
+    code = "PORTFOLIO_ACCOUNT_INVALID"

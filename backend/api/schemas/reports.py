@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from backend.api.schemas.quant_execution import QuantExecutionDTO
 from backend.api.schemas.tasks import TaskTypeValue
 
 BlockStatus = Literal["AVAILABLE", "UNAVAILABLE", "NOT_REQUESTED"]
@@ -47,3 +48,5 @@ class ReportDTO(BaseModel):
     sections: list[ReportSectionDTO]
     data_sources: list[DataSourceDTO] | None = None
     risk_note: str | None = None
+    # 量化执行投影（plan 4.4.1）：旧/损坏 decision 防御解析为 None，不渲染面板
+    quant_execution: QuantExecutionDTO | None = None

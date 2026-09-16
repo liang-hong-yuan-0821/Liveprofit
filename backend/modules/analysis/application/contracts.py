@@ -21,6 +21,12 @@ class CreateAnalysisTaskCommand:
     selected_layers: tuple[str, ...]
     analysis_options: dict = field(default_factory=dict)
     trace_id: str | None = None
+    # 量化提交参数（plan 4.2.1）：position 层必填，其余场景必须为空
+    strategy_version_id: uuid.UUID | None = None
+    portfolio_id: uuid.UUID | None = None
+    expected_portfolio_version: int | None = None
+    # 提交服务冻结的策略/组合/持仓快照（含源码，唯一允许保存策略源码的任务域数据）
+    execution_snapshot: dict | None = None
 
 
 @dataclass(frozen=True)

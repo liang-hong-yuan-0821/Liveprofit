@@ -16,8 +16,13 @@ vi.mock('../../../api/generated/services/MarketDataService', () => ({
     stockBarsApiV1MarketDataStocksSymbolBarsGet: vi.fn(),
   },
 }));
+// 捕获 model prop（m7 断言：indicators 透传给图表，与指数 K 线同款渲染）
+const chartCalls = vi.hoisted(() => ({ props: [] as Array<{ model: Record<string, unknown> }> }));
 vi.mock('../../../shared/charts/CandlestickChart', () => ({
-  CandlestickChart: () => <div data-testid="kline-chart" />,
+  CandlestickChart: (props: { model: Record<string, unknown> }) => {
+    chartCalls.props.push(props);
+    return <div data-testid="kline-chart" />;
+  },
 }));
 vi.mock('../components/ConceptTreemap', () => ({
   ConceptTreemap: ({ data, onNodeClick }: {
@@ -87,6 +92,7 @@ beforeEach(() => {
   treeMock.mockReset();
   conceptBarsMock.mockReset();
   stockBarsMock.mockReset();
+  chartCalls.props = [];
 });
 
 afterEach(() => {
@@ -150,5 +156,38 @@ describe('HotConceptsPanel', () => {
     const [symbol, market, interval] = stockBarsMock.mock.calls[0];
     expect([symbol, market, interval]).toEqual(['600050.SH', 'CN', '1d']);
     expect(conceptBarsMock).not.toHaveBeenCalled();
+  });
+
+  it('弹窗 K 线透传指标（m7：MA/BOLL/MACD 进 mapper → 与指数 K 线同款渲染）', async () => {
+    treeMock.mockResolvedValue(envelope(treeSnapshot([makeConcept('BK1753', '光刻胶', 1)])));
+    conceptBarsMock.mockResolvedValue(envelope({
+      ...barsData,
+      indicators: {
+        ma: [
+          { period: 5, values: [1.1] },
+          { period: 10, values: [1.2] },
+          { period: 20, values: [1.3] },
+          { period: 60, values: [null] },
+        ],
+        boll: { period: 20, k: 2.0, mid: [1.3], upper: [1.4], lower: [1.2] },
+        macd: { fast: 12, slow: 26, signal: 9, dif: [0.5], dea: [0.4], hist: [0.2] },
+      },
+    }));
+    renderWithRouter(<HotConceptsPanel />);
+
+    await screen.findByTestId('concept-treemap');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'click-concept' }));
+    await waitFor(() => expect(screen.getByTestId('kline-chart')).toBeInTheDocument());
+
+    expect(chartCalls.props).toHaveLength(1);
+    const model = chartCalls.props[0].model;
+    expect(model.ma).toEqual([
+      { period: 5, values: [1.1] },
+      { period: 10, values: [1.2] },
+      { period: 20, values: [1.3] },
+      { period: 60, values: [null] },
+    ]);
+    expect(model.boll).toEqual({ period: 20, k: 2.0, mid: [1.3], upper: [1.4], lower: [1.2] });
+    expect(model.macd).toEqual({ dif: [0.5], dea: [0.4], hist: [0.2] });
   });
 });

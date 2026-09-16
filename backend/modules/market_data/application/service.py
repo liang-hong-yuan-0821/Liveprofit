@@ -9,8 +9,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 
@@ -19,16 +20,26 @@ from backend.modules.market_data.application.errors import (
     MarketAssetNotFoundError,
     RangeTooLargeError,
 )
+from backend.modules.market_data.application.indicators import (
+    BOLL_K,
+    BOLL_PERIOD,
+    MACD_FAST,
+    MACD_SIGNAL,
+    MACD_SLOW,
+    MA_PERIODS,
+    compute_indicators,
+)
 from backend.shared.clock import Clock, SystemClock
 
-# 技术指标不自算（技术指标数据源切换方案 §3.3）：指标值取自 idx_factor_pro 入库数据
-# （上游用区间前历史计算，因子行自带全历史窗口），无需补窗口。
-MA_PERIODS = (5, 10, 20, 60)
-BOLL_PERIOD = 20
-BOLL_K = 2.0
-MACD_FAST = 12
-MACD_SLOW = 26
-MACD_SIGNAL = 9
+# 技术指标不自算（技术指标数据源切换方案 §3.3）：指数/个股主路径指标值取自
+# idx_factor_pro/stk_factor_pro 入库数据（上游用区间前历史计算，因子行自带全历史
+# 窗口），无需补窗口。显式例外（板块概念Treemap方案 m7，用户拍板 2026-09-16）：
+# ① 概念（板块指数）无任何上游因子源 → get_sector_bars 自算（indicators.py）；
+# ② 个股因子表无行 → 按需拉取 stk_factor_pro 入库缓存（factor_daily 即缓存层）。
+# 概念自算预热窗口（自然日，口径沿用归档 K线指标叠加方案 3.1）：
+# MA60 需 59 个前导交易日 ≈ 88 自然日，另留长假休市余量取 120；板块库内历史短
+# （首跑 ~33 根），预热取到多少算多少——历史不足处指标为 None（数据缺失是事实）。
+WARMUP_DAYS = 120
 
 # 热度计算口径（heat_v1，与 AI/dataflows/providers/cn/tushare.py 的
 # _fetch_concept_heat 同公式——两处口径注释互指，变更须同步，polish a）
@@ -69,6 +80,15 @@ class BarsDTO:
     market_closed_reason: str | None
 
 
+def default_stock_factor_fetcher(symbol: str, start: str, end: str):
+    """个股因子按需拉取生产默认（m7）：AI 数据流接口层（provider 单例，按
+    LIVEPROFIT_DATA_SOURCE 选源，AKShare 源下基类默认返回 None）。失败返回 None
+    → 调用方降级纯 K 线（indicators=None，拉取失败不阻断 K 线响应）。"""
+    from AI.dataflows.interface import get_stock_factor_df
+
+    return get_stock_factor_df(symbol, start, end)
+
+
 class MarketDataService:
     def __init__(
         self,
@@ -76,15 +96,21 @@ class MarketDataService:
         clock: Clock | None = None,
         calendar=None,
         market_conn=None,
+        stock_factor_fetcher: Callable[[str, str, str], object] | None = None,
     ) -> None:
         """market_conn = db.instrument.get_connection 工厂（contextmanager）。
 
         uow 参数已删除（决策 13）：热点快照表整链删除后 SQLAlchemy 侧无读模型，
         market_conn 成为市场数据读路径唯一连接源。
+
+        stock_factor_fetcher(symbol, start_iso, end_iso) → stk_factor_pro 帧
+        （DataFrame 或 None，失败返回 None）——个股因子按需拉取（m7）；None = 生产
+        默认（AI 数据流接口层 provider 单例），测试注入 fake。
         """
         self._clock = clock or SystemClock()
         self._calendar = calendar
         self._market_conn = market_conn
+        self._stock_factor_fetcher = stock_factor_fetcher
 
     # ---- K 线 ----
 
@@ -151,11 +177,17 @@ class MarketDataService:
             with self._market_conn() as conn:
                 from db.instrument.dao.factor_daily import query_range as factors_range
                 fdf = factors_range(conn, symbol, from_date.isoformat(), to_date.isoformat())
-            # 仅个股路径短路（板块概念Treemap方案 3.3）：个股因子采集为后续阶段，
-            # 因子表无行 → indicators=None 纯 K 线；指数路径保持全 null 数组降级
-            # 语义（契约测试 test_market_data.py:77-81 冻结断言，不得全局改 None）
+            # 个股因子表无行 → 按需拉取 stk_factor_pro 并入库缓存（板块概念Treemap
+            # 方案 m7，用户拍板 2026-09-16：个股接因子、概念自算）。拉取失败/无数据
+            # → indicators=None 纯 K 线（原 3.3 语义，降级不阻断 K 线）；指数路径
+            # 保持全 null 数组降级语义（契约测试 test_market_data.py:77-81 冻结断言，
+            # 不得全局改 None）
+            if inst["instrument_type"] == "stock" and fdf.empty:
+                fdf = self._fetch_stock_factors_into_table(symbol, from_date, to_date)
+            # 个股拉取后仍无行 → 短路 indicators=None 纯 K 线；指数路径不短路——
+            # 空因子表仍产全 null 数组指标（冻结用例固化语义，不得全局改 None）
             if not (inst["instrument_type"] == "stock" and fdf.empty):
-                factor_map = {r["trade_date"]: r for _, r in fdf.iterrows()} if not fdf.empty else {}
+                factor_map = {r["trade_date"]: r for _, r in fdf.iterrows()}
 
                 def _factor_col(name: str) -> list[float | None]:
                     # 判值不判行：行存在但列为 NULL 与行缺失同为 None，不抛异常
@@ -202,15 +234,55 @@ class MarketDataService:
             market_closed_reason=closed_reason,
         )
 
+    def _fetch_stock_factors_into_table(
+        self, symbol: str, from_date: date, to_date: date
+    ) -> pd.DataFrame:
+        """个股因子按需拉取（m7）：调 stk_factor_pro 拉 [from, to] 因子帧，入库
+        factor_daily（即缓存层——下次同区间查询走表、不再调上游），返回库内该区间
+        因子帧。拉取失败/无数据 → 返回空 DataFrame（调用方降级纯 K 线）。
+
+        stk_factor_pro 帧无 close/ts_code 列：close 由 DAO 清洗置 None（宽表可空，
+        仅供指数路径对齐自检，个股路径不读）；ts_code 由本方法补。上游因子行自带
+        全历史窗口（区间前历史计算），区间首根即有值，按 [from, to] 拉取即可。
+        """
+        fetcher = self._stock_factor_fetcher or default_stock_factor_fetcher
+        try:
+            df = fetcher(symbol, from_date.isoformat(), to_date.isoformat())
+        except Exception:
+            logger.warning("个股 %s 因子按需拉取异常（降级纯 K 线）", symbol, exc_info=True)
+            return pd.DataFrame()
+        if df is None or df.empty:
+            return pd.DataFrame()
+        df = df.copy()
+        df["ts_code"] = symbol
+        df["updated_at"] = pd.Timestamp.now()
+        try:
+            from db.instrument.dao.factor_daily import (
+                bulk_upsert_factor_daily,
+                query_range as factors_range,
+            )
+
+            with self._market_conn() as conn:
+                bulk_upsert_factor_daily(conn, df, update=True)
+                conn.commit()  # get_connection 不自管 commit，缓存必须落盘
+                return factors_range(conn, symbol, from_date.isoformat(), to_date.isoformat())
+        except Exception:
+            # 入库失败不阻断 K 线（降级纯 K 线）；下次点击重试拉取
+            logger.warning("个股 %s 因子入库失败（降级纯 K 线）", symbol, exc_info=True)
+            return pd.DataFrame()
+
     def get_sector_bars(
         self, *, market: str, source: str, sector_code: str,
         from_date: date, to_date: date,
     ) -> BarsDTO:
-        """概念 K 线（板块概念Treemap方案 3.3）：读 market.sector_daily，indicators 恒 None。
+        """概念 K 线（板块概念Treemap方案 3.3 + m7 修订）：读 market.sector_daily。
 
         - from>to → RangeTooLargeError（同 get_bars）；板块不存在 → 404
         - OHLC 任一 NaN 整行不产出 bar（BarDTO OHLC 为必填 float，None 化会使
           响应 500；close 列 NOT NULL 已由 DAO 保障，本防御只拦脏行）
+        - 指标自算（m7 用户拍板 2026-09-16）：板块指数无上游因子源，唯一出路是
+          自算——预热取 [from−WARMUP_DAYS, to] 全段计算后切回 [from, to]（板块
+          库内历史短，预热取到多少算多少；历史不足处指标为 None，数据缺失是事实）
         """
         if from_date > to_date:
             raise RangeTooLargeError("查询范围无效：开始日期晚于结束日期")
@@ -220,12 +292,20 @@ class MarketDataService:
                 (source, sector_code),
             ).fetchone()
             bars_full = None
+            warmup_bars = None
             latest = None
             source_updated = None
             if sector is not None:
                 from db.instrument.dao.sector_daily import query_bars
                 bars_full = query_bars(conn, source, sector_code,
                                        from_date.isoformat(), to_date.isoformat())
+                # 指标自算预热帧（m7）：与 bars_full 同过滤口径（OHLC 脏行排除），
+                # bar_dicts 是预热有效序列的后缀 → 指标数组切 [-len(bar_dicts):] 即对齐
+                warmup_bars = query_bars(
+                    conn, source, sector_code,
+                    (from_date - timedelta(days=WARMUP_DAYS)).isoformat(),
+                    to_date.isoformat(),
+                )
                 latest_row = conn.execute(
                     "SELECT max(trade_date), max(updated_at) "
                     "FROM market.sector_daily WHERE source = %s AND sector_code = %s",
@@ -258,13 +338,14 @@ class MarketDataService:
                     "close": float(row["close"]),
                     "volume": float(row["vol"]) if pd.notna(row["vol"]) else None,
                 })
+        indicators = self._compute_sector_indicators(warmup_bars, len(bar_dicts))
         return BarsDTO(
             asset=AssetDTO(market=market, symbol=sector_code, name=sector[0]),
             interval="1d",
             from_date=from_date,
             to_date=to_date,
             bars=bar_dicts,
-            indicators=None,  # 板块指数无因子表数据（技术指标不自算）
+            indicators=indicators,
             source=source,
             as_of=latest,
             source_updated_at=source_updated,
@@ -272,6 +353,45 @@ class MarketDataService:
             market_session_status=session_status,
             market_closed_reason=closed_reason,
         )
+
+    def _compute_sector_indicators(
+        self, warmup_bars: pd.DataFrame | None, bar_count: int
+    ) -> dict | None:
+        """概念指标自算（m7）：预热帧有效行 closes → compute_indicators →
+        各数组切回请求窗口（后缀 bar_count 根）。bars 空 → None（契约）。
+
+        有效行 = OHLC 均非 NaN（与 bar_dicts 同过滤口径，保证后缀对齐）。
+        """
+        if bar_count == 0 or warmup_bars is None or warmup_bars.empty:
+            return None
+        closes = [
+            float(row["close"])
+            for _, row in warmup_bars.iterrows()
+            if not any(pd.isna(row[c]) for c in ("open", "high", "low", "close"))
+        ]
+        computed = compute_indicators(closes)
+        trim = lambda values: values[-bar_count:]
+        return {
+            "ma": [
+                {"period": line["period"], "values": trim(line["values"])}
+                for line in computed["ma"]
+            ],
+            "boll": {
+                "period": BOLL_PERIOD,
+                "k": BOLL_K,
+                "mid": trim(computed["boll"]["mid"]),
+                "upper": trim(computed["boll"]["upper"]),
+                "lower": trim(computed["boll"]["lower"]),
+            },
+            "macd": {
+                "fast": MACD_FAST,
+                "slow": MACD_SLOW,
+                "signal": MACD_SIGNAL,
+                "dif": trim(computed["macd"]["dif"]),
+                "dea": trim(computed["macd"]["dea"]),
+                "hist": trim(computed["macd"]["hist"]),
+            },
+        }
 
     def _last_trading_day(self) -> date | None:
         if self._calendar is None:

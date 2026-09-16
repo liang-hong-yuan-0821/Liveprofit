@@ -1,7 +1,7 @@
 """db.instrument 集成测试环境：临时 PG 库（liveprofit_instrument_test）。
 
 建库 → 注入 PG_CONNECTION_STRING（模块常量直赋值）→ init_schema →
-逐用例 TRUNCATE 11 张 market 表（test_db.py 的连接生命周期测试不受 env 影响，
+逐用例 TRUNCATE 12 张 market 表（test_db.py 的连接生命周期测试不受 env 影响，
 独立跑真实库安全操作）。
 """
 
@@ -91,6 +91,7 @@ def clean_market_state(pg_env):
         conn.execute(text(
             "TRUNCATE market.instrument, market.instrument_daily, market.factor_daily, "
             "market.adj_factor, market.sector, market.sector_member, market.sector_daily, "
-            "market.industry, market.industry_member, market.fund_info, market.stock_info CASCADE"
+            "market.industry, market.industry_member, market.ingest_state, "
+            "market.fund_info, market.stock_info CASCADE"
         ))
     yield

@@ -15,6 +15,10 @@ export function EventDetailDialog({
   onClose: () => void;
 }) {
   if (!vm) return null;
+  // aiSuggestions 是自由 dict：unresolved_entities 需运行时守卫（Array.isArray + string 过滤）
+  const unresolved = Array.isArray(vm.aiSuggestions?.unresolved_entities)
+    ? vm.aiSuggestions.unresolved_entities.filter((x): x is string => typeof x === 'string')
+    : [];
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -39,6 +43,12 @@ export function EventDetailDialog({
             <p className="mb-1 text-xs" style={{ color: 'var(--color-fg-muted)' }}>
               AI 预填建议（请确认后提交）
             </p>
+            {unresolved.length > 0 && (
+              <p className="mb-2 text-sm text-amber-200">
+                ⚠ 未解析目标：{unresolved.join('、')}——请人工补目标引用
+                （SW:801080 / CONCEPT:BK1753.DC / stock:600519.SH）或回退 market
+              </p>
+            )}
             <pre className="overflow-x-auto rounded-md border p-3 text-xs" style={{ borderColor: 'var(--color-border)' }}>
               {vm.aiSuggestions ? JSON.stringify(vm.aiSuggestions, null, 2) : '（无）'}
             </pre>

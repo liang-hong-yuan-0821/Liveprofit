@@ -4,5 +4,6 @@
 /* eslint-disable */
 export type PrelabelRequest = {
     limit?: number;
+    draft_ids?: (Array<number> | null);
 };
 

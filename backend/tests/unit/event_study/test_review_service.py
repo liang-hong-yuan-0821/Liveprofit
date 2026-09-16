@@ -34,6 +34,7 @@ class FakeAdapter:
         self.pending_script: list[list[dict]] = []
         self.pending_calls = 0
         self.prelabel_batches: list[list[dict]] = []
+        self.prelabel_forces: list[bool] = []
         self.prelabel_return = 0
         self.approve_errors: dict[int, Exception] = {}
         self.approve_calls: list[tuple] = []
@@ -104,9 +105,15 @@ class FakeAdapter:
             "assets": {"000001.SH": {"event_day": {"window_days": 1, "cumulative_abnormal_return": 0.0}}},
         }
 
-    def prelabel(self, drafts):
+    def prelabel(self, drafts, force=False):
         self.prelabel_batches.append(drafts)
+        self.prelabel_forces.append(force)
         return self.prelabel_return
+
+    def needs_prelabel(self, draft) -> bool:
+        """预填谓词桩（与 AI 侧 needs_prelabel 同口径）。"""
+        suggestions = draft.get("ai_suggestions")
+        return not suggestions or "event_scope" not in suggestions
 
     def fetch_latest_events(self):
         self.fetch_calls += 1
@@ -187,7 +194,11 @@ def test_list_pending_events_redis_unavailable_raises_503(svc):
 
 def test_prelabel_slices_only_unlabeled_and_recounts_remaining(svc):
     adapter, service = svc
-    labeled = _draft(draft_id=1)
+    # labeled 局部补 event_scope（不改 _draft() 默认值——list_pending 用例断言默认值原文；
+    # 缺 scope 的草稿在新谓词下会进 unlabeled 切片，评审 N1-b）
+    labeled = _draft(draft_id=1, ai_suggestions={
+        "event_type": "宏观数据", "importance": 5, "event_scope": "market",
+    })
     unlabeled_1 = _draft(draft_id=2, ai_suggestions=None)
     unlabeled_2 = _draft(draft_id=3, ai_suggestions=None)
     adapter.pending_script = [
@@ -196,8 +207,50 @@ def test_prelabel_slices_only_unlabeled_and_recounts_remaining(svc):
     ]
     adapter.prelabel_return = 1
     result = service.prelabel(limit=1)
-    assert adapter.prelabel_batches == [[unlabeled_1]]  # 仅无建议切片 + limit 截断
+    assert adapter.prelabel_batches == [[unlabeled_1]]  # 仅谓词命中切片 + limit 截断
+    assert adapter.prelabel_forces == [False]
     assert result.prelabeled == 1 and result.remaining == 1
+
+
+def test_prelabel_counts_missing_scope_as_unlabeled(svc):
+    """回填：缺 event_scope 的旧建议计入 unlabeled 切片；完整建议不进切片。"""
+    adapter, service = svc
+    stale = _draft(draft_id=1, ai_suggestions={"importance": 3})  # 缺 event_scope 旧建议
+    complete = _draft(draft_id=2, ai_suggestions={"event_scope": "market"})
+    adapter.pending_script = [
+        [stale, complete],   # 切片前
+        [complete],          # 执行后 stale 已回填
+    ]
+    adapter.prelabel_return = 1
+    result = service.prelabel(limit=50)
+    assert adapter.prelabel_batches == [[stale]]
+    assert adapter.prelabel_forces == [False]
+    assert result.prelabeled == 1 and result.remaining == 0
+
+
+def test_prelabel_draft_ids_mode_overwrites_specified_drafts(svc):
+    """draft_ids 模式：仅指定草稿进预填（force=True 覆写），缺失草稿自动跳过。"""
+    adapter, service = svc
+    complete = _draft(draft_id=1, ai_suggestions={"event_scope": "market"})
+    target = _draft(draft_id=2)  # 无建议，但在 draft_ids 模式不依赖谓词
+    adapter.pending_script = [[complete, target], [complete, target]]
+    adapter.prelabel_return = 1
+    result = service.prelabel(limit=50, draft_ids=[2, 999])  # 999 不存在 → 跳过
+    assert adapter.prelabel_batches == [[target]]
+    assert adapter.prelabel_forces == [True]
+    assert result.prelabeled == 1
+
+
+def test_prelabel_draft_ids_mode_overwrites_even_complete_drafts(svc):
+    """draft_ids 模式不做过谓词过滤：完整建议的草稿也被覆写（强制重填语义）。"""
+    adapter, service = svc
+    complete = _draft(draft_id=1, ai_suggestions={"event_scope": "market"})
+    adapter.pending_script = [[complete], [complete]]
+    adapter.prelabel_return = 1
+    result = service.prelabel(limit=50, draft_ids=[1])
+    assert adapter.prelabel_batches == [[complete]]
+    assert adapter.prelabel_forces == [True]
+    assert result.prelabeled == 1
 
 
 def test_prelabel_redis_unavailable_raises_503(svc):

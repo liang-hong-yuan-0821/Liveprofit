@@ -12,6 +12,7 @@ from backend.modules.investment_workspace.application.contracts import (
 )
 from backend.modules.investment_workspace.application.errors import (
     InvalidPositionError,
+    PortfolioAccountInvalidError,
     PortfolioNameConflictError,
     PortfolioNotEmptyError,
     PortfolioNotFoundError,
@@ -39,11 +40,32 @@ class PortfolioService:
 
     # ---- 组合 ----
 
-    def create(self, name: str) -> PortfolioDTO:
+    def create(
+        self,
+        name: str,
+        *,
+        total_assets: float | None = None,
+        available_cash: float | None = None,
+        risk_per_trade_pct: float | None = None,
+        min_risk_reward_ratio: float | None = None,
+        max_total_position_pct: float | None = None,
+        max_single_stock_pct: float | None = None,
+        max_sector_pct: float | None = None,
+    ) -> PortfolioDTO:
         if self._repo.get_by_name(name) is not None:
             raise PortfolioNameConflictError(f"组合名已存在：{name}")
+        # 接受完整账户配置（也接受默认参数）；None 字段落 DB 默认值
+        account = self._validate_account(
+            total_assets=total_assets,
+            available_cash=available_cash,
+            risk_per_trade_pct=risk_per_trade_pct,
+            min_risk_reward_ratio=min_risk_reward_ratio,
+            max_total_position_pct=max_total_position_pct,
+            max_single_stock_pct=max_single_stock_pct,
+            max_sector_pct=max_sector_pct,
+        )
         now = self._clock.now()
-        portfolio = Portfolio(id=new_uuid(), name=name, version=1, created_at=now, updated_at=now)
+        portfolio = Portfolio(id=new_uuid(), name=name, version=1, created_at=now, updated_at=now, **account)
         self._repo.add(portfolio)
         try:
             self._uow.commit()
@@ -51,6 +73,117 @@ class PortfolioService:
             self._uow.rollback()
             raise PortfolioNameConflictError(f"组合名已存在：{name}") from None
         return self._to_portfolio_dto(portfolio, 0)
+
+    def update_account(
+        self,
+        portfolio_id: uuid.UUID,
+        *,
+        name: str,
+        total_assets: float,
+        available_cash: float,
+        risk_per_trade_pct: float,
+        min_risk_reward_ratio: float,
+        max_total_position_pct: float,
+        max_single_stock_pct: float,
+        max_sector_pct: float,
+        expected_version: int,
+    ) -> PortfolioDTO:
+        """PATCH 原子更新名称与全部账户字段（plan 4.2.1：一次条件更新、成功仅 version+1）。"""
+        portfolio = self._repo.get(portfolio_id)
+        if portfolio is None:
+            raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
+        if self._repo.get_by_name(name) is not None and name != portfolio.name:
+            raise PortfolioNameConflictError(f"组合名已存在：{name}")
+        account = self._validate_account(
+            total_assets=total_assets,
+            available_cash=available_cash,
+            risk_per_trade_pct=risk_per_trade_pct,
+            min_risk_reward_ratio=min_risk_reward_ratio,
+            max_total_position_pct=max_total_position_pct,
+            max_single_stock_pct=max_single_stock_pct,
+            max_sector_pct=max_sector_pct,
+        )
+        now = self._clock.now()
+        if not self._repo.conditional_update_version(
+            portfolio_id,
+            expected_version,
+            {"name": name, "version": expected_version + 1, "updated_at": now, **account},
+        ):
+            raise RevisionConflictError("组合已变更，请重新拉取")
+        try:
+            self._uow.commit()
+        except IntegrityError:
+            self._uow.rollback()
+            raise PortfolioNameConflictError(f"组合名已存在：{name}") from None
+        return self.get(portfolio_id)
+
+    @staticmethod
+    def _validate_account(
+        *,
+        total_assets: float | None,
+        available_cash: float | None,
+        risk_per_trade_pct: float | None,
+        min_risk_reward_ratio: float | None,
+        max_total_position_pct: float | None,
+        max_single_stock_pct: float | None,
+        max_sector_pct: float | None,
+    ) -> dict:
+        """账户字段校验（Decimal 精度）：0<=cash<=assets、各比例 (0,1]、single<=total、sector<=total、rr>0。
+
+        返回 dict[str, Decimal]（仅非 None 字段；None 字段由 DB 默认值兜底）。
+        """
+        from decimal import Decimal, InvalidOperation
+
+        def to_decimal(value: float | None) -> Decimal | None:
+            if value is None:
+                return None
+            try:
+                return Decimal(str(value))
+            except InvalidOperation:
+                raise PortfolioAccountInvalidError(f"账户字段不是有效数值：{value}") from None
+
+        assets = to_decimal(total_assets)
+        cash = to_decimal(available_cash)
+        risk = to_decimal(risk_per_trade_pct)
+        rr = to_decimal(min_risk_reward_ratio)
+        total_pct = to_decimal(max_total_position_pct)
+        single_pct = to_decimal(max_single_stock_pct)
+        sector_pct = to_decimal(max_sector_pct)
+
+        def check(condition: bool, message: str) -> None:
+            if not condition:
+                raise PortfolioAccountInvalidError(message)
+
+        # 单字段区间（跨字段关系由服务复验，与 DB CHECK 分工一致）
+        if assets is not None:
+            check(assets >= 0, "total_assets 必须非负")
+        if cash is not None:
+            check(cash >= 0, "available_cash 必须非负")
+        if assets is not None and cash is not None:
+            check(cash <= assets, "available_cash 必须 <= total_assets")
+        for label, v in (
+            ("risk_per_trade_pct", risk),
+            ("max_total_position_pct", total_pct),
+            ("max_single_stock_pct", single_pct),
+            ("max_sector_pct", sector_pct),
+        ):
+            if v is not None:
+                check(0 < v <= 1, f"{label} 必须在 (0,1] 区间")
+        if rr is not None:
+            check(rr > 0, "min_risk_reward_ratio 必须 > 0")
+        if single_pct is not None and total_pct is not None:
+            check(single_pct <= total_pct, "max_single_stock_pct 必须 <= max_total_position_pct")
+        if sector_pct is not None and total_pct is not None:
+            check(sector_pct <= total_pct, "max_sector_pct 必须 <= max_total_position_pct")
+        return {
+            "total_assets": assets,
+            "available_cash": cash,
+            "risk_per_trade_pct": risk,
+            "min_risk_reward_ratio": rr,
+            "max_total_position_pct": total_pct,
+            "max_single_stock_pct": single_pct,
+            "max_sector_pct": sector_pct,
+        }
 
     def list(self, *, limit: int, before: tuple[datetime, uuid.UUID] | None = None) -> tuple[list[PortfolioDTO], tuple[datetime, uuid.UUID] | None]:
         rows = self._repo.list_ordered(limit=limit + 1, before=before)
@@ -184,6 +317,13 @@ class PortfolioService:
             name=portfolio.name,
             version=portfolio.version,
             position_count=position_count,
+            total_assets=float(portfolio.total_assets),
+            available_cash=float(portfolio.available_cash),
+            risk_per_trade_pct=float(portfolio.risk_per_trade_pct),
+            min_risk_reward_ratio=float(portfolio.min_risk_reward_ratio),
+            max_total_position_pct=float(portfolio.max_total_position_pct),
+            max_single_stock_pct=float(portfolio.max_single_stock_pct),
+            max_sector_pct=float(portfolio.max_sector_pct),
             created_at=portfolio.created_at,
             updated_at=portfolio.updated_at,
         )

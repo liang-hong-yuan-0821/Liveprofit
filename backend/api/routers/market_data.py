@@ -54,13 +54,22 @@ def _bars_data(bars_dto, market: str) -> BarsData:
 
 async def _run_get_bars(request: Request, symbol: str, market: str, interval: str,
                        from_: date, to: date):
-    """indices/stocks bars 端点共用执行体（get_bars 已放宽 stock，板块概念Treemap方案 3.3）。"""
+    """indices/stocks bars 端点共用执行体（get_bars 已放宽 stock，板块概念Treemap方案 3.3）。
+
+    stock_factor_fetcher 经 app.state 注入（测试覆盖点；生产不赋值 → 服务层
+    默认 default_stock_factor_fetcher，m7 个股因子按需拉取）。
+    """
     services = request.app.state.analysis_services
     calendar = request.app.state.market_calendar
     market_conn = request.app.state.market_conn
+    stock_factor_fetcher = getattr(request.app.state, "stock_factor_fetcher", None)
 
     def _do():
-        return MarketDataService(calendar=calendar, market_conn=market_conn).get_bars(
+        return MarketDataService(
+            calendar=calendar,
+            market_conn=market_conn,
+            stock_factor_fetcher=stock_factor_fetcher,
+        ).get_bars(
             market=market, symbol=symbol, interval=interval, from_date=from_, to_date=to
         )
 

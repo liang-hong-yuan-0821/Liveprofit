@@ -75,6 +75,10 @@ def env(monkeypatch):
     monkeypatch.setattr(inc.fund_info, "upsert_fund_info", MagicMock(return_value=1))
     monkeypatch.setattr(inc, "fetch_day_frames", MagicMock(return_value=_FRAMES))
     monkeypatch.setattr(inc, "collect_sectors", MagicMock())
+    # 行业成员周刷在 incremental 内懒加载，mock 掉避免真实 DB 调用（见 test_industries_ingest.py）
+    monkeypatch.setattr(
+        "db.instrument.ingest.industries.collect_industries", MagicMock(return_value={"status": "MOCKED"})
+    )
     monkeypatch.setattr(inc, "datetime", _FakeDateTime)
     return conn, prov
 
@@ -273,3 +277,26 @@ def test_index_factor_missing_chunks_rejected(env):
 
     inc.collect_incremental(conn, lambda: prov, refresh_sectors=False)
     inc.bulk_upsert_factor_daily.assert_not_called()   # 缺段拒绝部分入库
+
+
+def test_refresh_industries_wiring(env):
+    """refresh_industries 三态接线（plan 4.3.1 周刷）：True 强制 / False 跳过 / 异常不破坏 summary。"""
+    from db.instrument.ingest import industries as industries_mod
+
+    conn, prov = env
+    industries_mod.collect_industries.reset_mock()
+    result = _run(conn, prov, refresh_industries=True)
+    assert industries_mod.collect_industries.called
+    assert result["industries"] == {"status": "MOCKED"}
+    assert "daily" in result
+
+    industries_mod.collect_industries.reset_mock()
+    _run(conn, prov, refresh_industries=False)
+    assert not industries_mod.collect_industries.called
+
+    # 行业步骤异常不阻断增量主流程（不破坏 summary）
+    industries_mod.collect_industries.side_effect = RuntimeError("行业接口炸了")
+    result = _run(conn, prov, refresh_industries=True)
+    assert "daily" in result
+    assert "industries" not in result  # 失败不写入 summary，仅告警日志
+    industries_mod.collect_industries.side_effect = None

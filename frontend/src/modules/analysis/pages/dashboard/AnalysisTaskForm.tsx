@@ -10,7 +10,8 @@ import { Button } from '../../../../shared/ui/button';
 import { Checkbox } from '../../../../shared/ui/checkbox';
 import { Input } from '../../../../shared/ui/input';
 import { Label } from '../../../../shared/ui/label';
-import { useCreateAnalysisTaskMutation, type CreateTaskVariables } from './queries';
+import { isStaleInputError, useCreateAnalysisTaskMutation, type CreateTaskVariables } from './queries';
+import { QuantParamsPicker } from './QuantParamsPicker';
 
 // 创建分析任务面板（产品决策 2026-09-06 v3）：新建分析恒为全市场调研——
 // 无目标标的代码输入；市场/板块/筛选三个层级自由勾选（任意非空组合），
@@ -23,10 +24,28 @@ export const analysisTaskFormSchema = z
   .object({
     requested_trade_date: z.string().min(1, '请选择请求交易日'),
     selected_layers: z.array(z.enum(analysisLayerValues)),
+    strategy_version_id: z.string().optional(),
+    portfolio_id: z.string().optional(),
+    expected_portfolio_version: z.number().int().positive().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.selected_layers.length === 0) {
       ctx.addIssue({ code: 'custom', path: ['selected_layers'], message: '请至少选择一个分析层级' });
+    }
+    const hasPosition = value.selected_layers.includes('position');
+    if (hasPosition) {
+      // 量化仓位层：策略/组合三字段必填（决策 11：position 独立成任务，不再要求 screening）
+      if (!value.strategy_version_id) {
+        ctx.addIssue({ code: 'custom', path: ['strategy_version_id'], message: '请选择已发布策略版本' });
+      }
+      if (!value.portfolio_id) {
+        ctx.addIssue({ code: 'custom', path: ['portfolio_id'], message: '请选择组合' });
+      }
+      if (!value.expected_portfolio_version) {
+        ctx.addIssue({ code: 'custom', path: ['expected_portfolio_version'], message: '组合版本缺失' });
+      }
+    } else if (value.strategy_version_id || value.portfolio_id || value.expected_portfolio_version) {
+      ctx.addIssue({ code: 'custom', path: ['selected_layers'], message: '未选择仓位层时不能携带量化参数' });
     }
   });
 
@@ -62,7 +81,6 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
   });
 
   const selectedLayers = form.watch('selected_layers');
-  const hasScreening = selectedLayers.includes('screening');
 
   function toggleLayer(layer: AnalysisLayer, checked: boolean) {
     const next = new Set(selectedLayers);
@@ -70,8 +88,12 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
       next.add(layer);
     } else {
       next.delete(layer);
-      // 仓位仅可随筛选出现：取消筛选时联动取消仓位
-      if (layer === 'screening') next.delete('position');
+      if (layer === 'position') {
+        // 取消仓位层时清空量化三字段（避免「落库未生效」）
+        form.setValue('strategy_version_id', undefined);
+        form.setValue('portfolio_id', undefined);
+        form.setValue('expected_portfolio_version', undefined);
+      }
     }
     form.setValue('selected_layers', Array.from(next));
   }
@@ -80,6 +102,9 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
     const snapshot = JSON.stringify({
       requested_trade_date: values.requested_trade_date,
       selected_layers: values.selected_layers,
+      strategy_version_id: values.strategy_version_id ?? null,
+      portfolio_id: values.portfolio_id ?? null,
+      expected_portfolio_version: values.expected_portfolio_version ?? null,
     });
     if (!idempotencyRef.current || idempotencyRef.current.snapshot !== snapshot) {
       idempotencyRef.current = { key: crypto.randomUUID(), snapshot };
@@ -95,6 +120,9 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
         ticker: null,
         requested_trade_date: values.requested_trade_date,
         selected_layers: values.selected_layers,
+        strategy_version_id: values.strategy_version_id ?? null,
+        portfolio_id: values.portfolio_id ?? null,
+        expected_portfolio_version: values.expected_portfolio_version ?? null,
       },
       idempotencyKey,
     };
@@ -137,12 +165,14 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             checked={selectedLayers.includes('position')}
-            disabled={!hasScreening}
             onChange={(event) => toggleLayer('position', event.target.checked)}
           />
           仓位
-          <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>（可选，需同时选择筛选）</span>
+          <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+            （量化全市场扫描：选择已发布策略与组合，建议订单需人工确认、不自动下单）
+          </span>
         </label>
+        {selectedLayers.includes('position') && <QuantParamsPicker form={form} />}
         {form.formState.errors.selected_layers && (
           <p className="text-xs text-red-400">{form.formState.errors.selected_layers.message}</p>
         )}
@@ -151,7 +181,11 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
       {submitError && (
         <ErrorState
           error={toApiError(submitError)}
-          onRetry={submitError instanceof ApiError && submitError.retryable ? retryLastSubmit : undefined}
+          onRetry={
+            submitError instanceof ApiError && submitError.retryable && !isStaleInputError(submitError)
+              ? retryLastSubmit
+              : undefined
+          }
         />
       )}
 

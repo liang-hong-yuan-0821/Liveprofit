@@ -29,6 +29,8 @@ export const queryKeys = {
   agentPrompts: makeQueryKeys('agent-prompts'),
   watchlists: makeQueryKeys('watchlists'),
   portfolios: makeQueryKeys('portfolios'),
+  quantStrategies: makeQueryKeys('quant-strategies'),
+  quantSignals: makeQueryKeys('quant-signals'),
   eventStudyAssets: makeQueryKeys('event-study-assets'),
   eventStudyReview: makeQueryKeys('event-study-review'),
 } as const;

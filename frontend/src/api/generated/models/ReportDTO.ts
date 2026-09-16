@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { DataSourceDTO } from './DataSourceDTO';
+import type { QuantExecutionDTO } from './QuantExecutionDTO';
 import type { ReportSectionDTO } from './ReportSectionDTO';
 import type { ReportTaskInfo } from './ReportTaskInfo';
 export type ReportDTO = {
@@ -13,5 +14,6 @@ export type ReportDTO = {
     sections: Array<ReportSectionDTO>;
     data_sources?: (Array<DataSourceDTO> | null);
     risk_note?: (string | null);
+    quant_execution?: (QuantExecutionDTO | null);
 };
 

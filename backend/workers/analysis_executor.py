@@ -13,6 +13,7 @@ import threading
 import time
 import uuid
 from contextlib import AbstractContextManager
+from datetime import date
 from typing import Any, Callable, Protocol
 
 from backend.modules.analysis.application.contracts import AnalysisArtifact, ClaimedTask
@@ -24,6 +25,11 @@ from backend.modules.analysis.application.errors import (
 )
 from backend.modules.analysis.domain.enums import TaskEventType, TaskStatus
 from backend.modules.analysis.infrastructure.artifact_store import ArtifactFencingError
+from backend.modules.analysis.infrastructure.execution_control import (
+    ExecutionControl,
+    ExecutionInactiveError,
+)
+from backend.modules.analysis.infrastructure.source_guard import assert_no_source_leak
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +107,25 @@ class LeaseHeartbeat(threading.Thread):
         self._stop_requested.set()
 
 
+def _is_quant_task(claimed: ClaimedTask) -> bool:
+    """量化任务判定：request_params 含 execution_snapshot 且 selected_layers 含 position。"""
+    return (
+        isinstance(claimed.request_params, dict)
+        and claimed.request_params.get("execution_snapshot") is not None
+        and "position" in (claimed.selected_layers or ())
+    )
+
+
+def _as_state_dict(state: Any) -> dict:
+    if state is None:
+        return {}
+    if isinstance(state, dict):
+        return dict(state)
+    if hasattr(state, "__dict__"):
+        return dict(state.__dict__)
+    return {}
+
+
 class AnalysisExecutor:
     def __init__(
         self,
@@ -144,10 +169,94 @@ class AnalysisExecutor:
         )
         heartbeat.start()
         try:
-            self._run_graph(claimed, rerun_from=rerun_from)
+            if _is_quant_task(claimed):
+                self._run_quant(claimed, heartbeat)
+            else:
+                self._run_graph(claimed, rerun_from=rerun_from)
         finally:
             heartbeat.stop()
             heartbeat.join(timeout=self._heartbeat_interval * 2 + 5)
+
+    # ---- 量化执行分支（plan 4.3.1：不经 LangGraph，Worker 直接执行） ----
+
+    def _run_quant(self, claimed: ClaimedTask, heartbeat: LeaseHeartbeat) -> None:
+        snapshot = claimed.request_params.get("execution_snapshot") or {}
+        forbidden_source_code = (snapshot.get("strategy") or {}).get("source_code")
+        control: ExecutionControl | None = None
+        try:
+            from db.instrument.db import get_connection
+
+            market_conn = get_connection()
+            try:
+                with self._bundles.open() as bundle:
+                    control = ExecutionControl(
+                        claimed.task_id,
+                        claimed.lease_token,
+                        is_cancelled=lambda: self._cancel_flag,
+                        is_fencing_active=lambda: heartbeat.fencing_lost.is_set(),
+                    )
+                    from backend.modules.quant_strategy.application.execution import QuantExecutionService
+
+                    service = QuantExecutionService(
+                        task_id=claimed.task_id,
+                        attempt_no=claimed.attempt_no,
+                        snapshot=snapshot,
+                        market_conn=market_conn,
+                        session=bundle.uow.session,
+                        execution_control=control,
+                        effective_trade_date=claimed.effective_trade_date or date.today(),
+                        on_progress=self._on_progress,
+                    )
+                    summary = service.run()
+
+                    # 同选 AI 层（market/sector/screening/stock）时 AI 层照旧独立运行
+                    # （plan 4.2.1/决策 7：量化不读取其产物，两者互不影响；报告合并两者结果）
+                    ai_layers = set(claimed.selected_layers or ()) - {"position"}
+                    if ai_layers:
+                        ai_state = self._adapter.execute(claimed, self._on_progress, rerun_from=None)
+                        final_state = _as_state_dict(ai_state)
+                        final_state["selected_layers"] = list(claimed.selected_layers)
+                        final_state["quant_execution"] = summary
+                    else:
+                        final_state = {
+                            "selected_layers": list(claimed.selected_layers),
+                            "quant_execution": summary,
+                        }
+                    # 序列化边界防泄漏：完整摘要不得承载源码/敏感键/完整散列
+                    assert_no_source_leak(
+                        final_state, forbidden_source_code, context="quant-final-state"
+                    )
+                    artifact = bundle.build_artifact(final_state)
+                    if self._artifact_store is not None:
+                        artifact = self._persist_artifact(
+                            claimed, final_state, artifact, forbidden_source_code=forbidden_source_code
+                        )
+                    bundle.tasks.complete_task(
+                        claimed.task_id, claimed.attempt_no, claimed.lease_token, artifact, bundle.reports
+                    )
+            finally:
+                market_conn.close()
+        except CooperativeCancelledError:
+            if control is not None:
+                control.terminate_all()
+            return  # 回调中已完成 mark_cancelled
+        except ExecutionInactiveError:
+            logger.info("量化执行因取消/失租停止：task=%s attempt=%s", claimed.task_id, claimed.attempt_no)
+            if control is not None:
+                control.terminate_all()
+            try:
+                with self._bundles.open() as bundle:
+                    bundle.tasks.mark_cancelled(claimed.task_id, claimed.attempt_no, claimed.lease_token)
+            except LeaseConflictError:
+                logger.warning("取消收口被 fencing 拒绝：task=%s", claimed.task_id)
+        except (LeaseConflictError, FencingLostError, ArtifactFencingError):
+            if control is not None:
+                control.terminate_all()
+            logger.warning("量化完成被 fencing 拒绝：task=%s attempt=%s", claimed.task_id, claimed.attempt_no)
+        except Exception as exc:
+            if control is not None:
+                control.terminate_all()
+            self._fail_or_retry(claimed, exc)
 
     # ---- 内部流程 ----
 
@@ -200,7 +309,14 @@ class AnalysisExecutor:
         except Exception as exc:
             self._fail_or_retry(claimed, exc)
 
-    def _persist_artifact(self, claimed: ClaimedTask, final_state: Any, artifact: AnalysisArtifact) -> AnalysisArtifact:
+    def _persist_artifact(
+        self,
+        claimed: ClaimedTask,
+        final_state: Any,
+        artifact: AnalysisArtifact,
+        *,
+        forbidden_source_code: str | None = None,
+    ) -> AnalysisArtifact:
         """staging 校验 → manifest → 同卷 os.replace 发布；返回带受控引用与 checksum 的 artifact。"""
         uri, checksum = self._artifact_store.persist_artifact(
             task_id=claimed.task_id,
@@ -209,6 +325,7 @@ class AnalysisExecutor:
             core_version=self._core_version,
             final_state=final_state if isinstance(final_state, dict) else {},
             report_json=artifact.report_json,
+            forbidden_source_code=forbidden_source_code,
         )
         return AnalysisArtifact(
             report_json=artifact.report_json,
@@ -230,8 +347,12 @@ class AnalysisExecutor:
         except LeaseConflictError:
             logger.warning("失败/重试被 fencing 拒绝：task=%s attempt=%s", claimed.task_id, claimed.attempt_no)
 
-    def _on_progress(self, message: str) -> None:
-        """阶段边界：先检查取消标志与 fencing，再发布 progress（单一独立 Session）。"""
+    def _on_progress(self, stage: str, done: int | None = None, total: int | None = None) -> None:
+        """阶段边界：先检查取消标志与 fencing，再发布 progress（单一独立 Session）。
+
+        图路径按单参 message 调用；量化扫描按 (stage, done, total) 三参调用——统一归一为消息文本。
+        """
+        message = stage if done is None else f"{stage} {done}/{total}"
         claimed = self._claimed
         if self._cancel_flag:
             return

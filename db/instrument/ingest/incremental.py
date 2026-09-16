@@ -295,7 +295,7 @@ def _ingest_stock_fund_daily(conn, provider, days, stock_codes, fund_codes) -> d
 
 
 def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
-                        refresh_sectors: bool = None) -> dict:
+                        refresh_sectors: bool = None, refresh_industries: bool = None) -> dict:
     """每日增量主流程（provider 工厂注入；CLI 入口按 LIVEPROFIT_DATA_SOURCE 实例化）。"""
     _assert_index_targets_valid()
     provider = provider_factory()
@@ -369,6 +369,26 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
             summary["sectors"] = sectors_result
         except Exception as e:
             logger.warning("增量: 板块体系周刷失败（不阻断）: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
+    # ---- 行业成员周刷（plan 4.3.1：行业 BUY 门控的数据底座，默认周一周刷） ----
+    do_industries = (datetime.now().weekday() == 0) if refresh_industries is None \
+        else bool(refresh_industries)
+    if do_industries:
+        try:
+            from db.instrument.ingest.industries import collect_industries
+
+            # collect_industries 内部自管 commit（成功一个事务 / 失败短事务只写失败字段）；
+            # 双源兜底：主源不支持行业接口时（如 akshare）走兜底源
+            industries_result = collect_industries(conn, provider, fallback_provider=fallback)
+            logger.info("增量: 行业成员周刷完成: %s",
+                        industries_result.get("status", "?"))
+            summary["industries"] = industries_result
+        except Exception as e:
+            logger.warning("增量: 行业成员周刷失败（不阻断）: %s", e)
             try:
                 conn.rollback()
             except Exception:

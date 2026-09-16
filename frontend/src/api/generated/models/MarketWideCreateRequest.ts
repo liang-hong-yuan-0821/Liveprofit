@@ -9,5 +9,8 @@ export type MarketWideCreateRequest = {
     requested_trade_date: string;
     selected_layers: Array<'market' | 'sector' | 'stock' | 'screening' | 'position'>;
     analysis_options?: (AnalysisOptions | null);
+    strategy_version_id?: (string | null);
+    portfolio_id?: (string | null);
+    expected_portfolio_version?: (number | null);
 };
 

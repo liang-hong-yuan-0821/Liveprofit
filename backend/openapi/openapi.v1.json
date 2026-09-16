@@ -1734,8 +1734,8 @@
         "tags": [
           "portfolios"
         ],
-        "summary": "Rename Portfolio",
-        "operationId": "rename_portfolio_api_v1_portfolios__portfolio_id__patch",
+        "summary": "Update Portfolio",
+        "operationId": "update_portfolio_api_v1_portfolios__portfolio_id__patch",
         "parameters": [
           {
             "name": "portfolio_id",
@@ -1999,6 +1999,465 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_DeleteResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quant-strategies": {
+      "get": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "List Strategies",
+        "operationId": "list_strategies_api_v1_quant_strategies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyListData_"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Create Strategy",
+        "operationId": "create_strategy_api_v1_quant_strategies_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuantStrategyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quant-strategies/format": {
+      "post": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Format Strategy Source",
+        "description": "本地 ruff 格式化策略源码（编辑器体验；不落库、不校验七键合同）。",
+        "operationId": "format_strategy_source_api_v1_quant_strategies_format_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuantStrategyFormatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyFormatData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quant-strategies/{strategy_id}": {
+      "get": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Get Strategy",
+        "operationId": "get_strategy_api_v1_quant_strategies__strategy_id__get",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Strategy Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quant-strategies/{strategy_id}/draft": {
+      "get": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Get Draft",
+        "operationId": "get_draft_api_v1_quant_strategies__strategy_id__draft_get",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Strategy Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyDraftDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Save Draft",
+        "operationId": "save_draft_api_v1_quant_strategies__strategy_id__draft_put",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Strategy Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuantStrategyDraftUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyDraftDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quant-strategies/{strategy_id}/versions/{version_id}/publish": {
+      "post": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Publish Version",
+        "operationId": "publish_version_api_v1_quant_strategies__strategy_id__versions__version_id__publish_post",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Strategy Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuantStrategyPublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyPublishData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quant-strategies/{strategy_id}/versions/{version_id}/archive": {
+      "post": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Archive Version",
+        "operationId": "archive_version_api_v1_quant_strategies__strategy_id__versions__version_id__archive_post",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Strategy Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyVersionDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-tasks/{task_id}/quant-signals": {
+      "get": {
+        "tags": [
+          "quant-signals"
+        ],
+        "summary": "List Quant Signals",
+        "operationId": "list_quant_signals_api_v1_analysis_tasks__task_id__quant_signals_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "buy",
+                "holding",
+                "orders",
+                "errors"
+              ],
+              "type": "string",
+              "default": "buy",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "attempt_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Attempt No"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantSignalPageData_"
                 }
               }
             }
@@ -3884,6 +4343,118 @@
         ],
         "title": "Envelope[PrelabelData]"
       },
+      "Envelope_QuantSignalPageData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantSignalPageData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantSignalPageData]"
+      },
+      "Envelope_QuantStrategyDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyDTO]"
+      },
+      "Envelope_QuantStrategyDraftDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyDraftDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyDraftDTO]"
+      },
+      "Envelope_QuantStrategyFormatData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyFormatData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyFormatData]"
+      },
+      "Envelope_QuantStrategyListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyListData]"
+      },
+      "Envelope_QuantStrategyPublishData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyPublishData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyPublishData]"
+      },
+      "Envelope_QuantStrategyVersionDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyVersionDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyVersionDTO]"
+      },
       "Envelope_RefreshData_": {
         "properties": {
           "data": {
@@ -4634,6 +5205,55 @@
         "title": "HeartbeatEventData",
         "description": "heartbeat 控制帧 data（固定且仅此三字段，无 id）。"
       },
+      "HoldingSignalPreviewDTO": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "order_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "action",
+          "reason",
+          "order_status"
+        ],
+        "title": "HoldingSignalPreviewDTO"
+      },
       "HotConceptDTO": {
         "properties": {
           "sector_code": {
@@ -5158,6 +5778,42 @@
                 "type": "null"
               }
             ]
+          },
+          "strategy_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Version Id"
+          },
+          "portfolio_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Id"
+          },
+          "expected_portfolio_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Portfolio Version"
           }
         },
         "type": "object",
@@ -5167,6 +5823,91 @@
           "selected_layers"
         ],
         "title": "MarketWideCreateRequest"
+      },
+      "MatchingBuyPreviewDTO": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Price"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit"
+          },
+          "order_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "score",
+          "reason",
+          "entry_price",
+          "stop_loss",
+          "take_profit",
+          "order_status"
+        ],
+        "title": "MatchingBuyPreviewDTO"
       },
       "PendingActionDTO": {
         "properties": {
@@ -5383,6 +6124,94 @@
             "maxLength": 64,
             "minLength": 1,
             "title": "Name"
+          },
+          "total_assets": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Assets"
+          },
+          "available_cash": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Cash"
+          },
+          "risk_per_trade_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Per Trade Pct"
+          },
+          "min_risk_reward_ratio": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Risk Reward Ratio"
+          },
+          "max_total_position_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Total Position Pct"
+          },
+          "max_single_stock_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Single Stock Pct"
+          },
+          "max_sector_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Sector Pct"
           }
         },
         "type": "object",
@@ -5410,6 +6239,34 @@
             "type": "integer",
             "title": "Position Count"
           },
+          "total_assets": {
+            "type": "number",
+            "title": "Total Assets"
+          },
+          "available_cash": {
+            "type": "number",
+            "title": "Available Cash"
+          },
+          "risk_per_trade_pct": {
+            "type": "number",
+            "title": "Risk Per Trade Pct"
+          },
+          "min_risk_reward_ratio": {
+            "type": "number",
+            "title": "Min Risk Reward Ratio"
+          },
+          "max_total_position_pct": {
+            "type": "number",
+            "title": "Max Total Position Pct"
+          },
+          "max_single_stock_pct": {
+            "type": "number",
+            "title": "Max Single Stock Pct"
+          },
+          "max_sector_pct": {
+            "type": "number",
+            "title": "Max Sector Pct"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5427,6 +6284,13 @@
           "name",
           "version",
           "position_count",
+          "total_assets",
+          "available_cash",
+          "risk_per_trade_pct",
+          "min_risk_reward_ratio",
+          "max_total_position_pct",
+          "max_single_stock_pct",
+          "max_sector_pct",
           "created_at",
           "updated_at"
         ],
@@ -5537,6 +6401,52 @@
         ],
         "title": "PortfolioPositionsData"
       },
+      "PortfolioSnapshotDTO": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "total_assets": {
+            "type": "string",
+            "title": "Total Assets"
+          },
+          "available_cash": {
+            "type": "string",
+            "title": "Available Cash"
+          },
+          "risk": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Risk"
+          },
+          "snapshot_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "total_assets",
+          "available_cash",
+          "risk"
+        ],
+        "title": "PortfolioSnapshotDTO"
+      },
       "PortfolioUpdateRequest": {
         "properties": {
           "name": {
@@ -5544,6 +6454,45 @@
             "maxLength": 64,
             "minLength": 1,
             "title": "Name"
+          },
+          "total_assets": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Total Assets"
+          },
+          "available_cash": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Available Cash"
+          },
+          "risk_per_trade_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Risk Per Trade Pct"
+          },
+          "min_risk_reward_ratio": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Min Risk Reward Ratio"
+          },
+          "max_total_position_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Total Position Pct"
+          },
+          "max_single_stock_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Single Stock Pct"
+          },
+          "max_sector_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Sector Pct"
           },
           "expected_version": {
             "type": "integer",
@@ -5554,9 +6503,17 @@
         "type": "object",
         "required": [
           "name",
+          "total_assets",
+          "available_cash",
+          "risk_per_trade_pct",
+          "min_risk_reward_ratio",
+          "max_total_position_pct",
+          "max_single_stock_pct",
+          "max_sector_pct",
           "expected_version"
         ],
-        "title": "PortfolioUpdateRequest"
+        "title": "PortfolioUpdateRequest",
+        "description": "原子更新名称与全部账户字段（plan 4.2.1：一次条件更新、成功仅 version+1）。"
       },
       "PositionUpsertRequest": {
         "properties": {
@@ -5730,10 +6687,697 @@
             "minimum": 1.0,
             "title": "Limit",
             "default": 50
+          },
+          "draft_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Ids"
           }
         },
         "type": "object",
         "title": "PrelabelRequest"
+      },
+      "QuantExecutionDTO": {
+        "properties": {
+          "strategy": {
+            "$ref": "#/components/schemas/StrategyAuditDTO"
+          },
+          "portfolio_snapshot": {
+            "$ref": "#/components/schemas/PortfolioSnapshotDTO"
+          },
+          "matching_buy_preview": {
+            "items": {
+              "$ref": "#/components/schemas/MatchingBuyPreviewDTO"
+            },
+            "type": "array",
+            "title": "Matching Buy Preview"
+          },
+          "holding_signal_preview": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingSignalPreviewDTO"
+            },
+            "type": "array",
+            "title": "Holding Signal Preview"
+          },
+          "suggested_order_preview": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestedOrderPreviewDTO"
+            },
+            "type": "array",
+            "title": "Suggested Order Preview"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/QuantExecutionSummaryDTO"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "valued_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valued At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "strategy",
+          "portfolio_snapshot",
+          "matching_buy_preview",
+          "holding_signal_preview",
+          "suggested_order_preview",
+          "summary",
+          "warnings"
+        ],
+        "title": "QuantExecutionDTO",
+        "description": "decision[\"quant_execution\"] 的无源码投影（旧报告为 null，不渲染面板）。"
+      },
+      "QuantExecutionSummaryDTO": {
+        "properties": {
+          "universe_total": {
+            "type": "integer",
+            "title": "Universe Total"
+          },
+          "data_complete": {
+            "type": "integer",
+            "title": "Data Complete"
+          },
+          "scanned": {
+            "type": "integer",
+            "title": "Scanned"
+          },
+          "buy_matches": {
+            "type": "integer",
+            "title": "Buy Matches"
+          },
+          "suggested_buy_orders": {
+            "type": "integer",
+            "title": "Suggested Buy Orders"
+          },
+          "suggested_sell_orders": {
+            "type": "integer",
+            "title": "Suggested Sell Orders"
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "universe_total",
+          "data_complete",
+          "scanned",
+          "buy_matches",
+          "suggested_buy_orders",
+          "suggested_sell_orders",
+          "failed_count"
+        ],
+        "title": "QuantExecutionSummaryDTO"
+      },
+      "QuantSignalPageData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuantSignalRowDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "attempt_no",
+          "kind"
+        ],
+        "title": "QuantSignalPageData"
+      },
+      "QuantSignalRowDTO": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ts_code": {
+            "type": "string",
+            "title": "Ts Code"
+          },
+          "signal_kind": {
+            "type": "string",
+            "title": "Signal Kind"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Price"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit"
+          },
+          "sell_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Ratio"
+          },
+          "order_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Status"
+          },
+          "shares": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares"
+          },
+          "notional": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notional"
+          },
+          "order_cost_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Cost Price"
+          },
+          "valuation_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Price"
+          },
+          "risk_bucket": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Bucket"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ts_code",
+          "signal_kind",
+          "attempt_no"
+        ],
+        "title": "QuantSignalRowDTO"
+      },
+      "QuantStrategyCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "source_code": {
+            "type": "string",
+            "maxLength": 12288,
+            "title": "Source Code",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "QuantStrategyCreateRequest"
+      },
+      "QuantStrategyDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/QuantStrategyVersionDTO"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "version",
+          "created_at",
+          "updated_at",
+          "versions"
+        ],
+        "title": "QuantStrategyDTO"
+      },
+      "QuantStrategyDraftDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "strategy_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Strategy Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source_code": {
+            "type": "string",
+            "title": "Source Code"
+          },
+          "source_hash": {
+            "type": "string",
+            "title": "Source Hash"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "strategy_id",
+          "version_no",
+          "status",
+          "source_code",
+          "source_hash",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QuantStrategyDraftDTO",
+        "description": "当前草稿（唯一可返回 source_code 的合同）。"
+      },
+      "QuantStrategyDraftUpdateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "source_code": {
+            "type": "string",
+            "maxLength": 12288,
+            "title": "Source Code"
+          },
+          "expected_strategy_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Strategy Version"
+          },
+          "expected_draft_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Draft Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "source_code",
+          "expected_strategy_version",
+          "expected_draft_version"
+        ],
+        "title": "QuantStrategyDraftUpdateRequest",
+        "description": "草稿保存：元数据 + 源码，一个原子请求（plan 4.2.1 风格）。"
+      },
+      "QuantStrategyFormatData": {
+        "properties": {
+          "source_code": {
+            "type": "string",
+            "title": "Source Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_code"
+        ],
+        "title": "QuantStrategyFormatData"
+      },
+      "QuantStrategyFormatRequest": {
+        "properties": {
+          "source_code": {
+            "type": "string",
+            "maxLength": 12288,
+            "title": "Source Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_code"
+        ],
+        "title": "QuantStrategyFormatRequest",
+        "description": "代码格式化：本地 ruff 格式化（前端编辑器「格式化」按钮）。"
+      },
+      "QuantStrategyListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuantStrategyDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "QuantStrategyListData"
+      },
+      "QuantStrategyPublishData": {
+        "properties": {
+          "published": {
+            "$ref": "#/components/schemas/QuantStrategyVersionDTO"
+          },
+          "next_draft": {
+            "$ref": "#/components/schemas/QuantStrategyDraftDTO"
+          }
+        },
+        "type": "object",
+        "required": [
+          "published",
+          "next_draft"
+        ],
+        "title": "QuantStrategyPublishData"
+      },
+      "QuantStrategyPublishRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_version"
+        ],
+        "title": "QuantStrategyPublishRequest"
+      },
+      "QuantStrategyVersionDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "strategy_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Strategy Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source_hash": {
+            "type": "string",
+            "title": "Source Hash"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "strategy_id",
+          "version_no",
+          "status",
+          "source_hash",
+          "published_at",
+          "archived_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QuantStrategyVersionDTO"
       },
       "RecentConclusionDTO": {
         "properties": {
@@ -5911,6 +7555,16 @@
               }
             ],
             "title": "Risk Note"
+          },
+          "quant_execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantExecutionDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -6443,6 +8097,151 @@
           "selected_layers"
         ],
         "title": "SingleStockCreateRequest"
+      },
+      "StrategyAuditDTO": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "source_hash_prefix": {
+            "type": "string",
+            "title": "Source Hash Prefix"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "version_no",
+          "source_hash_prefix"
+        ],
+        "title": "StrategyAuditDTO"
+      },
+      "SuggestedOrderPreviewDTO": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "shares": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares"
+          },
+          "notional": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notional"
+          },
+          "order_cost_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Cost Price"
+          },
+          "valuation_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Price"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit"
+          },
+          "risk_bucket": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Bucket"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "action",
+          "shares",
+          "notional",
+          "order_cost_price",
+          "valuation_price",
+          "stop_loss",
+          "take_profit",
+          "risk_bucket"
+        ],
+        "title": "SuggestedOrderPreviewDTO"
       },
       "TaskCreatedData": {
         "properties": {

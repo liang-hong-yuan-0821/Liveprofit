@@ -138,17 +138,24 @@ class PlatformArtifactStore:
         core_version: str | None,
         final_state: dict,
         report_json: dict,
+        forbidden_source_code: str | None = None,
     ) -> tuple[str, str]:
-        """执行器使用：写 staging（final_state/report）→ manifest → 原子发布 → 返回 (artifact_uri, checksum)。"""
+        """执行器使用：写 staging（final_state/report）→ manifest → 原子发布 → 返回 (artifact_uri, checksum)。
+
+        forbidden_source_code 非空时对 final_state/report 序列化字节做源码泄漏防护
+        （plan 4.2.1 共用 guard），命中抛 ArtifactSourceLeakError（不可重试）并拒绝发布。
+        """
         staging = self.staging_dir(task_id, attempt_no, lease_token)
         staging.mkdir(parents=True, exist_ok=False)
         try:
-            self.write_validated(
-                staging,
-                "final_state.json",
-                json.dumps(final_state, ensure_ascii=False, default=str).encode("utf-8"),
-            )
+            final_bytes = json.dumps(final_state, ensure_ascii=False, default=str).encode("utf-8")
             report_bytes = json.dumps(report_json, ensure_ascii=False, default=str).encode("utf-8")
+            if forbidden_source_code:
+                from backend.modules.analysis.infrastructure.source_guard import assert_no_source_leak
+
+                assert_no_source_leak(final_state, forbidden_source_code, context="final_state.json")
+                assert_no_source_leak(report_json, forbidden_source_code, context="report.json")
+            self.write_validated(staging, "final_state.json", final_bytes)
             self.write_validated(staging, "report.json", report_bytes)
             final = self.publish(
                 staging,

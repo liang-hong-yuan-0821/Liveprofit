@@ -3,16 +3,15 @@ import ReactECharts from 'echarts-for-react';
 import type { BarSeriesOption, CandlestickSeriesOption, LineSeriesOption } from 'echarts/charts';
 import type { DataZoomComponentOption } from 'echarts/components';
 import type { CallbackDataParams } from 'echarts/types/dist/shared';
-import { graphic, type EChartsType } from 'echarts';
+import type { EChartsType } from 'echarts';
 import {
   anchorIndex,
-  buildDrawingsMarks,
   DRAWING_COLOR,
+  EXTENT_EPS,
   hitTestRect,
   hitTestSegment,
   newId,
   renderedSegment,
-  unionExtent,
   windowEdgeIndex,
   type Drawing,
   type RenderExtent,
@@ -59,12 +58,22 @@ export interface CandlestickChartViewModel {
   };
 }
 
-// 均线配色（暗色主题友好）；未列出的周期用中性灰兜底
-const MA_COLORS: Record<number, string> = {
-  5: '#fbbf24',
-  10: '#f472b6',
-  20: '#a78bfa',
-  60: '#34d399',
+// 均线配色——原样式（暗色主题友好，2026-09-16 用户试参考代码效果时注释保留、回退即恢复）：
+// const MA_COLORS: Record<number, string> = {
+//   5: '#fbbf24',
+//   10: '#f472b6',
+//   20: '#a78bfa',
+//   60: '#34d399',
+// };
+// 参考代码样式（2026-09-16 用户试效果）：ECharts 默认调色板按系列序分配——candlestick
+// 恒第 0、MA 系列恒为系列序 1..4，即调色板 #91cc75/#fac858/#ee6666/#73c0de；
+// 显式写死色值保证图例 label+value 与线同色（完全省略 color 时 ECharts 隐式按系列序
+// 取调色板，图例侧读不到该映射）；未列出的周期用中性灰兜底。
+const MA_REF_COLORS: Record<number, string> = {
+  5: '#91cc75',
+  10: '#fac858',
+  20: '#ee6666',
+  60: '#73c0de',
 };
 const MA_FALLBACK_COLOR = '#94a3b8';
 const BOLL_LINE_COLOR = '#94a3b8';
@@ -84,12 +93,14 @@ const DRAW_KIND_LABELS: Record<DrawKind, string> = {
   text: '标注',
 };
 
-type Mode = 'view' | 'draw' | 'edit';
+type Mode = 'view' | 'draw' | 'edit' | 'eraser';
 type DrawKind = 'hline' | 'trend' | 'ray' | 'text';
+// 橡皮擦悬停高亮色（sky-300）：与选中态（同宽 3 的 DRAWING_COLOR）区分
+const ERASER_HOVER_COLOR = '#7dd3fc';
 
 function legendColor(name: string): string {
   const ma = name.match(/^MA(\d+)$/);
-  if (ma) return MA_COLORS[Number(ma[1])] ?? MA_FALLBACK_COLOR;
+  if (ma) return MA_REF_COLORS[Number(ma[1])] ?? MA_FALLBACK_COLOR; // 参考样式；原 MA_COLORS 见顶部注释
   if (name.startsWith('BOLL')) return BOLL_LINE_COLOR;
   if (name === 'DIF') return MACD_DIF_COLOR;
   if (name === 'DEA') return MACD_DEA_COLOR;
@@ -234,15 +245,21 @@ export function CandlestickChart({
 
     for (const line of model.ma ?? []) {
       const name = `MA${line.period}`;
-      const color = MA_COLORS[line.period] ?? MA_FALLBACK_COLOR;
       mainLegend.push(name);
+      // 参考代码样式（2026-09-16 用户试效果）：smooth + 默认调色板色；数据点经用户
+      // 拍板改回 symbol: 'none'（不喜欢默认空心圆点），透明度经用户调至 0.7（0.5 太淡），
+      // 其余保留。原样式注释保留便于回退：
+      //   const color = MA_COLORS[line.period] ?? MA_FALLBACK_COLOR;
+      //   lineStyle: { width: 1, opacity: 0.5, color },
+      //   itemStyle: { color },
       built.push({
         name,
         type: 'line',
         data: line.values,
         symbol: 'none',
-        lineStyle: { width: 1, opacity: 0.5, color },
-        itemStyle: { color },
+        smooth: true,
+        lineStyle: { opacity: 0.7, color: MA_REF_COLORS[line.period] ?? MA_FALLBACK_COLOR },
+        itemStyle: { color: MA_REF_COLORS[line.period] ?? MA_FALLBACK_COLOR },
       });
     }
 
@@ -318,18 +335,33 @@ export function CandlestickChart({
   const [drawKind, setDrawKind] = useState<DrawKind>('trend');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  // 橡皮擦模式悬停命中的画线 id（逐像素 state：ChartCore memo 拦截，仅覆盖层重绘）
+  const [eraserHoverId, setEraserHoverId] = useState<string | null>(null);
   const [pendingText, setPendingText] = useState<{ idx: number; price: number } | null>(null);
   const [textValue, setTextValue] = useState('');
   const textCancelledRef = useRef(false);
   const instanceRef = useRef<EChartsType | null>(null);
-  const lastExtentRef = useRef<{ windowKey: string; extent: RenderExtent } | null>(null);
-  const drawingRef = useRef<{ kind: Exclude<DrawKind, 'text'>; p1: { x: number; y: number } } | null>(null);
+  // 渲染视口（grid 矩形 + 真实 y 轴 extent）：渲染后由 layout effect 读取存 state，
+  // 覆盖层与交互换算全部走它（纯像素数学，不依赖 convertToPixel/轴 band API——实测
+  // 类目轴 convertToPixel 对小数索引取整、convertFromPixel 不返回连续值）
+  const [viewport, setViewport] = useState<{
+    rect: { x: number; y: number; width: number; height: number };
+    extent: RenderExtent;
+    windowKey: string;
+  } | null>(null);
+  // onChartReady 只写 ref 不触发渲染——置位一次让 layout effect 重跑读视口
+  // （echarts-for-react mount 先建临时实例再重建，可能多次 ready，tick 累加无副作用）
+  const [, setChartTick] = useState(0);
+  // 绘制/拖拽预览线段（SVG 覆盖层渲染，纯 state 声明式）
+  const [previewLine, setPreviewLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  // 绘制起点在 mousedown 时即转数据坐标存储（非像素）：绘制中滚轮缩放/滑条改轴域后
+  // 锚点仍钉在原数据位置不漂移；x = 小数类目索引（连续位置）——渲染精确落在按点像素
+  const drawingRef = useRef<{ kind: Exclude<DrawKind, 'text'>; p1: { idx: number; price: number; x: number } } | null>(null);
   const dragRef = useRef<{
     id: string;
     hit: 'endpoint1' | 'endpoint2' | 'body';
     start: { idx: number; price: number };
   } | null>(null);
-  const previewShapeRef = useRef<graphic.Line | null>(null);
 
   // ---- 图例与读条（§3.7）----
   // legendSelected React 化（防 notMerge 重建重置选中）：legendselectchanged 读实例 selected
@@ -354,132 +386,51 @@ export function CandlestickChart({
   }, [model.xAxisData, visibleRange?.start, visibleRange?.end]);
   const windowKey = `${windowIdx.startIdx}|${windowIdx.endIdx}`;
 
-  // extent 两条路径一个构建函数（§3.6.1 读取时序）：windowKey 一致用 ref 里的真实 extent（精确）；
-  // 不一致（缩放/平移后首帧）或首帧 → 可见窗口内全系列极值并集兜底（⊆ extent，containData 恒过）。
-  // 并集仅作 containData 兜底、不作夹取精度目标。
-  const cachedExtent = lastExtentRef.current;
-  const extentForOption: RenderExtent | null =
-    cachedExtent && cachedExtent.windowKey === windowKey
-      ? cachedExtent.extent
-      : unionExtent(
-          windowIdx.startIdx,
-          windowIdx.endIdx,
-          model.ohlc,
-          model.ma?.map((m) => m.values) ?? [],
-          model.boll ? [model.boll.upper, model.boll.mid, model.boll.lower] : [],
-        );
-
-  const marks = useMemo(() => {
-    if (!hasDrawings || !extentForOption) return { markLine: [], markPoint: [] };
-    const effectiveDrawings = draggingId ? (drawings ?? []).filter((d) => d.id !== draggingId) : (drawings ?? []);
-    return buildDrawingsMarks(effectiveDrawings, model.xAxisData, windowIdx, extentForOption, selectedId);
-  }, [hasDrawings, extentForOption, drawings, model.xAxisData, windowIdx, selectedId, draggingId]);
-
-  // 画线挂载（不改写 useMemo 出的 series 本体——option 的 memo 依赖需要稳定引用）
-  const optionSeries = useMemo(() => {
-    if (!hasDrawings) return series;
-    return [
-      { ...series[0], markLine: { data: marks.markLine }, markPoint: { data: marks.markPoint } },
-      ...series.slice(1),
-    ];
-  }, [hasDrawings, series, marks]);
-
-  // 渲染后读真实 extent 并 merge 修正（useLayoutEffect 同帧，免闪烁）：
-  // option 构建是同步纯函数、extent 渲染后才可读；extent 读取门控到实例就绪
-  // （echarts-for-react mount 先建临时实例、finished 后 dispose 重建——临时实例上读 yAxis 得
-  // undefined，读数校验失败待下一次渲染重试）。
-  // 门控（§3.7 性能守卫）：hover 等逐像素重渲染时输入未变 → 不重读 extent、不 merge——
-  // 否则每 mousemove 一次 markLine 重建（ChartCore memo 拦不住这条直连实例路径）。
-  const lastMergeRef = useRef<{
-    windowKey: string;
-    model: CandlestickChartViewModel;
-    selectedId: string | null;
-    draggingId: string | null;
-    drawings: Drawing[] | undefined;
-  } | null>(null);
-  useLayoutEffect(() => {
-    const inst = instanceRef.current;
-    if (!inst || !hasDrawings) return;
-    const last = lastMergeRef.current;
-    if (
-      last &&
-      last.windowKey === windowKey &&
-      last.model === model &&
-      last.selectedId === selectedId &&
-      last.draggingId === draggingId &&
-      last.drawings === drawings
-    ) {
-      return; // 输入未变（含数据/extent 未变）：无 merge 需要
-    }
-    try {
-      const readExtent = (): RenderExtent | null => {
-        // getModel 在类型上为私有成员，先把实例断言成公开签名再读取（运行时为公开 API）
-        const getComponent = (
-          inst as unknown as {
-            getModel: () => { getComponent: (kind: string, idx: number) => unknown };
-          }
-        ).getModel().getComponent;
-        const axis = getComponent('yAxis', 0) as {
-          axis?: { scale?: { getExtent?: () => number[] } };
-        } | null;
-        const ext = axis?.axis?.scale?.getExtent?.();
-        if (ext && ext.length === 2 && Number.isFinite(ext[0]) && Number.isFinite(ext[1])) {
-          return { min: ext[0], max: ext[1] };
-        }
-        // extent 读取失败兜底 = convertToPixel 反算主图轴范围（§3.6.2）
-        const grid = getComponent('grid', 0) as {
-          coordinateSystem?: { getRect?: () => { x: number; y: number; width: number; height: number } };
-        } | null;
-        const rect = grid?.coordinateSystem?.getRect?.();
-        if (!rect) return null;
-        const top = inst.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [rect.x, rect.y]);
-        const bottom = inst.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [rect.x, rect.y + rect.height]);
-        if (
-          !Array.isArray(top) || !Array.isArray(bottom) ||
-          typeof top[1] !== 'number' || typeof bottom[1] !== 'number'
-        ) {
-          return null;
-        }
-        return { min: Math.min(top[1], bottom[1]), max: Math.max(top[1], bottom[1]) };
-      };
-      const extent = readExtent();
-      if (!extent) return; // 实例未就绪/读轴异常：待下一次渲染重试
-      lastExtentRef.current = { windowKey, extent };
-      lastMergeRef.current = { windowKey, model, selectedId, draggingId, drawings };
-      // 直连 merge（series 按索引合并到 candlestick，不重建整图、不闪）
-      const merged = buildDrawingsMarks(
-        (draggingId ? (drawings ?? []).filter((d) => d.id !== draggingId) : (drawings ?? [])),
-        model.xAxisData,
-        windowIdx,
-        extent,
-        selectedId,
-      );
-      inst.setOption(
-        { series: [{ markLine: { data: merged.markLine }, markPoint: { data: merged.markPoint } }] },
-        { notMerge: false },
-      );
-    } catch {
-      // 实例未就绪/读轴异常：待下一次渲染重试
-    }
-  });
-
-  // ---- 画线交互（zr 鼠标事件，仅 draw/edit 模式挂接）----
-  const toData = (x: number, y: number): { idx: number; price: number } | null => {
+  // ---- 画线渲染（SVG 覆盖层，§3.6）----
+  // 渲染后读真实 extent 与主图网格矩形 → viewport state（useLayoutEffect 同帧，免闪烁）。
+  // 覆盖层渲染与交互换算全部走纯像素数学：类目轴 bar 带线性填满网格、y 轴 extent 线性
+  // 映射网格高度——不依赖 convertToPixel/convertFromPixel（实测类目轴两者对小数索引
+  // 取整、不返回连续值）与轴 band API。读数门控到实例就绪（echarts-for-react mount
+  // 先建临时实例、finished 后 dispose 重建——临时实例上读 yAxis 得 undefined，重试）。
+  const readExtent = (): RenderExtent | null => {
     const inst = instanceRef.current;
     if (!inst) return null;
-    try {
-      const v = inst.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [x, y]);
-      if (!Array.isArray(v) || v.length < 2 || typeof v[0] !== 'number' || typeof v[1] !== 'number') return null;
-      const idx = Math.round(v[0]);
-      if (idx < 0 || idx >= model.xAxisData.length) return null;
-      return { idx, price: v[1] };
-    } catch {
+    // getModel 在类型上为私有成员，先把实例断言成公开签名再读取（运行时为公开 API）。
+    // 注意：getComponent 必须经 model 以方法方式调用（bind 保 this）——拆引用裸调在真实
+    // 实例上是类方法，内部读 this._componentsMap 直接 TypeError（假实例箭头函数测不出来，
+    // 2026-09-16 诊断用例实锤）
+    const model = (
+      inst as unknown as {
+        getModel: () => { getComponent: (kind: string, idx: number) => unknown };
+      }
+    ).getModel();
+    const getComponent = model.getComponent.bind(model);
+    const axis = getComponent('yAxis', 0) as {
+      axis?: { scale?: { getExtent?: () => number[] } };
+    } | null;
+    const ext = axis?.axis?.scale?.getExtent?.();
+    if (ext && ext.length === 2 && Number.isFinite(ext[0]) && Number.isFinite(ext[1])) {
+      return { min: ext[0], max: ext[1] };
+    }
+    // extent 读取失败兜底 = convertToPixel 反算主图轴范围（§3.6.2）
+    const grid = getComponent('grid', 0) as {
+      coordinateSystem?: { getRect?: () => { x: number; y: number; width: number; height: number } };
+    } | null;
+    const rect = grid?.coordinateSystem?.getRect?.();
+    if (!rect) return null;
+    const top = inst.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [rect.x, rect.y]);
+    const bottom = inst.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [rect.x, rect.y + rect.height]);
+    if (
+      !Array.isArray(top) || !Array.isArray(bottom) ||
+      typeof top[1] !== 'number' || typeof bottom[1] !== 'number'
+    ) {
       return null;
     }
+    return { min: Math.min(top[1], bottom[1]), max: Math.max(top[1], bottom[1]) };
   };
-  const inMainGrid = (x: number, y: number): boolean => {
+  const mainGridRect = (): { x: number; y: number; width: number; height: number } | null => {
     const inst = instanceRef.current;
-    if (!inst) return false;
+    if (!inst) return null;
     try {
       // getModel 在类型上为私有成员，先把实例断言成公开签名再读取（运行时为公开 API）
       const grid = (
@@ -489,43 +440,74 @@ export function CandlestickChart({
       ).getModel().getComponent('grid', 0) as {
         coordinateSystem?: { getRect?: () => { x: number; y: number; width: number; height: number } };
       } | null;
-      const rect = grid?.coordinateSystem?.getRect?.();
-      if (!rect) return false;
-      return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
-    } catch {
-      return false;
-    }
-  };
-  const toPixel = (idx: number, price: number): { x: number; y: number } | null => {
-    const inst = instanceRef.current;
-    if (!inst) return null;
-    try {
-      const v = inst.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [idx, price]);
-      if (!Array.isArray(v) || v.length < 2) return null;
-      return { x: v[0] as number, y: v[1] as number };
+      return grid?.coordinateSystem?.getRect?.() ?? null;
     } catch {
       return null;
     }
   };
+  const inMainGrid = (x: number, y: number): boolean => {
+    const rect = mainGridRect();
+    if (!rect) return false;
+    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+  };
+  useLayoutEffect(() => {
+    const inst = instanceRef.current;
+    if (!inst) return;
+    try {
+      const rect = mainGridRect();
+      const extent = readExtent();
+      if (!rect || !extent || rect.width <= 0 || rect.height <= 0 || extent.max <= extent.min) return;
+      setViewport((prev) =>
+        prev &&
+        prev.windowKey === windowKey &&
+        prev.extent.min === extent.min &&
+        prev.extent.max === extent.max &&
+        prev.rect.x === rect.x &&
+        prev.rect.y === rect.y &&
+        prev.rect.width === rect.width &&
+        prev.rect.height === rect.height
+          ? prev // 视口未变（hover 等逐像素重渲染）→ 不触发覆盖层重绘
+          : { rect, extent, windowKey },
+      );
+    } catch {
+      // 实例未就绪/读轴异常：待下一次渲染重试
+    }
+  });
+
+  // ---- 画线交互（zr 鼠标事件，仅 draw/edit 模式挂接；几何换算全部经 viewport 纯像素数学）----
+  const dataOf = (px: number, py: number): { idx: number; price: number; x: number } | null => {
+    const vp = viewport;
+    if (!vp) return null;
+    const band = vp.rect.width / (windowIdx.endIdx - windowIdx.startIdx + 1);
+    // 小数类目索引 = 窗口左缘 − 0.5 + 像素偏移/带宽（按点像素直算，不经 convertFromPixel——
+    // 实测其只返回所在 bar 整数索引，小数位置会丢）
+    const fx = windowIdx.startIdx - 0.5 + (px - vp.rect.x) / band;
+    const idx = Math.round(fx);
+    if (idx < 0 || idx >= model.xAxisData.length) return null;
+    const price = vp.extent.max - ((py - vp.rect.y) / vp.rect.height) * (vp.extent.max - vp.extent.min);
+    return { idx, price, x: fx };
+  };
+  const toData = (px: number, py: number): { idx: number; price: number } | null => {
+    const d = dataOf(px, py);
+    return d ? { idx: d.idx, price: d.price } : null;
+  };
+  // 数据坐标（小数类目索引 + 价格）→ 容器像素（与 dataOf 严格互逆）
+  const pxOf = (fx: number, price: number): { x: number; y: number } | null => {
+    const vp = viewport;
+    if (!vp) return null;
+    const band = vp.rect.width / (windowIdx.endIdx - windowIdx.startIdx + 1);
+    return {
+      x: vp.rect.x + (fx - windowIdx.startIdx + 0.5) * band,
+      y: vp.rect.y + ((vp.extent.max - price) / (vp.extent.max - vp.extent.min)) * vp.rect.height,
+    };
+  };
   const round2 = (v: number) => Math.round(v * 100) / 100;
 
   const showPreview = (x1: number, y1: number, x2: number, y2: number) => {
-    const inst = instanceRef.current;
-    if (!inst) return;
-    clearPreview();
-    const line = new graphic.Line({
-      shape: { x1, y1, x2, y2 },
-      style: { stroke: DRAWING_COLOR, lineWidth: 1.5, lineDash: [4, 4] },
-    });
-    previewShapeRef.current = line;
-    inst.getZr().add(line);
+    setPreviewLine({ x1, y1, x2, y2 });
   };
   const clearPreview = () => {
-    const inst = instanceRef.current;
-    if (previewShapeRef.current && inst) {
-      inst.getZr().remove(previewShapeRef.current);
-    }
-    previewShapeRef.current = null;
+    setPreviewLine(null);
   };
   const cancelInteraction = () => {
     drawingRef.current = null;
@@ -555,9 +537,46 @@ export function CandlestickChart({
     if (prev.mouseup) zr.off('mouseup', prev.mouseup);
     zrHandlersRef.current = { mousedown: null, mousemove: null, mouseup: null };
     if (mode === 'view') return;
+    // 命中检测（像素空间：端点 8px 优先、线身 6px、text 包围盒 6px）——edit 拖拽、橡皮擦
+    // 悬停/删除共用。线段几何与渲染同源（renderedSegment）：射线外推段可命中、截断后
+    // 不可见的段不可命中；拖拽中按 id 过滤隐藏的线不在命中集合。
+    const hitTestDrawings = (mouse: { x: number; y: number }): { id: string; part: 'endpoint1' | 'endpoint2' | 'body' } | null => {
+      for (const d of drawings ?? []) {
+        if (d.id === draggingId) continue;
+        if (d.kind === 'text') {
+          const idx = anchorIndex(model.xAxisData, d.pos.date);
+          if (idx < 0) continue;
+          const pix = pxOf(idx, d.pos.price);
+          if (!pix) continue;
+          const rect = { x1: pix.x - 2, y1: pix.y - 12, x2: pix.x + d.text.length * 6.6 + 2, y2: pix.y + 2 };
+          if (hitTestRect(mouse, rect)) return { id: d.id, part: 'body' };
+          continue;
+        }
+        const seg = viewport
+          ? renderedSegment(d, model.xAxisData, windowIdx, viewport.extent)
+          : null;
+        if (!seg) continue;
+        const a = pxOf(seg.i1, seg.p1);
+        const b = pxOf(seg.i2, seg.p2);
+        if (!a || !b) continue;
+        const part = hitTestSegment(mouse, a, b);
+        if (part) return { id: d.id, part };
+      }
+      return null;
+    };
     const onMouseDown = (event: { offsetX: number; offsetY: number }) => {
       if (!inMainGrid(event.offsetX, event.offsetY)) return; // 副图/slider 区域忽略
+      const hit = hitTestDrawings({ x: event.offsetX, y: event.offsetY });
       if (mode === 'draw') {
+        // 命中已有画线 → 选中并直接进入拖拽（与 edit 同路径）：画错了不用重画，拖一下即到位；
+        // 未命中 → 开新线。命中优先于开新线（TradingView 同款语义），text 工具同样命中优先。
+        if (hit) {
+          setSelectedId(hit.id);
+          setDraggingId(hit.id);
+          const pos = toData(event.offsetX, event.offsetY);
+          if (pos) dragRef.current = { id: hit.id, hit: hit.part, start: pos };
+          return;
+        }
         if (drawKind === 'text') {
           const pos = toData(event.offsetX, event.offsetY);
           if (pos) {
@@ -567,41 +586,20 @@ export function CandlestickChart({
           }
           return;
         }
-        drawingRef.current = { kind: drawKind, p1: { x: event.offsetX, y: event.offsetY } };
+        const pos = dataOf(event.offsetX, event.offsetY);
+        if (pos) drawingRef.current = { kind: drawKind, p1: pos };
         return;
       }
-      // edit：命中检测（像素空间：端点 8px 优先、线身 6px、text 包围盒 6px）。
-      // 线段几何与渲染同源（renderedSegment）：射线外推段可命中、截断后不可见的段不可命中；
-      // 拖拽中按 id 过滤隐藏的线不在命中集合。
-      const mouse = { x: event.offsetX, y: event.offsetY };
-      let hit: { id: string; part: 'endpoint1' | 'endpoint2' | 'body' } | null = null;
-      for (const d of drawings ?? []) {
-        if (d.id === draggingId) continue;
-        if (d.kind === 'text') {
-          const idx = anchorIndex(model.xAxisData, d.pos.date);
-          if (idx < 0) continue;
-          const pix = toPixel(idx, d.pos.price);
-          if (!pix) continue;
-          const rect = { x1: pix.x - 2, y1: pix.y - 12, x2: pix.x + d.text.length * 6.6 + 2, y2: pix.y + 2 };
-          if (hitTestRect(mouse, rect)) {
-            hit = { id: d.id, part: 'body' };
-            break;
-          }
-          continue;
+      if (mode === 'eraser') {
+        // 橡皮擦：单击命中的画线立即删除（悬停已高亮，所见即所删）；空处点击无操作
+        if (hit) {
+          onDrawingsChange?.((drawings ?? []).filter((d) => d.id !== hit.id));
+          setSelectedId(null);
+          setEraserHoverId(null);
         }
-        const seg = extentForOption
-          ? renderedSegment(d, model.xAxisData, windowIdx, extentForOption)
-          : null;
-        if (!seg) continue;
-        const a = toPixel(seg.i1, seg.p1);
-        const b = toPixel(seg.i2, seg.p2);
-        if (!a || !b) continue;
-        const part = hitTestSegment(mouse, a, b);
-        if (part) {
-          hit = { id: d.id, part };
-          break;
-        }
+        return;
       }
+      // edit：命中 → 选中并进入拖拽
       if (hit) {
         setSelectedId(hit.id);
         setDraggingId(hit.id);
@@ -613,11 +611,50 @@ export function CandlestickChart({
     };
     const onMouseMove = (event: { offsetX: number; offsetY: number }) => {
       if (drawingRef.current) {
-        showPreview(drawingRef.current.p1.x, drawingRef.current.p1.y, event.offsetX, event.offsetY);
+        // 绘制预览：起点 = mousedown 时锚点的精确像素（小数 x 直算，提交后渲染即此点——
+        // 起点所见即所得、钉死不飘）；终点跟随鼠标原始像素连续移动（流畅跟手，提交同一几何）。
+        // trend 预览 = 锚点→鼠标；ray 预览 = 完整射线（锚点→主图右缘、斜率跟手，与提交渲染同语义）；
+        // hline 预览 = 锚点价格全窗宽水平线（提交即此几何，静态不跟手）。
+        const dr = drawingRef.current;
+        const a = pxOf(dr.p1.x, dr.p1.price);
+        if (!a) {
+          clearPreview();
+          return;
+        }
+        if (dr.kind === 'hline') {
+          const rect = mainGridRect();
+          if (rect) {
+            showPreview(rect.x, a.y, rect.x + rect.width, a.y);
+            return;
+          }
+          clearPreview();
+          return;
+        }
+        if (dr.kind === 'ray' && event.offsetX !== a.x) {
+          const slope = (event.offsetY - a.y) / (event.offsetX - a.x);
+          if (Number.isFinite(slope)) {
+            const rect = mainGridRect();
+            if (rect) {
+              const edgeX = rect.x + rect.width;
+              // 与主图右缘交点；y 截进 grid（提交后线段按 extent 求交，预览仅像素级近似）
+              const yEdge = Math.max(rect.y, Math.min(rect.y + rect.height, a.y + slope * (edgeX - a.x)));
+              showPreview(a.x, a.y, edgeX, yEdge);
+              return;
+            }
+          }
+        }
+        showPreview(a.x, a.y, event.offsetX, event.offsetY);
+        return;
+      }
+      if (mode === 'eraser') {
+        // 橡皮擦悬停高亮：mousemove 逐像素命中检测（≤100 条画线，开销可忽略），
+        // 同值 setState React 直接 bail——覆盖层重绘、ChartCore memo 拦截图表重建
+        const hit = hitTestDrawings({ x: event.offsetX, y: event.offsetY });
+        setEraserHoverId(hit?.id ?? null);
         return;
       }
       const dr = dragRef.current;
-      if (dr && draggingId && extentForOption) {
+      if (dr && draggingId && viewport) {
         // 拖拽预览 = 假设提交后的渲染线段（与渲染几何同源）：原线已按 id 过滤隐藏，
         // 预览画平移/变形后的真实位置；校验不通过（如同日）则预览清除
         const target = (drawings ?? []).find((d) => d.id === dr.id);
@@ -625,9 +662,9 @@ export function CandlestickChart({
         if (target && end) {
           const updated = applyDrag(target, dr.hit, dr.start, end, model.xAxisData);
           if (updated) {
-            const seg = renderedSegment(updated, model.xAxisData, windowIdx, extentForOption);
-            const a = seg ? toPixel(seg.i1, seg.p1) : null;
-            const b = seg ? toPixel(seg.i2, seg.p2) : null;
+            const seg = renderedSegment(updated, model.xAxisData, windowIdx, viewport.extent);
+            const a = seg ? pxOf(seg.i1, seg.p1) : null;
+            const b = seg ? pxOf(seg.i2, seg.p2) : null;
             if (a && b) {
               showPreview(a.x, a.y, b.x, b.y);
               return;
@@ -643,9 +680,9 @@ export function CandlestickChart({
         drawingRef.current = null;
         clearPreview();
         if (!inMainGrid(event.offsetX, event.offsetY)) return; // mouseup 出 grid → 取消
-        const end = toData(event.offsetX, event.offsetY);
-        const startData = toData(start.p1.x, start.p1.y);
-        if (!end || !startData) return;
+        const end = dataOf(event.offsetX, event.offsetY);
+        if (!end) return;
+        const startData = start.p1; // mousedown 时已转数据坐标（含小数 x）
         const date = (i: number) => model.xAxisData[i];
         if (start.kind === 'hline') {
           onDrawingsChange?.([...(drawings ?? []), {
@@ -654,12 +691,13 @@ export function CandlestickChart({
           }]);
           return;
         }
-        // trend/ray：垂直两点拒绝提交（射线方向未定义）
+        // trend/ray：两锚点同日拒绝提交（数据模型按日期锚点，同 bar 两锚点不可区分）
         if (startData.idx === end.idx) return;
         onDrawingsChange?.([...(drawings ?? []), {
           id: newId(), kind: start.kind,
-          p1: { date: date(startData.idx), price: round2(startData.price) },
-          p2: { date: date(end.idx), price: round2(end.price) },
+          // x 存小数类目索引：渲染精确落在 mousedown/mouseup 的按点像素（§3.6）
+          p1: { date: date(startData.idx), price: round2(startData.price), x: startData.x },
+          p2: { date: date(end.idx), price: round2(end.price), x: end.x },
         }]);
         return;
       }
@@ -731,10 +769,11 @@ export function CandlestickChart({
   };
 
   // ---- 图例/布局/dataZoom（§3.1/§3.3/§3.7）----
-  // 多 grid 布局（H=420 验算，§3.1.1 表）：主图→成交量→MACD；grid.bottom 自底部计量、
-  // grid.top 自顶部计量；相邻间距 8.4px/8.4px + slider 余量 18px，主图 ≥170px 门槛。
-  // top：双行图例预算 36、单行 32、无图例 30（读条预算）。
-  const zoomLocked = mode !== 'view';
+  // 多 grid 布局（H=460 验算，2026-09-16 间距加宽）：主图→成交量→MACD；grid.bottom 自底部计量、
+  // grid.top 自顶部计量；相邻间距 16.1px/16.1px（3.5%）+ slider 余量 18px，主图 ≥170px 门槛：
+  // 56 图例 + 178.6 主图 + 16.1 间距 + 89.7 成交量 + 16.1 间距 + 69.5 MACD + 34（x 标签 + slider）= 460。
+  // top：三行图例 56、双行 40、单行 24。
+  const panLocked = mode !== 'view'; // draw/edit 只锁鼠标拖拽平移（与绘制/拖拽的 mousedown 互斥）；滚轮缩放不锁
 
   // 事件出口（§3.3 datazoom 上报 + §3.7 读条/图例）：引用保持稳定（useMemo），
   // 外层 hover 变化不重建 → ChartCore memo 拦截、无 setOption 风暴。
@@ -785,6 +824,7 @@ export function CandlestickChart({
 
   const onChartReady = useCallback((instance: EChartsType) => {
     instanceRef.current = instance;
+    setChartTick((t) => t + 1); // 触发一次重渲染 → layout effect 读视口 → 覆盖层出图
   }, []);
 
   // 未悬浮 → 可见窗口最后一根（平移/缩放后数据集末尾可能在屏幕外，取窗口末根才有意义）
@@ -820,13 +860,13 @@ export function CandlestickChart({
       left: 48,
       right: 16,
       top: legendRows >= 3 ? 56 : legendRows === 2 ? 40 : legendRows === 1 ? 24 : 30,
-      bottom: hasVolume && hasMacd ? '50%' : hasVolume ? '34%' : hasMacd ? '36%' : 30,
+      bottom: hasVolume && hasMacd ? '49%' : hasVolume ? '34%' : hasMacd ? '35%' : 30,
     };
     const volumeGrid = hasVolume
-      ? { left: 48, right: 16, top: hasMacd ? '52%' : '72%', bottom: hasMacd ? '26%' : 34 }
+      ? { left: 48, right: 16, top: hasMacd ? '54.5%' : '72%', bottom: hasMacd ? '26%' : 34 }
       : undefined;
     const macdGrid = hasMacd
-      ? { left: 48, right: 16, top: hasVolume ? '76%' : '67%', bottom: 34 }
+      ? { left: 48, right: 16, top: hasVolume ? '77.5%' : '70%', bottom: 34 }
       : undefined;
     const grids = [mainGrid, volumeGrid, macdGrid].filter((g): g is NonNullable<typeof g> => g !== undefined);
     const grid = grids.length > 1 ? grids : mainGrid;
@@ -851,10 +891,18 @@ export function CandlestickChart({
         }))
       : xAxisBase;
     // 成交量轴只挂在它实际存在的 grid 上（hasVolume=false 时索引 1 是 MACD grid——
-    // 写死 i===1 会把 MACD 副图套上成交量轴样式，刻度/分割线全隐）
+    // 写死 i===1 会把 MACD 副图套上成交量轴样式，刻度/分割线全隐）；
+    // MACD 副图矮（69.5px）：splitNumber 3 防默认 5 分度刻度标签逐刻度挤压
     const volumeAxisIndex = hasVolume ? 1 : -1;
+    const macdAxisIndex = hasMacd ? (hasVolume ? 2 : 1) : -1;
     const yAxis = grids.length > 1
-      ? grids.map((_g, i) => (i === volumeAxisIndex ? volumeYAxis : { ...yAxisBase, gridIndex: i }))
+      ? grids.map((_g, i) => (
+          i === volumeAxisIndex
+            ? volumeYAxis
+            : i === macdAxisIndex
+              ? { ...yAxisBase, gridIndex: i, splitNumber: 3 }
+              : { ...yAxisBase, gridIndex: i }
+        ))
       : yAxisBase;
 
     // dataZoom 覆盖全部副图（[0..gridCount-1]）；单 grid 不设 xAxisIndex（现状行为）。
@@ -862,13 +910,15 @@ export function CandlestickChart({
     // 数据扩展（前插更早 bars）时可见日期不变 → 窗口不跳；未传时回落 start/end 百分比。
     // **两种锚互斥，禁止混写**（实测混写时百分比优先、日期锚被忽略，窗口锁死全量且
     // 每次重建弹回——放大永远失效，缩小仅因 §3.4 扩展让全量窗口变大看似可用）。
-    // draw/edit 模式禁用 inside 滚轮缩放与鼠标平移（zr 事件与缩放互斥；slider 仍可拖动照发 datazoom）。
+    // draw/edit 模式只禁用鼠标拖拽平移（moveOnMouseMove 与绘制/拖拽的 mousedown 互斥）；
+    // 滚轮缩放保留——wheel 不走 mousedown/mousemove，与 zr 绘制事件不冲突；
+    // 绘制起点已按数据坐标存储，绘制中缩放锚点不漂移。slider 仍可拖动照发 datazoom。
     const zoomAxes = grids.length > 1 ? grids.map((_g, i) => i) : undefined;
     const zoomWindow = visibleRange
       ? { startValue: visibleRange.start, endValue: visibleRange.end }
       : { start: 0, end: 100 };
     const dataZoom = [
-      { type: 'inside', xAxisIndex: zoomAxes, zoomOnMouseWheel: !zoomLocked, moveOnMouseMove: !zoomLocked, moveOnMouseWheel: false, ...zoomWindow },
+      { type: 'inside', xAxisIndex: zoomAxes, zoomOnMouseWheel: true, moveOnMouseMove: !panLocked, moveOnMouseWheel: false, ...zoomWindow },
       {
         type: 'slider', xAxisIndex: zoomAxes, height: 14, bottom: 2, showDetail: false,
         borderColor: 'transparent', backgroundColor: 'rgba(35, 42, 51, 0.6)',
@@ -903,12 +953,49 @@ export function CandlestickChart({
       // tooltip 内容已移除（§3.7 读条替代）：禁用 show:false 写法——实测会在模型层短路
       // trigger，axisPointer 与 updateAxisPointer.axesInfo 一并失效（§3.6.2 实测结论 5）
       tooltip: { showContent: false, trigger: 'axis' },
-      series: optionSeries,
+      series,
     };
   }, [
     hasVolume, hasMacd, model.xAxisData, visibleRange?.start, visibleRange?.end,
-    zoomLocked, legendMain, legendMacd, legendSelected, optionSeries, fallbackIdx,
+    panLocked, legendMain, legendMacd, legendSelected, series, fallbackIdx,
   ]);
+
+  // 已提交画线的覆盖层元素（SVG，§3.6）：线段走 renderedSegment（与编辑命中检测同源几何，
+  // §3.6.1），像素经 pxOf 纯数学换算——小数锚点精确落在按点像素；渲染即覆盖层，
+  // 不依赖 zr 生命周期（临时实例/重建时序/图层序一律无关）
+  const overlay = useMemo(() => {
+    const lines: Array<{ id: string; x1: number; y1: number; x2: number; y2: number; width: number; color: string }> = [];
+    const texts: Array<{ id: string; x: number; y: number; content: string; color: string }> = [];
+    if (!hasDrawings || !viewport) return { lines, texts };
+    const extent = viewport.extent;
+    for (const d of drawings ?? []) {
+      if (draggingId === d.id) continue; // 拖拽中的线按 id 过滤隐藏，以拖拽预览呈现
+      // 橡皮擦悬停：高亮色 + 宽 3（与选中态同宽、颜色区分）
+      const hovered = mode === 'eraser' && eraserHoverId === d.id;
+      const color = hovered ? ERASER_HOVER_COLOR : DRAWING_COLOR;
+      if (d.kind === 'text') {
+        const idx = anchorIndex(model.xAxisData, d.pos.date);
+        if (idx < 0) continue; // 锚点未命中 → 跳过渲染不删数据（§3.6.1）
+        // 锚点价格超出 extent → 不渲染（不裁剪——点无法裁剪，与线段求交口径不同）
+        if (d.pos.price < extent.min - EXTENT_EPS || d.pos.price > extent.max + EXTENT_EPS) continue;
+        const pix = pxOf(idx, d.pos.price);
+        if (!pix) continue;
+        texts.push({ id: d.id, x: pix.x, y: pix.y - 12, content: d.text, color });
+        continue;
+      }
+      const seg = renderedSegment(d, model.xAxisData, windowIdx, extent);
+      if (!seg) continue;
+      const a = pxOf(seg.i1, seg.p1);
+      const b = pxOf(seg.i2, seg.p2);
+      if (!a || !b) continue;
+      lines.push({ id: d.id, x1: a.x, y1: a.y, x2: b.x, y2: b.y, width: selectedId === d.id || hovered ? 3 : 1.5, color });
+      if (d.kind === 'hline') {
+        // hline 价格标签：线左端上方
+        texts.push({ id: `${d.id}-label`, x: a.x, y: a.y - 4, content: d.label ?? d.p1.price.toFixed(2), color });
+      }
+    }
+    return { lines, texts };
+  }, [hasDrawings, viewport, drawings, model.xAxisData, windowIdx, selectedId, draggingId, mode, eraserHoverId]);
 
   return (
     <div data-testid="candlestick-chart">
@@ -929,6 +1016,14 @@ export function CandlestickChart({
             onClick={() => setMode(mode === 'edit' ? 'view' : 'edit')}
           >
             编辑
+          </button>
+          <button
+            type="button"
+            className="rounded border border-[var(--color-fg-muted)] px-1.5 py-0.5 text-xs"
+            style={mode === 'eraser' ? { color: DRAWING_COLOR } : undefined}
+            onClick={() => setMode(mode === 'eraser' ? 'view' : 'eraser')}
+          >
+            橡皮擦
           </button>
           <button
             type="button"
@@ -957,6 +1052,9 @@ export function CandlestickChart({
               >
                 完成
               </button>
+              <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+                按住已有线拖动调整 · Esc 退出
+              </span>
             </>
           )}
           {mode === 'edit' && (
@@ -977,6 +1075,11 @@ export function CandlestickChart({
               </span>
             </>
           )}
+          {mode === 'eraser' && (
+            <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+              点击线删除 · Esc 退出
+            </span>
+          )}
           {pendingText && (
             <input
               autoFocus
@@ -995,8 +1098,51 @@ export function CandlestickChart({
           )}
         </div>
       )}
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', cursor: mode === 'eraser' ? 'pointer' : undefined }}>
         <ChartCore option={option} onEvents={onEvents} onChartReady={onChartReady} height={height} />
+        {hasDrawings && viewport && (
+          // 画线覆盖层：pointerEvents none——滚轮/悬浮/点击全部穿透给 ECharts 画布
+          <svg
+            data-testid="drawing-overlay"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              zIndex: 1,
+              overflow: 'visible',
+            }}
+          >
+            {overlay.lines.map((l) => (
+              <line
+                key={l.id}
+                x1={l.x1}
+                y1={l.y1}
+                x2={l.x2}
+                y2={l.y2}
+                stroke={l.color}
+                strokeWidth={l.width}
+              />
+            ))}
+            {overlay.texts.map((t) => (
+              <text key={t.id} x={t.x} y={t.y} fill={t.color} fontSize={10}>
+                {t.content}
+              </text>
+            ))}
+            {previewLine && (
+              <line
+                x1={previewLine.x1}
+                y1={previewLine.y1}
+                x2={previewLine.x2}
+                y2={previewLine.y2}
+                stroke={DRAWING_COLOR}
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+              />
+            )}
+          </svg>
+        )}
       </div>
     </div>
   );
@@ -1032,11 +1178,13 @@ function applyDrag(
     const minDelta = -Math.min(i1, i2);
     const maxDelta = xAxisData.length - 1 - Math.max(i1, i2);
     const shift = Math.max(minDelta, Math.min(maxDelta, deltaIdx));
-    const p1 = { date: xAxisData[i1 + shift], price: round2(d.p1.price + deltaPrice) };
-    const p2 = { date: xAxisData[i2 + shift], price: round2(d.p2.price + deltaPrice) };
+    // 双锚点同步平移：小数 x 随锚点保留（偏移不变）
+    const p1 = { date: xAxisData[i1 + shift], price: round2(d.p1.price + deltaPrice), x: d.p1.x };
+    const p2 = { date: xAxisData[i2 + shift], price: round2(d.p2.price + deltaPrice), x: d.p2.x };
     if (p1.date === p2.date) return null;
     return { ...d, p1, p2 };
   }
+  // 端点拖拽：落点按 bar 中心锚定（拖拽取整索引），小数 x 重置
   const moved =
     hit === 'endpoint1'
       ? { p1: { date: date(end.idx), price: round2(end.price) }, p2: d.p2 }

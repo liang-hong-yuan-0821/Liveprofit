@@ -35,6 +35,10 @@ class MarketWideCreateRequest(BaseModel):
     requested_trade_date: date
     selected_layers: list[AnalysisLayer] = Field(min_length=1)
     analysis_options: AnalysisOptions | None = None
+    # 量化提交参数（plan 4.2.1）：position 层三者必填，否则必须省略/null
+    strategy_version_id: UUID | None = None
+    portfolio_id: UUID | None = None
+    expected_portfolio_version: int | None = Field(default=None, ge=1)
 
 
 CreateAnalysisTaskRequest = Annotated[

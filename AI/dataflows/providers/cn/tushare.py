@@ -871,6 +871,39 @@ class TushareProvider(BaseStockDataProvider):
                 break
         return "\n".join(results)
 
+    def get_industry_classify_df(self):
+        """申万行业分类（index_classify src='SW2021' level='L1'）归一帧：
+        source / industry_code（去 .SI 后缀 6 位码）/ name；失败返回 None。"""
+        if not self.connected:
+            return None
+        try:
+            df = self._api_call(self.api.index_classify, src="SW2021", level="L1")
+            if df is None or df.empty:
+                return None
+            out = df.rename(columns={"index_code": "industry_code", "industry_name": "name"})[
+                ["industry_code", "name"]
+            ].copy()
+            out["industry_code"] = out["industry_code"].str.replace(r"\.SI$", "", regex=True)
+            out["source"] = "SW2021"
+            return out[["source", "industry_code", "name"]]
+        except Exception as e:
+            logger.warning("获取申万行业分类失败: %s", e)
+            return None
+
+    def get_industry_members_df(self, industry_index_code: str):
+        """行业成分（index_member）：index_code / con_code 帧；失败返回 None。
+        industry_index_code 须为带 .SI 后缀的 6 位码（801010.SI，仅请求边界补后缀）。"""
+        if not self.connected:
+            return None
+        try:
+            df = self._api_call(
+                self.api.index_member, index_code=industry_index_code, fields="index_code,con_code"
+            )
+            return df if df is not None and not df.empty else None
+        except Exception as e:
+            logger.warning("获取行业成分失败 %s: %s", industry_index_code, e)
+            return None
+
     def get_industry_sector_performance(self, days: int = 10) -> str:
         """获取全行业板块涨跌排名（通过申万行业指数）
 

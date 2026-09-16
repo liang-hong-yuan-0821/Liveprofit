@@ -149,6 +149,15 @@ class BaseStockDataProvider(ABC):
         """获取全行业板块涨跌排名（TOP/BOTTOM），输出含近10个交易日逐日涨跌幅矩阵"""
         return self._not_supported("行业板块表现")
 
+    def get_industry_classify_df(self):
+        """申万行业分类（index_classify src='SW2021' level='L1'）归一帧：
+        source / industry_code（去 .SI 后缀 6 位码）/ name；不支持返回 None。"""
+        return None
+
+    def get_industry_members_df(self, industry_index_code: str):
+        """行业成分（index_member）：index_code / con_code 帧；不支持返回 None。"""
+        return None
+
     def get_concept_board_heat_rank(self, days: int = 10) -> str:
         """获取热门概念板块热度排名（涨幅+成交额综合排序），输出含近10个交易日逐日涨跌幅矩阵"""
         return self._not_supported("板块热度排名")

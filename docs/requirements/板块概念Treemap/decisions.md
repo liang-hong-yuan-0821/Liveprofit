@@ -2,6 +2,20 @@
 
 按时间**倒序**追加。每条四要素：背景 → 选项 → 拍板结论 → 理由。
 
+## 2026-09-16 弹窗 K 线指标数据源：个股接因子、概念自算
+
+- **背景**：用户要求 treemap 点击弹窗的 K 线与指数 K 线同款（含 MA/BOLL/MACD 等指标）。现状：概念（板块指数）K 线契约 `indicators` 恒 null（板块指数无任何上游因子源——tushare 无板块指数因子端点，"技术指标不自算"决策在此路径无因子可取）；个股因子表 factor_daily 只有指数行（stk_factor_pro 采集为后续阶段）→ 个股弹窗也是纯 K 线。
+- **选项**：a) 前端自算（弹窗内从 bars 算）；b) 后端自算（service 层算并回传）；c) **个股按需接 stk_factor_pro 真因子 + 概念自算**。
+- **结论**：c——个股弹窗点击时按需调 stk_factor_pro 拉真因子并入库 factor_daily（factor_daily 即缓存层，下次同区间走表不调上游；拉取失败降级纯 K 线，不阻断 K 线响应）；概念板块指数因无因子源只能自算（预热窗口 [from−120d, to] 全段计算后切回请求窗口，口径沿用归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1 已批纯函数设计）。
+- **理由**：用户拍板。最贴合"技术指标不自算"决策（个股仍取上游因子原值）；概念自算是该决策的显式例外——无因子源时"不自算"不可满足，只能自算。契约变化：概念 bars 的 `indicators` 由恒 null 改为自算值（冻结断言随需求演进更新）；个股 bars 由恒纯 K 线改为按需因子（拉取失败仍纯 K 线）。
+
+## 2026-09-16 treemap 点击后缩放保持
+
+- **背景**：用户反馈放大板块图后点击个股，treemap 弹回放大前样式。
+- **选项**：a) 缓存缩放状态并恢复；b) **option 按 data 引用 memoize**（数据未变不重建）。
+- **结论**：b——拆分布局与两张图的 option 用 useMemo 按 data 引用缓存；点击节点只改父组件 state（弹窗开关），data 引用未变 → echarts-for-react 深比较同引用短路跳过 setOption → treemap 内部缩放状态保留。榜单日期变化 → data 变 → 重建（新数据缩放重置属预期）。
+- **理由**：根因是 notMerge 全量 setOption 重置 treemap 内部缩放状态；memoize 引用即根除（零状态搬运、无恢复时序问题）。
+
 ## 2026-09-14 日线数据命名定稿：bars 系不改名，频率由 interval 区分
 
 - **背景**：日线数据全链叫 `bars`（BarsData/BarDTO/get_bars/`/indices/{symbol}/bars`/useMarketBarsQuery/barsToCandlestickViewModel）。讨论经历两轮：先拟"bar+daily 修饰改名"（DailyBarsData/DailyBarDTO），后用户指出周/月线的 DTO 结构完全相同（timestamp/OHLC/volume 六字段不变）——频率是取值不是类型，DailyBarDTO 对周/月线会名字撒谎。

@@ -1,9 +1,11 @@
 """
-AI 预填写模块测试（2026-08-18；2026-09-11 补三级路由建议值）
+AI 预填写模块测试（2026-08-18；2026-09-11 补三级路由建议值；2026-09-16 名称解析与回填）
 
 覆盖：LLM 输出容错解析（JSON/代码块/杂质/坏输出）、字段清洗（值域收敛/
-非法类型置 None）、LLM 不可用降级，以及路由字段（event_scope /
-affected_scope_refs）的建议值生成、值域清洗、幻化引用初筛与失败降级。
+非法类型置 None）、LLM 不可用降级，路由字段（event_scope /
+affected_scope_refs）的建议值生成、值域清洗、幻化引用初筛与失败降级，
+以及 2026-09-16 新增的名称解析（resolver 接入/unresolved_entities）、
+回填谓词 needs_prelabel、force 覆写与 TTL 写回。
 """
 
 import json
@@ -12,6 +14,7 @@ import pytest
 
 from AI.eventStudy.collectors.config import KEY_PENDING_EVENT
 from AI.eventStudy.review import ai_prelabel
+from AI.eventStudy.review.review_dao import MAX_SCOPE_REFS
 
 
 class FakeExistence:
@@ -26,6 +29,20 @@ class FakeExistence:
         return [r for r in refs if r in self.missing]
 
 
+class FakeResolver:
+    """名称解析替身：mapping 中的名称 → 引用；其余名称未解析。"""
+
+    def __init__(self, mapping=None):
+        self.mapping = mapping or {}
+        self.queried = []
+
+    def resolve_names(self, names, scope):
+        self.queried.extend(names)
+        resolved = [self.mapping[n] for n in names if n in self.mapping]
+        unresolved = [n for n in names if n not in self.mapping]
+        return resolved, unresolved
+
+
 class BrokenExistence:
     """存在性数据源不可用替身（连接/码表缺失）。"""
 
@@ -36,9 +53,11 @@ class BrokenExistence:
 class FakeRedis:
     def __init__(self):
         self.store = {}
+        self.ex_args = {}
 
-    def set(self, key, value):
+    def set(self, key, value, ex=None):
         self.store[key] = value
+        self.ex_args[key] = ex
 
 
 def test_parse_plain_json():
@@ -111,22 +130,25 @@ def test_prelabel_one_success(monkeypatch):
 # ==================== 路由字段：建议值生成 / 值域清洗 / 幻化拦截 / 降级 ====================
 
 def test_system_prompt_declares_route_fields():
-    """提示词声明作用域三值语义、引用语法与「禁止编造代码」。"""
+    """提示词声明作用域三值语义、引用语法、中文名称输出与「禁止编造名称与代码」。"""
     prompt = ai_prelabel._SYSTEM_PROMPT
     assert "event_scope" in prompt and "affected_scope_refs" in prompt
     assert "market" in prompt and "sector" in prompt and "stock" in prompt
-    assert "禁止编造代码" in prompt
+    assert "禁止编造名称与代码" in prompt
+    assert "中文实体名称" in prompt
+    assert "不要凭记忆补代码" in prompt
     assert "SW:" in prompt and "CONCEPT:" in prompt and "stock:" in prompt
 
 
 def test_sanitize_scope_converges_and_cleans_refs():
-    """值域清洗：scope 收敛三值，refs 格式归一（非法项丢弃）。"""
+    """值域清洗：scope 收敛三值，refs 格式归一（非法项进 unresolved_entities）。"""
     s = ai_prelabel._sanitize({
         "event_scope": "Sector",
         "affected_scope_refs": ["801080", "BK1753.DC", "JUNK", "600519"],
     })
     assert s["event_scope"] == "sector"
     assert s["affected_scope_refs"] == ["SW:801080", "CONCEPT:BK1753.DC"]
+    assert s["unresolved_entities"] == ["JUNK", "600519"]
 
     # 非法 scope → None（表单回退 market），不留悬空引用
     s = ai_prelabel._sanitize({"event_scope": "GLOBAL", "affected_scope_refs": ["SW:801080"]})
@@ -142,6 +164,73 @@ def test_sanitize_scope_converges_and_cleans_refs():
     s = ai_prelabel._sanitize({})
     assert s["event_scope"] is None
     assert s["affected_scope_refs"] == []
+
+
+# ==================== 名称解析（2026-09-16） ====================
+
+def test_sanitize_resolves_names_via_resolver():
+    """名称经 resolver 解析并入 refs，解析顺序 = 名称出现顺序；无未解析名称不写键。"""
+    s = ai_prelabel._sanitize(
+        {"event_scope": "sector", "affected_scope_refs": ["半导体", "光刻胶"]},
+        resolver=FakeResolver({"半导体": "SW:801080", "光刻胶": "CONCEPT:BK1753.DC"}),
+    )
+    assert s["affected_scope_refs"] == ["SW:801080", "CONCEPT:BK1753.DC"]
+    assert "unresolved_entities" not in s
+
+
+def test_sanitize_mixes_codes_and_names():
+    """代码引用在前、解析引用在后，合并去重；纯代码项不进名称解析。"""
+    resolver = FakeResolver({"光刻胶": "CONCEPT:BK1753.DC"})
+    s = ai_prelabel._sanitize(
+        {"event_scope": "sector", "affected_scope_refs": ["801080", "光刻胶", "801080"]},
+        resolver=resolver,
+    )
+    assert s["affected_scope_refs"] == ["SW:801080", "CONCEPT:BK1753.DC"]
+    assert "unresolved_entities" not in s
+    assert resolver.queried == ["光刻胶"]  # 纯代码项不进解析（方案 4.7.1 ⑦）
+
+
+def test_sanitize_unresolved_without_resolver():
+    """resolver 不可用 → 名称全部进 unresolved_entities（fail-open，不阻塞预填）。"""
+    s = ai_prelabel._sanitize(
+        {"event_scope": "stock", "affected_scope_refs": ["贵州茅台"]},
+    )
+    assert s["event_scope"] == "stock"
+    assert s["affected_scope_refs"] == []
+    assert s["unresolved_entities"] == ["贵州茅台"]
+
+
+def test_sanitize_partial_resolution():
+    """部分名称解析成功：成功并入 refs，失败进 unresolved。"""
+    s = ai_prelabel._sanitize(
+        {"event_scope": "sector", "affected_scope_refs": ["半导体", "新概念X"]},
+        resolver=FakeResolver({"半导体": "SW:801080"}),
+    )
+    assert s["affected_scope_refs"] == ["SW:801080"]
+    assert s["unresolved_entities"] == ["新概念X"]
+
+
+def test_sanitize_market_scope_drops_names_without_recording():
+    """market 作用域：名称不解析不记录（无目标语义）。"""
+    s = ai_prelabel._sanitize(
+        {"event_scope": "market", "affected_scope_refs": ["半导体"]},
+        resolver=FakeResolver({"半导体": "SW:801080"}),
+    )
+    assert s["event_scope"] == "market"
+    assert s["affected_scope_refs"] == []
+    assert "unresolved_entities" not in s
+
+
+def test_sanitize_name_length_and_count_caps():
+    """候选名称边界：单条超长丢弃（不进 unresolved）；条数上限 MAX_SCOPE_REFS。"""
+    long_name = "长" * 65
+    many = [f"名称{i}" for i in range(MAX_SCOPE_REFS + 5)]
+    s = ai_prelabel._sanitize(
+        {"event_scope": "sector", "affected_scope_refs": [long_name, *many]},
+    )
+    unresolved = s.get("unresolved_entities") or []
+    assert long_name not in unresolved
+    assert len(unresolved) == MAX_SCOPE_REFS
 
 
 def test_sanitize_filters_hallucinated_refs():
@@ -213,18 +302,18 @@ def test_prelabel_one_existence_unavailable_falls_back(monkeypatch):
 
 
 def test_open_existence_unavailable(monkeypatch):
-    """PG 不可达 → (None, None)，预填继续（不阻塞、不再查询）。"""
+    """PG 不可达 → (None, None, None)，预填继续（不阻塞、不再查询）。"""
     from AI.eventStudy.db import connection as db_connection
 
     def boom():
         raise RuntimeError("PG 不可达")
 
     monkeypatch.setattr(db_connection, "get_connection", boom)
-    assert ai_prelabel._open_existence() == (None, None)
+    assert ai_prelabel._open_existence() == (None, None, None)
 
 
 def test_prelabel_events_writes_and_skips_existing(monkeypatch):
-    """幂等写回：已有 ai_suggestions 的草稿跳过；连接在批末关闭。"""
+    """幂等写回：已有完整建议的草稿跳过；写回带 TTL；连接在批末关闭。"""
     fake_redis = FakeRedis()
     monkeypatch.setattr(ai_prelabel, "is_redis_available", lambda: True)
     monkeypatch.setattr(ai_prelabel, "get_redis_client", lambda: fake_redis)
@@ -237,14 +326,15 @@ def test_prelabel_events_writes_and_skips_existing(monkeypatch):
 
     conn = FakeConn()
     monkeypatch.setattr(ai_prelabel, "_open_existence",
-                        lambda: (FakeExistence(), conn))
+                        lambda: (FakeExistence(), None, conn))
     monkeypatch.setattr(ai_prelabel, "prelabel_one",
-                        lambda draft, existence=None: {"event_scope": "market",
-                                                       "affected_scope_refs": []})
+                        lambda draft, existence=None, resolver=None: {
+                            "event_scope": "market", "affected_scope_refs": []})
 
     drafts = [
         {"draft_id": 1, "title": "新草稿"},
-        {"draft_id": 2, "title": "已预填", "ai_suggestions": {"importance": 3}},
+        {"draft_id": 2, "title": "已预填",
+         "ai_suggestions": {"importance": 3, "event_scope": "market"}},
     ]
     assert ai_prelabel.prelabel_events(drafts) == 1
     key = KEY_PENDING_EVENT.format(draft_id=1)
@@ -252,14 +342,63 @@ def test_prelabel_events_writes_and_skips_existing(monkeypatch):
     assert json.loads(fake_redis.store[key])["ai_suggestions"] == {
         "event_scope": "market", "affected_scope_refs": [],
     }
+    assert fake_redis.ex_args[key] == ai_prelabel.PENDING_DRAFT_TTL
     assert conn.closed, "存在性连接应在批末关闭"
+
+
+def test_prelabel_events_backfills_missing_scope(monkeypatch):
+    """回填：缺 event_scope 的旧建议草稿重预填；完整建议草稿跳过。"""
+    fake_redis = FakeRedis()
+    monkeypatch.setattr(ai_prelabel, "is_redis_available", lambda: True)
+    monkeypatch.setattr(ai_prelabel, "get_redis_client", lambda: fake_redis)
+    monkeypatch.setattr(ai_prelabel, "_open_existence", lambda: (None, None, None))
+    monkeypatch.setattr(ai_prelabel, "prelabel_one",
+                        lambda draft, existence=None, resolver=None: {
+                            "event_scope": "market", "affected_scope_refs": []})
+
+    drafts = [
+        {"draft_id": 1, "title": "缺 scope 旧建议", "ai_suggestions": {"importance": 3}},
+        {"draft_id": 2, "title": "完整建议", "ai_suggestions": {"event_scope": "market"}},
+    ]
+    assert ai_prelabel.prelabel_events(drafts) == 1
+    assert list(fake_redis.store) == [KEY_PENDING_EVENT.format(draft_id=1)]
+
+
+def test_prelabel_events_force_overwrites_all(monkeypatch):
+    """force=True：对传入列表全部重生成（覆写），不做谓词过滤。"""
+    fake_redis = FakeRedis()
+    monkeypatch.setattr(ai_prelabel, "is_redis_available", lambda: True)
+    monkeypatch.setattr(ai_prelabel, "get_redis_client", lambda: fake_redis)
+    monkeypatch.setattr(ai_prelabel, "_open_existence", lambda: (None, None, None))
+    monkeypatch.setattr(ai_prelabel, "prelabel_one",
+                        lambda draft, existence=None, resolver=None: {
+                            "event_scope": "sector", "affected_scope_refs": []})
+
+    drafts = [
+        {"draft_id": 1, "title": "t1"},
+        {"draft_id": 2, "title": "t2", "ai_suggestions": {"event_scope": "market"}},
+    ]
+    assert ai_prelabel.prelabel_events(drafts, force=True) == 2
+    assert len(fake_redis.store) == 2
+
+
+def test_needs_prelabel_predicate():
+    """回填谓词：无建议 → True；缺 event_scope → True；完整建议 → False。"""
+    assert ai_prelabel.needs_prelabel({"draft_id": 1}) is True
+    assert ai_prelabel.needs_prelabel(
+        {"draft_id": 1, "ai_suggestions": {"importance": 3}}) is True
+    assert ai_prelabel.needs_prelabel(
+        {"draft_id": 1, "ai_suggestions": {"event_scope": "market"}}) is False
+    assert ai_prelabel.needs_prelabel(
+        {"draft_id": 1,
+         "ai_suggestions": {"event_scope": "stock", "affected_scope_refs": []}}) is False
 
 
 def test_prelabel_events_llm_unavailable_returns_zero(monkeypatch):
     fake_redis = FakeRedis()
     monkeypatch.setattr(ai_prelabel, "is_redis_available", lambda: True)
     monkeypatch.setattr(ai_prelabel, "get_redis_client", lambda: fake_redis)
-    monkeypatch.setattr(ai_prelabel, "_open_existence", lambda: (None, None))
+    monkeypatch.setattr(ai_prelabel, "_open_existence", lambda: (None, None, None))
     monkeypatch.setattr(ai_prelabel, "get_llm", lambda: None)
     assert ai_prelabel.prelabel_events([{"draft_id": 1, "title": "t"}]) == 0
     assert fake_redis.store == {}

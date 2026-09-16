@@ -12,6 +12,7 @@ const WatchlistPage = lazy(() => import('../modules/watchlist/pages/WatchlistPag
 const AiDashboardPage = lazy(() => import('../modules/analysis/pages/dashboard/AiDashboardPage'));
 const AiTasksPage = lazy(() => import('../modules/analysis/pages/tasks/AiTasksPage'));
 const AiTaskDetailPage = lazy(() => import('../modules/analysis/pages/task-detail/AiTaskDetailPage'));
+const QuantStrategiesPage = lazy(() => import('../modules/analysis/pages/strategies/QuantStrategiesPage'));
 const EventStudyPage = lazy(() => import('../modules/event-study/pages/EventStudyPage'));
 
 function page(node: ReactNode) {
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: 'ai', element: page(<AiDashboardPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/tasks', element: page(<AiTasksPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/tasks/:taskId', element: page(<AiTaskDetailPage />), errorElement: <RouteErrorBoundary /> },
+      { path: 'ai/strategies', element: page(<QuantStrategiesPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'event-study', element: page(<EventStudyPage />), errorElement: <RouteErrorBoundary /> },
       { path: 'ai/event-study', element: <LegacyEventStudyRedirect /> },
       { path: 'ai/event-study/review', element: <Navigate to="/event-study?tab=review" replace /> },

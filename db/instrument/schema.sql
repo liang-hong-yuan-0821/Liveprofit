@@ -1,7 +1,7 @@
 -- ============================================================
 -- 证券市场数据库（market schema）——证券市场数据库统一方案 2.2
 --
--- 单一事实来源：11 表 DDL + 31 行申万行业字典幂等种子。
+-- 单一事实来源：12 表 DDL + 31 行申万行业字典幂等种子。
 -- 全部语句 IF NOT EXISTS / ON CONFLICT DO NOTHING，可重复执行；
 -- 全部 SQL 显式 market. 前缀（不依赖 search_path——过渡窗口内
 -- public 与 market 的 adj_factor 同名，裸表名写入会静默落到旧表）。
@@ -223,3 +223,20 @@ INSERT INTO market.industry (source, industry_code, name) VALUES
     ('SW2021', '801970', '环保'),
     ('SW2021', '801980', '美容护理')
 ON CONFLICT (source, industry_code) DO NOTHING;
+
+-- 采集验收状态（量化策略与实操层方案 4.3.1）：单行混存最近成功验收与最近失败观测——
+-- 成功事务只写成功字段（status/successful_at/coverage/member_hash），
+-- 失败短事务只写失败字段（failure_code/summary_json），互不覆盖。
+-- 行业 BUY 门控谓词见 dao/ingest_state.py::is_industry_bucket_available。
+CREATE TABLE IF NOT EXISTS market.ingest_state (
+    resource       VARCHAR(64) NOT NULL,   -- 资源名：industry_member
+    source         VARCHAR(16) NOT NULL,   -- 数据来源：SW2021
+    status         VARCHAR(16),            -- 最近观测状态：SUCCESS / FAILED
+    successful_at  TIMESTAMPTZ,            -- 最后成功验收时刻
+    coverage       DOUBLE PRECISION,       -- 最后成功覆盖率（成功行业数/31）
+    member_hash    VARCHAR(64),            -- 最后成功成员集合 hash（SW2021 全部成员行）
+    failure_code   VARCHAR(64),            -- 最近失败观测码（如 INDUSTRY_COLLECT_FAILED）
+    summary_json   JSONB,                  -- 最近失败/POC 摘要
+    observed_at    TIMESTAMPTZ,            -- 最近观测时刻
+    PRIMARY KEY (resource, source)
+);

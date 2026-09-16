@@ -84,13 +84,28 @@ class EventStudyReviewService:
             ai_suggestions=draft.get("ai_suggestions"),
         )
 
-    def prelabel(self, limit: int) -> PrelabelResult:
-        """对尚无 ai_suggestions 的草稿切片做 AI 预填（幂等；LLM 不可用返回 0 不报错）。"""
+    def prelabel(self, limit: int, draft_ids: list[int] | None = None) -> PrelabelResult:
+        """AI 预填（幂等；LLM 不可用返回 0 不报错）。
+
+        - draft_ids 为 None：按 needs_prelabel 谓词切片（无建议或缺
+          event_scope 的旧建议回填，2026-09-16）
+        - draft_ids 非 None：对指定草稿覆写重填（内部以 force=True 调 AI
+          侧；草稿中途被提交删除的自动跳过）——强制重填分片驱动
+        """
         self._require_redis()
-        unlabeled = [d for d in self._adapter.list_pending_events() if not d.get("ai_suggestions")]
-        prelabeled = self._adapter.prelabel(unlabeled[:limit])
-        # remaining = 执行后重新列草稿、仍无建议的数量（前端循环收敛依据）
-        remaining = sum(1 for d in self._adapter.list_pending_events() if not d.get("ai_suggestions"))
+        drafts = self._adapter.list_pending_events()
+        if draft_ids is not None:
+            wanted = set(draft_ids)
+            targets = [d for d in drafts if int(d.get("draft_id", 0)) in wanted]
+            prelabeled = self._adapter.prelabel(targets, force=True)
+        else:
+            unlabeled = [d for d in drafts if self._adapter.needs_prelabel(d)][:limit]
+            prelabeled = self._adapter.prelabel(unlabeled, force=False)
+        # remaining = 执行后重新列草稿、仍命中 needs_prelabel 谓词的数量
+        # （非 draft_ids 路径的循环收敛依据；draft_ids 分片路径前端不看 remaining）
+        remaining = sum(
+            1 for d in self._adapter.list_pending_events() if self._adapter.needs_prelabel(d)
+        )
         return PrelabelResult(prelabeled=prelabeled, remaining=remaining)
 
     def refresh_events(self) -> RefreshResult:

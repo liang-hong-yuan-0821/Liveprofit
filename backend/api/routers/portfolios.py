@@ -64,7 +64,16 @@ async def create_portfolio(
 
     def _do():
         with _open_uow(services) as uow:
-            return PortfolioService(uow).create(payload.name)
+            return PortfolioService(uow).create(
+                payload.name,
+                total_assets=payload.total_assets,
+                available_cash=payload.available_cash,
+                risk_per_trade_pct=payload.risk_per_trade_pct,
+                min_risk_reward_ratio=payload.min_risk_reward_ratio,
+                max_total_position_pct=payload.max_total_position_pct,
+                max_single_stock_pct=payload.max_single_stock_pct,
+                max_sector_pct=payload.max_sector_pct,
+            )
 
     dto = await services.run(_do)
     meta = EnvelopeMeta(request_id=request.state.trace_id)
@@ -72,7 +81,7 @@ async def create_portfolio(
 
 
 @router.patch("/portfolios/{portfolio_id}", response_model=Envelope[PortfolioDTO])
-async def rename_portfolio(
+async def update_portfolio(
     portfolio_id: uuid.UUID,
     payload: PortfolioUpdateRequest,
     request: Request,
@@ -82,7 +91,18 @@ async def rename_portfolio(
 
     def _do():
         with _open_uow(services) as uow:
-            return PortfolioService(uow).rename(portfolio_id, payload.name, payload.expected_version)
+            return PortfolioService(uow).update_account(
+                portfolio_id,
+                name=payload.name,
+                total_assets=payload.total_assets,
+                available_cash=payload.available_cash,
+                risk_per_trade_pct=payload.risk_per_trade_pct,
+                min_risk_reward_ratio=payload.min_risk_reward_ratio,
+                max_total_position_pct=payload.max_total_position_pct,
+                max_single_stock_pct=payload.max_single_stock_pct,
+                max_sector_pct=payload.max_sector_pct,
+                expected_version=payload.expected_version,
+            )
 
     dto = await services.run(_do)
     meta = EnvelopeMeta(request_id=request.state.trace_id)

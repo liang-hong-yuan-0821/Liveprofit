@@ -32,6 +32,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="跳过个股基金日线采集，仅采指数日线+技术因子（因子全历史回填用）",
     )
+    parser.add_argument(
+        "--refresh-industries",
+        action="store_true",
+        default=None,
+        help="强制本次增量执行申万行业成员刷新（默认周一周刷）",
+    )
+    parser.add_argument(
+        "--no-refresh-industries",
+        action="store_false",
+        dest="refresh_industries",
+        help="强制跳过本次行业成员刷新",
+    )
     args = parser.parse_args(argv)
 
     end = args.end or date.today()
@@ -67,7 +79,8 @@ def main(argv: list[str] | None = None) -> int:
     from db.instrument.ingest.incremental import collect_incremental
     with get_connection() as conn:
         summary = collect_incremental(
-            conn, provider_factory, fallback_provider_factory)
+            conn, provider_factory, fallback_provider_factory,
+            refresh_industries=args.refresh_industries)
     print(f"增量完成：{summary}")
     return 0 if "error" not in summary else 1
 

@@ -27,8 +27,8 @@
 （改造）后端：MarketDataService
   get_hot_concepts  不改（热度现场计算 source='dc' 原口径，表有数据后自动启用）
   get_concept_tree  新方法：热度 top N + 当日涨跌幅 + 成分股（sector_member join instrument_daily 当日横截面）
-  get_sector_bars   新方法：单板块指数 K 线（读 market.sector_daily，source='dc'）
-  get_bars          放宽：instrument_type ∈ {index, stock}，个股 K 线（仅个股路径因子行缺失 → indicators=None）
+  get_sector_bars   新方法：单板块指数 K 线（读 market.sector_daily，source='dc'；m7 修订：指标自算）
+  get_bars          放宽：instrument_type ∈ {index, stock}，个股 K 线（仅个股路径因子行缺失 → indicators=None；m7 修订：因子表无行时按需拉 stk_factor_pro 入库）
 
 （新增）端点：GET /api/v1/market-data/concepts/tree      → 概念树（treemap 数据源）
              GET /api/v1/market-data/concepts/{code}/bars → 概念 K 线
@@ -86,7 +86,7 @@ ConceptTreeData {
 }
 ```
 
-`GET /api/v1/market-data/concepts/{sector_code}/bars?market=CN&source=dc&interval=1d&from=&to=` 与 `GET /api/v1/market-data/stocks/{symbol}/bars?market=CN&interval=1d&from=&to=`：均复用现有 `BarsData` 契约（[schemas/market.py:74](Liveprofit/backend/api/schemas/market.py#L74)），差异仅在 `indicators` 恒为 null（板块指数与个股均无因子表数据——idx_factor_pro 不覆盖板块指数、个股因子 stk_factor_pro 是统一方案后续阶段 ③，指标不自算原则）；`asset.market` 恒回显 `'CN'`。**命名定稿（用户 2026-09-14 拍板）**：DTO 结构对日/周/月线完全相同——频率是取值不是类型，接口频率区分由 `interval` 参数 + 响应 `interval` 字段承载（bars 系不改名；未来周/月线零新 DTO、零新端点）。
+`GET /api/v1/market-data/concepts/{sector_code}/bars?market=CN&source=dc&interval=1d&from=&to=` 与 `GET /api/v1/market-data/stocks/{symbol}/bars?market=CN&interval=1d&from=&to=`：均复用现有 `BarsData` 契约（[schemas/market.py:74](Liveprofit/backend/api/schemas/market.py#L74)），`asset.market` 恒回显 `'CN'`。**命名定稿（用户 2026-09-14 拍板）**：DTO 结构对日/周/月线完全相同——频率是取值不是类型，接口频率区分由 `interval` 参数 + 响应 `interval` 字段承载（bars 系不改名；未来周/月线零新 DTO、零新端点）。**m7 修订（用户拍板 2026-09-16）**：`indicators` 不再恒 null——概念（板块指数）无上游因子源由后端自算（预热 [from−120d, to] 全段 → 切回请求窗口，口径 = 归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1 已批纯函数设计）；个股因子表无行时按需调 stk_factor_pro 拉真因子入库 factor_daily（factor_daily 即缓存层），拉取失败仍降级纯 K 线（indicators=null）。详见 [decisions.md](decisions.md)。
 
 ## 三、详细设计
 
@@ -229,8 +229,8 @@ TushareProvider 覆写（首期仅 dc 分支）：
    - 板块存在性：`SELECT name FROM market.sector WHERE source=%s AND sector_code=%s`，查无 → MarketAssetNotFoundError（404 语义同 get_bars）
    - bars：query_bars 区间行 → bar_dicts（open/high/low/close/vol——dc_daily 实测全列；vol 可 NaN → None；**OHLC 任一 NaN 整行丢弃**，见 3.3.3 定稿）
    - freshness：该板块 max(trade_date) vs calendar.last_trading_day（FRESH/STALE/UNAVAILABLE，同 get_bars 模式）；source_updated_at = 该板块 max(updated_at)
-   - `indicators=None`（板块指数无因子表数据；技术指标不自算）
-3. **`get_bars` 放宽**（[service.py:104](Liveprofit/backend/modules/market_data/application/service.py#L104)、[service.py:117-121](Liveprofit/backend/modules/market_data/application/service.py#L117-L121)）：`instrument_type == "index"` → `in ("index", "stock")`；指标段加个股路径短路：**仅当资产为 stock 且 fdf 为空时 `indicators = None`**——指数路径行为保持现状不动（fdf 空 → 全 null 数组的降级语义已被契约测试 [test_market_data.py:77-81](Liveprofit/backend/tests/contract/api/test_market_data.py#L77-L81) 固化断言 `ma[0].values == [None]`，全局改 None 会破坏冻结用例；个股路径无既有用例，None 与 BarsData 契约 `indicators: IndicatorsDTO | None = None` 一致）。
+   - `indicators` = 自算指标（**m7 修订 2026-09-16**：板块指数无因子表数据、无上游因子源，自算是唯一出路——原"恒 None + 技术指标不自算"随用户拍板改为例外；预热 [from−WARMUP_DAYS, to] 全段计算后各数组切回请求窗口后缀，与 bars 等长按 index 对齐）
+3. **`get_bars` 放宽**（[service.py:104](Liveprofit/backend/modules/market_data/application/service.py#L104)、[service.py:117-121](Liveprofit/backend/modules/market_data/application/service.py#L117-L121)）：`instrument_type == "index"` → `in ("index", "stock")`；指标段加个股路径短路：**仅当资产为 stock 且 fdf 为空时 `indicators = None`**——指数路径行为保持现状不动（fdf 空 → 全 null 数组的降级语义已被契约测试 [test_market_data.py:77-81](Liveprofit/backend/tests/contract/api/test_market_data.py#L77-L81) 固化断言 `ma[0].values == [None]`，全局改 None 会破坏冻结用例；个股路径无既有用例，None 与 BarsData 契约 `indicators: IndicatorsDTO | None = None` 一致）。**m7 修订 2026-09-16**：个股 fdf 空时先按需调 stk_factor_pro（注入式 fetcher，生产默认 AI 数据流接口层 provider 单例；路由经 app.state.stock_factor_fetcher 透传，测试注入 fake）→ 入库 factor_daily（DO UPDATE，缓存层）→ 重读表内区间；拉取失败/无数据 → 仍短路 `indicators=None` 纯 K 线（降级不阻断 K 线响应）。
 4. **端点**：
    - `GET /market-data/concepts/{sector_code}/bars?market=CN&source=dc&interval=1d&from=&to=`（source 缺省 'dc'，当前唯一可采源；interval 必填同 indices 端点——频率由参数区分，命名定稿见 2.1）
    - `GET /market-data/stocks/{symbol}/bars?market=CN&interval=1d&from=&to=`（复用 get_bars；interval≠1d 由 get_bars 抛 IntervalNotSupportedError 同现状）
@@ -242,8 +242,8 @@ TushareProvider 覆写（首期仅 dc 分支）：
 
 #### 3.3.3 风险与验证方式
 
-- 风险：sector_daily 首跑前概念 K 线空（bars=[] + UNAVAILABLE——契约允许，前端显示"K 线不可用"）；**概念 K 线历史 = 库内积累长度（首跑 33 根、逐日增长）**，属已拍板取舍；个股 K 线无指标（首版纯 K 线，个股因子采集后自动补——届时 get_bars 指标段无需再改，fdf 有行即产出）；**定稿：OHLC 任一 NaN 的行整行不产出 bar**（BarDTO 的 open/high/low/close 为必填 float，None 化会使响应 500；close 列 NOT NULL 已由 DAO 保障，本防御只拦脏行）。
-- 验证：契约测试——concept bars：seed sector_daily dc → 200 断言 bars 升序/字段/indicators null/name 映射；404 未知板块；个股 bars：seed instrument(stock)+instrument_daily → 200 纯 K 线（indicators null）、fund 代码 → 404、**指数路径回归（现有用例 [test_market_data.py:77-81](Liveprofit/backend/tests/contract/api/test_market_data.py#L77-L81) 保持通过——指数空因子仍产全 null 数组指标，行为不变）**。
+- 风险：sector_daily 首跑前概念 K 线空（bars=[] + UNAVAILABLE——契约允许，前端显示"K 线不可用"）；**概念 K 线历史 = 库内积累长度（首跑 33 根、逐日增长）**，属已拍板取舍；**定稿：OHLC 任一 NaN 的行整行不产出 bar**（BarDTO 的 open/high/low/close 为必填 float，None 化会使响应 500；close 列 NOT NULL 已由 DAO 保障，本防御只拦脏行）。**m7 修订 2026-09-16**：概念自算指标受历史长度约束——33 根历史下 MA60 全 None、MACD 仅尾部有值（数据缺失是事实，不伪造）；个股按需拉取首次点击有 tushare 网络延迟（_api_call 超时上限），失败自动降级纯 K 线。
+- 验证：契约测试——concept bars：seed sector_daily dc → 200 断言 bars 升序/字段/name 映射、**indicators 自算结构（m7 修订：短序列全 None 结构断言 + 密集序列预热生效数值断言）**；404 未知板块；个股 bars：seed instrument(stock)+instrument_daily → 200（fake 拉取器 None → 纯 K 线降级）、**fake 返回因子帧 → 指标透传 + factor_daily 落库 + 二次请求不重拉**、fund 代码 → 404、**指数路径回归（现有用例 [test_market_data.py:77-81](Liveprofit/backend/tests/contract/api/test_market_data.py#L77-L81) 保持通过——指数空因子仍产全 null 数组指标，行为不变）**。
 
 #### 3.3.4 文件变更清单
 
@@ -289,7 +289,7 @@ useStockBarsQuery(symbol, { market, interval, from, to })                 // GET
   - 颜色：红涨绿跌（`#ef4444`/`#22c55e`）+ 停牌灰（`#64748b`），与 CandlestickChart 项目惯例一致
   - tooltip formatter：`treePathInfo` 拼接路径（用户示例同款）；概念层显示 热度分 + 当日涨跌幅、个股层显示当日涨跌幅
   - 点击事件用 **`onEvents: { click }`**（echarts-for-react 3.0.6 的属性名，仓库先例 [AgentTopologyPage.tsx:137](Liveprofit/frontend/src/modules/analysis/pages/agents/AgentTopologyPage.tsx#L137)、[GraphTopologyPanel.tsx:153](Liveprofit/frontend/src/modules/analysis/pages/task-detail/GraphTopologyPanel.tsx#L153)）：params.data 识别层级（有 sector_code → 概念；有 ts_code → 个股）→ 回调 `onNodeClick({ kind, code, name })`
-- **KLineDialog**（模块内组件）：共享 `shared/ui/dialog.tsx`；标题 = 名称 + 代码；内容 = `CandlestickChart`（`barsToCandlestickViewModel` 直接复用，indicators null → 纯 K 线）+ bars 空态"K 线不可用"；查询窗口 = 近 180 自然日（`daysAgoLocalDate(180)` → today；常量 `KLINE_DIALOG_DAYS = 180`，**概念/个股同一固定窗口**——概念 K 线返回库内实际积累的长度（首跑 ~33 根、逐日增长，可能短于 180 天），个股 K 线返回该 180 天窗口内全部可用日线；首版不做渐进加载，全历史窗口另案）；**查询 enabled 门控 = dialog 打开且标的确定时**（react-query-dialog 坑：共享 key 弹窗订阅必须 enabled 门控）；关闭即卸载、不留查询。
+- **KLineDialog**（模块内组件）：共享 `shared/ui/dialog.tsx`；标题 = 名称 + 代码；内容 = `CandlestickChart` + bars 空态"K 线不可用"；查询窗口 = 近 180 自然日（`daysAgoLocalDate(180)` → today；常量 `KLINE_DIALOG_DAYS = 180`，**概念/个股同一固定窗口**——概念 K 线返回库内实际积累的长度（首跑 ~33 根、逐日增长，可能短于 180 天），个股 K 线返回该 180 天窗口内全部可用日线；首版不做渐进加载，全历史窗口另案）；**查询 enabled 门控 = dialog 打开且标的确定时**（react-query-dialog 坑：共享 key 弹窗订阅必须 enabled 门控）；关闭即卸载、不留查询。**m7 修订 2026-09-16**：与指数 K 线同款渲染——`indicators` 透传 mapper（概念 = 后端自算、个股 = 按需因子，前端不计算）；画线工具接入（loadDrawings/saveDrawings 按 node.code 持久化，与指数卡同规则）；弹窗尺寸 max-w-3xl×320 → **max-w-4xl×460**（容纳双副图 + 图例）。
 - **HotConceptsPanel 重写**：保留日期选择（as_of 透传 from）、STALE 徽标、空态/错误态/重试；删除卡片网格与 ConceptCard（含近 10 日涨跌幅展开——treemap 点击 K 线替代该信息）；渲染 `<ConceptTreemap data={tree.items} onNodeClick={...} />`（高度 ~560px）；点击回调 → 打开 KLineDialog（概念 → useConceptBarsQuery / 个股 → useStockBarsQuery）。
 - treemap 规模：30 概念 + ≤3,000 成分（后端每概念截断 top 100，见 3.2.1 规模定稿），ECharts treemap 可流畅渲染（实现后人工检查确认）。
 

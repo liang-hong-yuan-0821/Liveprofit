@@ -40,6 +40,14 @@ class PortfolioDTO:
     name: str
     version: int
     position_count: int
+    # 资金/风控字段（0008）
+    total_assets: float
+    available_cash: float
+    risk_per_trade_pct: float
+    min_risk_reward_ratio: float
+    max_total_position_pct: float
+    max_single_stock_pct: float
+    max_sector_pct: float
     created_at: datetime
     updated_at: datetime
 

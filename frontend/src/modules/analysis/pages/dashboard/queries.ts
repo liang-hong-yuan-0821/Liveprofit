@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError } from '../../../../api/client';
 import { AnalysisDashboardService } from '../../../../api/generated/services/AnalysisDashboardService';
 import { AnalysisTasksService } from '../../../../api/generated/services/AnalysisTasksService';
 import { requestEnvelope } from '../../../../api/client';
@@ -49,5 +50,20 @@ export function useCreateAnalysisTaskMutation() {
       // 创建成功后精准失效看板三区块
       void queryClient.invalidateQueries({ queryKey: queryKeys.analysisDashboard.all });
     },
+    onError: () => {
+      // 组合/策略快照冲突：重拉，让表单里的版本号收敛（重试不再用陈旧 expected_version）
+      void queryClient.invalidateQueries({ queryKey: queryKeys.portfolios.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.quantStrategies.all });
+    },
   });
+}
+
+/** 输入已过期的冲突类错误：重试必然失败，不给「重试」按钮。 */
+export function isStaleInputError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  return (
+    error.code === 'PORTFOLIO_SNAPSHOT_CONFLICT' ||
+    error.code === 'STRATEGY_VERSION_NOT_PUBLISHED' ||
+    error.code === 'STRATEGY_NOT_FOUND'
+  );
 }

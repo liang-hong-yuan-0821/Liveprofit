@@ -319,6 +319,12 @@ class SqlAlchemyAnalysisUnitOfWork:
             self._session.close()
             self._session = None
 
+    @property
+    def session(self) -> Session:
+        """量化执行分支专用：共享当前事务 Session（跨聚合服务注入用）。"""
+        assert self._session is not None, "UoW 未进入上下文"
+        return self._session
+
     def commit(self) -> None:
         assert self._session is not None, "UoW 未进入上下文"
         self._session.commit()

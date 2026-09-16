@@ -57,13 +57,13 @@ export class PortfoliosService {
         });
     }
     /**
-     * Rename Portfolio
+     * Update Portfolio
      * @param portfolioId
      * @param requestBody
      * @returns Envelope_PortfolioDTO_ Successful Response
      * @throws ApiError
      */
-    public static renamePortfolioApiV1PortfoliosPortfolioIdPatch(
+    public static updatePortfolioApiV1PortfoliosPortfolioIdPatch(
         portfolioId: string,
         requestBody: PortfolioUpdateRequest,
     ): CancelablePromise<Envelope_PortfolioDTO_> {

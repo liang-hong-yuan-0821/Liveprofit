@@ -199,11 +199,6 @@ function IndexCandlestickSection({ asset }: { asset: CatalogEntry }) {
               drawings={drawings}
               onDrawingsChange={setDrawings}
             />
-            {barsQuery.isFetching && !barsQuery.isPending && (
-              <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-                加载更多历史…
-              </p>
-            )}
             <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
               来源 {barsQuery.data.source ?? '—'} · as_of {barsQuery.data.as_of ?? '—'}
               {barsQuery.data.source_updated_at ? ` · 源更新时间 ${barsQuery.data.source_updated_at}` : ''}

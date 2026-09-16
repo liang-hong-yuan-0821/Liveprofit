@@ -7,8 +7,10 @@ import {
 } from './mappers/toPendingEventRowVM';
 
 // 待审事件单行：批量可编辑表格的行（grid 行 div，先例 WatchlistItemList）。
+// 标题列 minmax(14rem,1.2fr)：固定列总和 ≈1592px，fr 下界为 0 时窄容器下
+// 整列塌缩为 0px 不可见（2026-09-16 修复）；正下界 + overflow-x-auto 横向滚动。
 export const PENDING_ROW_GRID =
-  'grid grid-cols-[3rem_9rem_7rem_minmax(0,1.2fr)_7rem_7rem_8rem_5rem_8rem_12rem_7rem_7rem_7rem_6rem] items-center gap-2';
+  'grid grid-cols-[3rem_9rem_7rem_minmax(14rem,1.2fr)_7rem_7rem_8rem_5rem_8rem_12rem_7rem_7rem_7rem_6rem] items-center gap-2';
 
 const selectClass =
   'h-9 w-full rounded-md border bg-transparent px-2 text-sm outline-none focus-visible:border-[var(--color-accent)]';

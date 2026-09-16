@@ -47,7 +47,7 @@ class ReviewBatchResult:
 @dataclass(frozen=True)
 class PrelabelResult:
     prelabeled: int
-    remaining: int  # 执行后仍无 ai_suggestions 的草稿数（前端循环收敛依据）
+    remaining: int  # 执行后仍命中 needs_prelabel 谓词的草稿数（前端循环收敛依据；draft_ids 分片模式前端不看）
 
 
 @dataclass(frozen=True)

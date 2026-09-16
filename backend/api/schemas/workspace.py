@@ -82,6 +82,14 @@ class PortfolioDTO(BaseModel):
     name: str
     version: int
     position_count: int
+    # 资金/风控字段（0008）：历史组合迁移后为 0 + 默认参数
+    total_assets: float
+    available_cash: float
+    risk_per_trade_pct: float
+    min_risk_reward_ratio: float
+    max_total_position_pct: float
+    max_single_stock_pct: float
+    max_sector_pct: float
     created_at: datetime
     updated_at: datetime
 
@@ -92,10 +100,27 @@ class PortfolioListData(BaseModel):
 
 class PortfolioCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=64)
+    # 可空 = 使用默认参数（total_assets/available_cash=0，风险参数为方案默认值）
+    total_assets: float | None = Field(default=None, ge=0)
+    available_cash: float | None = Field(default=None, ge=0)
+    risk_per_trade_pct: float | None = Field(default=None, gt=0, le=1)
+    min_risk_reward_ratio: float | None = Field(default=None, gt=0)
+    max_total_position_pct: float | None = Field(default=None, gt=0, le=1)
+    max_single_stock_pct: float | None = Field(default=None, gt=0, le=1)
+    max_sector_pct: float | None = Field(default=None, gt=0, le=1)
 
 
 class PortfolioUpdateRequest(BaseModel):
+    """原子更新名称与全部账户字段（plan 4.2.1：一次条件更新、成功仅 version+1）。"""
+
     name: str = Field(min_length=1, max_length=64)
+    total_assets: float = Field(ge=0)
+    available_cash: float = Field(ge=0)
+    risk_per_trade_pct: float = Field(gt=0, le=1)
+    min_risk_reward_ratio: float = Field(gt=0)
+    max_total_position_pct: float = Field(gt=0, le=1)
+    max_single_stock_pct: float = Field(gt=0, le=1)
+    max_sector_pct: float = Field(gt=0, le=1)
     expected_version: int = Field(ge=1)
 
 

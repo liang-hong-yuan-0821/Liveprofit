@@ -274,6 +274,48 @@ describe('PendingEventsTab', () => {
     expect(prelabelMock).toHaveBeenCalledTimes(1);
   });
 
+  it('强制重填：按 50 条/片分片提交 draft_ids，完成后提示', async () => {
+    const user = userEvent.setup();
+    const items = Array.from({ length: 12 }, (_, i) => draftItem(i + 1));
+    setupPending(items);
+    await screen.findByLabelText('第1行-操作');
+    prelabelMock.mockResolvedValue(envelope({ prelabeled: 12, remaining: 0 }));
+    await user.click(screen.getByRole('button', { name: '🤖 强制重填全部' }));
+    expect(await screen.findByText('已重填 12/12 条')).toBeInTheDocument();
+    expect(prelabelMock).toHaveBeenCalledTimes(1);
+    expect(prelabelMock).toHaveBeenCalledWith({
+      limit: 50,
+      draft_ids: items.map((d) => d.draft_id),
+    });
+  });
+
+  it('强制重填：60 条草稿分两片提交', async () => {
+    const user = userEvent.setup();
+    const items = Array.from({ length: 60 }, (_, i) => draftItem(i + 1));
+    setupPending(items);
+    await screen.findByLabelText('第1行-操作');
+    prelabelMock
+      .mockResolvedValueOnce(envelope({ prelabeled: 50, remaining: 10 }))
+      .mockResolvedValueOnce(envelope({ prelabeled: 10, remaining: 0 }));
+    await user.click(screen.getByRole('button', { name: '🤖 强制重填全部' }));
+    expect(await screen.findByText('已重填 60/60 条')).toBeInTheDocument();
+    expect(prelabelMock).toHaveBeenCalledTimes(2);
+    const ids = items.map((d) => d.draft_id);
+    expect(prelabelMock.mock.calls[0][0].draft_ids).toEqual(ids.slice(0, 50));
+    expect(prelabelMock.mock.calls[1][0].draft_ids).toEqual(ids.slice(50));
+  });
+
+  it('强制重填护栏：片内 prelabeled=0 提前终止', async () => {
+    const user = userEvent.setup();
+    const items = Array.from({ length: 60 }, (_, i) => draftItem(i + 1));
+    setupPending(items);
+    await screen.findByLabelText('第1行-操作');
+    prelabelMock.mockResolvedValue(envelope({ prelabeled: 0, remaining: 60 }));
+    await user.click(screen.getByRole('button', { name: '🤖 强制重填全部' }));
+    expect(await screen.findByText(/LLM 不可用或全部预填失败，已停止/)).toBeInTheDocument();
+    expect(prelabelMock).toHaveBeenCalledTimes(1);
+  });
+
   it('挂载自动拉取：新增事件后自动 AI 预填', async () => {
     refreshMock.mockResolvedValue(envelope({ fetched: 2, new_drafts: 2, skipped_reason: null }));
     prelabelMock.mockResolvedValue(envelope({ prelabeled: 2, remaining: 0 }));

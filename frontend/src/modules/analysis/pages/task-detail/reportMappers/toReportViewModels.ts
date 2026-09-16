@@ -1,4 +1,4 @@
-import type { ReportDTO, ReportSectionDTO } from '../../../../../api/generated';
+import type { QuantExecutionDTO, ReportDTO, ReportSectionDTO } from '../../../../../api/generated';
 
 // 报告 DTO → 展示 ViewModel（首期只服务任务详情页）。
 // 区块固定顺序 market → sector → stock → decision；仅保留契约内区块，状态字段原样透传，
@@ -25,6 +25,8 @@ export interface ReportViewModel {
   sections: ReportSectionViewModel[];
   dataSources: ReportDTO['data_sources'];
   riskNote: string | null;
+  /** 量化执行投影（plan 4.4.1）：旧报告为 null，不渲染面板 */
+  quantExecution: QuantExecutionDTO | null;
 }
 
 export function toReportViewModel(dto: ReportDTO): ReportViewModel {
@@ -39,6 +41,7 @@ export function toReportViewModel(dto: ReportDTO): ReportViewModel {
     ),
     dataSources: dto.data_sources ?? null,
     riskNote: dto.risk_note ?? null,
+    quantExecution: dto.quant_execution ?? null,
   };
 }
 

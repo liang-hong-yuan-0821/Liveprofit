@@ -47,9 +47,9 @@ def step_crawl_events(conn):
     return len(ids)
 
 
-def step_collect_market(conn):
+def step_collect_market(conn, *, refresh_sectors: bool | None = None, refresh_industries: bool | None = None):
     """步骤 2：统一市场采集 → market schema（指数日线+因子、个股基金日线+复权、
-    板块周刷；原步骤 2 market_data 与步骤 3 store 合并，统一方案 3.4.1）。"""
+    板块周刷、行业成员周刷；原步骤 2 market_data 与步骤 3 store 合并，统一方案 3.4.1）。"""
     from AI.eventStudy.collectors.config import get_provider
     from db.instrument.ingest.incremental import collect_incremental, _providers_from_env
 
@@ -59,7 +59,10 @@ def step_collect_market(conn):
         _, fallback_cls = _providers_from_env()
         return fallback_cls()
 
-    result = collect_incremental(conn, get_provider, fallback_factory)
+    result = collect_incremental(
+        conn, get_provider, fallback_factory,
+        refresh_sectors=refresh_sectors, refresh_industries=refresh_industries,
+    )
     logger.info(f"[2/5] 统一市场采集完成: {result}")
     return result
 

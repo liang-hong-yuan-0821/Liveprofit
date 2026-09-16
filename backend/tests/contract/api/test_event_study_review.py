@@ -273,7 +273,7 @@ def test_pending_events_sorted_desc_with_suggestions(client):
 
 def test_prelabel_llm_unavailable_idempotent(client, monkeypatch):
     monkeypatch.setattr("AI.eventStudy.review.ai_prelabel.get_llm", lambda: None)
-    # 无 ai_suggestions 的草稿才进入预填切片
+    # 命中 needs_prelabel 谓词（无建议或缺 event_scope）的草稿进入预填切片
     _seed_pending(client, 1, _pending_draft(ai_suggestions=None))
     _seed_pending(client, 2, _pending_draft(title="LPR 公布", ai_suggestions=None))
     resp = client.http.post("/api/v1/event-studies/review/prelabel", json={"limit": 50})

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import * as echarts from 'echarts';
 import { CandlestickChart, type CandlestickChartViewModel } from './CandlestickChart';
@@ -41,6 +42,8 @@ interface SeriesShape {
   yAxisIndex?: number;
   itemStyle?: { color?: unknown };
   lineStyle?: { width?: number; opacity?: number; color?: string };
+  smooth?: boolean;
+  symbol?: string;
   markLine?: { data: Array<{ lineStyle?: { width?: number; type?: string; color?: string }; data?: unknown }> };
   markPoint?: { data: Array<{ coord?: [number, number]; label?: { formatter?: unknown }; symbol?: string }> };
 }
@@ -72,7 +75,7 @@ interface LegendShape {
 interface OptionShape {
   series: SeriesShape[];
   legend?: LegendShape[];
-  dataZoom?: { type?: string; xAxisIndex?: number[]; startValue?: unknown; endValue?: unknown }[];
+  dataZoom?: { type?: string; xAxisIndex?: number[]; startValue?: unknown; endValue?: unknown; zoomOnMouseWheel?: boolean; moveOnMouseMove?: boolean }[];
   grid?: unknown;
   xAxis?: unknown;
   yAxis?: unknown;
@@ -121,17 +124,17 @@ function setupFakeInstance() {
     add: vi.fn(),
     remove: vi.fn(),
   };
+  // 像素模型（SVG 覆盖层纯像素数学）：主图 grid {0,0,600,300}、真实 extent [2900,3200]、
+  // 全窗 10 bar → band = 60、bar i 中心 = (i+0.5)×60、价格 p → y = 3200−p
   mockState.fakeInstance = {
     getZr: () => mockState.zr!,
     getModel: () => ({
       getComponent: (kind: string, _idx: number) => {
-        if (kind === 'grid') return { coordinateSystem: { getRect: () => ({ x: 0, y: 0, width: 600, height: 420 }) } };
+        if (kind === 'grid') return { coordinateSystem: { getRect: () => ({ x: 0, y: 0, width: 600, height: 300 }) } };
         if (kind === 'yAxis') return { axis: { scale: { getExtent: () => [2900, 3200] } } };
         return null;
       },
     }),
-    convertFromPixel: (_finder: unknown, [x, y]: [number, number]) => [Math.round(x / 100), 3200 - y],
-    convertToPixel: (_finder: unknown, [idx, price]: [number, number]) => [idx * 100, 3200 - price],
     setOption: vi.fn(),
     getOption: () => ({ dataZoom: [{ type: 'inside', startValue: 0, endValue: 9 }] }),
   };
@@ -152,18 +155,28 @@ function zrFire(event: 'mousedown' | 'mousemove' | 'mouseup', offsetX: number, o
   });
 }
 
+// SVG 覆盖层断言辅助：已提交线段（无虚线 stroke-dasharray）、预览线段（虚线）、文本
+function overlayLines(): SVGLineElement[] {
+  const svg = document.querySelector('svg[data-testid="drawing-overlay"]');
+  return svg ? Array.from(svg.querySelectorAll('line')).filter((el) => !el.hasAttribute('stroke-dasharray')) : [];
+}
+function overlayPreview(): SVGLineElement | null {
+  const svg = document.querySelector('svg[data-testid="drawing-overlay"]');
+  return svg?.querySelector('line[stroke-dasharray]') ?? null;
+}
+function overlayTexts(): SVGTextElement[] {
+  const svg = document.querySelector('svg[data-testid="drawing-overlay"]');
+  return svg ? Array.from(svg.querySelectorAll('text')) : [];
+}
+
+// 画线提交回填 harness：onDrawingsChange 直接 setState，验证提交后覆盖层真实渲染
+function DrawingHarness({ model, initial }: { model: CandlestickChartViewModel; initial: Drawing[] }) {
+  const [drawings, setDrawings] = useState<Drawing[]>(initial);
+  return <CandlestickChart model={model} drawings={drawings} onDrawingsChange={setDrawings} />;
+}
+
 // SSR 用例桩掉 canvas getContext，afterEach 还原（jsdom 无 canvas 的隔离桩）
 const originalCanvasGetContext = HTMLCanvasElement.prototype.getContext;
-
-// merge 断言用命名类型（TSX 里内联 as {…} + 泛型易被解析器误读）
-type CoordLine = Array<{ coord: [number, number] }>;
-type LineStyleLine = Array<{ lineStyle?: { width?: number } }>;
-interface MergeArgShape {
-  series: Array<{ markLine?: { data: CoordLine[] } }>;
-}
-interface MergeWidthArgShape {
-  series: Array<{ markLine?: { data: LineStyleLine[] } }>;
-}
 
 const baseModel: CandlestickChartViewModel = {
   xAxisData: ['2026-09-01', '2026-09-02', '2026-09-03'],
@@ -320,7 +333,7 @@ describe('CandlestickChart', () => {
     expect(option.axisPointer).toBeUndefined();
   });
 
-  it('MA/BOLL 细线半透明：可见系列 lineStyle {width:1, opacity:0.5}，带宽隐藏系列不变', () => {
+  it('MA 参考样式（smooth+调色板色+symbol none）、BOLL 细线半透明：带宽隐藏系列不变', () => {
     const model: CandlestickChartViewModel = {
       ...baseModel,
       ma: [
@@ -339,10 +352,26 @@ describe('CandlestickChart', () => {
     };
     render(<CandlestickChart model={model} />);
     const option = renderOption();
-    const visible = option.series.filter(
-      (s) => s.name && !s.stack && ['MA5', 'MA10', 'MA20', 'MA60', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨'].includes(s.name),
+    // MA（2026-09-16 参考代码样式）：smooth、symbol none（用户拍板：不喜欢默认空心圆点）、
+    // 半透明 + 调色板按系列序色值（MA5/10/20/60 = 系列序 1..4）
+    const maSeries = option.series.filter((s) => s.name && /^MA\d+$/.test(s.name));
+    expect(maSeries.map((s) => [s.smooth, s.symbol])).toEqual([
+      [true, 'none'],
+      [true, 'none'],
+      [true, 'none'],
+      [true, 'none'],
+    ]);
+    expect(maSeries.map((s) => [s.name, s.lineStyle])).toEqual([
+      ['MA5', { opacity: 0.7, color: '#91cc75' }],
+      ['MA10', { opacity: 0.7, color: '#fac858' }],
+      ['MA20', { opacity: 0.7, color: '#ee6666' }],
+      ['MA60', { opacity: 0.7, color: '#73c0de' }],
+    ]);
+    // BOLL 可见系列：细线半透明（不变）
+    const bollVisible = option.series.filter(
+      (s) => s.name && !s.stack && ['BOLL上轨', 'BOLL中轨', 'BOLL下轨'].includes(s.name),
     );
-    for (const s of visible) {
+    for (const s of bollVisible) {
       expect(s.lineStyle).toMatchObject({ width: 1, opacity: 0.5 });
     }
     // 带宽两条隐藏堆叠系列不透明
@@ -405,11 +434,11 @@ describe('CandlestickChart', () => {
     ]);
     expect(option.dataZoom?.map((d) => d.xAxisIndex)).toEqual([[0, 1, 2], [0, 1, 2]]);
     expect(option.axisPointer?.link).toEqual([{ xAxisIndex: 'all' }]);
-    // 布局验算（§3.1.1 H=460 表，2026-09-15 三行图例）：主图 top 56 + bottom '50%'、成交量 '52%'/'26%'、MACD '76%'
+    // 布局验算（§3.1.1 H=460 表，2026-09-16 间距加宽 3.5%）：主图 top 56 + bottom '49%'、成交量 '54.5%'/'26%'、MACD '77.5%'
     const grids = option.grid as GridShape[];
-    expect(grids[0]).toMatchObject({ top: 56, bottom: '50%' });
-    expect(grids[1]).toMatchObject({ top: '52%', bottom: '26%' });
-    expect(grids[2]).toMatchObject({ top: '76%', bottom: 34 });
+    expect(grids[0]).toMatchObject({ top: 56, bottom: '49%' });
+    expect(grids[1]).toMatchObject({ top: '54.5%', bottom: '26%' });
+    expect(grids[2]).toMatchObject({ top: '77.5%', bottom: 34 });
   });
 
   it('volume 全 null：不开副图（单 grid、无成交量系列）', () => {
@@ -490,90 +519,56 @@ describe('CandlestickChart', () => {
 
   // ---- 画线渲染（§3.6.3 验证 1/3/4）----
 
-  it('画线渲染：trend 嵌套两点形态与坐标映射、hline 窗口两端、样式覆盖、text markPoint', () => {
+  it('画线覆盖层渲染：trend/hline 线段像素与样式、hline 价格标签、text 文本', () => {
+    setupFakeInstance();
     const hline: Drawing = { id: 'h1', kind: 'hline', p1: { date: drawDates[1], price: 3050 } };
     const text1: Drawing = { id: 'x1', kind: 'text', pos: { date: drawDates[2], price: 3030 }, text: '支撑位' };
     render(
       <CandlestickChart model={drawModel} drawings={[trend1, hline, text1]} onDrawingsChange={vi.fn()} />,
     );
-    const option = renderOption();
-    const markLine = option.series[0].markLine!.data as Array<Array<{
-      coord: [number, number];
-      symbol?: string;
-      lineStyle?: { type?: string; width?: number; color?: string };
-      label?: { formatter?: () => string };
-    }>>;
-    expect(markLine).toHaveLength(2);
-    // trend：markLine.data 项本身就是两点数组（嵌套形态），坐标 = 锚点日期索引 + 价格；
-    // per-item 样式挂在首元素上
-    const trendItem = markLine[0];
-    expect(trendItem.map((p) => p.coord)).toEqual([[3, 3000], [5, 3100]]);
-    expect(trendItem[0].symbol).toBe('none');
-    expect(trendItem[0].lineStyle).toMatchObject({ type: 'solid', width: 1.5, color: '#38bdf8' });
-    // hline：两端 = 窗口左右缘索引（与锚点日期无关），默认标签显示价格（首元素 label）
-    const hlineItem = markLine[1];
-    expect(hlineItem.map((p) => p.coord)).toEqual([[0, 3050], [9, 3050]]);
-    expect(hlineItem[0].label?.formatter?.()).toBe('3050.00');
-    // text markPoint：circle + symbolSize 0 + 函数 formatter
-    const textMark = option.series[0].markPoint!.data[0];
-    expect(textMark.coord).toEqual([2, 3030]);
-    expect(textMark.symbol).toBe('circle');
-    expect((textMark.label!.formatter as () => string)()).toBe('支撑位');
+    fireChartReady(); // 实例就绪 → tick 重渲染 → layout effect 读视口 → 覆盖层出图
+    const lines = overlayLines();
+    const texts = overlayTexts();
+    expect(lines).toHaveLength(2);
+    // trend (3,3000)-(5,3100)：像素 ((3+0.5)×60, 200)-((5+0.5)×60, 100) = (210,200)-(330,100)
+    expect(lines[0]).toHaveAttribute('x1', '210');
+    expect(lines[0]).toHaveAttribute('y1', '200');
+    expect(lines[0]).toHaveAttribute('x2', '330');
+    expect(lines[0]).toHaveAttribute('y2', '100');
+    expect(lines[0]).toHaveAttribute('stroke', '#38bdf8');
+    expect(lines[0]).toHaveAttribute('stroke-width', '1.5');
+    // hline 3050：窗口半开带两端 −0.5/9.5 → 像素 (0,150)-(600,150)；价格标签在左端上方
+    expect(lines[1]).toHaveAttribute('x1', '0');
+    expect(lines[1]).toHaveAttribute('y1', '150');
+    expect(lines[1]).toHaveAttribute('x2', '600');
+    expect(lines[1]).toHaveAttribute('y2', '150');
+    expect(texts[0]).toHaveTextContent('3050.00');
+    expect(texts[0]).toHaveAttribute('x', '0');
+    expect(texts[0]).toHaveAttribute('y', '146');
+    // text 标注：锚点 (2, 3030) → 像素 ((2+0.5)×60, 170) = (150, 170)，文本在锚点上方 12px
+    expect(texts[1]).toHaveTextContent('支撑位');
+    expect(texts[1]).toHaveAttribute('x', '150');
+    expect(texts[1]).toHaveAttribute('y', '158');
   });
 
-  it('画线渲染：射线右缘外推 + 跳过规则（trend 窗口同侧外/ray p1 在窗口右侧）+ y 求交收进 extent', () => {
-    const ray: Drawing = {
-      id: 'r1', kind: 'ray',
-      p1: { date: drawDates[1], price: 3050 },
-      p2: { date: drawDates[2], price: 3060 },
+  it('小数锚点 x 渲染：线段精确落在按点像素（回归锚：线的起点 = 鼠标的起点）', () => {
+    setupFakeInstance();
+    const frac: Drawing = {
+      id: 'f1', kind: 'trend',
+      p1: { date: drawDates[3], price: 3000, x: 3.2 },
+      p2: { date: drawDates[5], price: 3100, x: 5.4 },
     };
-    const trendOutside: Drawing = {
-      id: 'o1', kind: 'trend',
-      p1: { date: drawDates[0], price: 3000 },
-      p2: { date: drawDates[1], price: 3010 },
-    };
-    const rayRight: Drawing = {
-      id: 'o2', kind: 'ray',
-      p1: { date: drawDates[8], price: 3000 },
-      p2: { date: drawDates[9], price: 3010 },
-    };
-    const crossing: Drawing = {
-      id: 'c1', kind: 'trend',
-      p1: { date: drawDates[1], price: 5000 },
-      p2: { date: drawDates[8], price: 1000 },
-    };
-    render(
-      <CandlestickChart
-        model={drawModel}
-        drawings={[ray, trendOutside, rayRight, crossing]}
-        onDrawingsChange={vi.fn()}
-        visibleRange={{ start: drawDates[4], end: drawDates[7] }}
-      />,
-    );
-    const option = renderOption();
-    const markLine = option.series[0].markLine!.data as Array<Array<{ coord: [number, number] }>>;
-    // trendOutside 两端点均在窗口左侧（同一侧）→ 跳过；rayRight p1 在窗口右侧 → 跳过；
-    // ray + crossing 保留 → 2 条
-    expect(markLine).toHaveLength(2);
-    // ray：起点 = max(p1, 窗口左缘)=4、终点 = 窗口右缘外推 7；斜率 = 10/类目
-    expect(markLine[0].map((p) => p.coord)).toEqual([
-      [4, 3080], // 3050 + 10×(4−1)
-      [7, 3110], // 3050 + 10×(7−1)
-    ]);
-    // crossing（5000→1000）：x 截断后两端点仍在并集 extent [2950,3150] 外、中段横穿 → y 求交收进边界。
-    // x 断言（回归锚：求交参数化基准必须是起点，错取终点会算出 [4,3150],[2,2950] 的斜率反转）
-    expect(markLine[1].map((p) => p.coord)).toEqual([[4, 3150], [5, 2950]]);
+    render(<CandlestickChart model={drawModel} drawings={[frac]} onDrawingsChange={vi.fn()} />);
+    fireChartReady();
+    const lines = overlayLines();
+    expect(lines).toHaveLength(1);
+    // 小数 x 直算像素：(3.2+0.5)×60 = 222、(5.4+0.5)×60 = 354（非 bar 中心 210/330）
+    expect(lines[0]).toHaveAttribute('x1', '222');
+    expect(lines[0]).toHaveAttribute('x2', '354');
   });
 
-  it('无 drawings → 无 markLine/markPoint；无 onDrawingsChange → 无工具栏（概念卡回归）', () => {
-    render(<CandlestickChart model={drawModel} />);
-    const option = renderOption();
-    expect(option.series[0].markLine).toBeUndefined();
-    expect(option.series[0].markPoint).toBeUndefined();
-    expect(screen.queryByText('画线')).not.toBeInTheDocument();
-  });
-
-  it('真 echarts SSR 渲染（B1/B2/M3 回归锚）：嵌套 markLine 出图、文字 label 渲染、无异常', () => {
+  it('真 echarts 实例回归锚：viewport 读取 → 覆盖层出图（拆引用裸调 getComponent 会丢 this 抛 TypeError）', () => {
+    setupFakeInstance();
     // jsdom 无 canvas：zrender 布局 measureText 走 getContext——桩一个极简 2d 上下文
     const dummyCtx = new Proxy({}, {
       get: (_target, prop) => {
@@ -585,41 +580,97 @@ describe('CandlestickChart', () => {
     }) as unknown as CanvasRenderingContext2D;
     HTMLCanvasElement.prototype.getContext = vi.fn(() => dummyCtx) as never;
 
-    const text1: Drawing = { id: 'x1', kind: 'text', pos: { date: drawDates[2], price: 3030 }, text: '支撑位' };
-    render(<CandlestickChart model={drawModel} drawings={[trend1, text1]} onDrawingsChange={vi.fn()} />);
-    const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 600, height: 360 });
+    render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={vi.fn()} />);
+    // 用真实 echarts SSR 实例替换 fake：覆盖层 viewport 读取（grid rect + yAxis extent）走真 API。
+    // 2026-09-16 实锤：假实例的 getComponent 是箭头函数，拆引用裸调不炸；真实例是类方法，
+    // 裸调读 this._componentsMap 抛 TypeError——viewport 永远 null、画线功能整体静默失效
+    const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 600, height: 460 });
     chart.setOption(renderOption() as unknown as echarts.EChartsOption);
-    const svg = chart.renderToSVGString();
-    expect(svg).toContain('<path'); // 线段出图
-    expect(svg).toContain('支撑位'); // 文字 label
+    act(() => {
+      renderProps().onChartReady?.(chart);
+    });
+    const lines = overlayLines();
+    expect(lines).toHaveLength(1); // trend1 出图
+    expect(Number(lines[0].getAttribute('x1'))).toBeGreaterThan(0);
+    expect(Number(lines[0].getAttribute('y1'))).toBeGreaterThan(0);
+  });
+
+  it('无 drawings 覆盖层无线段；无 onDrawingsChange → 无工具栏（概念卡回归）', () => {
+    setupFakeInstance();
+    render(<CandlestickChart model={drawModel} />);
+    const option = renderOption();
+    expect(option.series[0].markLine).toBeUndefined();
+    expect(option.series[0].markPoint).toBeUndefined();
+    expect(screen.queryByText('画线')).not.toBeInTheDocument();
+    expect(document.querySelector('svg[data-testid="drawing-overlay"]')).toBeNull();
   });
 
   // ---- 画线交互（§3.6.3 验证 5/6）----
 
-  it('绘制 trend：mousedown→mousemove→mouseup 提交新画线；mouseup 出 grid 取消', () => {
+  it('绘制 trend：mousedown→mousemove→mouseup 提交新画线；起点精确落点；mouseup 出 grid 取消', () => {
     setupFakeInstance();
-    const onDrawingsChange = vi.fn();
-    render(<CandlestickChart model={drawModel} drawings={[]} onDrawingsChange={onDrawingsChange} />);
+    render(<DrawingHarness model={drawModel} initial={[]} />);
     fireChartReady();
     fireEvent.click(screen.getByText('画线')); // 进入 draw 模式（默认趋势线）
 
-    zrFire('mousedown', 300, 200); // idx 3、price 3000
-    zrFire('mousemove', 500, 100); // 预览
-    expect(mockState.zr!.add).toHaveBeenCalled(); // 预览走 zr 图元
-    zrFire('mouseup', 500, 100); // idx 5、price 3100
-    expect(onDrawingsChange).toHaveBeenCalledTimes(1);
-    const [next] = onDrawingsChange.mock.calls[0] as [Drawing[]];
-    expect(next).toHaveLength(1);
-    expect(next[0]).toMatchObject({
-      kind: 'trend',
-      p1: { date: drawDates[3], price: 3000 },
-      p2: { date: drawDates[5], price: 3100 },
-    });
+    zrFire('mousedown', 222, 200); // 非 bar 中心像素：锚点小数 x = 3.2、price 3000
+    // 同 bar 内拖拽（回归锚：按下后立即出线——锚点精确像素→鼠标原始像素，连续跟手不空窗）
+    zrFire('mousemove', 240, 220);
+    expect(overlayPreview()).toHaveAttribute('x1', '222');
+    expect(overlayPreview()).toHaveAttribute('y1', '200');
+    expect(overlayPreview()).toHaveAttribute('x2', '240');
+    expect(overlayPreview()).toHaveAttribute('y2', '220');
+    zrFire('mousemove', 330, 100); // 跨 bar 拖拽：终点跟随鼠标原始像素
+    // 起点精确落点回归锚（核心）：预览起点 = 按点像素 (222,200) 自身、钉死不飘——
+    // 不再是 bar 中心 (210,200)；mouseup 提交后渲染即此点
+    expect(overlayPreview()).toHaveAttribute('x1', '222');
+    expect(overlayPreview()).toHaveAttribute('x2', '330');
+    zrFire('mouseup', 330, 100); // idx 5、price 3100、小数 x 5
+    // 提交后覆盖层渲染（harness 回填 drawings）：起点 = 按点像素 (222,200)——线的起点就是鼠标的起点
+    const committed = overlayLines();
+    expect(committed).toHaveLength(1);
+    expect(committed[0]).toHaveAttribute('x1', '222');
+    expect(committed[0]).toHaveAttribute('y1', '200');
+    expect(committed[0]).toHaveAttribute('x2', '330');
+    expect(committed[0]).toHaveAttribute('y2', '100');
+    expect(overlayPreview()).toBeNull(); // 提交后预览清除
 
     // mouseup 出 grid → 取消本次绘制
-    zrFire('mousedown', 300, 200);
+    zrFire('mousedown', 210, 200);
     zrFire('mouseup', 700, 100); // x=700 超出 grid 矩形 600
-    expect(onDrawingsChange).toHaveBeenCalledTimes(1);
+    expect(overlayLines()).toHaveLength(1); // 不追加
+  });
+
+  it('绘制预览按线型：ray 锚点→主图右缘（斜率跟手）、hline 锚点价格全窗宽；起点恒钉锚点', () => {
+    setupFakeInstance();
+    render(<CandlestickChart model={drawModel} drawings={[]} onDrawingsChange={vi.fn()} />);
+    fireChartReady();
+    fireEvent.click(screen.getByText('画线'));
+    fireEvent.click(screen.getByText('射线'));
+    zrFire('mousedown', 210, 200); // 锚点 fx 3.0、price 3000 → 像素 (210,200)
+    zrFire('mousemove', 330, 100); // 斜率 (100−200)/(330−210) = −5/6
+    // 主图 rect 右缘 x=600：y = 200 − (5/6)×390 = −125 → 截进 grid 顶缘 0
+    expect(overlayPreview()).toHaveAttribute('x1', '210');
+    expect(overlayPreview()).toHaveAttribute('y1', '200');
+    expect(overlayPreview()).toHaveAttribute('x2', '600');
+    expect(overlayPreview()).toHaveAttribute('y2', '0');
+
+    fireEvent.click(screen.getByText('水平线'));
+    zrFire('mousedown', 270, 200); // 锚点 fx 4.0、price 3000 → 像素 (270,200)
+    zrFire('mousemove', 330, 100); // 鼠标位置不影响 hline 预览（提交只取锚点价格）
+    expect(overlayPreview()).toHaveAttribute('x1', '0');
+    expect(overlayPreview()).toHaveAttribute('y1', '200');
+    expect(overlayPreview()).toHaveAttribute('x2', '600');
+    expect(overlayPreview()).toHaveAttribute('y2', '200');
+  });
+
+  it('draw 模式滚轮缩放不锁（滚轮与 zr 绘制事件不冲突）、拖拽平移保持锁定；退出恢复平移', () => {
+    render(<CandlestickChart model={drawModel} drawings={[]} onDrawingsChange={vi.fn()} />);
+    expect(renderOption().dataZoom?.[0]).toMatchObject({ zoomOnMouseWheel: true, moveOnMouseMove: true });
+    fireEvent.click(screen.getByText('画线')); // 进入 draw 模式
+    expect(renderOption().dataZoom?.[0]).toMatchObject({ zoomOnMouseWheel: true, moveOnMouseMove: false });
+    fireEvent.click(screen.getByText('完成')); // 退出 → view 恢复拖拽平移
+    expect(renderOption().dataZoom?.[0]).toMatchObject({ zoomOnMouseWheel: true, moveOnMouseMove: true });
   });
 
   it('绘制 trend 垂直两点（同日）拒绝提交；空 text 拒绝提交', () => {
@@ -629,14 +680,14 @@ describe('CandlestickChart', () => {
     fireChartReady();
     fireEvent.click(screen.getByText('画线'));
 
-    // 同日两点：mousedown idx3、mouseup 同 idx3（x=300 与 x=330 都取整到 3）
-    zrFire('mousedown', 300, 200);
-    zrFire('mouseup', 330, 100);
+    // 同日两点：mousedown idx3、mouseup 同 idx3（fx 3.0 与 fx 3.2 都取整到 3）
+    zrFire('mousedown', 210, 200);
+    zrFire('mouseup', 222, 100);
     expect(onDrawingsChange).not.toHaveBeenCalled();
 
     // 空 text：标注模式单击 → 输入框出现 → 直接 Enter 空串不提交
     fireEvent.click(screen.getByText('标注'));
-    zrFire('mousedown', 200, 200);
+    zrFire('mousedown', 150, 200);
     const input = screen.getByRole('textbox');
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onDrawingsChange).not.toHaveBeenCalled();
@@ -649,7 +700,7 @@ describe('CandlestickChart', () => {
     fireChartReady();
     fireEvent.click(screen.getByText('画线'));
     fireEvent.click(screen.getByText('标注'));
-    zrFire('mousedown', 200, 200); // idx 2、price 3000
+    zrFire('mousedown', 150, 200); // fx 2.0、price 3000
 
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: '压力位' } });
@@ -660,7 +711,7 @@ describe('CandlestickChart', () => {
 
     // Esc 取消优先于 blur：取消后 blur 不再提交
     fireEvent.click(screen.getByText('标注'));
-    zrFire('mousedown', 200, 200);
+    zrFire('mousedown', 150, 200);
     const input2 = screen.getByRole('textbox');
     fireEvent.change(input2, { target: { value: '不应提交' } });
     fireEvent.keyDown(input2, { key: 'Escape' });
@@ -668,29 +719,115 @@ describe('CandlestickChart', () => {
     expect(onDrawingsChange).toHaveBeenCalledTimes(1);
   });
 
-  it('编辑：命中端点只移该锚点、选中态 width 3（含 merge 修正后）', () => {
+  it('draw 模式命中线身 → 拖动平移、不新建线（画错不用重画，拖一下即到位）', () => {
+    setupFakeInstance();
+    const onDrawingsChange = vi.fn();
+    render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={onDrawingsChange} />);
+    fireChartReady();
+    fireEvent.click(screen.getByText('画线')); // 进入 draw 模式（默认趋势线）
+
+    // 命中线身（中点 (270,150)，恰在线段上）→ 拖拽预览（虚线）而非开新线
+    zrFire('mousedown', 270, 150); // start fx 4.0、price 3050
+    zrFire('mousemove', 330, 50);
+    expect(overlayPreview()).not.toBeNull(); // 拖拽预览 = 假设提交后的渲染线段
+    zrFire('mouseup', 330, 50); // end fx 5.0、price 3150 → delta idx +1、price +100
+    // 提交 = 更新 t1（双锚点同步平移），不追加新线
+    expect(onDrawingsChange).toHaveBeenCalledTimes(1);
+    const [next] = onDrawingsChange.mock.calls[0] as [Drawing[]];
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({
+      id: 't1',
+      p1: { date: drawDates[4], price: 3100 }, // 3000 + 100
+      p2: { date: drawDates[6], price: 3200 }, // 3100 + 100
+    });
+  });
+
+  it('draw 模式命中端点 → 只移该锚点', () => {
+    setupFakeInstance();
+    const onDrawingsChange = vi.fn();
+    render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={onDrawingsChange} />);
+    fireChartReady();
+    fireEvent.click(screen.getByText('画线'));
+
+    // 命中端点 1（pixel (210,200)，偏移 3,2 px 在 8px 阈值内）→ 只移 p1
+    zrFire('mousedown', 213, 202);
+    zrFire('mouseup', 270, 50); // fx 4.0、price 3150
+    const [next] = onDrawingsChange.mock.calls[0] as [Drawing[]];
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({
+      id: 't1',
+      p1: { date: drawDates[4], price: 3150 }, // 只移 p1（落点回 bar 中心）
+      p2: { date: drawDates[5], price: 3100 }, // p2 不动
+    });
+  });
+
+  it('draw 模式拖拽提交后仍在 draw 模式，可继续画第二条', () => {
+    setupFakeInstance();
+    render(<DrawingHarness model={drawModel} initial={[trend1]} />);
+    fireChartReady();
+    fireEvent.click(screen.getByText('画线'));
+
+    // 先拖走 t1：线身命中 → 平移（p1 → bar4/3100 像素 (270,100)，p2 → bar6/3200 像素 (390,0)）
+    zrFire('mousedown', 270, 150);
+    zrFire('mouseup', 330, 50);
+    expect(overlayLines()).toHaveLength(1);
+
+    // 点空处（远离已移走的线）→ 正常开新线并提交
+    zrFire('mousedown', 150, 200); // fx 2.0、price 3000
+    zrFire('mouseup', 210, 100); // fx 3.0、price 3100 → 新 trend 线
+    expect(overlayLines()).toHaveLength(2);
+    expect(screen.getByText('完成')).toBeInTheDocument(); // 未退出 draw 模式
+  });
+
+  it('draw 模式 text 工具命中已有线 → 拖动而非弹标注框', () => {
+    setupFakeInstance();
+    const onDrawingsChange = vi.fn();
+    render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={onDrawingsChange} />);
+    fireChartReady();
+    fireEvent.click(screen.getByText('画线'));
+    fireEvent.click(screen.getByText('标注'));
+
+    zrFire('mousedown', 213, 202); // 命中端点 1 → 拖动优先于标注定位
+    expect(screen.queryByRole('textbox')).toBeNull();
+    zrFire('mouseup', 270, 50);
+    const [next] = onDrawingsChange.mock.calls[0] as [Drawing[]];
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({
+      id: 't1',
+      kind: 'trend',
+      p1: { date: drawDates[4], price: 3150 },
+      p2: { date: drawDates[5], price: 3100 },
+    });
+  });
+
+  it('draw 模式工具栏提示可拖动已有线', () => {
+    render(<CandlestickChart model={drawModel} drawings={[]} onDrawingsChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('画线'));
+    expect(screen.getByText('按住已有线拖动调整 · Esc 退出')).toBeInTheDocument();
+  });
+
+  it('编辑：命中端点只移该锚点、选中态 width 3', () => {
     setupFakeInstance();
     const onDrawingsChange = vi.fn();
     render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={onDrawingsChange} />);
     fireChartReady();
     fireEvent.click(screen.getByText('编辑'));
 
-    // 命中端点 2（pixel (500, 100)）：偏移 3,2 px 在 8px 阈值内
-    zrFire('mousedown', 503, 102);
-    zrFire('mousemove', 600, 0);
-    zrFire('mouseup', 600, 0); // idx 6、price 3200
-    // 提交后 selectedId 保留、draggingId 清除 → markLine 重建为选中态 width 3（样式在两点数组首元素上；
-    // 拖拽中该线按 id 过滤隐藏、以 zr 预览渲染，故断言须在 mouseup 之后）
-    const selectedItem = renderOption().series[0].markLine!.data[0] as Array<{ lineStyle?: { width?: number } }>;
-    expect(selectedItem[0].lineStyle?.width).toBe(3);
+    // 命中端点 2（pixel (330, 100)）：偏移 3,2 px 在 8px 阈值内
+    zrFire('mousedown', 333, 102);
+    zrFire('mousemove', 390, 0);
+    zrFire('mouseup', 390, 0); // fx 6.0、price 3200
+    // 提交后 selectedId 保留、draggingId 清除 → 覆盖层重渲染为选中态 width 3（拖拽中该线按
+    // id 过滤隐藏、以虚线预览呈现，故断言须在 mouseup 之后）
+    const lines = overlayLines();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toHaveAttribute('stroke-width', '3');
     const [next] = onDrawingsChange.mock.calls[0] as [Drawing[]];
     expect(next[0]).toMatchObject({
       id: 't1',
       p1: { date: drawDates[3], price: 3000 }, // p1 不动
-      p2: { date: drawDates[6], price: 3200 }, // 只移 p2
+      p2: { date: drawDates[6], price: 3200 }, // 只移 p2（拖拽落点回 bar 中心）
     });
-    // 渲染后 merge 被调用（按真实 extent 修正）且选中态仍为 width 3
-    expect(mockState.fakeInstance.setOption).toHaveBeenCalled();
   });
 
   it('编辑：拖到两锚点同日 → 回退（不更新）；线身拖拽双锚点同步平移', () => {
@@ -700,18 +837,18 @@ describe('CandlestickChart', () => {
     fireChartReady();
     fireEvent.click(screen.getByText('编辑'));
 
-    // 端点 1（pixel (300, 200)）拖到 idx5（与 p2 同日）→ 回退
-    zrFire('mousedown', 303, 202);
-    zrFire('mouseup', 500, 100);
+    // 端点 1（pixel (210, 200)）拖到 fx 5（与 p2 同日）→ 回退
+    zrFire('mousedown', 213, 202);
+    zrFire('mouseup', 330, 100);
     expect(onDrawingsChange).not.toHaveBeenCalled();
 
-    // 线身命中（中点附近 (400, 150)，投影距离 ≤6px）→ 双锚点同步平移 delta(idx +1, price +102)
-    zrFire('mousedown', 400, 152); // start idx 4、price 3048
-    zrFire('mouseup', 500, 50); // end idx 5、price 3150
+    // 线身命中（中点 (270, 150)，在线段上）→ 双锚点同步平移 delta(idx +1, price +100)
+    zrFire('mousedown', 270, 150); // start fx 4.0、price 3050
+    zrFire('mouseup', 330, 50); // end fx 5.0、price 3150
     const [next] = onDrawingsChange.mock.calls[0] as [Drawing[]];
     expect(next[0]).toMatchObject({
-      p1: { date: drawDates[4], price: 3102 }, // 3000 + 102
-      p2: { date: drawDates[6], price: 3202 }, // 3100 + 102
+      p1: { date: drawDates[4], price: 3100 }, // 3000 + 100
+      p2: { date: drawDates[6], price: 3200 }, // 3100 + 100
     });
   });
 
@@ -721,7 +858,7 @@ describe('CandlestickChart', () => {
     render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={onDrawingsChange} />);
     fireChartReady();
     fireEvent.click(screen.getByText('编辑'));
-    zrFire('mousedown', 503, 102); // 选中 t1
+    zrFire('mousedown', 333, 102); // 选中 t1
     fireEvent.keyDown(document, { key: 'Delete' });
     expect(onDrawingsChange).toHaveBeenCalledWith([]);
 
@@ -729,6 +866,50 @@ describe('CandlestickChart', () => {
     fireEvent.click(screen.getByText('编辑'));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByText('Esc 退出')).not.toBeInTheDocument();
+  });
+
+  it('橡皮擦：悬停高亮（sky-300/宽3）+ 单击删除命中线 + 空处不删 + Esc 退出', () => {
+    setupFakeInstance();
+    const onDrawingsChange = vi.fn();
+    render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={onDrawingsChange} />);
+    fireChartReady();
+    fireEvent.click(screen.getByText('橡皮擦'));
+    expect(screen.getByText('点击线删除 · Esc 退出')).toBeInTheDocument();
+
+    // 悬停命中线身（trend1 线段上 (270,150)）→ 高亮 sky-300 + 宽 3
+    zrFire('mousemove', 270, 150);
+    let lines = overlayLines();
+    expect(lines[0]).toHaveAttribute('stroke', '#7dd3fc');
+    expect(lines[0]).toHaveAttribute('stroke-width', '3');
+    // 移开 → 恢复默认
+    zrFire('mousemove', 30, 30);
+    lines = overlayLines();
+    expect(lines[0]).toHaveAttribute('stroke', '#38bdf8');
+    expect(lines[0]).toHaveAttribute('stroke-width', '1.5');
+
+    // 单击命中 → 立即删除该线
+    zrFire('mousedown', 270, 150);
+    expect(onDrawingsChange).toHaveBeenCalledTimes(1);
+    expect((onDrawingsChange.mock.calls[0] as [Drawing[]])[0]).toHaveLength(0);
+
+    // 空处点击 → 不删除
+    zrFire('mousedown', 30, 30);
+    expect(onDrawingsChange).toHaveBeenCalledTimes(1);
+
+    // Esc 退出 eraser 模式
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByText('点击线删除 · Esc 退出')).not.toBeInTheDocument();
+  });
+
+  it('橡皮擦删除文字标注（harness 回填 → 覆盖层同步消失）', () => {
+    setupFakeInstance();
+    const text1: Drawing = { id: 'x1', kind: 'text', pos: { date: drawDates[2], price: 3030 }, text: '支撑位' };
+    render(<DrawingHarness model={drawModel} initial={[text1]} />);
+    fireChartReady();
+    expect(overlayTexts()).toHaveLength(1);
+    fireEvent.click(screen.getByText('橡皮擦'));
+    zrFire('mousedown', 150, 160); // text 包围盒内（锚点 (150,170)）
+    expect(overlayTexts()).toHaveLength(0); // 删除后覆盖层同步消失
   });
 
   // ---- 图例与读条（§3.7.3 验证 1/2/3/4/5）----
@@ -764,7 +945,7 @@ describe('CandlestickChart', () => {
     const byName = Object.fromEntries(legends.flatMap((l) => l.data.map((d) => [d.name, d.textStyle?.color])));
     expect(byName).toEqual({
       开: '#ef4444', 高: '#ef4444', 低: '#ef4444', 收: '#ef4444', // drawModel 收≥开 → 红
-      MA5: '#fbbf24', MA10: '#f472b6', MA20: '#a78bfa', MA60: '#34d399',
+      MA5: '#91cc75', MA10: '#fac858', MA20: '#ee6666', MA60: '#73c0de', // 参考调色板色（2026-09-16）
       'BOLL上轨': '#94a3b8', 'BOLL中轨': '#94a3b8', 'BOLL下轨': '#94a3b8',
       DIF: '#e2e8f0', DEA: '#fbbf24',
     });
@@ -883,7 +1064,8 @@ describe('CandlestickChart', () => {
     expect(svg).toContain('MA5');
     expect(svg).toContain('BOLL上'); // formatter 展示缩写名（data 名为 BOLL上轨）
     expect(svg).toContain('DIF');
-    expect(svg).toContain('#fbbf24'); // 系列色文字 fill（icon none 无可见标记，空 d path 属已知）
+    expect(svg).toContain('#91cc75'); // MA5 系列色文字 fill（参考调色板；icon none 无可见标记，空 d path 属已知）
+    expect(svg).toContain('#fbbf24'); // DEA 系列色
   });
 
   // ---- Code Review 回归（2026-09-14 CR 一轮 findings）----
@@ -970,48 +1152,37 @@ describe('CandlestickChart', () => {
     expect(grids[0].top).toBe(56); // 三行图例（行 1 开高低收恒在）→ 56
   });
 
-  it('merge 按真实 extent 不改写带内价格（§3.6.3 验证 4 回归锚：守护过度夹取）', () => {
+  it('渲染用真实 extent 不夹带内价格（§3.6.3 验证 4 回归锚：守护过度夹取）', () => {
     setupFakeInstance();
-    // p2 价格 3180 落在并集 extent 顶（3150）与真实 extent 顶（3200）之间
+    // p2 价格 3180：并集 extent 顶（3150）外、真实 extent [2900,3200] 内 → 渲染 y = 3200−3180 = 20
     const bandTrend: Drawing = {
       id: 'b1', kind: 'trend',
       p1: { date: drawDates[1], price: 3120 },
       p2: { date: drawDates[3], price: 3180 },
     };
     render(<CandlestickChart model={drawModel} drawings={[bandTrend]} onDrawingsChange={vi.fn()} />);
-    fireChartReady();
-    // 首帧 option（并集兜底 [2950,3150]）：3180 被夹到 3150
-    const first = renderOption().series[0].markLine!.data as Array<Array<{ coord: [number, number] }>>;
-    expect(first[0].map((p) => p.coord[1])).toEqual([3120, 3150]);
-    // 渲染后 merge 用真实 extent [2900,3200]：带内端点按原价渲染（不被改写）
-    const fireAxis = renderProps().onEvents!.updateAxisPointer as (p: unknown) => void;
-    act(() => {
-      fireAxis({ axesInfo: [{ value: 1 }] });
-    });
-    const setOptionMock = mockState.fakeInstance.setOption as Mock;
-    // 图例 merge 也走 setOption——按含 series 的调用定位 markLine merge
-    const mergeArg = setOptionMock.mock.calls
-      .map((call) => call[0] as { series?: unknown } & MergeArgShape)
-      .find((arg) => arg.series)! as MergeArgShape;
-    expect(mergeArg.series[0].markLine!.data[0].map((p) => p.coord[1])).toEqual([3120, 3180]);
+    fireChartReady(); // 实例就绪 → tick 重渲染 → 覆盖层以真实 extent 出图
+    const lines = overlayLines();
+    expect(lines).toHaveLength(1);
+    // 带内端点按原价渲染（不被并集 extent [2950,3150] 夹到 3150）：y2 = 3200−3180 = 20
+    expect(lines[0]).toHaveAttribute('x1', '90'); // (1+0.5)×60
+    expect(lines[0]).toHaveAttribute('y1', '80'); // 3200−3120
+    expect(lines[0]).toHaveAttribute('x2', '210');
+    expect(lines[0]).toHaveAttribute('y2', '20');
   });
 
-  it('merge 修正后选中态仍为 width 3（§3.6.3 验证 6 回归锚：构建与 merge 共用构建函数）', () => {
+  it('编辑拖拽提交后覆盖层重渲染为选中态 width 3（§3.6.3 验证 6 回归锚：渲染与命中同源几何）', () => {
     setupFakeInstance();
     render(<CandlestickChart model={drawModel} drawings={[trend1]} onDrawingsChange={vi.fn()} />);
     fireChartReady();
     fireEvent.click(screen.getByText('编辑'));
-    // 拖拽中该线按 id 过滤隐藏（markLine 空），选中态断言须在 mouseup 之后：
-    // draggingId 清除、selectedId 保留 → 重渲染 → merge 以 selectedId 重建
-    zrFire('mousedown', 503, 102);
-    zrFire('mousemove', 600, 0);
-    zrFire('mouseup', 600, 0);
-    const setOptionMock = mockState.fakeInstance.setOption as Mock;
-    // 图例 merge 也走 setOption——按含 series 的调用定位 markLine merge，取最后一次
-    const seriesCalls = setOptionMock.mock.calls
-      .map((call) => call[0] as { series?: unknown } & MergeWidthArgShape)
-      .filter((arg) => arg.series);
-    const mergeArg = seriesCalls.at(-1)! as MergeWidthArgShape;
-    expect(mergeArg.series[0].markLine!.data[0][0].lineStyle?.width).toBe(3);
+    // 拖拽中该线按 id 过滤隐藏（覆盖层不渲染、以虚线预览呈现），选中态断言须在 mouseup 之后：
+    // draggingId 清除、selectedId 保留 → 覆盖层以 selectedId 重渲染
+    zrFire('mousedown', 333, 102);
+    zrFire('mousemove', 390, 0);
+    zrFire('mouseup', 390, 0);
+    const lines = overlayLines();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toHaveAttribute('stroke-width', '3');
   });
 });

@@ -85,10 +85,16 @@ class EventStudyReviewAdapter:
 
         return compute_all_windows(conn, event_id)
 
-    def prelabel(self, drafts: list[dict]) -> int:
+    def prelabel(self, drafts: list[dict], force: bool = False) -> int:
         from AI.eventStudy.review import ai_prelabel
 
-        return ai_prelabel.prelabel_events(drafts)
+        return ai_prelabel.prelabel_events(drafts, force=force)
+
+    def needs_prelabel(self, draft: dict) -> bool:
+        """预填谓词透传（回填语义与 AI 侧单一事实来源保持一致）。"""
+        from AI.eventStudy.review import ai_prelabel
+
+        return ai_prelabel.needs_prelabel(draft)
 
     def list_impact_drafts(self) -> list[dict]:
         from AI.eventStudy.review import review_dao

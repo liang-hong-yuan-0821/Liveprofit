@@ -28,3 +28,14 @@ def open_workspace_uow(services):
 
     with SqlAlchemyWorkspaceUnitOfWork(services._container.sync_session_factory) as uow:
         yield uow
+
+
+@contextmanager
+def open_quant_strategy_uow(services):
+    """量化策略路由：在 API 线程池内打开独立 sync Session（事务边界在 Service）。"""
+    from backend.modules.quant_strategy.infrastructure.repositories import (
+        SqlAlchemyQuantStrategyUnitOfWork,
+    )
+
+    with SqlAlchemyQuantStrategyUnitOfWork(services._container.sync_session_factory) as uow:
+        yield uow

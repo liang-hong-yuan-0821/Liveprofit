@@ -545,8 +545,9 @@ def _seed_sector_daily_bars(client) -> None:
 
 
 def test_concept_bars_returns_ohlc_ascending(client):
-    """概念 K 线（板块概念Treemap方案 3.3）：读 sector_daily、OHLC 脏行整行丢弃、
-    indicators 恒 None、名称映射、freshness。"""
+    """概念 K 线（板块概念Treemap方案 3.3 + m7 修订）：读 sector_daily、OHLC 脏行
+    整行丢弃、指标自算（板块指数无因子源，m7 用户拍板 2026-09-16）、名称映射、
+    freshness。3 根短序列：指标数组存在但与 bars 等长全 None（窗口不足即 None）。"""
     _seed_sector_daily_bars(client)
     client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 5))
     response = client.http.get(
@@ -563,8 +564,93 @@ def test_concept_bars_returns_ohlc_ascending(client):
     assert bars[0]["high"] == 105.0 and bars[0]["low"] == 99.0
     assert bars[0]["volume"] == 1000.0
     assert bars[2]["volume"] == 1200.0
-    assert data["indicators"] is None  # 板块指数无因子表数据（指标不自算）
+    # 指标自算契约（m7）：结构完整、与 bars 等长；3 根短序列窗口不足 → 全 None
+    indicators = data["indicators"]
+    assert indicators is not None
+    assert [line["period"] for line in indicators["ma"]] == [5, 10, 20, 60]
+    for line in indicators["ma"]:
+        assert line["values"] == [None, None, None]
+    for key in ("mid", "upper", "lower"):
+        assert indicators["boll"][key] == [None, None, None]
+    for key in ("dif", "dea", "hist"):
+        assert indicators["macd"][key] == [None, None, None]
     assert data["freshness_status"] == "FRESH"
+
+
+def _seed_dense_sector_bars(client, sector_code: str = "BK1756",
+                            start: date = date(2026, 7, 1), days: int = 40) -> None:
+    """概念指标自算用例 seed（m7）：密集连续自然日 close = 100+offset 线性递增，
+    OHLC 全有效（脏行路径由 _seed_sector_daily_bars 用例覆盖）。"""
+    from sqlalchemy import create_engine, text
+
+    from backend.bootstrap.settings import CoreSettings
+    from backend.tests.contract.api.conftest import _test_db_url
+
+    base_url = CoreSettings().resolved_database_url()
+    engine = create_engine(_test_db_url(base_url))
+    with engine.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO market.sector (source, sector_code, name, type) "
+            "VALUES ('dc', :code, '密集板块', 'N') ON CONFLICT DO NOTHING"),
+            {"code": sector_code})
+        for offset in range(days):
+            trading_date = start + timedelta(days=offset)
+            close = 100.0 + offset
+            conn.execute(
+                text(
+                    "INSERT INTO market.sector_daily "
+                    "(source, sector_code, trade_date, open, high, low, close, vol) "
+                    "VALUES ('dc', :code, :d, :o, :h, :l, :c, 1000) "
+                    "ON CONFLICT DO NOTHING"
+                ),
+                {"code": sector_code, "d": trading_date, "o": close - 1.0,
+                 "h": close + 1.0, "l": close - 2.0, "c": close},
+            )
+    engine.dispose()
+
+
+def test_concept_bars_compute_indicators_with_warmup(client):
+    """概念指标自算（m7）：预热窗口计算（[from−120d, to] 全段 → 切回请求窗口），
+    请求窗口首根指标即有值（预热生效）、与 bars 等长按 index 对齐、数值口径
+    = 归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1。"""
+    _seed_dense_sector_bars(client)
+    from_date = date(2026, 7, 11)  # offset 10
+    to_date = date(2026, 8, 9)     # offset 39
+    client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=to_date)
+    response = client.http.get(
+        f"/api/v1/market-data/concepts/BK1756/bars?market=CN&source=dc&interval=1d&from={from_date}&to={to_date}"
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data["bars"]) == 30
+    indicators = data["indicators"]
+    assert indicators is not None
+    # 对齐：各数组与 bars 等长；窗口首根（global offset 10）预热生效即有值
+    assert [line["period"] for line in indicators["ma"]] == [5, 10, 20, 60]
+    for line in indicators["ma"]:
+        assert len(line["values"]) == 30
+    # MA5 窗口首根 = mean(closes[6..10]) = mean(106..110) = 108；
+    # 末根 = mean(closes[35..39]) = mean(135..139) = 137
+    assert indicators["ma"][0]["values"][0] == 108.0
+    assert indicators["ma"][0]["values"][29] == 137.0
+    # BOLL(20)：全局第 19 根起有值 → 窗口 index 9；窗口首根 None（窗口不足即 None）
+    assert indicators["boll"]["mid"][0] is None
+    assert indicators["boll"]["mid"][9] == 109.5  # MA20(global 19) = mean(100..119)
+    # 末根 mid = mean(120..139) = 129.5；σ 总体标准差 ddof=0（归档方案 D6）：
+    # 窗口 [120..139] 偏差 ±9.5..±0.5 步长 1，方差 = 33.25 → σ = √33.25 ≈ 5.7663
+    assert indicators["boll"]["mid"][29] == 129.5
+    assert indicators["boll"]["upper"][29] == pytest.approx(129.5 + 2.0 * 33.25 ** 0.5)
+    assert indicators["boll"]["lower"][29] == pytest.approx(129.5 - 2.0 * 33.25 ** 0.5)
+    # MACD 边界：dif 第 slow−1=25 根（global）起有值 → 窗口 index 15；
+    # dea 再滞后 signal−1=8 根 → 窗口 index 23
+    macd = indicators["macd"]
+    assert (macd["fast"], macd["slow"], macd["signal"]) == (12, 26, 9)
+    assert macd["dif"][14] is None and macd["dif"][15] is not None
+    assert macd["dea"][22] is None and macd["dea"][23] is not None
+    # hist = 2×(dif−dea)（末根一致性，国内惯例 2×）
+    assert macd["hist"][29] == pytest.approx(2.0 * (macd["dif"][29] - macd["dea"][29]))
+    # MA60：40 根全历史不足 60 → 全 None（数据缺失是事实，不伪造）
+    assert indicators["ma"][3]["values"] == [None] * 30
 
 
 def test_concept_bars_errors(client):
@@ -626,9 +712,12 @@ def _seed_stock_bars(client) -> None:
 
 
 def test_stock_bars_returns_pure_kline(client):
-    """个股 K 线（板块概念Treemap方案 3.3）：get_bars 放宽 stock、因子行缺失 →
-    indicators=None 纯 K 线（与指数路径全 null 数组降级语义分流）。"""
+    """个股 K 线（板块概念Treemap方案 3.3 + m7 修订）：get_bars 放宽 stock、因子表
+    无行且按需拉取无数据 → indicators=None 纯 K 线降级（拉取不阻断 K 线响应；
+    与指数路径全 null 数组降级语义分流）。"""
     _seed_stock_bars(client)
+    # 测试注入 fake 拉取器（None = 上游无数据），防真实 tushare 网络调用
+    client.http.app.state.stock_factor_fetcher = lambda symbol, start, end: None
     client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 4))
     response = client.http.get(
         "/api/v1/market-data/stocks/600519.SH/bars?market=CN&interval=1d&from=2026-09-01&to=2026-09-07"
@@ -637,8 +726,63 @@ def test_stock_bars_returns_pure_kline(client):
     data = response.json()["data"]
     assert data["asset"] == {"market": "CN", "symbol": "600519.SH", "name": "贵州茅台"}
     assert [b["close"] for b in data["bars"]] == [1500.0, 1501.0]
-    assert data["indicators"] is None  # 个股因子采集为后续阶段：因子表无行 → 纯 K 线
+    assert data["indicators"] is None  # 拉取无数据 → 纯 K 线
     assert data["freshness_status"] == "FRESH"
+
+
+def test_stock_bars_fetches_stk_factors_on_demand_and_caches(client):
+    """个股因子按需拉取（m7 用户拍板 2026-09-16：个股接因子、概念自算）：因子表
+    无行 → 调 stk_factor_pro（注入 fake）→ 入库 factor_daily（缓存层）→ 指标按
+    因子值透传；第二次同区间请求走缓存不再调上游。"""
+    _seed_stock_bars(client)
+    import pandas as pd
+
+    calls = []
+
+    def fake_fetcher(symbol, start, end):
+        calls.append((symbol, start, end))
+        return pd.DataFrame({
+            "trade_date": ["2026-09-03", "2026-09-04"],
+            "ma_bfq_5": [1510.0, 1511.0],
+            "ma_bfq_10": [1520.0, 1521.0],
+            "ma_bfq_20": [1530.0, 1531.0],
+            "ma_bfq_60": [1560.0, 1561.0],
+            "boll_mid_bfq": [1502.0, 1503.0],
+            "boll_upper_bfq": [1530.0, 1531.0],
+            "boll_lower_bfq": [1470.0, 1471.0],
+            "macd_dif_bfq": [0.5, 0.6],
+            "macd_dea_bfq": [0.3, 0.4],
+            "macd_bfq": [0.4, 0.5],
+        })
+
+    client.http.app.state.stock_factor_fetcher = fake_fetcher
+    client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 4))
+    url = (
+        "/api/v1/market-data/stocks/600519.SH/bars?market=CN&interval=1d"
+        "&from=2026-09-01&to=2026-09-07"
+    )
+
+    response = client.http.get(url)
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["asset"] == {"market": "CN", "symbol": "600519.SH", "name": "贵州茅台"}
+    indicators = data["indicators"]
+    assert indicators is not None
+    # 指标逐值透传拉取到的因子（不自算）
+    assert [line["period"] for line in indicators["ma"]] == [5, 10, 20, 60]
+    assert indicators["ma"][0]["values"] == [1510.0, 1511.0]
+    assert indicators["ma"][3]["values"] == [1560.0, 1561.0]
+    assert indicators["boll"]["mid"] == [1502.0, 1503.0]
+    assert indicators["boll"]["upper"] == [1530.0, 1531.0]
+    assert indicators["macd"]["hist"] == [0.4, 0.5]
+    # 按请求区间调用一次（fake 收到的 from/to 与请求一致）
+    assert calls == [("600519.SH", "2026-09-01", "2026-09-07")]
+
+    # 因子已入库缓存：第二次同区间请求不再调上游、指标仍产出（表内读）
+    response = client.http.get(url)
+    assert response.status_code == 200
+    assert response.json()["data"]["indicators"]["ma"][0]["values"] == [1510.0, 1511.0]
+    assert len(calls) == 1
 
 
 def test_stock_bars_rejects_non_stock_index(client):

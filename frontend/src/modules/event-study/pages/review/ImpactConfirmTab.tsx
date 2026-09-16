@@ -12,8 +12,10 @@ import { queryKeys } from '../../../../api/queryKeys';
 import { toImpactRowVM, type ImpactRowVM } from './mappers/toImpactRowVM';
 import { useConfirmImpactsMutation, useImpactDraftsQuery } from './queries';
 
+// 事件标题/备注列为正下界 minmax：fr 下界为 0 时窄容器下整列塌缩为 0px
+// 不可见（与 PendingEventRow 同类问题，2026-09-16 修复）；正下界 + 横向滚动。
 const IMPACT_ROW_GRID =
-  'grid grid-cols-[2.5rem_4rem_minmax(0,1.5fr)_7rem_7rem_6rem_5rem_5rem_5rem_5rem_minmax(0,1fr)] items-center gap-2';
+  'grid grid-cols-[2.5rem_4rem_minmax(14rem,1.5fr)_7rem_7rem_6rem_5rem_5rem_5rem_5rem_minmax(6rem,1fr)] items-center gap-2';
 
 // Tab2 影响结果确认：资产×窗口行勾选 → 按事件分组逐事件确认落表（仅勾选的写入 event_impacts）。
 export function ImpactConfirmTab() {

@@ -40,6 +40,7 @@
 | 文件 | 内容 |
 |------|------|
 | [git-bash-windows.md](pitfalls/workspace/git-bash-windows.md) | Git Bash 下 start /c MSYS 转换坑 |
+| [git-status-porcelain-empty-path.md](pitfalls/workspace/git-status-porcelain-empty-path.md) | git status 对不存在路径静默返回空，核验前先确认路径存在 |
 | [评审循环踩坑.md](pitfalls/workspace/评审循环踩坑.md) | 评审收敛的 5 段踩坑史（评审维度清单的来源） |
 
 ## best-practices/（good：最佳实践）
@@ -57,4 +58,3 @@
 | [langgraph-topology.md](best-practices/ai/langgraph-topology.md) | 图结构确定性拓扑提取的正确姿势（compiled.builder） |
 | [market-t6.md](best-practices/ai/market-t6.md) | 市场层 T6：花括号注入、纯代码节点登记、结构化 State 消费约定 |
 | [eventstudy-scheduler.md](best-practices/ai/eventstudy-scheduler.md) | 每日批处理机制与睡眠补跑三层触发设计 |
-| [debug-step-mode.md](best-practices/ai/debug-step-mode.md) | 调试步进模式协调机制 |

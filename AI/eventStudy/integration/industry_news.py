@@ -118,7 +118,7 @@ def _filter_pending_drafts(drafts, win_start, win_end) -> tuple:
 
     None 兜底为显式要求：importance_hint 常为 None（无星级）、ai_suggestions
     常为 {}，None >= 4 会抛 TypeError——过滤与排序一律 int(... or 0)/... or 3
-    （沿用 review_app 的既有口径）。
+    （沿用审核界面既有口径）。
     truncated = 截断前命中数超过 MAX_PER_SOURCE。
     """
     picked = []

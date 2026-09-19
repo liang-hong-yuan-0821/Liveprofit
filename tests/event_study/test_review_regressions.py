@@ -382,27 +382,3 @@ def test_raw_ref_items_skips_none_and_blank():
     })
     assert scope == "sector"
     assert refs == ["SW:801080"]
-
-
-# ==================== M6 残留：Streamlit 提交前拦截未识别引用项 ====================
-
-def test_review_app_row_target_refs_flags_unrecognized():
-    """表格「目标」列 → (归一引用, 未识别项)：静默丢项不得落库（纯函数层面）。
-
-    `normalize_scope_refs` 会静默丢弃未识别项；提交前不比对归一前后，会落库一个
-    「少目标」的事件，与 backend `resolve_scope_fields` 的拦截语义分叉。
-    """
-    from AI.eventStudy.review import review_app
-
-    refs, unrecognized = review_app.row_target_refs("SW:801080, garbage, 801080")
-    assert refs == ["SW:801080"]
-    assert unrecognized == ["garbage"]
-
-    # 合法重复引用（同一目标写两次）不是未识别项
-    refs, unrecognized = review_app.row_target_refs("SW:801080, 801080")
-    assert refs == ["SW:801080"]
-    assert unrecognized == []
-
-    # 空目标（market 行）不产生未识别项——缺目标由既有前置拦截负责
-    assert review_app.row_target_refs("") == ([], [])
-    assert review_app.row_target_refs(None) == ([], [])

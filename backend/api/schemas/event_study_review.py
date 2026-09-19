@@ -16,7 +16,7 @@ _FIELD_HARD_MAX = 10_000
 class ReviewRowRequest(BaseModel):
     draft_id: int
     action: Literal["approve", "ignore"]
-    # 不用 Literal 约束类型/条件取值——Streamlit Selectbox 选项是 UI 层约束
+    # 不用 Literal 约束类型/条件取值——前端下拉选项是 UI 层约束
     event_type: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)
     event_subtype: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)
     event_condition: str | None = Field(default=None, max_length=_FIELD_HARD_MAX)

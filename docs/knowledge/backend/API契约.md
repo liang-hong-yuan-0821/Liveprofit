@@ -587,9 +587,9 @@ data: {"connection_id":"...","sent_at":"2026-09-05T09:12:30Z","schema_version":"
 
 200 + `data.items: [{ticker, name, market}]`（首期为事件研究系统已初始化的 4 个 CN 指数：000001.SH 上证指数 / 000688.SH 科创50 / 000698.SH 科创100 / 000300.SH 沪深300）。供资产下拉选项；接口缺失时前端保留自由输入，**不硬编码名单**。
 
-### 7.3 审核 API（2026-09-08 增补，平台集成版替代 Streamlit review_app）
+### 7.3 审核 API（2026-09-08 增补）
 
-行为对齐原 Streamlit 审核界面；草稿存 Redis（`events:pending:{draft_id}` 30 天 / `event_impacts:draft:{event_id}` 7 天），审核终态写 PG `events`（approved/ignored）与 `event_impacts`，审核日志 LPUSH Redis `event_review_log`。设计细节见 docs/requirements/archive/事件研究审核界面平台集成方案.md。
+审核流复用 AI 侧 review_dao；草稿存 Redis（`events:pending:{draft_id}` 30 天 / `event_impacts:draft:{event_id}` 7 天），审核终态写 PG `events`（approved/ignored）与 `event_impacts`，审核日志 LPUSH Redis `event_review_log`。设计细节见 docs/requirements/archive/事件研究审核界面平台集成方案.md。
 
 | Method/Path | 请求体 | 响应 data |
 |---|---|---|

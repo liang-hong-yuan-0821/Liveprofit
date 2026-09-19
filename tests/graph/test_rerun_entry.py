@@ -128,7 +128,7 @@ def test_rerun_from_node_writes_markers_and_injects_state(tmp_path, monkeypatch)
     captured = {}
     with mock.patch.object(
         graph, "_propagate_inner",
-        side_effect=lambda state, log_dir, debug, ctx, cb: captured.update(
+        side_effect=lambda state, log_dir, ctx, cb: captured.update(
             {"state": dict(state), "log_dir": log_dir}) or ({"ok": True}, {"action": "持有"}),
     ):
         final, decision = graph.rerun_from_node(

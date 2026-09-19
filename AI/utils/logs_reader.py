@@ -1,5 +1,5 @@
 """
-日志目录读取层（纯函数，无 streamlit 依赖，供 app.py 与测试共用）
+日志目录读取层（纯函数，无 UI 框架依赖，供平台执行日志/图拓扑与测试共用）
 
 目录约定见 AI/utils/llm_callbacks.py 与 AI/utils/dataprovider_log.py 的模块 docstring：
   logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/req.md + res.md + meta.json
@@ -122,34 +122,6 @@ def list_report_files(run: Path) -> List[Path]:
         (p for p in reports_dir.rglob("*") if p.is_file()),
         key=lambda p: p.relative_to(reports_dir).as_posix(),
     )
-
-
-# 调试步进检查点文件名（run 根下隐藏文件，单点定义见 AI/utils/step_gate.py）
-from AI.utils.step_gate import CHECKPOINT_FILE
-
-
-def find_checkpoint(run: Path) -> Optional[Dict[str, Any]]:
-    """读 run 的调试步进检查点文件；缺失/坏 JSON → None"""
-    return read_json(run / CHECKPOINT_FILE)
-
-
-def find_active_checkpoint(root: Optional[Path] = None) -> Optional[Tuple[Path, Dict[str, Any]]]:
-    """扫描全部 run（最新在前），返回 (run_dir, payload)；无 → None。
-
-    优先返回 waiting 的检查点（并发多 run 时，较旧 run 仍在等待的检查点
-    不能被较新 run 已结束的 confirmed 残留遮蔽）；无 waiting 时退回最新的
-    非 waiting 检查点（历史状态展示）。
-    """
-    fallback: Optional[Tuple[Path, Dict[str, Any]]] = None
-    for run in list_runs(root):
-        payload = find_checkpoint(run)
-        if payload is None:
-            continue
-        if payload.get("status") == "waiting":
-            return run, payload
-        if fallback is None:
-            fallback = (run, payload)
-    return fallback
 
 
 def read_json(p: Path) -> Optional[Dict[str, Any]]:

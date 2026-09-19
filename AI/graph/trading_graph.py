@@ -42,7 +42,6 @@ from AI.utils import checkpoint
 from AI.utils import prompts as agent_prompts
 from AI.utils.llm_callbacks import LLMCallbackHandler, ToolCallbackHandler
 from AI.utils.dataprovider_log import track_node
-from AI.utils import step_gate
 
 logger = logging.getLogger(__name__)
 
@@ -310,9 +309,9 @@ class TradingAgentsGraph:
         Returns:
             (final_state, decision_dict)
         """
-        prepared, log_dir, debug_step, ctx = self._prepare_run(
+        prepared, log_dir, ctx = self._prepare_run(
             dict(init_state), progress_callback)
-        return self._propagate_inner(prepared, log_dir, debug_step, ctx,
+        return self._propagate_inner(prepared, log_dir, ctx,
                                      progress_callback)
 
     def rerun_from_node(self, init_state, checkpoint_state, node_id,
@@ -338,19 +337,19 @@ class TradingAgentsGraph:
         # 环成员目标上移环入口：跳过只发生在环入口之前（环整体重演）
         merged["_rerun_from"] = checkpoint._LOOP_ENTRY.get(node_id, node_id)
 
-        prepared, log_dir, debug_step, ctx = self._prepare_run(
+        prepared, log_dir, ctx = self._prepare_run(
             merged, progress_callback)
         checkpoint.write_rerun_marker(
             log_dir, node_id, max(int(prepared.get("attempt_no", 1)) - 1, 0))
         if progress_callback:
             progress_callback(f"从节点 {node_id} 续跑：上游复用上次结果")
-        return self._propagate_inner(prepared, log_dir, debug_step, ctx,
+        return self._propagate_inner(prepared, log_dir, ctx,
                                      progress_callback)
 
     def _prepare_run(self, init_state, progress_callback=None):
         """propagate/rerun_from_node 共用的运行准备：
         覆盖快照 → 防御性日期校正 → 日志目录/回调 → checkpoint 入口保存。
-        返回 (prepared_state, log_dir, debug_step, ctx)。
+        返回 (prepared_state, log_dir, ctx)。
         """
         company_name = init_state.get("company_of_interest", "")
         trade_date = init_state.get("trade_date", "")
@@ -391,13 +390,6 @@ class TradingAgentsGraph:
         checkpoint.save_init_state(init_state)
         logger.info(f"日志目录: {log_dir.resolve()}")
 
-        # ---- 调试步进模式（LIVEPROFIT_DEBUG_STEP=true）----
-        debug_step = self.config.get("debug_step", False)
-        if debug_step:
-            step_gate.enable(log_dir)
-            trace_step("调试步进模式已启用",
-                       checkpoint_file=str(step_gate.checkpoint_file()))
-
         trace_step("propagate 入口", company=company_name, trade_date=trade_date,
                    raw_date=raw_date, correction=date_correction,
                    callback=bool(progress_callback))
@@ -413,9 +405,9 @@ class TradingAgentsGraph:
             "raw_date": raw_date,
             "date_correction": date_correction,
         }
-        return init_state, log_dir, debug_step, ctx
+        return init_state, log_dir, ctx
 
-    def _propagate_inner(self, init_state, log_dir, debug_step, ctx,
+    def _propagate_inner(self, init_state, log_dir, ctx,
                          progress_callback=None):
         """propagate/rerun_from_node 共用的执行主体（图运行 → 报告 → 决策）。"""
         trade_date = ctx["trade_date"]
@@ -530,10 +522,6 @@ class TradingAgentsGraph:
             )
         trace_step("决策提取完成", action=decision.get("action"),
                    price=decision.get("target_price"), conf=decision.get("confidence"))
-
-        # 步进模式收尾：清理门控状态（防跨 run 残留）
-        if debug_step:
-            step_gate.disable()
 
         # 完成标记：成功收尾原子写（失败/取消的 attempt 目录无此文件，
         # checkpoint 目录链回溯以此过滤部分执行目录，见 AI/graph/checkpoint.py）

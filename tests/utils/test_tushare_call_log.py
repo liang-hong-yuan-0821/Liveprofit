@@ -231,9 +231,6 @@ def test_dp_fn_exception_keeps_dir_with_error(dp_log_env):
     res = _read(d / "res.json")
     assert res == {"error": "ValueError: 组装失败"}
     assert _read(d / "meta.json")["error"] is True
-    # 检查点文件不产生（与 test_step_gate 的"仅成功路径"语义一致）
-    from AI.utils import step_gate
-    assert not (tmp_path / step_gate.CHECKPOINT_FILE).exists()
 
 
 # ---- 序号与标志 ----

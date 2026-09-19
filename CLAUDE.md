@@ -63,7 +63,7 @@ knowledge/ 是**知识沉淀桶**（领域知识库），回答"系统现在是�
    - **我确认后先做任务分解**：生成任务文件夹内 `tasks.md` 拆任务清单（复制 [requirements/templates/tasks.md.模板.md](docs/requirements/templates/tasks.md.模板.md)，见下方"任务文件夹约定"），把方案拆成可独立验收的开发任务；任务清单就绪后才开始实现
    - **实时状态更新**：实现过程中，每完成一个关键步骤（如：State 字段新增完毕、某个 Agent 写完、子图编译通过）或一个开发任务，**立即更新 README.md 状态块 + tasks.md 任务状态**（任务完成 → 勾选验收项 + 同步任务总览表），并在 log.md 追加时间线，记录当前进度和下一步
    - **代码写完之后，启动 subagent 做 code review**（见下方"Code Review 规则"）
-   - **实现完成 + review 通过后，将方案中的架构变更整合进对应领域文档（`docs/knowledge/`），README.md 状态更新为"已完成"，result.md / retrospective.md 填写完毕，整个任务文件夹移入 `docs/requirements/archive/<任务名>/` 归档（archive 深一层，同步把文件夹内相对链接整体上移一层：`../../X` → `../../../X`）**
+   - **实现完成 + review 通过后，将方案中的架构变更整合进对应领域文档（`docs/knowledge/`），README.md 状态更新为"已完成"，result.md / retrospective.md 填写完毕，整个任务文件夹移入 `docs/requirements/archive/<任务名>/` 归档（archive 深一层，同步把文件夹内相对链接整体上移一层：`../../X` → `../../../X`）；归档后自动提交 commit——暂存按路径显式 `git add <路径>`，禁止 `git add -A`（用户并发编辑），提交信息沿用仓库风格（如 `chore: <任务名> 实现 + 归档`），提交范围仅限本任务文件与归档文件夹**
 
 2. **中小改动（单文件、加函数、修 bug）**
    - 直接改代码，不需要任务文件夹
@@ -85,7 +85,7 @@ knowledge/ 是**知识沉淀桶**（领域知识库），回答"系统现在是�
 
 - 状态取值：`方案设计` → `评审中`（写完自动进入方案评审）→ `待确认` → `任务分解`（用户确认后生成任务清单）→ `实现中` → `Code Review` → `已完成`
 - **实现过程中每完成一个关键步骤，必须更新 README.md 状态块的进度和下一步，并在 log.md 追加时间线**
-- 任务完成后状态改为 `已完成`，**整个文件夹移入 `docs/requirements/archive/<任务名>/`** 归档（同步把文件夹内相对链接整体上移一层），架构变更同步进 knowledge/ 对应文档
+- 任务完成后状态改为 `已完成`，**整个文件夹移入 `docs/requirements/archive/<任务名>/`** 归档（同步把文件夹内相对链接整体上移一层），架构变更同步进 knowledge/ 对应文档，**归档后自动提交 commit**（提交规则见上方「工作流程」第 1 条）
 - **plan.md 正文章节结构**：复制 [requirements/templates/plan.md.模板.md](docs/requirements/templates/plan.md.模板.md)，取舍规则详见模板文件末尾速查表。**详细设计章节开头必须有模块总览表（维度｜问题｜方案概览，2026-09-10 起）**：每一行与下方设计模块小节一一对应（维度名 = 小节标题），只列设计模块，三方依赖评估/验证/文件变更等过程小节不入表。**方案中所有问题陈述必须附具体例子（2026-09-10 起）**：现状与问题列用代码事实说话（文件路径/函数名/可观测现象/示例值，如"`derive_risk_gate` 正则解析 `market_regime` 文本，空串落 `normal`"），禁止抽象措辞（如"不稳定""不足"）。**待确认问题每条必须写具体并附背景、目标与推荐（2026-09-11 起）**：问题句带代码事实；背景 = 现状事实 + 该决策影响哪些实现点；目标 = 各选项对应的实现形态；推荐 = 默认选项 + 理由（用户可按推荐直接拍板）。已有历史方案不做回填改造（在审方案按新约定补齐）
 - **tasks.md 拆任务清单约定**：**方案经用户确认后**，生成任务文件夹内 `tasks.md`（复制 [requirements/templates/tasks.md.模板.md](docs/requirements/templates/tasks.md.模板.md)）——把方案的实施步骤拆解为可独立验收的开发任务，是方案的实施计划载体。任务清单直接由已评审通过的方案拆出，**无需额外评审**
   - **拆分原则**：每个任务 = 一个可独立验收的实现单元（新建一个模块 / 改造一个文件 / 写一组单测）；按依赖排序，任务块标注依赖关系，无依赖任务可并行；通常 3–10 个任务；每个任务的验收标准必须是**可执行的检查项**（单测命令 / 可运行检查 / 写明观察点的人工检查），禁止"完成 XX 功能"式模糊表述
@@ -302,11 +302,6 @@ docs/memory/
 - **方案 B（推荐）：常驻自调度**——APScheduler 挂在 eventStudy FastAPI lifespan，每天 08:30 以子进程触发 `python -m AI.eventStudy.scheduler.daily_job`；睡眠/宕机靠三层补跑（cron 触发、服务启动自检、每 15 分钟周期自检）补救
 - 运行约束：uvicorn **单 worker、禁用 --reload**（否则调度器重复启动）；Windows 守护用 NSSM
 - 完整机制细节（防重复标记、完成标记、方案 A schtasks）见 [docs/memory/best-practices/ai/eventstudy-scheduler.md](docs/memory/best-practices/ai/eventstudy-scheduler.md)
-
-### 调试步进模式（Debug Step Mode）
-
-- 开启：运行分析前设 `LIVEPROFIT_DEBUG_STEP=true`，分析进程在 DP 响应 / LLM 调用前 / 节点 res 三检查点暂停；`streamlit run AI/logviewer/app.py` 的「调用时序」tab 点【✅ 下一步】/【⏭ 跳过全部】继续
-- 协调机制详见 [docs/memory/best-practices/ai/debug-step-mode.md](docs/memory/best-practices/ai/debug-step-mode.md)
 
 ### 后端平台踩坑（backend/）
 

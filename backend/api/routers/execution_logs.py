@@ -102,7 +102,7 @@ async def get_execution_log_content(
             if size > _CONTENT_FILE_MAX_BYTES:
                 raise ProblemError(422, "VALIDATION_ERROR", f"文件超过 10MB 上限：{raw}")
 
-            from AI.logviewer import logs_reader  # 延迟导入：与树读取器同源
+            from AI.utils import logs_reader  # 延迟导入：与树读取器同源
 
             kind = "json" if suffix == ".json" else ("txt" if suffix == ".txt" else "md")
             content = None

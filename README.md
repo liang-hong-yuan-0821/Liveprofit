@@ -304,7 +304,7 @@ LiveProfit/
 | 缓存层 | MongoDB + Redis + File | Redis + File |
 | ChromaDB | 非持久化 + 7 嵌入提供商 | 持久化 + OpenAI 嵌入 |
 | Python 文件数 | ~112 | ~57 |
-| API/Web UI | FastAPI + Streamlit | 无 |
+| API/Web UI | FastAPI + React | 无 |
 | Docker | 5 服务 (含前后端) | 2 服务 (仅后端存储) |
 
 ## 输出示例

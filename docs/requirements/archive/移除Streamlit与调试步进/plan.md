@@ -2,7 +2,7 @@
 
 > **状态**：待确认（2026-09-16，评审 3 轮收敛：R3 PASS，全维度 ≥8）
 > **评审轨迹**：R1 FAIL（2 major + 9 minor）→ R2 FAIL（2 minor 残留）→ R3 PASS（0 findings）。维度 2/6/10 的 R1 findings（M1/m2/m5/m8）已在 R2/R3 核验全部落地，收尾按锚定规则更新为 9 分；其余维度 1=10/3=9/4=9/5=9/7=9/8=8/9=10。
-> **关联文档**：[README.md](README.md)、archive/事件研究审核界面平台集成方案.md、archive/调试步进模式方案.md
+> **关联文档**：[README.md](README.md)、../事件研究审核界面平台集成方案.md、../调试步进模式方案.md
 
 ---
 

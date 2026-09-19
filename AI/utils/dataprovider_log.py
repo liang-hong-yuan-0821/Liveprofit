@@ -16,7 +16,7 @@
             │                 "truncated"}；调用异常 → {"error": ...}
             └── meta.json  ← {name, seq, ts, res, probe, error?}
 
-旧格式 {接口名}.json（{name, desc, req, res}）仅存在于历史 run，由 AI/logviewer 兼容展示。
+旧格式 {接口名}.json（{name, desc, req, res}）仅存在于历史 run，供平台执行日志兼容展示（parse_legacy）。
 
 归属判定：
 - track_node 装饰器为每个图节点设置当前节点上下文（contextvar）；
@@ -26,9 +26,6 @@
   3) 无节点上下文（如 ToolNode 内部）→ 回退到最近一次 LLM 目录。
 
 控制台仅输出一行摘要。
-
-调试步进模式（LIVEPROFIT_DEBUG_STEP=true）下，每次调用落盘后挂 DP 响应检查点
-（见 AI/utils/step_gate.py）。
 
 tushare 端点子日志语义：
 - 仅在 tushare 数据源 + 调用发生在 @dataprovider_log 装饰函数内（DP 调用目录已创建）时落盘；
@@ -56,7 +53,6 @@ from typing import Any, Callable, Dict, Optional
 
 # 与 llm_callbacks 共享运行状态（log_dir / llm_seq / last_llm_dir / dp_counters）
 from AI.utils.llm_callbacks import _run, _NODE_LAYER, _safe_json, _sanitize, _ts
-from AI.utils import step_gate
 
 logger = logging.getLogger(__name__)
 
@@ -129,22 +125,8 @@ def dataprovider_log(fn: Callable) -> Callable:
                                    None, error=e)
                 raise
             if call_dir is not None:
-                written = _finalize_call(call_dir, fn.__name__, fn.__doc__,
-                                         req, result)
-                # 调试步进：DP 响应检查点（仅成功路径；异常隔离不干扰数据流）
-                if written is not None:
-                    try:
-                        rel = str(call_dir.relative_to(_run.log_dir)).replace("\\", "/")
-                        step_gate.checkpoint(
-                            "dp",
-                            layer=rel.split("/")[0],
-                            node=_current_node.get() or "unknown",
-                            name=fn.__name__,
-                            dir=rel,
-                            show_file=written[1],
-                        )
-                    except Exception as e:
-                        logger.debug(f"[DP] 步进检查点失败 {fn.__name__}: {e}")
+                _finalize_call(call_dir, fn.__name__, fn.__doc__,
+                               req, result)
             return result
         finally:
             if token is not None:

@@ -5,7 +5,7 @@ import { PendingEventsTab } from './PendingEventsTab';
 
 type ReviewSubTab = 'pending' | 'impacts';
 
-// 事件研究·审核（平台集成版，行为对齐 Streamlit review_app 两个 Tab）。
+// 事件研究·审核（平台集成版，行为对齐原审核界面两个 Tab）。
 export function ReviewTab() {
   const [tab, setTab] = useState<ReviewSubTab>('pending');
 

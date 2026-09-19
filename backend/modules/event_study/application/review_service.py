@@ -1,8 +1,8 @@
 """EventStudyReviewService（同步方法，Router 经 API 分析服务线程池执行）。
 
-行为对齐 Streamlit 审核界面（review_app.py），关键语义：
+行为对齐原审核界面语义，关键语义：
 - 批量逐行处理：行级失败（草稿缺失 / DB 数据错误）不失败整批，任何失败路径统一
-  rollback 后继续下一行（修复 Streamlit 版事务毒化隐患）。
+  rollback 后继续下一行（修复原审核界面事务毒化隐患）。
 - approve 成功即同 conn 计算影响窗口，compute 失败仅记 compute_status="failed"
   （daily_job 步骤 6 兜底重算）。
 - review_fields 仅含非 None 键：键缺失委托 review_dao 既有默认链
@@ -261,7 +261,7 @@ class EventStudyReviewService:
         return "ok"
 
     def _compute_after_approve(self, conn, event_id: int) -> str:
-        """通过后立即计算影响窗口（同 conn，Streamlit 先例）；失败仅记 failed，不失败该行。"""
+        """通过后立即计算影响窗口（同 conn，原审核界面先例）；失败仅记 failed，不失败该行。"""
         try:
             draft = self._adapter.compute_windows(conn, event_id)
             verdict = self._compute_verdict(draft)
@@ -277,7 +277,7 @@ class EventStudyReviewService:
         """补算端点：覆盖影响草稿并刷新 TTL；事件不存在 → 404；其余异常 → 500。
 
         计算不抛异常但全部窗口带 error 时（如行情不足）折叠为 200 status="failed"
-        而非 500——与 Streamlit「计算失败仅 warning、daily_job 兜底」行为一致。
+        而非 500——与原审核界面「计算失败仅 warning、daily_job 兜底」行为一致。
         """
         self._require_redis()
         conn = self._adapter.open_connection()

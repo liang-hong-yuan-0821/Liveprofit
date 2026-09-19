@@ -1,9 +1,8 @@
 """
 板块层热力图生成模块（板块层轮动战术与政策事件流方案 3.2）
 
-生成行业 + 概念近 10 日逐日涨跌幅热力图（plotly 自包含 HTML），写入 run 级
-日志目录 logs/{ts}/reports/charts/sector_daily_heatmaps.html，由 logviewer
-报告 tab 的 .html 渲染分支展示。
+生成行业 + 概念近 10 日逐日涨跌幅热力图（plotly 自包含 HTML），
+产物落 logs/{ts}/reports/charts/sector_daily_heatmaps.html。
 
 - 单侧数据不可用时不拖累另一侧（任一可用即写文件）
 - 两侧均不可用 → 返回 None（无图不报错）

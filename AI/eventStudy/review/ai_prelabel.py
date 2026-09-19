@@ -11,7 +11,7 @@ event_scope / affected_scope_refs（三级路由作用域与目标引用，2026-
 - LLM 不可用 / 输出解析失败 → 无建议，人工照旧填，不阻塞
 - 回填谓词 needs_prelabel（2026-09-16）：只预填无建议或缺 event_scope 的
   旧建议；force=True 覆写模式是否传入哪些草稿由调用方决定（平台侧
-  draft_ids 分片驱动 / Streamlit 分片循环）
+  draft_ids 分片驱动 / 调用方分片循环）
 - LLM 不凭记忆补代码（2026-09-16）：代码仅在原文明确出现时输出；原文
   只出现名称时输出中文实体名称，经 NameResolver 查字典表解析为规范引用
   （名称→代码唯一映射源），未解析名称落 unresolved_entities 供人工处理；
@@ -249,7 +249,7 @@ def prelabel_events(drafts: list[dict], force: bool = False) -> int:
 
     非 force：只预填命中 needs_prelabel 的草稿（无建议或缺 event_scope 的
     旧建议回填）；force=True：对传入列表全部重生成建议（覆写）——是否
-    覆写哪些草稿由调用方决定（平台侧 draft_ids 分片驱动 / Streamlit 分片
+    覆写哪些草稿由调用方决定（平台侧 draft_ids 分片驱动 / 调用方分片
     循环传入目标草稿）。
     写回带 ex=PENDING_DRAFT_TTL（2026-09-16 顺手修 TTL 抹除：原实现
     r.set 不带 ex，预填后草稿过期被抹）。

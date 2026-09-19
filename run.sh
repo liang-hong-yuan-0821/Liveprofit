@@ -128,32 +128,7 @@ else
     log_warn "未找到 .env 文件"
 fi
 
-# --------------- 5. 启动日志查看器（后台 + 打开浏览器） ---------------
-VIEWER_PORT=8501
-VIEWER_URL="http://localhost:${VIEWER_PORT}"
-if curl -sf -o /dev/null "${VIEWER_URL}/healthz"; then
-    log_info "日志查看器已在运行 (${VIEWER_URL})"
-else
-    log_info "启动日志查看器 (${VIEWER_URL})，日志输出到 logs/viewer.log ..."
-    nohup streamlit run AI/logviewer/app.py --server.headless true \
-        --server.port ${VIEWER_PORT} > logs/viewer.log 2>&1 &
-    # 等待就绪（最多 20 秒）
-    for i in $(seq 1 20); do
-        if curl -sf -o /dev/null "${VIEWER_URL}/healthz"; then
-            log_info "日志查看器已就绪 ($i 秒)"
-            break
-        fi
-        sleep 1
-    done
-fi
-log_info "打开浏览器: ${VIEWER_URL}"
-# Git Bash 下 cmd.exe /c "start ..." 的 /c 会被 MSYS 路径转换破坏，
-# 导致 cmd 进入交互式会话挂起脚本 → 用 PowerShell Start-Process 打开默认浏览器，
-# </dev/null 兜底防交互式挂起，失败不阻塞主流程
-powershell.exe -NoProfile -Command "Start-Process '${VIEWER_URL}'" </dev/null 2>/dev/null || \
-    cmd.exe /c "start \"\" \"${VIEWER_URL}\"" </dev/null 2>/dev/null || true
-
-# --------------- 6. 运行 ---------------
+# --------------- 5. 运行 ---------------
 echo ""
 log_info "============================================"
 log_info "  启动 LiveProfit 多智能体交易分析系统"
@@ -356,7 +331,7 @@ start_all() {
     log_info "    API 文档：  http://127.0.0.1:${LIVEPROFIT_API_PORT:-8000}/docs"
     log_info "  停止全部：./run.sh stop"
     log_info "  日志实时输出：logs/api.log / worker.log / dispatcher.log（Ctrl+C 退出查看，服务保持运行）"
-    log_info "  前端日志：logs/vite-dev.log；任务内核明细：logs/{ts}/（Streamlit 查看器）"
+    log_info "  前端日志：logs/vite-dev.log；任务内核明细：logs/{ts}/（平台执行日志页）"
     log_info "============================================"
     echo ""
 

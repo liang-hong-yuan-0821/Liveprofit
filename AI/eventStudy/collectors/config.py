@@ -4,7 +4,7 @@
 集中管理 PG / Redis / 数据源 / 目标资产 / 事件研究参数 / 向量模型 配置，
 均支持环境变量覆盖（默认值与 docker-compose 服务对齐）。
 
-独立脚本（daily_job / api / review_app）直接 import 本模块即可完成
+独立脚本（daily_job / api）直接 import 本模块即可完成
 .env 加载与连接初始化，不依赖主程序入口。
 """
 

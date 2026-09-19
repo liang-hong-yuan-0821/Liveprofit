@@ -1,5 +1,5 @@
 """
-AI/logviewer/logs_reader.py 纯函数测试：
+AI/utils/logs_reader.py 纯函数测试：
 run 排序与噪音排除、新旧 dataprovider 判别、缺失文件/坏 JSON 安全通道、legacy 解析。
 """
 
@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from AI.logviewer import logs_reader as L
+from AI.utils import logs_reader as L
 
 
 @pytest.fixture
@@ -196,36 +196,3 @@ def test_list_two_digit_seq_prefix_still_excluded(logs_fixture):
     layer = logs_fixture / "2026-08-19_223929" / "market"
     (layer / "12_two_digit").mkdir()
     assert "12_two_digit" not in [p.name for p in L.list_nodes(layer)]
-
-
-# ---- 调试步进检查点 ----
-
-def test_find_checkpoint(logs_fixture):
-    """缺失 → None；正常 JSON → payload；坏 JSON → None"""
-    run = logs_fixture / "2026-08-19_223929"
-    assert L.find_checkpoint(run) is None
-    (run / L.CHECKPOINT_FILE).write_text('{"status": "waiting", "seq": 1}',
-                                         encoding="utf-8")
-    assert L.find_checkpoint(run)["status"] == "waiting"
-    (run / L.CHECKPOINT_FILE).write_text("not-json", encoding="utf-8")
-    assert L.find_checkpoint(run) is None
-
-
-def test_find_active_checkpoint_waiting_first(logs_fixture):
-    """无检查点 → None；waiting 优先（并发 run 不被遮蔽）；无 waiting 退回最新"""
-    run_old = logs_fixture / "2026-08-15_194033"
-    run_new = logs_fixture / "2026-08-19_223929"
-
-    assert L.find_active_checkpoint() is None
-
-    # 仅较新 run 有 confirmed → 返回它（历史状态展示）
-    (run_new / L.CHECKPOINT_FILE).write_text(
-        '{"status": "confirmed", "seq": 2}', encoding="utf-8")
-    run_dir, payload = L.find_active_checkpoint()
-    assert run_dir == run_new and payload["status"] == "confirmed"
-
-    # 较旧 run 出现 waiting → 优先返回 waiting（不被较新 run 的 confirmed 遮蔽）
-    (run_old / L.CHECKPOINT_FILE).write_text(
-        '{"status": "waiting", "seq": 1}', encoding="utf-8")
-    run_dir, payload = L.find_active_checkpoint()
-    assert run_dir == run_old and payload["status"] == "waiting"

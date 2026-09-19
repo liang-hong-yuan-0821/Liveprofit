@@ -17,7 +17,7 @@ import re
 from pathlib import Path
 
 from AI.graph.topology import Topology
-from AI.logviewer import logs_reader
+from AI.utils import logs_reader
 from AI.utils.llm_callbacks import _sanitize
 
 _SEQ_PREFIX_RE = re.compile(r"^(\d+)_")

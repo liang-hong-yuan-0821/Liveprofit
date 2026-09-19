@@ -1,6 +1,6 @@
 """执行日志树读取器（纯函数，无 DB/IO 框架依赖）。
 
-复用 AI.logviewer.logs_reader 的目录枚举（list_layers/list_nodes/list_dp_calls/
+复用 AI.utils.logs_reader 的目录枚举（list_layers/list_nodes/list_dp_calls/
 list_tushare_calls/list_tools/read_json/read_text/parse_legacy），不在后端复制树遍历
 逻辑。日志目录磁盘格式见 AI/utils/llm_callbacks.py 与 dataprovider_log.py 模块 docstring。
 
@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from AI.logviewer import logs_reader
+from AI.utils import logs_reader
 
 EXECUTION_LOG_CONTENT_MAX_BYTES = 100 * 1024
 EXECUTION_LOG_TREE_MAX_BYTES = 5 * 1024 * 1024

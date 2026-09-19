@@ -12,7 +12,7 @@
 | 前端类型/构建 | `pnpm typecheck && pnpm build` | ✅ 无类型错误 |
 | 数据首跑 | `collect_sector_daily_incremental` 真实端点直调 | ✅ 1031 板块 / 51,381 行 / 0 失败（每板块 ~50 行，2026-07-06 起）；updated_at 全非 NULL |
 | 服务链真数据验证 | MarketDataService 直调（真实 market_conn） | ✅ hot OK（top1=历史新高）/ tree OK（heat=866.05）/ 概念 K 线 24 根 FRESH / 个股 K 线 30 根纯 K 线（indicators=null） |
-| 浏览器端检查 | 起前后端打开大盘页（treemap 渲染/tooltip/点击弹窗） | ⏳ 待用户执行（T6 最后一项） |
+| 浏览器端检查 | 起前后端打开大盘页（treemap 渲染/tooltip/点击弹窗） | ✅ 用户验收通过（2026-09-14 起多轮反馈修复：标签显示/个股可见性/排序/面积口径/涨跌分图/面包屑/标题；2026-09-19 最终确认归档） |
 
 ## Code Review
 

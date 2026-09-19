@@ -4,6 +4,7 @@
 
 | 日期 | 动作 | 结果/备注 |
 |------|------|----------|
+| 2026-09-19 | 用户浏览器端最终验收通过 → 归档 | 大盘页 treemap 交互确认无残留问题（09-14 多轮验收反馈已全部修复）；README/result/tasks 收尾 → 文件夹移入 docs/requirements/archive/板块概念Treemap/（相对链接随迁）并提交 |
 | 2026-09-14 | 用户确认全案（top 30 按推荐）→ 任务分解 + 开始实施 | tasks.md 6 任务（T1 采集 → T2 tree API → T3 bars API → T4 前端 → T5 文档 → T6 首跑验收）；README 状态实现中 |
 | 2026-09-14 | 命名讨论收敛：日/周/月线 DTO 结构相同 → 撤销 daily 修饰改名 | 定稿：bars 系不改名（BarDTO/BarsData/get_bars//bars 端点），接口频率区分 = interval 参数 + 响应 interval 字段；新端点同样带 interval=1d；方案 3.5 改名模块删除、已确认决策第 5 条改写 |
 | 2026-09-14 | 用户拍板日线命名：bar 保留 + daily 修饰、全链统一改名（同日被推翻） | 方案曾新增 3.5 存量命名改造模块：DailyBarsData/DailyBarDTO/get_daily_bars//daily-bars 端点——后经"DTO 结构频率无关"讨论撤销 |

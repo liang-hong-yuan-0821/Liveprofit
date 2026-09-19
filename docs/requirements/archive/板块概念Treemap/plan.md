@@ -1,7 +1,7 @@
 # 板块概念 Treemap 方案（sector_daily dc 每日增量 + 概念树 API + 前端 Treemap 交互）
 
 > 状态与进度见 [README.md](README.md)（状态块权威载体）；本文件为方案正文（评审对象）。
-> 关联文档：[证券市场数据库统一方案](../archive/证券市场数据库统一方案.md)（sector_daily 表设计与决策 13/16）｜[产品需求分析](../../knowledge/产品需求分析.md)（§3.1.4 板块区块契约，实现后需同步）｜[指数K线图交互优化方案](../指数K线图交互优化/plan.md)（K 线组件另一案，本方案弹窗 K 线为固定窗口首版）
+> 关联文档：[证券市场数据库统一方案](../证券市场数据库统一方案.md)（sector_daily 表设计与决策 13/16）｜[产品需求分析](../../../knowledge/产品需求分析.md)（§3.1.4 板块区块契约，实现后需同步）｜[指数K线图交互优化方案](../../指数K线图交互优化/plan.md)（K 线组件另一案，本方案弹窗 K 线为固定窗口首版）
 
 ---
 
@@ -9,7 +9,7 @@
 
 | 维度 | 现状 | 问题 | 目标 |
 |------|------|------|------|
-| 数据底座 | `market.sector_daily`（板块指数日线）当前 **0 行**（实测 2026-09-13 查询 count=0）；其采集被[证券市场数据库统一方案](../archive/证券市场数据库统一方案.md)决策 16 排入"后续阶段"，一直未实施。`market.sector` 已有 1930 个板块（ths 899 个 type='N' 概念板块、dc 1031 个）、`market.sector_member` 已有 165,528 行成分关系（ths 72,131 + dc 93,397）、`market.instrument_daily` 已有 1383 万行个股日线（全历史） | 大盘页"板块"区块数据链断在第一步：`MarketDataService.get_hot_concepts`（[service.py:211](Liveprofit/backend/modules/market_data/application/service.py#L211)）读 `market.sector_daily WHERE source='dc'` 现场计算热度，表空 → 恒返回 `NO_HOT_CONCEPTS` 空态；前端 [HotConceptsPanel.tsx:63-65](Liveprofit/frontend/src/modules/market/pages/HotConceptsPanel.tsx#L63-L65) 恒显示"当前条件下暂无热门概念"——**这是"前端没有展示概念或板块"的根因** | 板块指数日线**每日增量入库**（dc 源、最近 33 交易日滚动窗口，历史自采集启动日起自然积累），热度现场计算启用，板块区块有真实数据可展示 |
+| 数据底座 | `market.sector_daily`（板块指数日线）当前 **0 行**（实测 2026-09-13 查询 count=0）；其采集被[证券市场数据库统一方案](../证券市场数据库统一方案.md)决策 16 排入"后续阶段"，一直未实施。`market.sector` 已有 1930 个板块（ths 899 个 type='N' 概念板块、dc 1031 个）、`market.sector_member` 已有 165,528 行成分关系（ths 72,131 + dc 93,397）、`market.instrument_daily` 已有 1383 万行个股日线（全历史） | 大盘页"板块"区块数据链断在第一步：`MarketDataService.get_hot_concepts`（[service.py:211](Liveprofit/backend/modules/market_data/application/service.py#L211)）读 `market.sector_daily WHERE source='dc'` 现场计算热度，表空 → 恒返回 `NO_HOT_CONCEPTS` 空态；前端 [HotConceptsPanel.tsx:63-65](Liveprofit/frontend/src/modules/market/pages/HotConceptsPanel.tsx#L63-L65) 恒显示"当前条件下暂无热门概念"——**这是"前端没有展示概念或板块"的根因** | 板块指数日线**每日增量入库**（dc 源、最近 33 交易日滚动窗口，历史自采集启动日起自然积累），热度现场计算启用，板块区块有真实数据可展示 |
 | 板块区块展示形式 | 现状 UI 为卡片网格（[HotConceptsPanel.tsx:67-73](Liveprofit/frontend/src/modules/market/pages/HotConceptsPanel.tsx#L67-L73) 每概念一张卡片 + 迷你 K 线），且卡片 K 线因后端硬编码 `bars=[]`（[service.py:305](Liveprofit/backend/modules/market_data/application/service.py#L305)）恒显示"K 线不可用" | 用户要求改为 treemap（矩形树图）两层展示：概念 → 成分股；卡片形式不再满足诉求 | 板块区块以 treemap 展示概念（矩形大小=热度、颜色=当日涨跌幅）与其成分股（矩形大小=当日涨跌幅绝对值、颜色=涨跌），悬浮显示 tooltip 数值 |
 | 悬浮/点击 K 线 | 概念 K 线无读模型（sector_daily 空）；个股 K 线无端点（`get_bars` 只服务 index：[service.py:104](Liveprofit/backend/modules/market_data/application/service.py#L104) `instrument_type != "index"` 即 404，[service.py:117-121](Liveprofit/backend/modules/market_data/application/service.py#L117-L121)） | 用户要求悬浮具体标的后展示 K 线：treemap 中点击概念/成分股矩形，应弹出该标的 K 线图，现状两条路都走不通 | 点击概念 → 弹窗展示该板块指数 K 线（dc 源，历史 = 采集启动日起积累的长度）；点击成分股 → 弹窗展示该个股 K 线（**近 180 自然日固定窗口**，instrument_daily 已有全历史数据；全历史窗口另案，见方案头关联文档） |
 
@@ -342,7 +342,7 @@ useStockBarsQuery(symbol, { market, interval, from, to })                 // GET
 
 - 已确认决策：
   1. treemap 两层（概念+成分股）、矩形大小=热度、颜色=当日涨跌幅、悬浮 tooltip + 点击弹窗 K 线（用户 2026-09-14 拍板）。
-  2. **数据先存 dc**（用户 2026-09-14 修订拍板，撤销"全历史回填"）：dc_daily 每日增量积累、历史自启动日起自然增长、不做回填；热度口径保持原 dc 不变（get_hot_concepts 零改动）；ths 全历史能力已验证、暂缓。**作废标注**：[证券市场数据库统一方案](../archive/证券市场数据库统一方案.md) §3.7.1（"最小窗口回填 → 全历史回填"）与决策 16 ②（"落地顺序 ① sector_daily 最小窗口"）描述的路线随本拍板撤销——归档文档不改，以本方案为准。
+  2. **数据先存 dc**（用户 2026-09-14 修订拍板，撤销"全历史回填"）：dc_daily 每日增量积累、历史自启动日起自然增长、不做回填；热度口径保持原 dc 不变（get_hot_concepts 零改动）；ths 全历史能力已验证、暂缓。**作废标注**：[证券市场数据库统一方案](../证券市场数据库统一方案.md) §3.7.1（"最小窗口回填 → 全历史回填"）与决策 16 ②（"落地顺序 ① sector_daily 最小窗口"）描述的路线随本拍板撤销——归档文档不改，以本方案为准。
   3. 大盘页"板块"区块由 treemap 替换现有卡片网格（本方案默认落点；卡片 UI 与 treemap 并存会重复展示同一批数据）。
   4. hot 端点保留（口径不变、契约不动）；前端 `useHotConceptsQuery` hook 与 `queryKeys.hotConcepts` 随面板切换删除（前端 dead code 不留，与端点去留正交）。
   5. **日线数据命名定稿：bars 系不改名、频率由 `interval` 区分**（用户 2026-09-14 讨论收敛）：DTO 结构对日/周/月线完全相同（频率是取值不是类型）——`BarDTO`/`BarsData`/`get_bars`/`/bars` 端点全部保持现状；接口频率区分由 `interval` 查询参数 + 响应 `interval` 字段承载（本方案新端点同样带 `interval=1d` 参数）；未来周/月线零新 DTO、零新端点。原"bar+daily 修饰改名"方向作废（DailyBarDTO 对周/月线会名字撒谎）。

@@ -22,6 +22,9 @@ class QuantStrategyVersionDTO:
     version_no: int
     status: str
     source_hash: str
+    template_id: str | None
+    template_params: dict | None
+    template_renderer_version: str | None
     published_at: datetime | None
     archived_at: datetime | None
     version: int
@@ -52,6 +55,9 @@ class QuantStrategyDraftDTO:
     status: str
     source_code: str
     source_hash: str
+    template_id: str | None
+    template_params: dict | None
+    template_renderer_version: str | None
     version: int
     created_at: datetime
     updated_at: datetime

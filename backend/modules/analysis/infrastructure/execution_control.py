@@ -13,6 +13,7 @@ import os
 import signal
 import subprocess
 import uuid
+from threading import Event, Lock
 from typing import Callable
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,8 @@ class ExecutionControl:
         self._is_cancelled = is_cancelled
         self._is_fencing_active = is_fencing_active
         self._processes: set[subprocess.Popen] = set()
+        self._process_lock = Lock()
+        self._terminated = Event()
 
     @property
     def task_id(self) -> uuid.UUID:
@@ -45,26 +48,35 @@ class ExecutionControl:
         return self._lease_token
 
     def raise_if_inactive(self) -> None:
+        if self._terminated.is_set():
+            raise ExecutionInactiveError(f"执行已终止：{self._task_id}")
         if self._is_cancelled():
             raise ExecutionInactiveError(f"任务已取消：{self._task_id}")
         if self._is_fencing_active():
             raise ExecutionInactiveError(f"租约失活（fencing）：{self._task_id}")
 
     def register_process(self, popen: subprocess.Popen) -> None:
-        self._processes.add(popen)
+        with self._process_lock:
+            self.raise_if_inactive()
+            self._processes.add(popen)
 
     def unregister_process(self, popen: subprocess.Popen) -> None:
-        self._processes.discard(popen)
+        with self._process_lock:
+            self._processes.discard(popen)
 
     def terminate_all(self) -> None:
         """终止全部已登记子进程并等待回收：POSIX 以新 session/process group 启动并 killpg，
         Windows 终止直接子进程并记录 PROCESS_GROUP_TERMINATION_DEGRADED。"""
-        for popen in list(self._processes):
+        with self._process_lock:
+            self._terminated.set()
+            processes = list(self._processes)
+        for popen in processes:
             try:
                 if popen.poll() is None:
                     if os.name == "posix":
                         try:
-                            os.killpg(os.getpgid(popen.pid), signal.SIGKILL)
+                            # runner 保证 child 是独立 session leader；不查询并杀伤宿主组。
+                            os.killpg(popen.pid, signal.SIGKILL)
                         except (ProcessLookupError, PermissionError):
                             popen.kill()
                     else:
@@ -74,4 +86,4 @@ class ExecutionControl:
             except Exception as exc:  # noqa: BLE001
                 logger.warning("终止子进程失败 pid=%s: %s", getattr(popen, "pid", None), exc)
             finally:
-                self._processes.discard(popen)
+                self.unregister_process(popen)

@@ -21,50 +21,21 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 
+from AI.strategy_sandbox.strategy_contract import (
+    ALLOWED_ARRAY_INDEXES,
+    ALLOWED_CALLS,
+    INDEXED_PATHS,
+    RETURN_KEYS,
+    SCALAR_PATHS,
+)
+
 MAX_SOURCE_BYTES = 12 * 1024
 MAX_NODES = 800
 MAX_STATEMENTS = 64
 MAX_IF_DEPTH = 6
 
-ALLOWED_CALLS = frozenset({"abs", "min", "max", "round", "isfinite"})
-REQUIRED_KEYS = (
-    "action",
-    "score",
-    "entry_price",
-    "stop_loss",
-    "take_profit",
-    "sell_ratio",
-    "reason",
-)
+REQUIRED_KEYS = RETURN_KEYS
 REQUIRED_KEY_SET = frozenset(REQUIRED_KEYS)
-
-# 允许的 context 访问路径：可加 [常量整型下标] 的数组字段
-INDEXED_PATHS = frozenset(
-    {
-        ("ohlcv", "trade_date"),
-        ("ohlcv", "open"),
-        ("ohlcv", "high"),
-        ("ohlcv", "low"),
-        ("ohlcv", "close"),
-        ("ohlcv", "volume"),
-        ("ohlcv", "amount"),
-        ("indicators", "ma_bfq_5"),
-        ("indicators", "ma_bfq_20"),
-        ("indicators", "rsi_bfq_6"),
-    }
-)
-# 标量字段（末尾不允许下标）
-SCALAR_PATHS = frozenset(
-    {
-        ("meta", "symbol"),
-        ("meta", "effective_trade_date"),
-        ("meta", "bars_count"),
-        ("meta", "price_basis"),
-        ("position", "shares"),
-        ("position", "average_cost"),
-        ("position", "market_value"),
-    }
-)
 
 # 注意：Python 3.12 起 ast.And/Or/Not/Eq 等由类改为函数，isinstance 不可用——
 # 一律按类型名比较（跨版本稳健）。
@@ -355,6 +326,7 @@ class _StrategyVisitor:
         # 最外 slice 可为整型下标（数组字段）或字符串键（标量字段），内层 slice 必须字符串键。
         keys: list[str] = []
         has_index = False
+        index_value: int | None = None
         first = True
         current: ast.expr = node
         while isinstance(current, ast.Subscript):
@@ -369,6 +341,7 @@ class _StrategyVisitor:
                         )
                         return
                     has_index = True
+                    index_value = int_val
                 first = False
             else:
                 if not isinstance(current.slice, ast.Constant) or not isinstance(current.slice.value, str):
@@ -392,6 +365,12 @@ class _StrategyVisitor:
                             "BAD_SUBSCRIPT_PATH", f"数组字段路径不合法: {'/'.join(path)}", line, col
                         )
                     )
+                elif index_value not in ALLOWED_ARRAY_INDEXES:
+                    self.issues.append(
+                        StrategyValidationIssue(
+                            "BAD_INDEX", "数组下标只允许 -250 到 -1 的常量整数", line, col
+                        )
+                    )
             else:
                 # 数组字段允许整体读取（存入局部变量后按常量下标访问）
                 if path not in SCALAR_PATHS and path not in INDEXED_PATHS:
@@ -411,6 +390,10 @@ class _StrategyVisitor:
             if not has_index:
                 self.issues.append(
                     StrategyValidationIssue("BAD_INDEX", "局部数组必须带常量整型下标", line, col)
+                )
+            elif index_value not in ALLOWED_ARRAY_INDEXES:
+                self.issues.append(
+                    StrategyValidationIssue("BAD_INDEX", "数组下标只允许 -250 到 -1 的常量整数", line, col)
                 )
             return
         self.issues.append(

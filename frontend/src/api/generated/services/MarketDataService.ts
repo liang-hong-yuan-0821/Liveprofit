@@ -5,6 +5,7 @@
 import type { Envelope_BarsData_ } from '../models/Envelope_BarsData_';
 import type { Envelope_ConceptTreeData_ } from '../models/Envelope_ConceptTreeData_';
 import type { Envelope_HotConceptsData_ } from '../models/Envelope_HotConceptsData_';
+import type { Envelope_TrendsData_ } from '../models/Envelope_TrendsData_';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -183,6 +184,56 @@ export class MarketDataService {
                 'to': to,
                 'limit': limit,
                 'as_of': asOf,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Cap Tier Trends
+     * 市值分层趋势（趋势对比面板方案 4.2）：沪深300/中证500/中证1000/中证2000
+     * 四序列，前端按共同首日=100 归一。
+     * @param from
+     * @param to
+     * @returns Envelope_TrendsData_ Successful Response
+     * @throws ApiError
+     */
+    public static capTierTrendsApiV1MarketDataTrendsCapTiersGet(
+        from: string,
+        to: string,
+    ): CancelablePromise<Envelope_TrendsData_> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/market-data/trends/cap-tiers',
+            query: {
+                'from': from,
+                'to': to,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Board Trends
+     * 市场板趋势（趋势对比面板方案 4.2）：上证综指/创业板指/科创50 官方指数
+     * 三序列，前端按共同首日=100 归一。
+     * @param from
+     * @param to
+     * @returns Envelope_TrendsData_ Successful Response
+     * @throws ApiError
+     */
+    public static boardTrendsApiV1MarketDataTrendsBoardsGet(
+        from: string,
+        to: string,
+    ): CancelablePromise<Envelope_TrendsData_> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/market-data/trends/boards',
+            query: {
+                'from': from,
+                'to': to,
             },
             errors: {
                 422: `Validation Error`,

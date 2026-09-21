@@ -13,17 +13,10 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-ACTIONS = frozenset({"BUY", "SELL_ALL", "SELL_PARTIAL", "HOLD"})
+from AI.strategy_sandbox.strategy_contract import ACTIONS, RETURN_KEYS
+
 TRADE_KEYS = ("entry_price", "stop_loss", "take_profit", "sell_ratio")
-REQUIRED_KEYS = (
-    "action",
-    "score",
-    "entry_price",
-    "stop_loss",
-    "take_profit",
-    "sell_ratio",
-    "reason",
-)
+REQUIRED_KEYS = RETURN_KEYS
 MAX_REASON_CHARS = 240
 MAX_STDOUT_BYTES = 4 * 1024
 
@@ -36,7 +29,13 @@ def build_context(
     indicators: dict[str, list],
     position: dict,
     bars_count: int | None = None,
-    price_basis: str = "raw",
+    price_basis: str = "qfq",
+    requested_trade_date: str | None = None,
+    market_as_of_trade_date: str | None = None,
+    latest_bar_trade_date: str | None = None,
+    factor_trade_date: str | None = None,
+    adj_factor_version: str | None = None,
+    data_hash: str | None = None,
 ) -> dict:
     """构造 strategy(context) 的 JSON 上下文（canonical，无 None 前填）。"""
     if bars_count is None:
@@ -45,8 +44,16 @@ def build_context(
         "meta": {
             "symbol": symbol,
             "effective_trade_date": effective_trade_date,
+            "requested_trade_date": requested_trade_date or effective_trade_date,
+            "market_as_of_trade_date": market_as_of_trade_date or effective_trade_date,
+            "latest_bar_trade_date": latest_bar_trade_date or effective_trade_date,
+            "factor_trade_date": factor_trade_date or latest_bar_trade_date or effective_trade_date,
             "bars_count": bars_count,
             "price_basis": price_basis,
+            "signal_price_basis": price_basis,
+            "execution_price_basis": "raw",
+            "adj_factor_version": adj_factor_version or effective_trade_date,
+            "data_hash": data_hash,
         },
         "ohlcv": ohlcv,
         "indicators": indicators,

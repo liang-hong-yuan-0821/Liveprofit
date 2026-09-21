@@ -34,6 +34,8 @@ export function QuantExecutionPanel({ taskId, quant }: { taskId: string; quant: 
           总资产 {Number(quant.portfolio_snapshot.total_assets).toFixed(2)} ·
           可用现金 {Number(quant.portfolio_snapshot.available_cash).toFixed(2)}
           {quant.valued_at ? ` · 估值于 ${formatDateTime(quant.valued_at)}` : ''}
+          {quant.requested_trade_date ? ` · 请求日 ${quant.requested_trade_date}` : ''}
+          {quant.market_as_of_trade_date ? ` · 市场水位 ${quant.market_as_of_trade_date}` : ''}
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">

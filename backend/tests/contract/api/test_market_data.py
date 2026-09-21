@@ -798,3 +798,38 @@ def test_stock_bars_rejects_non_stock_index(client):
         "/api/v1/market-data/stocks/999999.SH/bars?market=CN&interval=1d&from=2026-09-01&to=2026-09-07"
     )
     assert response.status_code == 404
+
+
+def test_trends_endpoints_contract(client):
+    """趋势端点契约（趋势对比面板方案 4.2.3）：2 端点 200 响应形状（序列条目录
+    保留、空窗口 points=[]、as_of/freshness）+ from>to → 422 RANGE_TOO_LARGE。"""
+    _seed_bars(client, "000300.SH", trade_date=date(2026, 9, 4), close=3340.0)
+    _seed_bars(client, "932000.CSI", trade_date=date(2026, 9, 4), close=2300.0)
+    client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 4))
+    response = client.http.get(
+        "/api/v1/market-data/trends/cap-tiers?from=2026-09-01&to=2026-09-05")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["from"] == "2026-09-01" and data["to"] == "2026-09-05"
+    series = data["series"]
+    assert [s["symbol"] for s in series] == ["000300.SH", "000905.SH", "000852.SH", "932000.CSI"]
+    assert [s["name"] for s in series] == ["沪深300", "中证500", "中证1000", "中证2000"]
+    assert series[0]["points"] == [{"date": "2026-09-04", "close": 3340.0}]
+    assert series[1]["points"] == []   # 未 seed → 空窗口契约（序列条目保留）
+    assert data["as_of"] == "2026-09-04"
+    assert data["freshness_status"] == "FRESH"
+
+    # boards 端点：板组未 seed → 三序列条目保留、points 全空
+    response = client.http.get(
+        "/api/v1/market-data/trends/boards?from=2026-09-01&to=2026-09-05")
+    assert response.status_code == 200
+    boards = response.json()["data"]["series"]
+    assert [s["symbol"] for s in boards] == ["000001.SH", "399006.SZ", "000688.SH"]
+    assert [s["name"] for s in boards] == ["上证综指", "创业板指", "科创50"]
+    assert all(s["points"] == [] for s in boards)
+
+    # from>to → 422 + RANGE_TOO_LARGE（照抄既有断言形态）
+    response = client.http.get(
+        "/api/v1/market-data/trends/cap-tiers?from=2026-09-05&to=2026-09-01")
+    assert response.status_code == 422
+    assert response.json()["code"] == "RANGE_TOO_LARGE"

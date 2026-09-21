@@ -54,6 +54,16 @@ HEAT_QUERY_DAYS = 20
 # 2.7 万节点不可渲染；每概念按 |pct_chg| 降序截断，member_total 标全量数）
 MEMBERS_PER_CONCEPT = 100
 
+# 趋势对比组语义常量（趋势对比面板方案 4.2.1：服务端硬编码，前端不持有名单——
+# 沿用目录写死先例）。名称与 INDEX_TARGETS 同串；响应只回 name，前端不硬编码。
+CAP_TIER_INDEXES: list[tuple[str, str]] = [
+    ("000300.SH", "沪深300"), ("000905.SH", "中证500"),
+    ("000852.SH", "中证1000"), ("932000.CSI", "中证2000"),
+]
+BOARD_INDEXES: list[tuple[str, str]] = [
+    ("000001.SH", "上证综指"), ("399006.SZ", "创业板指"), ("000688.SH", "科创50"),
+]
+
 
 @dataclass(frozen=True)
 class AssetDTO:
@@ -62,6 +72,26 @@ class AssetDTO:
     market: str
     symbol: str
     name: str
+
+
+@dataclass(frozen=True)
+class TrendSeries:
+    """单序列趋势点集（趋势对比面板方案 4.2）：points 按 date 升序。"""
+
+    symbol: str
+    name: str
+    points: list[dict]      # [{"date": date, "close": float}]，区间无行 → 空列表
+
+
+@dataclass(frozen=True)
+class TrendsDTO:
+    """多指数趋势读模型：as_of = 全组末点最大值（全历史口径，与 get_bars latest 同款）。"""
+
+    from_date: date         # 请求区间回显（_trends_data 映射到 TrendsData.from_/to）
+    to_date: date
+    series: list[TrendSeries]
+    as_of: date | None
+    freshness_status: str   # FRESH/STALE/UNAVAILABLE
 
 
 @dataclass(frozen=True)
@@ -232,6 +262,47 @@ class MarketDataService:
             freshness_status=freshness,
             market_session_status=session_status,
             market_closed_reason=closed_reason,
+        )
+
+    def get_index_trends(self, *, indexes, from_date: date, to_date: date) -> TrendsDTO:
+        """多指数趋势读模型（趋势对比面板方案 4.2）：按传入指数清单逐序列区间查询。
+
+        - from>to → RangeTooLargeError（与 get_bars 同语义）
+        - 空窗口契约（与 get_bars 一致，不新增分支语义）：区间内无行 → 该序列
+          points: []（序列条目仍返回）；全部序列皆空 → series 仍含全部条目、
+          as_of 取全历史口径（可能非 None）。不抛错、不 404
+        - 不返回 source/source_updated_at：多资产聚合读模型逐序列 provenance
+          无消费方（两组合计 7 个指数同为 tushare，前端图注用固定文案）
+        """
+        if from_date > to_date:
+            raise RangeTooLargeError("查询范围无效：开始日期晚于结束日期")
+        from db.instrument.dao import instrument_daily
+        codes = [symbol for symbol, _name in indexes]
+        with self._market_conn() as conn:
+            series = []
+            for symbol, name in indexes:
+                df = instrument_daily.query_range(
+                    conn, symbol, from_date.isoformat(), to_date.isoformat())
+                points = [
+                    {"date": row["trade_date"], "close": float(row["close"])}
+                    for _, row in df.iterrows()
+                    if pd.notna(row["close"])   # close NaN 的点跳过（DAO 写入已清洗，防御性保留）
+                ]
+                series.append(TrendSeries(symbol=symbol, name=name, points=points))
+            rows = conn.execute(
+                "SELECT ts_code, max(trade_date) FROM market.instrument_daily "
+                "WHERE ts_code = ANY(%s) GROUP BY ts_code",
+                (codes,),
+            ).fetchall()
+        as_of = max((r[1] for r in rows if r[1] is not None), default=None)
+        freshness = "UNAVAILABLE"
+        if as_of is not None:
+            last_trading = self._last_trading_day()
+            freshness = (
+                "FRESH" if last_trading is not None and as_of >= last_trading else "STALE")
+        return TrendsDTO(
+            from_date=from_date, to_date=to_date, series=series,
+            as_of=as_of, freshness_status=freshness,
         )
 
     def _fetch_stock_factors_into_table(

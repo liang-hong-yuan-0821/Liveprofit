@@ -146,7 +146,7 @@ def test_index_fallback_exception_skips_bars_only(env):
     result = inc.collect_incremental(
         conn, lambda: prov, lambda: fallback, refresh_sectors=False)
     assert result["index"] == {"bars": 0, "factors": 0}
-    # 异常被隔离在单码：全部 13 目标都走完兜底（各抛一次），而非首个异常中断
+    # 异常被隔离在单码：全部 15 目标都走完兜底（各抛一次），而非首个异常中断
     # 整个步骤 3（修复前会在首个码 000001.SH 就 abort，call_count 只有 1）
     assert fallback.get_index_data_df.call_count == len(inc.INDEX_TARGETS)
     fetched = [c.args[1] for c in inc.fetch_day_frames.call_args_list]

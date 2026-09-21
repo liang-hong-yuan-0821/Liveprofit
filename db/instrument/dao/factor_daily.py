@@ -18,6 +18,9 @@ FACTOR_DAILY_COLS = [
     "boll_mid_bfq", "boll_upper_bfq", "boll_lower_bfq",
     "macd_dif_bfq", "macd_dea_bfq", "macd_bfq",
     "rsi_bfq_6", "rsi_bfq_12", "rsi_bfq_24",
+    "ma_qfq_5", "ma_qfq_20", "ma_qfq_60",
+    "boll_mid_qfq", "boll_upper_qfq", "boll_lower_qfq",
+    "macd_dif_qfq", "macd_dea_qfq", "macd_qfq", "rsi_qfq_6",
     "updated_at",
 ]
 

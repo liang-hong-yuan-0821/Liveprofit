@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any
@@ -49,11 +50,18 @@ class _FakeBundle:
         self.task = task
         self.published: list[tuple] = []
         self.marked_cancelled: list[tuple] = []
-        self.uow = SimpleNamespace(tasks=SimpleNamespace(get=lambda task_id: self.task))
+        self.completed: list[tuple] = []
+        self.uow = SimpleNamespace(tasks=SimpleNamespace(get=lambda task_id: self.task), session=object())
         self.tasks = SimpleNamespace(
-            mark_cancelled=lambda task_id, attempt_no, lease_token: self.marked_cancelled.append((task_id, attempt_no))
+            mark_cancelled=lambda task_id, attempt_no, lease_token: self.marked_cancelled.append((task_id, attempt_no)),
+            complete_task=lambda *args: self.completed.append(args),
         )
         self.events = SimpleNamespace(publish=lambda *a, **kw: self.published.append((a, kw)))
+        self.reports = object()
+
+    @staticmethod
+    def build_artifact(state):
+        return {"report_json": state}
 
     def __enter__(self):
         return self
@@ -115,3 +123,39 @@ def test_on_progress_cancel_requested_raises_and_marks_cancelled():
     with pytest.raises(CooperativeCancelledError):
         executor._on_progress("scan", 1, 1)  # noqa: SLF001
     assert executor._cancel_flag is True  # noqa: SLF001
+
+
+def test_quant_branch_enters_market_connection_context_manager(monkeypatch):
+    """真实 get_connection 返回 @contextmanager；Worker 必须 enter 后再传给执行服务。"""
+    from db.instrument import db as instrument_db
+    from backend.modules.quant_strategy.application import execution as quant_execution
+
+    marker = {"entered": False, "exited": False, "received": None}
+    raw_connection = object()
+
+    @contextmanager
+    def fake_get_connection():
+        marker["entered"] = True
+        try:
+            yield raw_connection
+        finally:
+            marker["exited"] = True
+
+    class FakeQuantExecutionService:
+        def __init__(self, **kwargs):
+            marker["received"] = kwargs["market_conn"]
+
+        def run(self):
+            return {"summary": {"scanned": 1}}
+
+    monkeypatch.setattr(instrument_db, "get_connection", fake_get_connection)
+    monkeypatch.setattr(quant_execution, "QuantExecutionService", FakeQuantExecutionService)
+    bundle = _FakeBundle(_FakeTaskRow())
+    executor = _executor(bundle)
+    claimed = _claimed(request_params={"execution_snapshot": {"strategy": {}}})
+    heartbeat = SimpleNamespace(fencing_lost=SimpleNamespace(is_set=lambda: False))
+
+    executor._run_quant(claimed, heartbeat)  # noqa: SLF001
+
+    assert marker == {"entered": True, "exited": True, "received": raw_connection}
+    assert len(bundle.completed) == 1

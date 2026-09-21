@@ -20,5 +20,7 @@ export type QuantExecutionDTO = {
     summary: QuantExecutionSummaryDTO;
     warnings: Array<string>;
     valued_at?: (string | null);
+    requested_trade_date?: (string | null);
+    market_as_of_trade_date?: (string | null);
 };
 

@@ -60,6 +60,7 @@ export type { Envelope_QuantStrategyDTO_ } from './models/Envelope_QuantStrategy
 export type { Envelope_QuantStrategyFormatData_ } from './models/Envelope_QuantStrategyFormatData_';
 export type { Envelope_QuantStrategyListData_ } from './models/Envelope_QuantStrategyListData_';
 export type { Envelope_QuantStrategyPublishData_ } from './models/Envelope_QuantStrategyPublishData_';
+export type { Envelope_QuantStrategyTemplateListData_ } from './models/Envelope_QuantStrategyTemplateListData_';
 export type { Envelope_QuantStrategyVersionDTO_ } from './models/Envelope_QuantStrategyVersionDTO_';
 export type { Envelope_RefreshData_ } from './models/Envelope_RefreshData_';
 export type { Envelope_ReportDTO_ } from './models/Envelope_ReportDTO_';
@@ -67,6 +68,7 @@ export type { Envelope_ReviewBatchData_ } from './models/Envelope_ReviewBatchDat
 export type { Envelope_TaskCreatedData_ } from './models/Envelope_TaskCreatedData_';
 export type { Envelope_TaskDTO_ } from './models/Envelope_TaskDTO_';
 export type { Envelope_TaskListData_ } from './models/Envelope_TaskListData_';
+export type { Envelope_TrendsData_ } from './models/Envelope_TrendsData_';
 export type { Envelope_WatchlistDTO_ } from './models/Envelope_WatchlistDTO_';
 export type { Envelope_WatchlistItemMutationData_ } from './models/Envelope_WatchlistItemMutationData_';
 export type { Envelope_WatchlistItemsData_ } from './models/Envelope_WatchlistItemsData_';
@@ -125,6 +127,8 @@ export type { QuantStrategyFormatRequest } from './models/QuantStrategyFormatReq
 export type { QuantStrategyListData } from './models/QuantStrategyListData';
 export type { QuantStrategyPublishData } from './models/QuantStrategyPublishData';
 export type { QuantStrategyPublishRequest } from './models/QuantStrategyPublishRequest';
+export type { QuantStrategyTemplateDTO } from './models/QuantStrategyTemplateDTO';
+export type { QuantStrategyTemplateListData } from './models/QuantStrategyTemplateListData';
 export type { QuantStrategyVersionDTO } from './models/QuantStrategyVersionDTO';
 export { RecentConclusionDTO } from './models/RecentConclusionDTO';
 export type { RefreshData } from './models/RefreshData';
@@ -147,6 +151,9 @@ export type { TaskListData } from './models/TaskListData';
 export { TaskListItemDTO } from './models/TaskListItemDTO';
 export { TopologyEdgeDTO } from './models/TopologyEdgeDTO';
 export { TopologyNodeDTO } from './models/TopologyNodeDTO';
+export type { TrendPointDTO } from './models/TrendPointDTO';
+export { TrendsData } from './models/TrendsData';
+export type { TrendSeriesDTO } from './models/TrendSeriesDTO';
 export { UnavailableBlockDTO } from './models/UnavailableBlockDTO';
 export type { UpsertAgentPromptRequest } from './models/UpsertAgentPromptRequest';
 export type { ValidationError } from './models/ValidationError';

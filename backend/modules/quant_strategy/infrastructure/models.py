@@ -25,7 +25,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy import text as sa_text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.shared.db import Base, TimestampMixin
@@ -57,6 +57,9 @@ class QuantStrategyVersion(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     source_code: Mapped[str] = mapped_column(Text(), nullable=False)
     source_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    template_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    template_params: Mapped[dict | None] = mapped_column(JSONB(), nullable=True)
+    template_renderer_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     published_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)

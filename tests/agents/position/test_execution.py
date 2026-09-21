@@ -65,6 +65,8 @@ class FakeMarketConn:
         *,
         ingest_state_rows: list | None = None,
         closes: dict[str, float] | None = None,
+        adj_rows: list | None = None,
+        status_rows: list | None = None,
     ) -> None:
         self.instruments = instruments
         self.daily_rows = daily_rows
@@ -72,8 +74,25 @@ class FakeMarketConn:
         self.industry_rows = industry_rows
         self.ingest_state_rows = ingest_state_rows or []
         self.closes = closes or {}
+        self.adj_rows = adj_rows if adj_rows is not None else [
+            (r[0], r[1], 1.0) for r in daily_rows
+        ]
+        latest_by_code = {}
+        for r in daily_rows:
+            if r[0] not in latest_by_code or r[1] > latest_by_code[r[0]]:
+                latest_by_code[r[0]] = r[1]
+        self.status_rows = status_rows if status_rows is not None else [
+            (ts, d, False, False, close * 1.1 if close is not None else None,
+             close * 0.9 if close is not None else None)
+            for ts, d in latest_by_code.items()
+            for close in [self.closes.get(ts, next((x[5] for x in daily_rows if x[0] == ts), None))]
+        ]
 
     def execute(self, sql: str, params=None):
+        if "quant_data_readiness" in sql:
+            dates = [r[1] for r in self.daily_rows]
+            latest = max(dates) if dates else None
+            return _Rows([(latest, latest, latest, latest)])
         if "market.ingest_state" in sql:
             return _Rows(self.ingest_state_rows)
         if "JOIN market.industry" in sql:
@@ -87,6 +106,11 @@ class FakeMarketConn:
             return _Rows(self.daily_rows)
         if "market.factor_daily" in sql:
             return _Rows(self.factor_rows)
+        if "market.adj_factor" in sql:
+            return _Rows(self.adj_rows)
+        if "market.trade_status_daily" in sql:
+            wanted = str(params[1])[:10] if params else None
+            return _Rows([r for r in self.status_rows if str(r[1])[:10] == wanted])
         if "market.instrument" in sql:
             if "~" in sql:
                 return _Rows([(ts,) for ts in self.instruments])
@@ -107,7 +131,12 @@ def _factors(ts_code: str, days: int, start: date = date(2026, 9, 15)):
     rows = []
     d = start
     for i in range(days):
-        rows.append((ts_code, d, 9.5, 9.8, 55.0))
+        rows.append((
+            ts_code, d,
+            9.5, 9.8, 9.0,
+            9.7, 10.5, 8.9,
+            0.2, 0.1, 0.1, 55.0,
+        ))
         d -= timedelta(days=1)
     return rows
 
@@ -287,4 +316,42 @@ def test_data_unavailable_counted_not_blocking(env):
     assert summary["summary"]["data_complete"] == 2
     assert summary["summary"]["failed_count"] == 1
     rows = _signals_rows(env, task_id)
-    assert {r["ts_code"] for r in rows} == {"000001.SZ", "600519.SH"}
+    assert {r["ts_code"] for r in rows} == {"000001.SZ", "000002.SZ", "600519.SH"}
+    error = next(r for r in rows if r["ts_code"] == "000002.SZ")
+    assert error["signal_kind"] == "ERROR"
+    assert error["error_code"] == "WARMUP_INCOMPLETE"
+
+
+def test_loader_aligns_factor_values_by_trade_date_and_rejects_missing_latest():
+    from backend.modules.analysis.infrastructure.quant_execution_market_data import MarketContextBatchLoader
+
+    ts = "000001.SZ"
+    daily = _bars(ts, 3, 10.0)
+    # 故意乱序并用字符串日期，验证不是按行号、对象类型或整条 bar 对齐。
+    def f(day, ma5, ma20, rsi):
+        return (ts, day, ma5, ma20, 60.0, 10.0, 11.0, 9.0, 0.2, 0.1, 0.1, rsi)
+
+    factor = [
+        f("2026-09-13", 3.0, 30.0, 53.0),
+        f("2026-09-15", 1.0, 10.0, 51.0),
+        f("2026-09-14", 2.0, 20.0, 52.0),
+    ]
+    conn = FakeMarketConn([ts], daily, factor, [], closes={ts: 10.0})
+    item = MarketContextBatchLoader(lookback=3).load_batch(conn, [ts], EFFECTIVE)[0]
+    assert item["status"] == "OK"
+    assert item["context"]["ohlcv"]["trade_date"] == ["2026-09-13", "2026-09-14", "2026-09-15"]
+    assert item["context"]["indicators"]["ma_bfq_5"] == [3.0, 2.0, 1.0]
+    assert item["context"]["indicators"]["ma_bfq_20"] == [30.0, 20.0, 10.0]
+    assert item["context"]["indicators"]["rsi_bfq_6"] == [53.0, 52.0, 51.0]
+
+    missing_latest = FakeMarketConn([ts], daily, factor[:1], [], closes={ts: 10.0})
+    rejected = MarketContextBatchLoader(lookback=3).load_batch(missing_latest, [ts], EFFECTIVE)[0]
+    assert rejected["status"] == "INDICATOR_UNAVAILABLE"
+
+    all_null = FakeMarketConn(
+        [ts], daily,
+        [(ts, row[1], None, None, None, None, None, None, None, None, None, None) for row in daily],
+        [], closes={ts: 10.0},
+    )
+    rejected_null = MarketContextBatchLoader(lookback=3).load_batch(all_null, [ts], EFFECTIVE)[0]
+    assert rejected_null["status"] == "INDICATOR_UNAVAILABLE"

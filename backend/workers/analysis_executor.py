@@ -186,8 +186,7 @@ class AnalysisExecutor:
         try:
             from db.instrument.db import get_connection
 
-            market_conn = get_connection()
-            try:
+            with get_connection() as market_conn:
                 with self._bundles.open() as bundle:
                     control = ExecutionControl(
                         claimed.task_id,
@@ -234,8 +233,6 @@ class AnalysisExecutor:
                     bundle.tasks.complete_task(
                         claimed.task_id, claimed.attempt_no, claimed.lease_token, artifact, bundle.reports
                     )
-            finally:
-                market_conn.close()
         except CooperativeCancelledError:
             if control is not None:
                 control.terminate_all()

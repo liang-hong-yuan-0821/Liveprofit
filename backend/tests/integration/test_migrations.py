@@ -31,6 +31,9 @@ PLATFORM_TABLES = {
     "watchlist_items",
     "portfolios",
     "portfolio_positions",
+    "quant_strategies",
+    "quant_strategy_versions",
+    "quant_execution_signals",
 }
 
 EVENT_STUDY_TABLES = {"assets", "events", "market_data", "event_impacts", "market_context", "predictions"}

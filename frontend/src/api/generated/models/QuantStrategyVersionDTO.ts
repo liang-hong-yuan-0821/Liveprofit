@@ -8,6 +8,9 @@ export type QuantStrategyVersionDTO = {
     version_no: number;
     status: string;
     source_hash: string;
+    template_id?: (string | null);
+    template_params?: (Record<string, any> | null);
+    template_renderer_version?: (string | null);
     published_at: (string | null);
     archived_at: (string | null);
     version: number;

@@ -18,12 +18,18 @@ import {
 } from '../../../../shared/ui/dialog';
 import { Input } from '../../../../shared/ui/input';
 import { Label } from '../../../../shared/ui/label';
-import type { QuantStrategyDTO, QuantStrategyDraftDTO, QuantStrategyVersionDTO } from '../../../../api/generated';
+import type {
+  QuantStrategyDTO,
+  QuantStrategyDraftDTO,
+  QuantStrategyTemplateDTO,
+  QuantStrategyVersionDTO,
+} from '../../../../api/generated';
 import {
   useArchiveVersionMutation,
   useCreateQuantStrategyMutation,
   useListQuantStrategies,
   usePublishVersionMutation,
+  useQuantStrategyTemplates,
   useQuantStrategyDraft,
   useSaveDraftMutation,
 } from './queries';
@@ -86,17 +92,37 @@ function CreateStrategyDialog() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [source, setSource] = useState('');
+  const [templateId, setTemplateId] = useState('');
   const mutation = useCreateQuantStrategyMutation();
+  const templates = useQuantStrategyTemplates();
+
+  function chooseTemplate(id: string) {
+    setTemplateId(id);
+    const template = templates.data?.find((item) => item.template_id === id);
+    if (!template) return;
+    setName((current) => current || template.display_name);
+    setDescription(template.description);
+    setSource(template.source_code);
+  }
 
   function submit() {
     mutation.mutate(
-      { name, description: description || null, source_code: source },
+      {
+        name,
+        description: description || null,
+        source_code: source,
+        template_id: templateId || null,
+        template_params: templateId
+          ? templates.data?.find((item) => item.template_id === templateId)?.default_params ?? null
+          : null,
+      },
       {
         onSuccess: () => {
           setOpen(false);
           setName('');
           setDescription('');
           setSource('');
+          setTemplateId('');
         },
       },
     );
@@ -112,6 +138,25 @@ function CreateStrategyDialog() {
           <DialogTitle>新建策略</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2">
+          <Label htmlFor="new-template">策略模板</Label>
+          <select
+            id="new-template"
+            className="h-10 rounded-md border bg-transparent px-3 text-sm"
+            value={templateId}
+            onChange={(event) => chooseTemplate(event.target.value)}
+          >
+            <option value="">自定义策略</option>
+            {(templates.data ?? []).map((template: QuantStrategyTemplateDTO) => (
+              <option key={template.template_id} value={template.template_id}>
+                第 {template.wave} 波 · {template.display_name}（{template.required_bars} 根）
+              </option>
+            ))}
+          </select>
+          {templateId && (
+            <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+              模板源码与默认参数由服务端冻结；创建后手工修改源码会转为自定义策略。
+            </p>
+          )}
           <Label htmlFor="new-name">名称</Label>
           <Input id="new-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={64} />
           <Label htmlFor="new-desc">描述（可选）</Label>

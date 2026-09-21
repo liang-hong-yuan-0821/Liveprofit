@@ -17,7 +17,7 @@ import uuid
 
 from sqlalchemy.exc import IntegrityError
 
-from AI.strategy_sandbox.validator import validate_strategy_source
+from AI.strategy_sandbox.validator import MAX_SOURCE_BYTES, StrategyValidationIssue, validate_strategy_source
 from backend.modules.quant_strategy.application.contracts import (
     DraftSaveResult,
     PublishResult,
@@ -34,6 +34,11 @@ from backend.modules.quant_strategy.application.errors import (
     StrategyValidationFailedError,
 )
 from backend.modules.quant_strategy.domain.values import StrategyStatus
+from backend.modules.quant_strategy.domain.templates import (
+    RENDERER_VERSION,
+    TemplateValidationError,
+    get_template,
+)
 from backend.modules.quant_strategy.infrastructure.models import QuantStrategy, QuantStrategyVersion
 from backend.modules.quant_strategy.infrastructure.repositories import (
     QuantStrategyRepository,
@@ -72,8 +77,35 @@ class QuantStrategyService:
     # ---- 创建 ----
 
     def create(
-        self, name: str, description: str | None = None, source_code: str = ""
+        self, name: str, description: str | None = None, source_code: str = "",
+        template_id: str | None = None, template_params: dict | None = None,
     ) -> QuantStrategyDTO:
+        if not source_code.strip():
+            raise StrategyValidationFailedError([
+                StrategyValidationIssue("SOURCE_REQUIRED", "新建策略必须输入代码", 1, 1),
+            ])
+        if len(source_code.encode("utf-8")) > MAX_SOURCE_BYTES:
+            raise StrategyValidationFailedError([
+                StrategyValidationIssue("SOURCE_TOO_LARGE", "策略源码不能超过 12 KiB", 1, 1),
+            ])
+        normalized_params = None
+        renderer_version = None
+        if template_id is not None:
+            try:
+                rendered, normalized_params = get_template(template_id).render(template_params)
+            except TemplateValidationError as exc:
+                raise StrategyValidationFailedError([
+                    StrategyValidationIssue("TEMPLATE_PARAMS_INVALID", str(exc), 1, 1),
+                ]) from None
+            if rendered != source_code:
+                raise StrategyValidationFailedError([
+                    StrategyValidationIssue(
+                        "TEMPLATE_SOURCE_MISMATCH",
+                        "模板元数据必须对应服务端渲染的原始源码；修改后请按自定义策略创建",
+                        1, 1,
+                    ),
+                ])
+            renderer_version = RENDERER_VERSION
         if self._strategies.get_by_name(name) is not None:
             raise StrategyNameConflictError(f"策略名已存在：{name}")
         now = self._clock.now()
@@ -82,12 +114,14 @@ class QuantStrategyService:
             created_at=now, updated_at=now,
         )
         self._strategies.add(strategy)
-        # 创建策略同时创建 v1 DRAFT（草稿初始可为空，发布前必须校验通过）
+        # 代码必填；允许草稿尚未完成，发布前必须通过完整校验。
         self._versions.add(
             QuantStrategyVersion(
                 id=new_uuid(), strategy_id=strategy.id, version_no=1,
                 status=StrategyStatus.DRAFT.value,
                 source_code=source_code, source_hash=_source_hash(source_code),
+                template_id=template_id, template_params=normalized_params,
+                template_renderer_version=renderer_version,
                 version=1, created_at=now, updated_at=now,
             )
         )
@@ -131,6 +165,11 @@ class QuantStrategyService:
             {
                 "source_code": source_code,
                 "source_hash": _source_hash(source_code),
+                # 用户编辑后模板只保留来源审计会造成生命周期误绑定；
+                # 草稿自由编辑一律转为自定义策略。
+                "template_id": None,
+                "template_params": None,
+                "template_renderer_version": None,
                 "version": expected_draft_version + 1,
                 "updated_at": now,
             },
@@ -176,6 +215,8 @@ class QuantStrategyService:
             version_no=self._versions.next_version_no(strategy_id),
             status=StrategyStatus.DRAFT.value,
             source_code=version.source_code, source_hash=version.source_hash,
+            template_id=version.template_id, template_params=version.template_params,
+            template_renderer_version=version.template_renderer_version,
             version=1, created_at=now, updated_at=now,
         )
         self._versions.add(next_draft)
@@ -248,6 +289,8 @@ class QuantStrategyService:
         return QuantStrategyVersionDTO(
             id=v.id, strategy_id=v.strategy_id, version_no=v.version_no, status=v.status,
             source_hash=v.source_hash, published_at=v.published_at, archived_at=v.archived_at,
+            template_id=v.template_id, template_params=v.template_params,
+            template_renderer_version=v.template_renderer_version,
             version=v.version, created_at=v.created_at, updated_at=v.updated_at,
         )
 
@@ -255,5 +298,7 @@ class QuantStrategyService:
         return QuantStrategyDraftDTO(
             id=v.id, strategy_id=v.strategy_id, version_no=v.version_no, status=v.status,
             source_code=v.source_code, source_hash=v.source_hash, version=v.version,
+            template_id=v.template_id, template_params=v.template_params,
+            template_renderer_version=v.template_renderer_version,
             created_at=v.created_at, updated_at=v.updated_at,
         )

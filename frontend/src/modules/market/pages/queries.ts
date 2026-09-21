@@ -7,6 +7,7 @@ import type {
   BarsData,
   ConceptTreeData,
   MacroInformationData,
+  TrendsData,
 } from '../../../api/generated';
 
 // 大盘区块的页面私有 Query；目录前端写死（MARKET_INDEX_CATALOG），
@@ -116,6 +117,42 @@ export function useStockBarsQuery(symbol: string, filters: StockBarsFilters, ena
             symbol,
             filters.market,
             filters.interval,
+            filters.from,
+            filters.to,
+          ),
+        )
+      ).data,
+  });
+}
+
+export interface TrendsFilters {
+  from: string;
+  to: string;
+}
+
+// 趋势对比两 Tab（趋势对比面板方案 4.4.1）：组语义由后端常量承载，前端只传区间。
+export function useCapTierTrendsQuery(filters: TrendsFilters) {
+  return useQuery({
+    queryKey: queryKeys.marketCapTierTrends.list({ ...filters }),
+    queryFn: async (): Promise<TrendsData> =>
+      (
+        await requestEnvelope<TrendsData>(
+          MarketDataService.capTierTrendsApiV1MarketDataTrendsCapTiersGet(
+            filters.from,
+            filters.to,
+          ),
+        )
+      ).data,
+  });
+}
+
+export function useBoardTrendsQuery(filters: TrendsFilters) {
+  return useQuery({
+    queryKey: queryKeys.marketBoardTrends.list({ ...filters }),
+    queryFn: async (): Promise<TrendsData> =>
+      (
+        await requestEnvelope<TrendsData>(
+          MarketDataService.boardTrendsApiV1MarketDataTrendsBoardsGet(
             filters.from,
             filters.to,
           ),

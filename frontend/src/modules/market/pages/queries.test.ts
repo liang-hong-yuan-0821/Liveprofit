@@ -4,6 +4,8 @@ import { queryKeys } from '../../../api/queryKeys';
 import { createTestQueryClient, withQueryClient } from '../../../test/utils';
 import {
   CONCEPT_TREE_LIMIT,
+  useBoardTrendsQuery,
+  useCapTierTrendsQuery,
   useConceptBarsQuery,
   useConceptTreeQuery,
   useStockBarsQuery,
@@ -14,6 +16,8 @@ vi.mock('../../../api/generated/services/MarketDataService', () => ({
     conceptTreeApiV1MarketDataConceptsTreeGet: vi.fn(),
     sectorBarsApiV1MarketDataConceptsSectorCodeBarsGet: vi.fn(),
     stockBarsApiV1MarketDataStocksSymbolBarsGet: vi.fn(),
+    capTierTrendsApiV1MarketDataTrendsCapTiersGet: vi.fn(),
+    boardTrendsApiV1MarketDataTrendsBoardsGet: vi.fn(),
   },
 }));
 
@@ -22,6 +26,8 @@ import { MarketDataService } from '../../../api/generated/services/MarketDataSer
 const treeMock = MarketDataService.conceptTreeApiV1MarketDataConceptsTreeGet as Mock;
 const conceptBarsMock = MarketDataService.sectorBarsApiV1MarketDataConceptsSectorCodeBarsGet as Mock;
 const stockBarsMock = MarketDataService.stockBarsApiV1MarketDataStocksSymbolBarsGet as Mock;
+const capTierTrendsMock = MarketDataService.capTierTrendsApiV1MarketDataTrendsCapTiersGet as Mock;
+const boardTrendsMock = MarketDataService.boardTrendsApiV1MarketDataTrendsBoardsGet as Mock;
 
 const treeFixture = {
   as_of: '2026-09-11', algorithm_version: 'heat_v1', result_status: 'OK',
@@ -40,13 +46,47 @@ const barsFixture = {
   freshness_status: 'FRESH', market_session_status: 'CLOSED', market_closed_reason: '已收盘',
 };
 
+const trendsFixture = {
+  from: '2025-09-19', to: '2026-09-19',
+  series: [{ symbol: '000300.SH', name: '沪深300', points: [{ date: '2026-09-18', close: 3340 }] }],
+  as_of: '2026-09-18',
+  freshness_status: 'FRESH',
+};
+
 beforeEach(() => {
   treeMock.mockReset();
   conceptBarsMock.mockReset();
   stockBarsMock.mockReset();
+  capTierTrendsMock.mockReset();
+  boardTrendsMock.mockReset();
   treeMock.mockResolvedValue(envelope(treeFixture));
   conceptBarsMock.mockResolvedValue(envelope(barsFixture));
   stockBarsMock.mockResolvedValue(envelope(barsFixture));
+  capTierTrendsMock.mockResolvedValue(envelope(trendsFixture));
+  boardTrendsMock.mockResolvedValue(envelope(trendsFixture));
+});
+
+describe('useCapTierTrendsQuery / useBoardTrendsQuery', () => {
+  it('请求参数与 queryKey（趋势对比面板方案 4.4）', async () => {
+    const queryClient = createTestQueryClient();
+    const filters = { from: '2025-09-19', to: '2026-09-19' };
+    const { result } = renderHook(() => useCapTierTrendsQuery(filters), {
+      wrapper: withQueryClient(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(capTierTrendsMock).toHaveBeenCalledWith('2025-09-19', '2026-09-19');
+    expect(result.current.data).toEqual(trendsFixture);
+    expect(queryClient.getQueryData(queryKeys.marketCapTierTrends.list(filters))).toEqual(trendsFixture);
+
+    const { result: boardResult } = renderHook(() => useBoardTrendsQuery(filters), {
+      wrapper: withQueryClient(queryClient),
+    });
+    await waitFor(() => expect(boardResult.current.isSuccess).toBe(true));
+    expect(boardTrendsMock).toHaveBeenCalledWith('2025-09-19', '2026-09-19');
+    expect(boardResult.current.data).toEqual(trendsFixture);
+    expect(queryClient.getQueryData(queryKeys.marketBoardTrends.list(filters))).toEqual(trendsFixture);
+  });
 });
 
 describe('useConceptTreeQuery', () => {

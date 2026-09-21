@@ -148,3 +148,34 @@ class ConceptTreeData(BaseModel):
     source: str | None
     source_updated_at: datetime | None
     freshness_status: Literal["FRESH", "STALE"]
+
+
+class TrendPointDTO(BaseModel):
+    """单交易日归一前收盘点（趋势对比面板方案 4.2；无分时，故用 date 而非 BarDTO.timestamp）。"""
+
+    date: date
+    close: float
+
+
+class TrendSeriesDTO(BaseModel):
+    symbol: str
+    name: str  # 展示名一律取本字段（前端不硬编码层级名/板名）
+    points: list[TrendPointDTO]
+
+
+class TrendsData(BaseModel):
+    """多指数趋势对比响应（/trends/{cap-tiers,boards} 两端点共用）。
+
+    口径差异（维护者须知）：三条板曲线是官方指数的编制口径，非"全板等权"——
+    上证综指 2020-07-22 修订后纳入科创板、创业板指为 100 只样本股、科创50 为
+    50 只样本股；四条分层曲线同理是指数公司样本口径。本字段组不承载口径元数据
+    （响应里只回 name 与点），口径文案在前端图注固定写明。
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    from_: date = Field(alias="from")
+    to: date
+    series: list[TrendSeriesDTO]
+    as_of: date | None
+    freshness_status: Freshness

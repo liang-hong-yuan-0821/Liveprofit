@@ -73,6 +73,8 @@ class QuantExecutionDTO(BaseModel):
     summary: QuantExecutionSummaryDTO
     warnings: list[str]
     valued_at: str | None = None
+    requested_trade_date: str | None = None
+    market_as_of_trade_date: str | None = None
 
 
 class QuantSignalRowDTO(BaseModel):

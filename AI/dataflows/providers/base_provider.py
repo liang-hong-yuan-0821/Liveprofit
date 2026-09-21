@@ -317,6 +317,14 @@ class BaseStockDataProvider(ABC):
         """单交易日全市场复权因子（adj_factor / fund_adj）。同上。"""
         return None
 
+    def get_full_market_technical_factor_df(self, trade_date: str, ts_codes: list[str] | None = None):
+        """单交易日全市场股票技术因子（stk_factor_pro，含 qfq 十项）。"""
+        return None
+
+    def get_full_market_trade_status_df(self, trade_date: str):
+        """单交易日股票交易状态、ST 标记与涨跌停价。"""
+        return None
+
     def get_stock_basic_df(self):
         """股票基本信息全量（含退市，含 area 地域）。返回 None 表示不支持/失败。"""
         return None

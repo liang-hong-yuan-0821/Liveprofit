@@ -18,7 +18,7 @@ import { barsToCandlestickViewModel } from './mappers/toChartViewModels';
 // KOSDAQ 无可用数据源（tushare index_global 无 KQ11、东财本机空表、
 // 新浪环球表无此品种），用户拍板从目录移除（目录字段名 availability
 // 刻意区别于已删门控列 availability_status）。
-// 与 db.instrument INDEX_TARGETS（13 个：CN 9 + US 3 + KS11）的同步不变式：
+// 与 db.instrument INDEX_TARGETS（15 个：CN 11 + US 3 + KS11）的同步不变式：
 // CN 7 与后端采集清单的 CN 子集必须一致；US/KR 项变更需实测验收 + 两处同步。
 const MARKET_INDEX_CATALOG: CatalogEntry[] = [
   { market: 'US', symbol: '.INX', name: '标普500', currency: 'USD', market_timezone: 'America/New_York', availability: 'AVAILABLE' },

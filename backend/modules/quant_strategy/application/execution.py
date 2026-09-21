@@ -36,6 +36,8 @@ from backend.modules.analysis.infrastructure.quant_execution_market_data import 
     MarketContextBatchLoader,
 )
 from backend.modules.quant_strategy.application.position_planner import PositionPlanner
+from backend.modules.quant_strategy.application.data_readiness import DataReadinessGate
+from backend.modules.quant_strategy.domain.templates import get_template, validate_template_context
 from backend.modules.quant_strategy.infrastructure.signals import (
     QuantExecutionSignal,
     QuantExecutionSignalRepository,
@@ -103,9 +105,18 @@ class QuantExecutionService:
         self._signals = QuantExecutionSignalRepository(session)
 
     def run(self) -> dict:
+        try:
+            return self._run()
+        except BaseException:
+            self._control.terminate_all()
+            self._session.rollback()
+            raise
+
+    def _run(self) -> dict:
         """执行全市场扫描 + 订单规划，返回 quant_execution 摘要（无源码/无全量信号）。"""
         strategy = self._snapshot["strategy"]
         source_code = strategy["source_code"]
+        template = get_template(strategy["template_id"]) if strategy.get("template_id") else None
         # 已发布快照校验：AST + 散列（不符 → 不可重试任务失败）
         issues = validate_strategy_source(source_code)
         if issues:
@@ -117,7 +128,8 @@ class QuantExecutionService:
         if actual_hash != strategy["source_hash"]:
             raise StrategySnapshotInvalidError("策略快照源码散列不符")
 
-        effective_date = self._effective_trade_date
+        readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+        effective_date = readiness.market_as_of_trade_date
         universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn)
         universe_total = len(universe)
 
@@ -156,7 +168,7 @@ class QuantExecutionService:
 
         industry_available, _ = ingest_state_dao.is_industry_bucket_available(self._market_conn)
 
-        loader = MarketContextBatchLoader()
+        loader = MarketContextBatchLoader(lookback=int(strategy.get("required_bars", 250)))
         summary_counts = {
             "data_complete": 0,
             "scanned": 0,
@@ -191,31 +203,55 @@ class QuantExecutionService:
                     signal.valuation_price = position.get("close_last")
             self._signals.add(signal)
 
+        def _persist_data_error(ts_code: str, code: str) -> None:
+            self._signals.add(
+                QuantExecutionSignal(
+                    task_id=self._task_id,
+                    attempt_no=self._attempt_no,
+                    signal_kind="ERROR",
+                    ts_code=ts_code,
+                    error_code=code,
+                    reason=f"执行期行情输入不可用: {code}",
+                )
+            )
+
         total_batches = (len(scan_targets) + self._batch_size - 1) // self._batch_size
         for batch_index in range(0, len(scan_targets), self._batch_size):
             self._control.raise_if_inactive()
             batch = scan_targets[batch_index : batch_index + self._batch_size]
             contexts = loader.load_batch(
-                self._market_conn, batch, effective_date, positions_by_code=positions_by_code
+                self._market_conn, batch, effective_date, positions_by_code=positions_by_code,
+                requested_trade_date=readiness.requested_trade_date,
             )
             pending: list = []
             with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
                 for item in contexts:
                     self._control.raise_if_inactive()
                     ts = item["ts_code"]
+                    if item["status"] == "OK" and template is not None:
+                        guard_error = validate_template_context(template, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
                     if item["status"] != "OK":
-                        if item["status"] in ("DATA_UNAVAILABLE", "INDICATOR_UNAVAILABLE"):
-                            summary_counts["failed"] += 1
-                            error_counts[item["status"]] = error_counts.get(item["status"], 0) + 1
-                            if len(error_samples.setdefault(item["status"], [])) < ERROR_SAMPLE_LIMIT:
-                                error_samples[item["status"]].append(ts)
+                        summary_counts["failed"] += 1
+                        error_counts[item["status"]] = error_counts.get(item["status"], 0) + 1
+                        samples = error_samples.setdefault(item["status"], [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_data_error(ts, item["status"])
+                        elif ts in positions_by_code:
+                            # 持仓输入错误始终保留，不能被非持仓 sample 上限吞掉。
+                            _persist_data_error(ts, item["status"])
                         continue
                     summary_counts["data_complete"] += 1
                     summary_counts["scanned"] += 1
                     ctx = item["context"]
                     has_position = (ctx["position"].get("shares") or 0) > 0
 
-                    def _execute(_ctx, _ts, _has_position):
+                    execution_market = item["execution_market"]
+
+                    def _execute(_ctx, _ts, _has_position, _execution_market):
+                        self._control.raise_if_inactive()
                         proc_holder: dict = {}
                         try:
                             result = run_strategy(
@@ -229,9 +265,9 @@ class QuantExecutionService:
                             popen = proc_holder.get("p")
                             if popen is not None:
                                 self._control.unregister_process(popen)
-                        return _ts, result, _has_position, _ctx["ohlcv"]["close"][-1]
+                        return _ts, result, _has_position, _execution_market["raw_close"]
 
-                    pending.append(pool.submit(_execute, ctx, ts, has_position))
+                    pending.append(pool.submit(_execute, ctx, ts, has_position, execution_market))
 
                 for future in as_completed(pending):
                     self._control.raise_if_inactive()
@@ -260,6 +296,7 @@ class QuantExecutionService:
                         kind = "HOLDING"
                     _persist_signal(kind, ts, result, {"close_last": close_last})
             # 每批落盘后提交（取消时已持久化批次保留，未持久化批次丢弃）
+            self._control.raise_if_inactive()
             self._session.commit()
             done = min(batch_index + self._batch_size, len(scan_targets))
             self._on_progress("scan", done, len(scan_targets))
@@ -285,6 +322,7 @@ class QuantExecutionService:
             industry_bucket_available=industry_available,
             risk_gate=None,
         )
+        self._control.raise_if_inactive()
         self._session.commit()
 
         warnings = list(summary.warnings)
@@ -319,6 +357,8 @@ class QuantExecutionService:
             "buy_rejections": summary.buy_rejections,
             "warnings": warnings,
             "valued_at": summary.valued_at.isoformat(),
+            "requested_trade_date": readiness.requested_trade_date.isoformat(),
+            "market_as_of_trade_date": readiness.market_as_of_trade_date.isoformat(),
         }
 
     def _load_holding_closes(self, symbols: list[str]) -> dict:

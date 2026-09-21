@@ -11,12 +11,24 @@ import {
   type QuantStrategyDraftDTO,
   type QuantStrategyDraftUpdateRequest,
   type QuantStrategyPublishData,
+  type QuantStrategyTemplateDTO,
   type QuantStrategyVersionDTO,
 } from '../../../../api/generated';
 import { QuantSignalsService } from '../../../../api/generated/services/QuantSignalsService';
 import type { QuantSignalPageData } from '../../../../api/generated';
 
 export type QuantSignalKind = 'buy' | 'holding' | 'orders' | 'errors';
+
+export function useQuantStrategyTemplates() {
+  return useQuery({
+    queryKey: [...queryKeys.quantStrategies.all, 'templates'],
+    queryFn: async (): Promise<QuantStrategyTemplateDTO[]> =>
+      (await requestEnvelope<{ items: QuantStrategyTemplateDTO[] }>(
+        QuantStrategiesService.listStrategyTemplatesApiV1QuantStrategyTemplatesGet(),
+      )).data.items,
+    staleTime: Infinity,
+  });
+}
 
 export function useListQuantStrategies() {
   return useQuery({

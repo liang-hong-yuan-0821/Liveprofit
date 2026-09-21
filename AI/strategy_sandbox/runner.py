@@ -8,7 +8,7 @@
 - Unix 额外 RLIMIT_CPU=1s / RLIMIT_AS=128MiB / RLIMIT_FSIZE=0 / 低 NOFILE；
   Windows 记录 RESOURCE_LIMIT_DEGRADED 且仍 kill 超时进程。
 - AST 白名单由 validator 在上游（草稿保存/发布/执行装配）强制，
-  本层是纵深防御：即使用户代码绕过 AST 限制，空 builtins 也拿不到任何宿主能力。
+  本层提供进程隔离与超时；空 builtins 不能替代上游 AST 校验或强沙箱。
 """
 
 from __future__ import annotations
@@ -48,6 +48,8 @@ def _apply_posix_limits():
 
 
 def _isfinite(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
     if isinstance(value, float):
         return math.isfinite(value)
     return True
@@ -103,6 +105,8 @@ def run_strategy(
     on_process(popen) 在子进程创建后回调（执行控制登记/注销用）。
     """
     degraded = sys.platform == "win32"
+    # 序列化失败时尚未启动进程，避免子进程一直等待 stdin。
+    payload = json.dumps({"source": source_code, "context": context}, ensure_ascii=False).encode("utf-8")
     with tempfile.TemporaryDirectory(prefix="quant-sandbox-") as empty_cwd:
         try:
             proc = subprocess.Popen(
@@ -113,18 +117,18 @@ def run_strategy(
                 cwd=empty_cwd,
                 env=_child_env(),
                 close_fds=True,
+                start_new_session=os.name == "posix",
                 # 资源限额由子进程脚本自举（见 _CHILD_SCRIPT 开头）——
                 # 不用 preexec_fn（ThreadPoolExecutor 多线程下 fork 有死锁风险）
             )
-            if on_process is not None:
-                on_process(proc)
         except OSError as exc:
             return StrategyRunResult(
                 ok=False, error_code="INVALID_OUTPUT",
                 error_message=f"子进程启动失败: {exc}", resource_limit_degraded=degraded,
             )
-        payload = json.dumps({"source": source_code, "context": context}, ensure_ascii=False).encode("utf-8")
         try:
+            if on_process is not None:
+                on_process(proc)
             stdout, _ = proc.communicate(payload, timeout=timeout)
         except subprocess.TimeoutExpired:
             proc.kill()
@@ -133,6 +137,12 @@ def run_strategy(
                 ok=False, error_code="EXECUTION_TIMEOUT",
                 error_message=f"策略执行超过 {timeout}s", resource_limit_degraded=degraded,
             )
+        except BaseException:
+            # 包括登记时取消/失租；先回收，再让任务级异常正常传播。
+            if proc.poll() is None:
+                proc.kill()
+            proc.communicate()
+            raise
     if len(stdout) > MAX_STDOUT_BYTES:
         return StrategyRunResult(
             ok=False, error_code="INVALID_OUTPUT",

@@ -6,7 +6,7 @@ db.instrument.ingest：
   个股基金逐日回填）；--skip-bars 映射内部 skip_daily=True（仅指数日线+因子）
 - 未指定 → 增量模式（incremental：指数日线+因子 + 个股基金增量 + 板块周刷）
 - --market 保留兼容参数、不参与门控（采集范围由 INDEX_TARGETS 决定，
-  2026-09-14 US/KR 上线后含 CN 9 + US 3 + KS11）
+  2026-09-14 US/KR 上线后含 CN 11 + US 3 + KS11）
 """
 
 from __future__ import annotations

@@ -1,6 +1,14 @@
-# 最终产出与结论
+# 原基础阶段产出与结论
 
-收尾时写。
+> 本文件仅记录原 T1–T8 基础阶段的历史验证结果，不代表 2026-09-19 统一方案及评审增量 N0–N9 已实现或通过。当前状态以 README.md、plan.md 和 tasks.md 为准。
+
+## 2026-09-21 增量实施实测
+
+- N0 已完成；N1/N2/N8 已进入进行中，未把覆盖门槛或观察期未达标项目误记为完成。
+- 真实浏览器完成模板策略创建/发布、组合资金配置、仅仓位层任务提交与结果查看。
+- 成功任务 `1cedb9fb-0601-4174-b636-042601766f1a`：全市场 5,565 只，数据完备并执行 Sandbox 5,507 只，命中 25 个 `MA_TREND_CROSS` 买点，58 只以 `STALE_DATA`/`INDICATOR_UNAVAILABLE` 审计拒绝。
+- 真实申万当前成员覆盖率 93.62%，低于冻结门槛 95%；因此 25 个原始买点仍展示 qfq 入场/止损/止盈，但均标记 `BUY_REJECTED_INDUSTRY_BUCKET`，建议订单为 0，未写入持仓。
+- 后端定向回归 101 通过；前端 336 通过，typecheck 与 production build 通过。
 
 ## 验证结果
 
@@ -15,7 +23,7 @@
 | 行业 POC | `python -m db.instrument.ingest.industries --poc`（真实 TUSHARE_TOKEN） | **留待用户部署前人工执行** |
 | E2E 量化流程 | 完整栈（Worker+行情+策略）人工验收 | **留待用户** |
 
-## Code Review
+## 原基础阶段 Code Review
 
 - **结论**：两轮——首轮 subagent 报告 3 BLOCKER / 15 MAJOR / 12 MINOR / 6 项测试盲点；修复后全量回归通过（exit 0）；M7 覆盖率口径经用户拍板 A（活跃股票口径）落地；前端交互优化（编辑器着色/格式化/新建必填代码）与模板库方案差异分析完成
 - **关键修复**：
@@ -26,7 +34,7 @@
   - M5 非持仓错误样本未落库（错误分页恒空）
   - M8 失败短事务翻 status 导致整周关闭行业门控
   - M10 量化面板未接 cursor 全量分页（>50 条永不可见）
-- **遗留**：E2E 量化流程与行业 POC（--poc 真实 token）两项人工验收项留待用户
+- **遗留**：原 E2E 量化流程与行业 POC（--poc 真实 token）两项人工验收项留待用户；评审后另新增数据对齐、共同水位、qfq/raw 双口径、可交易性/费用、组合开放风险、生命周期、真实 6,000 标的性能与 forward shadow 门禁，详见 tasks.md N0–N9。
 
 ## 交付物
 
@@ -38,4 +46,4 @@
 - 行业底座：market.ingest_state + 采集模块（collect_industries/--poc/--refresh）+ 周刷接线 + 门控谓词
 - API：策略路由 7 端点、组合账户原子 PATCH、报告 quant_execution 投影、信号 cursor（attempt 隔离/稳定编码）
 - 前端：策略管理页、组合账户设置、任务表单量化参数选择器、量化执行面板（cursor 分页）、/ai/strategies 路由
-- 文档：plan.md（已确认冻结）、tasks.md（8/8 完成）、本 result.md、log.md 全程时间线
+- 文档：本文件保留原基础 8/8 历史记录；统一 plan 已进入评审修订状态，不再视为冻结或完成。

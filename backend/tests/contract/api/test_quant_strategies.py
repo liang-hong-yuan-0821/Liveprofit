@@ -19,7 +19,7 @@ def strategy(context):
 _SENTINEL = "def strategy(context):\n    import os\n"
 
 
-def _create(client, name: str, source_code: str = "") -> dict:
+def _create(client, name: str, source_code: str = LEGAL) -> dict:
     response = client.http.post("/api/v1/quant-strategies", json={"name": name, "source_code": source_code})
     assert response.status_code == 201, response.text
     return response.json()["data"]
@@ -90,7 +90,7 @@ def test_draft_save_validation_422_and_source_not_echoed(client):
     assert "import os" not in body["detail"]
     # 校验失败不落库
     still = client.http.get(f"/api/v1/quant-strategies/{sid}/draft")
-    assert still.json()["data"]["source_code"] == ""
+    assert still.json()["data"]["source_code"] == LEGAL
 
 
 def test_revision_conflicts(client):

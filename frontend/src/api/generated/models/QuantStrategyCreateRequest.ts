@@ -5,6 +5,8 @@
 export type QuantStrategyCreateRequest = {
     name: string;
     description?: (string | null);
-    source_code?: string;
+    source_code: string;
+    template_id?: (string | null);
+    template_params?: (Record<string, any> | null);
 };
 

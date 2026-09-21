@@ -23,6 +23,7 @@ LOT_SIZE = Decimal(100)
 ELIGIBLE = "ELIGIBLE"
 BUY_REJECTED_RISK_GATE = "BUY_REJECTED_RISK_GATE"  # 预留：AI 层接入后启用
 BUY_REJECTED_RR = "BUY_REJECTED_RR"
+BUY_REJECTED_PRICE_RANGE = "BUY_REJECTED_PRICE_RANGE"
 BUY_REJECTED_LOT_SIZE = "BUY_REJECTED_LOT_SIZE"
 BUY_REJECTED_CASH = "BUY_REJECTED_CASH"
 BUY_REJECTED_TOTAL_LIMIT = "BUY_REJECTED_TOTAL_LIMIT"
@@ -131,6 +132,11 @@ class PositionPlanner:
                 key = (bucket["industry_code"],)
                 sector_used[key] = sector_used.get(key, Decimal(0)) + mv
 
+        if unknown_sector_used > 0:
+            # 已持仓可能属于任意行业，无法证明新买入不突破行业上限。
+            industry_bucket_available = False
+            summary.warnings.append("持仓行业归属缺失：拒绝新 BUY，保留卖出建议")
+
         for signal in self._signals.list_actionable(task_id, attempt_no):
             if signal.signal_kind == "HOLDING":
                 self._plan_sell(signal, positions, closes, summary)
@@ -210,6 +216,14 @@ class PositionPlanner:
             return False, None
         close = _dec(signal.valuation_price) if signal.valuation_price is not None else entry
         order_cost = max(entry, close)
+        # 信号价只代表策略形态。实际建议买入成本抬高后必须重新满足严格三价关系、
+        # 最低盈亏比与风险预算，避免跳空时成本已越过目标价仍被标为 ELIGIBLE。
+        if not (0 < stop < order_cost < take):
+            self._reject(signal, BUY_REJECTED_PRICE_RANGE, summary)
+            return False, None
+        if (take - order_cost) / (order_cost - stop) < ctx["rr_min"]:
+            self._reject(signal, BUY_REJECTED_RR, summary)
+            return False, None
 
         # 行业风险桶：SW2021；行业不可用/未知行业 → 拒绝（绝不按零暴露绕过上限）
         bucket = ctx["industry_map"].get(signal.ts_code)
@@ -220,7 +234,7 @@ class PositionPlanner:
 
         # 风险手数
         risk_budget = total_assets * ctx["risk_per_trade"]
-        shares_risk = (risk_budget / (entry - stop) / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
+        shares_risk = (risk_budget / (order_cost - stop) / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
         # 现金上限（每笔及累计）
         shares_cash = (ctx["cash_remaining"] / order_cost / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
         # 总仓位上限

@@ -115,6 +115,8 @@ async def get_report(task_id: uuid.UUID, request: Request, trace_id: str = Depen
                 ),
                 warnings=[str(w) for w in (payload.get("warnings") or [])],
                 valued_at=payload.get("valued_at"),
+                requested_trade_date=payload.get("requested_trade_date"),
+                market_as_of_trade_date=payload.get("market_as_of_trade_date"),
             )
         except (TypeError, ValueError, KeyError):
             return None

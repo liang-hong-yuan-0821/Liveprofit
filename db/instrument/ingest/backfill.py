@@ -5,7 +5,7 @@
                                            [--retry-missing] [--skip-concepts]
 
 设计要点（store 回填经验逐条沿用）：
-- 指数全历史为内置分项（INDEX_TARGETS 13 个：CN 9 + US 3 + KS11，2026-09-14
+- 指数全历史为内置分项（INDEX_TARGETS 15 个：CN 11 + US 3 + KS11，2026-09-14
   US/KR 上线）：get_index_data_df 全历史 →
   instrument_daily DO UPDATE（补齐迁移行缺失的 pre_close/change/pct_chg 三列，
   store 决策 5 的显式例外）；get_index_factor_df → factor_daily DO UPDATE
@@ -41,6 +41,7 @@ from db.instrument.ingest.incremental import (
     _assert_index_targets_valid, _is_cn_index_code, _provider_source,
 )
 from db.instrument.ingest.sectors import collect_sectors
+from db.instrument.ingest.stock_factors import collect_stock_quant_day
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +208,15 @@ def _run_day(conn, provider, trade_date: str, stock_codes: list,
     n_factor = bulk_upsert_factor(conn, frames["factor"], update=False)
     conn.commit()
     logger.info("回填: %s 完成 daily=%d factor=%d", trade_date, n_daily, n_factor)
+    try:
+        quant = collect_stock_quant_day(conn, provider, trade_date, stock_codes)
+        logger.info("回填: %s 量化数据=%s", trade_date, quant.get("status"))
+    except Exception as exc:
+        logger.warning("回填: %s 量化因子/交易状态失败（保留日线成果）: %s", trade_date, exc)
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 def _run_day_with_retry(conn, provider, trade_date: str, stock_codes: list,

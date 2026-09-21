@@ -37,7 +37,7 @@ def _uow(env):
     return SqlAlchemyQuantStrategyUnitOfWork(env["session_factory"])
 
 
-def _create(env, name=None, source_code=""):
+def _create(env, name=None, source_code=LEGAL):
     if name is None:
         name = f"策略-{uuid.uuid4().hex[:8]}"
     with _uow(env) as uow:
@@ -219,7 +219,7 @@ def test_name_conflict_and_not_found(env):
     with _uow(env) as uow:
         service = QuantStrategyService(uow)
         with pytest.raises(StrategyNameConflictError):
-            service.create("重名策略")
+            service.create("重名策略", source_code=LEGAL)
         with pytest.raises(StrategyNotFoundError):
             service.get("00000000-0000-0000-0000-000000000000")
 

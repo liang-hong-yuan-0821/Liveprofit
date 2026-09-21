@@ -80,6 +80,33 @@ CREATE TABLE IF NOT EXISTS market.factor_daily (
 CREATE INDEX IF NOT EXISTS idx_factor_daily_trade_date
     ON market.factor_daily (trade_date, ts_code);
 
+-- 量化信号统一使用前复权技术因子；对既有库使用 ADD COLUMN IF NOT EXISTS 增量升级。
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS ma_qfq_5 DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS ma_qfq_20 DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS ma_qfq_60 DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS boll_mid_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS boll_upper_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS boll_lower_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS macd_dif_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS macd_dea_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS macd_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS rsi_qfq_6 DOUBLE PRECISION;
+
+CREATE TABLE IF NOT EXISTS market.trade_status_daily (
+    ts_code       VARCHAR(16) NOT NULL,
+    trade_date    DATE NOT NULL,
+    is_suspended  BOOLEAN NOT NULL DEFAULT FALSE,
+    is_st         BOOLEAN NOT NULL DEFAULT FALSE,
+    market_board  VARCHAR(32),
+    up_limit      DOUBLE PRECISION,
+    down_limit    DOUBLE PRECISION,
+    source        VARCHAR(32) NOT NULL,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (ts_code, trade_date)
+);
+CREATE INDEX IF NOT EXISTS idx_trade_status_daily_date
+    ON market.trade_status_daily (trade_date, ts_code);
+
 -- 基金信息表（fund_basic 差异列；场内基金恒 market='E' 过滤拉取）
 CREATE TABLE IF NOT EXISTS market.fund_info (
     ts_code         VARCHAR(16) PRIMARY KEY,    -- 基金代码：158013.SZ（易方达国证航天航空行业ETF）

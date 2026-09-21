@@ -37,6 +37,8 @@
 | 市场 | GET /api/v1/market-data/concepts/hot | 第二阶段 |
 | 市场 | GET /api/v1/market-data/concepts/tree | 第二阶段（2026-09-14 增补） |
 | 市场 | GET /api/v1/market-data/concepts/{sector_code}/bars | 第二阶段（2026-09-14 增补） |
+| 市场 | GET /api/v1/market-data/trends/cap-tiers | 第二阶段（2026-09-19 增补） |
+| 市场 | GET /api/v1/market-data/trends/boards | 第二阶段（2026-09-19 增补） |
 | 信息 | GET /api/v1/macro-information | 第二阶段 |
 | 自选 | /api/v1/watchlists 及其 items 子资源 | 第二阶段 |
 | 组合 | /api/v1/portfolios 及其 positions 子资源 | 第二阶段 |
@@ -806,6 +808,34 @@ Query：`limit`（必填，受上限约束）、`cursor`（可选）、`market`�
 空列表为正常空态（"暂无可展示的事件研究宏观信息"），不从预测响应或报告文本拼装。主题筛选采用可搜索下拉（选项来自已加载数据去重），自由输入以服务端校验为准。
 
 **卡片跳转事件研究（Q-03 已确认）**：点击标题 → `/event-study?event_id=<id>`；事件研究页用**卡片已渲染字段**（标题/摘要/市场标签）预填 event_text 与类型标签，不预填资产（除非卡片有唯一关联资产），窗口默认 post_event_5d，**不自动提交**（后端不提供 prefill 接口）。
+
+### 8.5 趋势对比 GET /api/v1/market-data/trends/{cap-tiers,boards}（2026-09-19 增补）
+
+Query 全部必填：`from`、`to`（from ≤ to；无区间上限校验，`RANGE_TOO_LARGE` 仅在 from>to 时抛）。两端点共用 `TrendsData` 响应族；组名单由服务端常量承载（`CAP_TIER_INDEXES` = 沪深300/中证500/中证1000/中证2000 四层、`BOARD_INDEXES` = 上证综指/创业板指/科创50 三板），前端不持有名单。
+
+成功 200：
+
+```json
+{
+  "data": {
+    "from": "2025-09-19",
+    "to": "2026-09-19",
+    "series": [
+      { "symbol": "000300.SH", "name": "沪深300",
+        "points": [ { "date": "2026-09-18", "close": 3340.0 } ] }
+    ],
+    "as_of": "2026-09-18",
+    "freshness_status": "FRESH"
+  },
+  "meta": { "request_id": "...", "schema_version": "v1" }
+}
+```
+
+- `series[].name` 是展示名唯一来源（前端不硬编码指数名单）；`points` 为归一**前**收盘点（按 date 升序），**归一在前端做**：共同首日=100（共同首日 = 各非空序列首点日期的最大值，基点日之前的点丢弃，代价是共同首日之前的更长历史不展示）。
+- **空窗口契约**：区间内无行的序列仍返回条目（`points: []`）——前端据此显示"无数据：<name>"角标；全部序列皆空仍 200 且 `series` 含全部条目，`as_of` 取全历史口径（可能非 None）。不抛错、不 404。
+- `as_of` = 全组末点最大值（全历史口径，与 get_bars latest 同款）；`freshness_status` 三态同 §8.2。**不返回 source / source_updated_at**（多资产聚合读模型逐序列 provenance 无消费方；两组合计 7 指数同为 tushare，前端图注用固定文案）。
+- **口径差异（前端图注固定文案承载，响应不承载元数据）**：三条板曲线是官方指数编制口径，非"全板等权"——上证综指 2020-07-22 修订后纳入科创板、创业板指 100 只样本股、科创50 50 只样本股；四条分层曲线同理是指数公司样本口径。
+- 错误：422 RANGE_TOO_LARGE（from>to）。无 404/503 语义（组名单服务端固定，不依赖资产存在性检查）。
 
 ---
 

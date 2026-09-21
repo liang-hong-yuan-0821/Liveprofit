@@ -48,6 +48,45 @@ def test_legal_strategy_returns_output():
     assert result.output["action"] in {"BUY", "HOLD"}
 
 
+@pytest.mark.parametrize("value,expected", [
+    (None, 0), (True, 0), (False, 0), ("1", 0), ([], 0),
+    (0, 1), (123, 1), (1.5, 1), (float("nan"), 0), (float("inf"), 0),
+])
+def test_isfinite_accepts_only_finite_numbers(value, expected):
+    source = '''def strategy(context):
+    return {"action": "HOLD", "score": 1 if isfinite(context["value"]) else 0,
+            "entry_price": None, "stop_loss": None, "take_profit": None,
+            "sell_ratio": None, "reason": "finite check"}
+'''
+    result = run_strategy(source, {"value": value}, timeout=2)
+    assert result.ok
+    assert result.output["score"] == expected
+
+
+def test_registration_failure_reaps_child():
+    processes = []
+
+    def reject(proc):
+        processes.append(proc)
+        raise RuntimeError("cancelled during registration")
+
+    with pytest.raises(RuntimeError, match="cancelled during registration"):
+        run_strategy(LEGAL, CTX, on_process=reject)
+    assert processes[0].poll() is not None
+
+
+def test_posix_child_owns_process_group():
+    import os
+    if os.name != "posix":
+        pytest.skip("POSIX process groups only")
+
+    def check(proc):
+        assert os.getpgid(proc.pid) == proc.pid
+        assert os.getpgid(proc.pid) != os.getpgrp()
+
+    assert run_strategy(LEGAL, CTX, on_process=check, timeout=2).ok
+
+
 def test_timeout_killed():
     src = "def strategy(context):\n    while True:\n        pass\n"
     result = run_strategy(src, CTX, timeout=0.3)

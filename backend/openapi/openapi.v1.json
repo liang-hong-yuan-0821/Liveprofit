@@ -2016,6 +2016,27 @@
         }
       }
     },
+    "/api/v1/quant-strategy-templates": {
+      "get": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "List Strategy Templates",
+        "operationId": "list_strategy_templates_api_v1_quant_strategy_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyTemplateListData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quant-strategies": {
       "get": {
         "tags": [
@@ -2909,6 +2930,114 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_HotConceptsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/trends/cap-tiers": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Cap Tier Trends",
+        "description": "市值分层趋势（趋势对比面板方案 4.2）：沪深300/中证500/中证1000/中证2000\n四序列，前端按共同首日=100 归一。",
+        "operationId": "cap_tier_trends_api_v1_market_data_trends_cap_tiers_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TrendsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/trends/boards": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Board Trends",
+        "description": "市场板趋势（趋势对比面板方案 4.2）：上证综指/创业板指/科创50 官方指数\n三序列，前端按共同首日=100 归一。",
+        "operationId": "board_trends_api_v1_market_data_trends_boards_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TrendsData_"
                 }
               }
             }
@@ -4439,6 +4568,22 @@
         ],
         "title": "Envelope[QuantStrategyPublishData]"
       },
+      "Envelope_QuantStrategyTemplateListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QuantStrategyTemplateListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[QuantStrategyTemplateListData]"
+      },
       "Envelope_QuantStrategyVersionDTO_": {
         "properties": {
           "data": {
@@ -4550,6 +4695,22 @@
           "meta"
         ],
         "title": "Envelope[TaskListData]"
+      },
+      "Envelope_TrendsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TrendsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TrendsData]"
       },
       "Envelope_WatchlistDTO_": {
         "properties": {
@@ -6756,6 +6917,28 @@
               }
             ],
             "title": "Valued At"
+          },
+          "requested_trade_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Trade Date"
+          },
+          "market_as_of_trade_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market As Of Trade Date"
           }
         },
         "type": "object",
@@ -7057,13 +7240,38 @@
           "source_code": {
             "type": "string",
             "maxLength": 12288,
-            "title": "Source Code",
-            "default": ""
+            "minLength": 1,
+            "title": "Source Code"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "template_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Params"
           }
         },
         "type": "object",
         "required": [
-          "name"
+          "name",
+          "source_code"
         ],
         "title": "QuantStrategyCreateRequest"
       },
@@ -7150,6 +7358,40 @@
           "source_hash": {
             "type": "string",
             "title": "Source Hash"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "template_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Params"
+          },
+          "template_renderer_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Renderer Version"
           },
           "version": {
             "type": "integer",
@@ -7301,6 +7543,71 @@
         ],
         "title": "QuantStrategyPublishRequest"
       },
+      "QuantStrategyTemplateDTO": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "title": "Template Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "required_bars": {
+            "type": "integer",
+            "title": "Required Bars"
+          },
+          "wave": {
+            "type": "integer",
+            "title": "Wave"
+          },
+          "renderer_version": {
+            "type": "string",
+            "title": "Renderer Version"
+          },
+          "default_params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Default Params"
+          },
+          "source_code": {
+            "type": "string",
+            "title": "Source Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "display_name",
+          "description",
+          "required_bars",
+          "wave",
+          "renderer_version",
+          "default_params",
+          "source_code"
+        ],
+        "title": "QuantStrategyTemplateDTO"
+      },
+      "QuantStrategyTemplateListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuantStrategyTemplateDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "QuantStrategyTemplateListData"
+      },
       "QuantStrategyVersionDTO": {
         "properties": {
           "id": {
@@ -7324,6 +7631,40 @@
           "source_hash": {
             "type": "string",
             "title": "Source Hash"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "template_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Params"
+          },
+          "template_renderer_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Renderer Version"
           },
           "published_at": {
             "anyOf": [
@@ -8749,6 +9090,104 @@
         ],
         "title": "TopologyNodeDTO",
         "description": "拓扑主节点（含未执行节点）。"
+      },
+      "TrendPointDTO": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "close": {
+            "type": "number",
+            "title": "Close"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "close"
+        ],
+        "title": "TrendPointDTO",
+        "description": "单交易日归一前收盘点（趋势对比面板方案 4.2；无分时，故用 date 而非 BarDTO.timestamp）。"
+      },
+      "TrendSeriesDTO": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPointDTO"
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "name",
+          "points"
+        ],
+        "title": "TrendSeriesDTO"
+      },
+      "TrendsData": {
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "title": "To"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/TrendSeriesDTO"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "freshness_status": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNAVAILABLE"
+            ],
+            "title": "Freshness Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "series",
+          "as_of",
+          "freshness_status"
+        ],
+        "title": "TrendsData",
+        "description": "多指数趋势对比响应（/trends/{cap-tiers,boards} 两端点共用）。\n\n口径差异（维护者须知）：三条板曲线是官方指数的编制口径，非\"全板等权\"——\n上证综指 2020-07-22 修订后纳入科创板、创业板指为 100 只样本股、科创50 为\n50 只样本股；四条分层曲线同理是指数公司样本口径。本字段组不承载口径元数据\n（响应里只回 name 与点），口径文案在前端图注固定写明。"
       },
       "UnavailableBlockDTO": {
         "properties": {

@@ -12,6 +12,9 @@ export type QuantStrategyDraftDTO = {
     status: string;
     source_code: string;
     source_hash: string;
+    template_id?: (string | null);
+    template_params?: (Record<string, any> | null);
+    template_renderer_version?: (string | null);
     version: number;
     created_at: string;
     updated_at: string;

@@ -10,6 +10,7 @@
 | 文件 | 内容 |
 |------|------|
 | [windows-pg-async.md](pitfalls/backend/windows-pg-async.md) | Windows psycopg async 循环、PG_HOST 归一化、stdout 全缓冲排查 |
+| [ingest-targeted-backfill.md](best-practices/backend/ingest-targeted-backfill.md) | 指数定向回填：INDEX_TARGETS clear+update 子集后跑 backfill_index_history（共享 dict 对象） |
 | [alembic-jsonb-settings.md](pitfalls/backend/alembic-jsonb-settings.md) | alembic.ini ASCII、JSONB 归一回写、pydantic alias、Alembic raw SQL、SQLAlchemy UPDATE |
 | [dramatiq-windows.md](pitfalls/backend/dramatiq-windows.md) | Dramatiq 进程内模型、CLI 传参 |
 | [threading-futures.md](pitfalls/backend/threading-futures.md) | Thread._stop 禁用、Future 桥接 asyncio |
@@ -24,6 +25,7 @@
 | [react-query-dialog.md](pitfalls/frontend/react-query-dialog.md) | refetchOnMount 门控、RegExp g 标志、弹窗回填 userEditedRef |
 | [zrender-shared-eventful.md](pitfalls/frontend/zrender-shared-eventful.md) | zr.on/off 与 ECharts 共用 Handler Eventful：裸 off 误删内部监听且不可恢复，按引用 off + 外来 handler 存活断言 |
 | [echarts-datazoom-anchors.md](pitfalls/frontend/echarts-datazoom-anchors.md) | dataZoom 百分比与日期锚互斥：混写锁死窗口致放大失效；jsdom wheel 探针验证交互行为 |
+| [date-arithmetic-clamping.md](pitfalls/frontend/date-arithmetic-clamping.md) | 近 N 月区间：setMonth 溢出滚动、负号方向漏负出未来日期；addMonthsClamped 夹取写法 |
 | [grid-minmax-collapse.md](pitfalls/frontend/grid-minmax-collapse.md) | grid-cols 任意值固定列超宽时 minmax(0,Xfr) 弹性列塌缩为 0px 整列不可见；标题类弹性列须正下界 + overflow-x-auto |
 
 ### ai/

@@ -10,6 +10,8 @@ vi.mock('../../../api/generated/services/MarketDataService', () => ({
   MarketDataService: {
     indexBarsApiV1MarketDataIndicesSymbolBarsGet: vi.fn(),
     conceptTreeApiV1MarketDataConceptsTreeGet: vi.fn(),
+    capTierTrendsApiV1MarketDataTrendsCapTiersGet: vi.fn(),
+    boardTrendsApiV1MarketDataTrendsBoardsGet: vi.fn(),
   },
 }));
 vi.mock('../../../api/generated/services/MacroInformationService', () => ({
@@ -18,6 +20,11 @@ vi.mock('../../../api/generated/services/MacroInformationService', () => ({
 vi.mock('../../../shared/charts/CandlestickChart', () => ({
   CandlestickChart: ({ model }: { model: unknown }) => (
     <div data-testid="candlestick-chart" data-bars={JSON.stringify(model)} />
+  ),
+}));
+vi.mock('../../../shared/charts/LineChart', () => ({
+  LineChart: ({ model }: { model: unknown }) => (
+    <div data-testid="line-chart" data-model={JSON.stringify(model)} />
   ),
 }));
 vi.mock('../components/ConceptTreemap', () => ({
@@ -29,15 +36,31 @@ import { MacroInformationService } from '../../../api/generated/services/MacroIn
 
 const barsMock = MarketDataService.indexBarsApiV1MarketDataIndicesSymbolBarsGet as Mock;
 const treeMock = MarketDataService.conceptTreeApiV1MarketDataConceptsTreeGet as Mock;
+const capTierTrendsMock = MarketDataService.capTierTrendsApiV1MarketDataTrendsCapTiersGet as Mock;
+const boardTrendsMock = MarketDataService.boardTrendsApiV1MarketDataTrendsBoardsGet as Mock;
 const macroMock = MacroInformationService.listMacroInformationApiV1MacroInformationGet as Mock;
 
 function envelope(data: unknown, meta: Record<string, unknown> = {}) {
   return { data, meta: { request_id: 'r', schema_version: 'v1', ...meta } };
 }
 
+const trendsFixture = {
+  from: '2025-09-19', to: '2026-09-19',
+  series: [
+    { symbol: '000300.SH', name: '沪深300', points: [{ date: '2026-09-18', close: 3340 }] },
+    { symbol: '000905.SH', name: '中证500', points: [] },
+    { symbol: '000852.SH', name: '中证1000', points: [{ date: '2026-09-18', close: 6100 }] },
+    { symbol: '932000.CSI', name: '中证2000', points: [] },
+  ],
+  as_of: '2026-09-18',
+  freshness_status: 'FRESH',
+};
+
 beforeEach(() => {
   barsMock.mockReset();
   treeMock.mockReset();
+  capTierTrendsMock.mockReset();
+  boardTrendsMock.mockReset();
   macroMock.mockReset();
 
   barsMock.mockResolvedValue(
@@ -54,6 +77,8 @@ beforeEach(() => {
     new ApiError({ code: 'INTERNAL', message: '热点加载失败', retryable: true, status: 500 }),
   );
   macroMock.mockResolvedValue(envelope({ items: [] }));
+  capTierTrendsMock.mockResolvedValue(envelope(trendsFixture));
+  boardTrendsMock.mockResolvedValue(envelope(trendsFixture));
 });
 
 afterEach(() => {
@@ -87,11 +112,12 @@ describe('MarketOverviewPage', () => {
     expect(barsMock.mock.calls.length).toBe(barsCallsBefore);
   });
 
-  it('无页内 Tab、无本地指数名单：仅渲染三个固定区块标题', async () => {
+  it('无页内 Tab、无本地指数名单：仅渲染四个固定区块标题', async () => {
     renderWithRouter(<MarketOverviewPage />);
     await screen.findByText('上证综指');
 
     expect(screen.getByRole('heading', { name: '市场' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '趋势对比' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '板块' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '信息' })).toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();

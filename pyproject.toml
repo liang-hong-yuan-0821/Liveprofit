@@ -67,6 +67,7 @@ liveprofit-dispatcher = "backend.cli:dispatcher_main"
 # test = 平台测试依赖。API/Worker 共用同一锁定版本。
 [project.optional-dependencies]
 platform = [
+    "ruff>=0.16.7",
     "sqlalchemy>=2.0.30",
     "alembic>=1.13.0",
     "dramatiq[redis]>=1.17.0",

@@ -56,7 +56,7 @@ class FakeTushareProvider:
 def test_index_bars_upsert_idempotent(conn):
     result = _ingest_index_bars_and_factors(
         conn, FakeTushareProvider(), None, DAYS)
-    assert result["bars"] >= 2  # 13 个目标均返回同帧（每目标 2 行）
+    assert result["bars"] >= 2  # 15 个目标均返回同帧（每目标 2 行）
     first_total = conn.execute(
         "SELECT count(*) FROM market.instrument_daily").fetchone()[0]
     # 幂等重跑：DO UPDATE 行数不变
@@ -64,7 +64,7 @@ def test_index_bars_upsert_idempotent(conn):
     second_total = conn.execute(
         "SELECT count(*) FROM market.instrument_daily").fetchone()[0]
     assert first_total == second_total
-    # 自举落库：13 指数 instrument 行存在
+    # 自举落库：15 指数 instrument 行存在
     n_inst = conn.execute(
         "SELECT count(*) FROM market.instrument "
         "WHERE ts_code = ANY(%s)", (list(INDEX_TARGETS.keys()),)).fetchone()[0]
@@ -112,7 +112,7 @@ def test_index_factor_nan_cleaned_and_idempotent(conn):
     # 幂等重跑
     _ingest_index_bars_and_factors(conn, FakeTushareFactorProvider(), None, DAYS)
     total = conn.execute("SELECT count(*) FROM market.factor_daily").fetchone()[0]
-    # 非 CN 目标（US 3 + KS11）不采因子 → 仅 CN 9 目标 × 2 行
+    # 非 CN 目标（US 3 + KS11）不采因子 → 仅 CN 11 目标 × 2 行
     cn_count = sum(1 for c in INDEX_TARGETS if _is_cn_index_code(c))
     assert total == 2 * cn_count
 
@@ -203,7 +203,7 @@ def test_factor_ingestion_rejects_partial_backfill_with_missing_chunks(conn):
 
 def test_whitelisted_non_cn_targets_pass_guard():
     """实测验收通过的 US/KR 白名单通过守卫（原 CN-only 语义反转，2026-09-14 上线）。"""
-    _assert_index_targets_valid()  # 13 目标（9 CN + 4 白名单）不抛
+    _assert_index_targets_valid()  # 15 目标（11 CN + 4 白名单）不抛
 
 
 def test_unknown_non_cn_target_rejected_by_guard(monkeypatch):

@@ -86,7 +86,7 @@ knowledge/ 是**知识沉淀桶**（领域知识库），回答"系统现在是�
 - 状态取值：`方案设计` → `评审中`（写完自动进入方案评审）→ `待确认` → `任务分解`（用户确认后生成任务清单）→ `实现中` → `Code Review` → `已完成`
 - **实现过程中每完成一个关键步骤，必须更新 README.md 状态块的进度和下一步，并在 log.md 追加时间线**
 - 任务完成后状态改为 `已完成`，**整个文件夹移入 `docs/requirements/archive/<任务名>/`** 归档（同步把文件夹内相对链接整体上移一层），架构变更同步进 knowledge/ 对应文档，**归档后自动提交 commit**（提交规则见上方「工作流程」第 1 条）
-- **plan.md 正文章节结构**：复制 [requirements/templates/plan.md.模板.md](docs/requirements/templates/plan.md.模板.md)，取舍规则详见模板文件末尾速查表。**详细设计章节开头必须有模块总览表（维度｜问题｜方案概览，2026-09-10 起）**：每一行与下方设计模块小节一一对应（维度名 = 小节标题），只列设计模块，三方依赖评估/验证/文件变更等过程小节不入表。**方案中所有问题陈述必须附具体例子（2026-09-10 起）**：现状与问题列用代码事实说话（文件路径/函数名/可观测现象/示例值，如"`derive_risk_gate` 正则解析 `market_regime` 文本，空串落 `normal`"），禁止抽象措辞（如"不稳定""不足"）。**待确认问题每条必须写具体并附背景、目标与推荐（2026-09-11 起）**：问题句带代码事实；背景 = 现状事实 + 该决策影响哪些实现点；目标 = 各选项对应的实现形态；推荐 = 默认选项 + 理由（用户可按推荐直接拍板）。已有历史方案不做回填改造（在审方案按新约定补齐）
+- **plan.md 正文章节结构**：复制 [requirements/templates/plan.md.模板.md](docs/requirements/templates/plan.md.模板.md)，取舍规则详见模板文件末尾速查表。**详细设计章节开头必须有模块总览表（维度｜问题｜方案概览，2026-09-10 起）**：每一行与下方设计模块小节一一对应（维度名 = 小节标题），只列设计模块，三方依赖评估/验证/文件变更等过程小节不入表。**方案中所有问题陈述必须附具体例子（2026-09-10 起）**：现状与问题列用代码事实说话（文件路径/函数名/可观测现象/示例值，如"`derive_risk_gate` 正则解析 `market_regime` 文本，空串落 `normal`"），禁止抽象措辞（如"不稳定""不足"）。**待确认问题每条必须写具体并附背景、目标与推荐（2026-09-11 起）**：问题句带代码事实；背景 = 现状事实 + 该决策影响哪些实现点；目标 = 各选项对应的实现形态；推荐 = 默认选项 + 理由（用户可按推荐直接拍板）。**设计概览必须分层写（2026-09-19 起）**：顶层（backend/frontend/AI）内按实现层拆 `####` 子标题、从底向上逐层写，禁止把数据表/DAO/服务/路由混进同一张表——标准分层与典型落点见模板「三、设计概览」的分层约定表。已有历史方案不做回填改造（在审方案按新约定补齐）
 - **tasks.md 拆任务清单约定**：**方案经用户确认后**，生成任务文件夹内 `tasks.md`（复制 [requirements/templates/tasks.md.模板.md](docs/requirements/templates/tasks.md.模板.md)）——把方案的实施步骤拆解为可独立验收的开发任务，是方案的实施计划载体。任务清单直接由已评审通过的方案拆出，**无需额外评审**
   - **拆分原则**：每个任务 = 一个可独立验收的实现单元（新建一个模块 / 改造一个文件 / 写一组单测）；按依赖排序，任务块标注依赖关系，无依赖任务可并行；通常 3–10 个任务；每个任务的验收标准必须是**可执行的检查项**（单测命令 / 可运行检查 / 写明观察点的人工检查），禁止"完成 XX 功能"式模糊表述
   - **状态取值**：`待开始` → `进行中` → `已完成`；被阻塞时标 `阻塞：<原因>`，解除后恢复流转
@@ -357,5 +357,5 @@ market schema（liveprofit 库）内所有表/列/代码命名以此为准；旧
 - 时间列：`trade_date`（DATE）；行写入时间**全表统一** `updated_at`（TIMESTAMPTZ）——原 instrument_daily/factor_daily 的 source_updated_at 例外废除（2026-09-13 拍板：覆盖式写入下"来源入库时间"与"行更新时间"无实质区别，来源维度已由 source 列承担）
 - 单位约定：价格元、vol 手、amount 千元（上游 tushare 原值口径，不换算）
 - 取值域：instrument_type ∈ index/stock/fund；data_source ∈ tushare/akshare
-- 代码格式：CN 资产 ts_code = 6 位数字 + `.SH`/`.SZ`/`.BJ` 后缀；US/KR 用原 symbol（如 `.INX`）——两种格式天然不冲突，ts_code 全局唯一
+- 代码格式：CN 资产 ts_code = 6 位数字 + `.SH`/`.SZ`/`.BJ`/`.CSI` 后缀；US/KR 用原 symbol（如 `.INX`）——两种格式天然不冲突，ts_code 全局唯一
 - db.instrument 包 DAO 模块名 = 表名（instrument.py / instrument_daily.py / adj_factor.py / factor_daily.py / sector.py / sector_daily.py / industry.py / fund_info.py / stock_info.py）；**成分表豁免**：sector_member/industry_member 写入并入 dao/sector.py / dao/industry.py，不单设模块

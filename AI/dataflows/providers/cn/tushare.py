@@ -42,7 +42,10 @@ STOCK_FACTOR_FIELDS = (
     "ts_code,trade_date,ma_bfq_5,ma_bfq_10,ma_bfq_20,ma_bfq_60,ma_bfq_250,"
     "boll_mid_bfq,boll_upper_bfq,boll_lower_bfq,"
     "macd_dif_bfq,macd_dea_bfq,macd_bfq,"
-    "rsi_bfq_6,rsi_bfq_12,rsi_bfq_24"
+    "rsi_bfq_6,rsi_bfq_12,rsi_bfq_24,"
+    "ma_qfq_5,ma_qfq_20,ma_qfq_60,"
+    "boll_mid_qfq,boll_upper_qfq,boll_lower_qfq,"
+    "macd_dif_qfq,macd_dea_qfq,macd_qfq,rsi_qfq_6"
 )
 
 try:
@@ -880,9 +883,14 @@ class TushareProvider(BaseStockDataProvider):
             df = self._api_call(self.api.index_classify, src="SW2021", level="L1")
             if df is None or df.empty:
                 return None
-            out = df.rename(columns={"index_code": "industry_code", "industry_name": "name"})[
-                ["industry_code", "name"]
-            ].copy()
+            # 部分代理同时返回标准列和兼容别名；rename 后会形成同名重复列，
+            # 此时 out["industry_code"] 是 DataFrame 而非 Series。显式选源列重建。
+            code_col = "index_code" if "index_code" in df.columns else "industry_code"
+            name_col = "industry_name" if "industry_name" in df.columns else "name"
+            out = pd.DataFrame({
+                "industry_code": df[code_col].astype(str),
+                "name": df[name_col].astype(str),
+            })
             out["industry_code"] = out["industry_code"].str.replace(r"\.SI$", "", regex=True)
             out["source"] = "SW2021"
             return out[["source", "industry_code", "name"]]
@@ -897,7 +905,10 @@ class TushareProvider(BaseStockDataProvider):
             return None
         try:
             df = self._api_call(
-                self.api.index_member, index_code=industry_index_code, fields="index_code,con_code"
+                self.api.index_member,
+                index_code=industry_index_code,
+                is_new="Y",
+                fields="index_code,con_code,is_new",
             )
             return df if df is not None and not df.empty else None
         except Exception as e:
@@ -2327,6 +2338,70 @@ class TushareProvider(BaseStockDataProvider):
             logger.warning("获取全市场复权因子失败 [%s/%s]: %s",
                            trade_date, market, e)
             return None
+
+    def get_full_market_technical_factor_df(self, trade_date: str, ts_codes: list[str] | None = None):
+        """单日股票技术因子；支持调用方以最多 100 个代码分批补拉。"""
+        if not self.connected:
+            return None
+        kwargs = {"trade_date": self._normalize_date(trade_date), "fields": STOCK_FACTOR_FIELDS}
+        if ts_codes:
+            kwargs["ts_code"] = ",".join(ts_codes)
+        try:
+            df = self._api_call(self.api.stk_factor_pro, **kwargs)
+        except Exception as exc:
+            logger.warning("全市场股票技术因子 %s 拉取失败: %s", trade_date, exc)
+            return None
+        if df is None:
+            return None
+        if df.empty:
+            return pd.DataFrame(columns=STOCK_FACTOR_FIELDS.split(","))
+        df = df.copy()
+        df["trade_date"] = pd.to_datetime(df["trade_date"]).dt.strftime("%Y-%m-%d")
+        for col in df.columns:
+            if col not in ("ts_code", "trade_date"):
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+        return df.sort_values(["ts_code", "trade_date"]).reset_index(drop=True)
+
+    def get_full_market_trade_status_df(self, trade_date: str):
+        """合并 stk_limit、suspend_d 与 stock_basic，生成每只活跃股票的日状态。"""
+        if not self.connected:
+            return None
+        td = self._normalize_date(trade_date)
+        try:
+            limits = self._api_call(
+                self.api.stk_limit, trade_date=td,
+                fields="ts_code,trade_date,up_limit,down_limit",
+            )
+            suspended = self._api_call(
+                self.api.suspend_d, suspend_date=td,
+                fields="ts_code,suspend_date",
+            )
+            basics = getattr(self, "_quant_trade_status_basics", None)
+            if basics is None:
+                basics = self._api_call(
+                    self.api.stock_basic, exchange="", list_status="L",
+                    fields="ts_code,name,market,list_status",
+                )
+                self._quant_trade_status_basics = basics
+        except Exception as exc:
+            logger.warning("股票交易状态 %s 拉取失败: %s", trade_date, exc)
+            return None
+        if basics is None or basics.empty or limits is None:
+            return None
+        if limits.empty:
+            limits = pd.DataFrame(columns=["ts_code", "up_limit", "down_limit"])
+        suspended_codes = set() if suspended is None or suspended.empty else set(suspended["ts_code"].astype(str))
+        frame = basics[["ts_code", "name", "market"]].merge(
+            limits[[c for c in ("ts_code", "up_limit", "down_limit") if c in limits.columns]],
+            on="ts_code", how="left",
+        )
+        frame["trade_date"] = pd.to_datetime(td).strftime("%Y-%m-%d")
+        frame["is_suspended"] = frame["ts_code"].isin(suspended_codes)
+        frame["is_st"] = frame["name"].fillna("").astype(str).str.upper().str.contains(r"(?:\*?ST)", regex=True)
+        frame["market_board"] = frame["market"]
+        return frame[[
+            "ts_code", "trade_date", "is_suspended", "is_st", "market_board", "up_limit", "down_limit"
+        ]]
 
     def get_stock_basic_df(self):
         """股票基本信息全量（stock_basic 不传 list_status，含退市 D/暂停 P，

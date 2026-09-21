@@ -4,8 +4,9 @@ collect_incremental(conn, provider_factory, fallback_provider_factory=None)：
 1. trade_cal 取最近 3 个交易日
 2. instrument + 信息表刷新：stock_basic/fund_basic → instrument 通用列 +
    stock_info / fund_info（exchange/market/area 原文直迁、fund_info 21 差异列）
-3. 指数日线+因子：INDEX_TARGETS 9 个（前端写死清单 7 CN ∪ TARGET_ASSETS 四指数
-   去重）——前置自举 upsert_instrument；主源失败/空数据换兜底源重试
+3. 指数日线+因子：INDEX_TARGETS 的 CN 项 11 个（前端写死清单 7 CN ∪ TARGET_ASSETS
+   四指数去重 + 000905.SH/932000.CSI；含 US/KR 共 15 个）——前置自举
+   upsert_instrument；主源失败/空数据换兜底源重试
    （双源兜底，迁自 market_data_collector 的 Tushare↔AKShare 互换逻辑）；
    source 写实际成功源
 4. 个股基金日线+复权：fetch_day_frames 单日 4 接口 + DO UPDATE（覆盖日终修正）
@@ -16,10 +17,10 @@ collect_incremental(conn, provider_factory, fallback_provider_factory=None)：
 每步独立 commit（单日提交、来源独立提交、失败 rollback 不丢成果）。
 
 两份硬编码清单的同步不变式：前端 MARKET_INDEX_CATALOG 是 11 个（7 CN + US 3 +
-KS11 均 AVAILABLE）、INDEX_TARGETS 是 13 个（CN 9 + US 3 + KS11——CN 7 与前端
-清单的 CN 子集必须一致 + 000300.SH/000698.SH 仅采集不上平台）——变更 CN 项时
-两处同步；US/KR 项变更需实测验收 + 两处同步（2026-09-14 US/KR 上线：
-KOSDAQ 无可用源不采集、前端已移除）。采集目标守卫：CN 格式或
+KS11 均 AVAILABLE）、INDEX_TARGETS 是 15 个（CN 11 + US 3 + KS11——CN 7 与前端
+清单的 CN 子集必须一致 + 000300.SH/000698.SH/000905.SH/932000.CSI 仅采集不上
+平台）——变更 CN 项时两处同步；US/KR 项变更需实测验收 + 两处同步（2026-09-14
+US/KR 上线：KOSDAQ 无可用源不采集、前端已移除）。采集目标守卫：CN 格式或
 NON_CN_INDEX_TARGETS 白名单（实测验收通过），未知非 CN 目标拒绝。
 """
 
@@ -36,16 +37,19 @@ from db.instrument.dao.factor_daily import bulk_upsert_factor_daily
 from db.instrument.ingest.frames import fetch_day_frames
 from db.instrument.ingest.sector_daily import collect_sector_daily_incremental
 from db.instrument.ingest.sectors import collect_sectors
+from db.instrument.ingest.stock_factors import collect_stock_quant_day
+from AI.dataflows.providers.base_provider import BaseStockDataProvider
 
 logger = logging.getLogger(__name__)
 
 _WINDOW_DAYS = 3       # 增量窗口：最近 3 个交易日（覆盖日终修正）
 _CAL_BACK_DAYS = 30    # 交易日历回溯窗口（周末+节假日兜底）
 
-# 采集目标 9 个（决策 13 前置改造后：前端写死清单 CN 7 ∪ TARGET_ASSETS 四指数去重）。
+# 采集目标 11 个（决策 13 前置改造后：前端写死清单 CN 7 ∪ TARGET_ASSETS 四指数去重，
+# 本次 + 000905.SH/932000.CSI）。
 # 名称口径：CN 7 与前端 MARKET_INDEX_CATALOG 同串（000001.SH=上证综指，平台口径）；
-# 000300.SH/000698.SH 用 TARGET_ASSETS 名称。自举 upsert 的 DO UPDATE 会按此
-# 名称刷新 instrument 行——两清单重叠行以平台口径为准。
+# 000300.SH/000698.SH 用 TARGET_ASSETS 名称、000905.SH/932000.CSI 用本清单名称。
+# 自举 upsert 的 DO UPDATE 会按此名称刷新 instrument 行——两清单重叠行以平台口径为准。
 INDEX_TARGETS = {
     "000001.SH": "上证综指",
     "399001.SZ": "深证成指",
@@ -53,9 +57,11 @@ INDEX_TARGETS = {
     "000688.SH": "科创50",
     "000016.SH": "上证50",
     "000852.SH": "中证1000",
+    "000905.SH": "中证500",
     "000015.SH": "上证红利",
     "000300.SH": "沪深300",
     "000698.SH": "科创100",
+    "932000.CSI": "中证2000",
     # 2026-09-14 US/KR 上线（实测验收：tushare index_global 主源 +
     # 新浪兜底；KOSDAQ 无可用源不采集）——必须保持在末尾（回填测试首帧断言依赖 dict 序）
     ".INX": "标普500",
@@ -69,8 +75,8 @@ NON_CN_INDEX_TARGETS = {".INX", ".DJI", ".IXIC", "KS11"}
 
 
 def _is_cn_index_code(code: str) -> bool:
-    """CN 指数代码格式判定（.SH/.SZ/.BJ 后缀）。"""
-    return code.endswith((".SH", ".SZ", ".BJ"))
+    """CN 指数代码格式判定（.SH/.SZ/.BJ/.CSI 后缀）。"""
+    return code.endswith((".SH", ".SZ", ".BJ", ".CSI"))
 
 
 # 指数日线合并 mapper 列集（tushare 扩列后 10 列 + source/updated_at 采集层填）
@@ -343,6 +349,21 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
     if not window_covered:
         summary["daily"] = _ingest_stock_fund_daily(
             conn, provider, days, stock_codes, fund_codes)
+
+    # ---- 量化 qfq 因子与交易状态：即使日线窗口已覆盖也要独立补齐。 ----
+    summary["quant_data"] = {}
+    if isinstance(provider, BaseStockDataProvider):
+        for d in days:
+            try:
+                summary["quant_data"][d] = collect_stock_quant_day(
+                    conn, provider, d, stock_codes,
+                )
+            except Exception as e:
+                logger.warning("增量: %s 量化因子/交易状态失败（不阻断其他数据）: %s", d, e)
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
 
     # ---- 步骤 5：板块日线增量（每日常规、非周一限定——板块概念Treemap方案 3.1；
     # dc_daily 窗口型数据源无历史回填，历史自启动日起每日 +1 行积累；

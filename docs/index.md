@@ -246,7 +246,7 @@ START
 **核心能力**：
 
 - **11 张表**：`instrument`（标的主表，instrument_type 显式列：index/stock/fund）、`instrument_daily`（统一日线）、`adj_factor`、`factor_daily`（技术因子宽表，指数∪个股列并集）、`fund_info`/`stock_info`（差异信息表）、`sector`/`sector_member`（同花顺板块体系，type 区分 N/I/S）、`sector_daily`（板块日线，热度现场计算底座）、`industry`/`industry_member`（申万 SW2021，与 sector 同构）
-- **数据采集**：`db/instrument/ingest/` 唯一采集实现（incremental 每日增量 5 步骤 + backfill 四参数全历史回填 + 指数内置分项 9 目标）；全市场拉取只允许 trade_date 单日查询（6000 行截断降级分批）；双源兜底（Tushare↔AKShare 按 LIVEPROFIT_DATA_SOURCE 装配）；断点续跑按数据域过滤（instrument_type——指数行不抬高个股基金域断点）
+- **数据采集**：`db/instrument/ingest/` 唯一采集实现（incremental 每日增量 5 步骤 + backfill 四参数全历史回填 + 指数内置分项 15 目标（CN 11 + US 3 + KS11））；全市场拉取只允许 trade_date 单日查询（6000 行截断降级分批）；双源兜底（Tushare↔AKShare 按 LIVEPROFIT_DATA_SOURCE 装配）；断点续跑按数据域过滤（instrument_type——指数行不抬高个股基金域断点）
 - **消费方**：backend MarketDataService 读 db.instrument DAO（get_bars + 热度现场计算 heat_v1：pct×0.6+vol×0.4，不落快照表不进 Redis）；eventStudy 行情经 market_data_dao 包装（assets.ticker → ts_code）；板块层热力图后续阶段切换
 - **查询 DAO**：`db/instrument/dao/` 9 模块（模块名 = 表名，成分表豁免）：单标的区间序列、全市场横截面（instrument_type 过滤）、前复权序列（qfq_x = x × factor_t / factor_latest）、板块双向查询、热度窗口查询
 - **调度**：并入事件研究每日批处理（采集 → 行情 → 全市场日线增量 → 市场上下文 → 向量化 → 事件研究），`--skip` 步骤名 `store`

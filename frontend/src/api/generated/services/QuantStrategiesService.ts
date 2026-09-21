@@ -7,6 +7,7 @@ import type { Envelope_QuantStrategyDTO_ } from '../models/Envelope_QuantStrateg
 import type { Envelope_QuantStrategyFormatData_ } from '../models/Envelope_QuantStrategyFormatData_';
 import type { Envelope_QuantStrategyListData_ } from '../models/Envelope_QuantStrategyListData_';
 import type { Envelope_QuantStrategyPublishData_ } from '../models/Envelope_QuantStrategyPublishData_';
+import type { Envelope_QuantStrategyTemplateListData_ } from '../models/Envelope_QuantStrategyTemplateListData_';
 import type { Envelope_QuantStrategyVersionDTO_ } from '../models/Envelope_QuantStrategyVersionDTO_';
 import type { QuantStrategyCreateRequest } from '../models/QuantStrategyCreateRequest';
 import type { QuantStrategyDraftUpdateRequest } from '../models/QuantStrategyDraftUpdateRequest';
@@ -16,6 +17,17 @@ import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class QuantStrategiesService {
+    /**
+     * List Strategy Templates
+     * @returns Envelope_QuantStrategyTemplateListData_ Successful Response
+     * @throws ApiError
+     */
+    public static listStrategyTemplatesApiV1QuantStrategyTemplatesGet(): CancelablePromise<Envelope_QuantStrategyTemplateListData_> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/quant-strategy-templates',
+        });
+    }
     /**
      * List Strategies
      * @returns Envelope_QuantStrategyListData_ Successful Response

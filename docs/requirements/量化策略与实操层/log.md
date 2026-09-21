@@ -4,6 +4,8 @@
 
 | 日期 | 动作 | 结果/备注 |
 |------|------|----------|
+| 2026-09-21 | N0 完成，N1/N2/N8 首轮真实全栈验证 | 修复因子日期对齐、数据错误审计、跳空成本后二次校验与 Worker market contextmanager；落地共同水位、qfq/raw context、交易状态采集、strategy_contract、七模板与模板创建 UI。真实数据补齐 2026-09-17/18：qfq 因子约 98.95%、交易状态 100%；申万当前成员 93.62% 未过 95% 门槛。浏览器创建/发布均线趋势模板与 100 万组合后完成 5565 只扫描：5507 完备、25 BUY、58 数据拒绝、0 建议订单（行业门禁 fail-closed），任务 `1cedb9fb-0601-4174-b636-042601766f1a`，页面/cursor 均已核验。定向后端 101 通过；前端 336 通过、typecheck/build 通过。 |
+| 2026-09-19 | 仓库评审后修订统一方案 | 新增 C9–C14：共同数据水位、qfq/raw 双口径、A 股可交易性/费用、组合开放风险、forward shadow、真实 6,000 标的性能；成本止损归平台、脚本卖出与目标仓位取最低目标、自定义代码独立绑定 lifecycle policy；取消统一 250 根资格门槛；tasks 新增 N0–N9，当前代码与模板上线均未因此视为完成 |
 | 2026-09-17 | 全量回归 exit 0，CR 收口 | 后端全量（unit/integration/contract + 三个 tests 目录）exit 0；result.md 回填、README 状态 Code Review 通过；编辑器暗色模式、新建必填代码（策略页组件测试 2 例、前端 313 全绿）；模板库方案差异分析（A 保留自定义输入代码；B 推荐「实时读取 + 生命周期自持价格事实」中间态，待用户拍板落地时机） |
 | 2026-09-16 | 前端编辑器交互优化（用户要求） | 新建策略即可输入代码（CreateStrategyDialog 加编辑器）；代码着色 CodeMirror 6（python 语言包、行号/折叠）；格式化走后端 ruff 端点 POST /api/v1/quant-strategies/format（.venv 装 ruff、前端「格式化」按钮、422 STRATEGY_FORMAT_FAILED 不含源码）；策略编辑对话框 textarea 替换为共享编辑器组件；OpenAPI/codegen 重导出；契约测试 6 全绿、前端 311 全绿 + build 通过 |
 | 2026-09-16 | M7 覆盖率口径用户拍板 A | 覆盖率改为「有行业归属的活跃股票数/活跃股票总数 ≥0.95」（防「非空但被截断」帧漏放）；新增失败码 INDUSTRY_COVERAGE_LOW；plan 4.3.1 与采集模块 docstring 同步；测试重写（100 活跃票覆盖 60 → 拒绝）+ 成功路径断言新口径字段 |
@@ -27,3 +29,9 @@
 | 2026-09-16 | plan.md 结构优化（用户「你先优化下吧」） | 删除与详细设计重复的「三、设计概览」（独有细节并入 3.3.1：Agent 事件研究定位、position 依赖 market 的门控语义、checkpoint guard；3.3.4 补 checkpoint.py）；章节对齐模板编号（详细设计 4.x→3.x、决策五→四）；tasks.md/README 交叉引用同步 |
 | 2026-09-15 | 数据表设计修订（对照存量表后用户拍板「都先改了」） | 0008 前提修正为「本任务创建」（存量迁移仅到 0007）；命名修正：context_snapshots、`*_hash` 统一、乐观锁列 revision→version；DDL 缺口补齐：universe 双 UNIQUE、signals 加 signal_kind+复合索引+FK、attempt 成功谓词（analysis_reports 行存在）、ingest_state 走 schema.sql、单任务快照体量预估 |
 | 2026-09-15 | 新建任务文件夹 + plan.md 起草 | 方案已按后续评审修订（量化执行职责边界收归 backend QuantExecutionService）；状态待确认，等待用户确认后进入任务分解 |
+
+
+
+## 2026-09-19 统一方案文档合并
+
+按用户发送的 0917 文稿，将七套策略参数/公式/评分、十项因子合同、价格规范化、移动止损、三日兑现及持仓生命周期并入 plan.md；保留原实操层章节和设计概览。同步 README、tasks、decisions、issues，历史完成记录不扩展到新增功能。删除独立模板库 plan.md，原文仍可从 Git 历史恢复。检查章节编号、旧路径引用和文档差异；本轮未修改业务代码、未执行数据库迁移或真实交易/数据 POC。

@@ -44,6 +44,8 @@ def _seed_quant_task_with_signals():
                                         "suggested_buy_orders": 2, "suggested_sell_orders": 1, "failed_count": 0},
                             "warnings": ["风险门控未启用（AI 层后续接入）"],
                             "valued_at": "2026-09-16T14:00:00+00:00",
+                            "requested_trade_date": "2026-09-16",
+                            "market_as_of_trade_date": "2026-09-15",
                         }
                     },
                     ensure_ascii=False,
@@ -98,6 +100,8 @@ def test_report_projection_and_buy_preview_order(client):
     assert qe["strategy"]["source_hash_prefix"] == "abcdef123456"
     assert qe["summary"]["universe_total"] == 3
     assert "风险门控未启用" in qe["warnings"][0]
+    assert qe["requested_trade_date"] == "2026-09-16"
+    assert qe["market_as_of_trade_date"] == "2026-09-15"
     # BUY 预览按 score 降序、symbol 升序
     buys = qe["matching_buy_preview"]
     assert [b["symbol"] for b in buys] == ["000001.SZ", "000002.SZ", "000003.SZ"]

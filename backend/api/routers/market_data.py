@@ -21,8 +21,15 @@ from backend.api.schemas.market import (
     DailyChangeDTO,
     HotConceptDTO,
     HotConceptsData,
+    TrendPointDTO,
+    TrendSeriesDTO,
+    TrendsData,
 )
-from backend.modules.market_data.application.service import MarketDataService
+from backend.modules.market_data.application.service import (
+    BOARD_INDEXES,
+    CAP_TIER_INDEXES,
+    MarketDataService,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["market-data"])
 
@@ -234,3 +241,58 @@ async def hot_concepts(
     )
     meta = EnvelopeMeta(request_id=request.state.trace_id)
     return Envelope(data=data, meta=meta).model_dump()
+
+
+def _trends_data(trends_dto) -> TrendsData:
+    """TrendsDTO → TrendsData（两趋势端点共用，同 _bars_data 先例）。"""
+    return TrendsData(
+        from_=trends_dto.from_date, to=trends_dto.to_date,
+        series=[TrendSeriesDTO(symbol=s.symbol, name=s.name,
+                               points=[TrendPointDTO(**point) for point in s.points])
+                for s in trends_dto.series],
+        as_of=trends_dto.as_of,
+        freshness_status=trends_dto.freshness_status,
+    )
+
+
+async def _run_trends(request: Request, indexes: list[tuple[str, str]],
+                      from_: date, to: date):
+    """趋势端点共用执行体（sector_bars 同款局部 _do 闭包；_run_get_bars 绑定
+    get_bars，不可复用）。"""
+    services = request.app.state.analysis_services
+    calendar = request.app.state.market_calendar
+    market_conn = request.app.state.market_conn
+
+    def _do():
+        return MarketDataService(calendar=calendar, market_conn=market_conn).get_index_trends(
+            indexes=indexes, from_date=from_, to_date=to)
+
+    return await services.run(_do)
+
+
+@router.get("/market-data/trends/cap-tiers", response_model=Envelope[TrendsData])
+async def cap_tier_trends(
+    request: Request,
+    from_: date = Query(alias="from"),
+    to: date = Query(),
+    trace_id: str = Depends(ensure_trace_context),
+):
+    """市值分层趋势（趋势对比面板方案 4.2）：沪深300/中证500/中证1000/中证2000
+    四序列，前端按共同首日=100 归一。"""
+    trends_dto = await _run_trends(request, CAP_TIER_INDEXES, from_, to)
+    meta = EnvelopeMeta(request_id=request.state.trace_id)
+    return Envelope(data=_trends_data(trends_dto), meta=meta).model_dump(by_alias=True)
+
+
+@router.get("/market-data/trends/boards", response_model=Envelope[TrendsData])
+async def board_trends(
+    request: Request,
+    from_: date = Query(alias="from"),
+    to: date = Query(),
+    trace_id: str = Depends(ensure_trace_context),
+):
+    """市场板趋势（趋势对比面板方案 4.2）：上证综指/创业板指/科创50 官方指数
+    三序列，前端按共同首日=100 归一。"""
+    trends_dto = await _run_trends(request, BOARD_INDEXES, from_, to)
+    meta = EnvelopeMeta(request_id=request.state.trace_id)
+    return Envelope(data=_trends_data(trends_dto), meta=meta).model_dump(by_alias=True)

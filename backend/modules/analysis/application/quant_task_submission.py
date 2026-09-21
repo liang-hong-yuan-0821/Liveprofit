@@ -41,6 +41,7 @@ from backend.modules.quant_strategy.application.errors import (
     StrategyVersionNotPublishedError,
 )
 from backend.modules.quant_strategy.infrastructure.models import QuantStrategy, QuantStrategyVersion
+from backend.modules.quant_strategy.domain.templates import get_template
 from backend.shared.clock import Clock, SystemClock
 
 MAX_POSITIONS = 500
@@ -137,6 +138,11 @@ class QuantTaskSubmissionService:
                     "version_no": version.version_no,
                     "source_code": version.source_code,
                     "source_hash": version.source_hash,
+                    "name": strategy.name,
+                    "template_id": version.template_id,
+                    "template_params": version.template_params,
+                    "template_renderer_version": version.template_renderer_version,
+                    "required_bars": get_template(version.template_id).required_bars if version.template_id else 250,
                 },
                 "portfolio": {
                     "id": str(portfolio.id),

@@ -1,13 +1,40 @@
 # 量化策略与实操层 任务清单
 
-> **状态**：`实现中`（2026-09-16，方案已确认）
-> **进度**：8/8 任务（全量回归收尾中）
-> **下一步**：全量回归确认 → result.md + Code Review
+> **状态**：`评审增量实施中`（2026-09-21）
+> **进度**：原基础 T1–T8 已完成；维护优化 O1、O3–O5 已完成，O2 待 POSIX 验收；增量 N0 已完成，N1/N2/N8 进行中
+> **下一步**：完成 N1 除权 fixture/覆盖 POC 与 N2 第一波另外两模板集成验证，再实施 N3–N7；N9 需观察期，不能即时勾选
 > **关联方案**：[plan.md](plan.md)（同任务文件夹内方案正文）
 
 ---
 
 ## 任务总览
+
+### 2026-09-19 现有代码优化（独立于生命周期新增功能）
+
+| 编号 | 修正 | 验收 | 状态 |
+|---|---|---|---|
+| O1 | API/服务层新建代码必填与 UTF-8 12KiB 限额，OpenAPI/codegen 同步 | schema 与服务拒绝缺失/空白/多字节超限；客户端类型检查 | 已完成 |
+| O2 | isfinite 非数值返回 False；POSIX 独立进程组；登记失败回收进程 | 子进程测试及取消回归；POSIX 专用检查须在 POSIX 运行 | 进行中：POSIX 待验 |
+| O3 | 取消/失租后禁止新登记与排队执行，提交前检查、异常 rollback | 模拟 signal 已暂存后取消，断言零 commit、一 rollback | 已完成 |
+| O4 | 已持仓行业未知时拒绝新 BUY，SELL_PARTIAL 仍允许 | 纯规划器风险/卖出回归 | 已完成 |
+| O5 | 格式化失败不透传含源码 stderr，声明 ruff 运行依赖 | 错误边界检查及本地 ruff 可用性 | 已完成 |
+
+### 评审修订增量（不得被原 8/8 完成记录覆盖）
+
+| 编号 | 任务 | 依赖 | 验收重点 | 状态 |
+|---|---|---|---|---|
+| N0 | 修复当前执行阻断项：因子日期对齐、数据错误 sample、订单成本价后二次风险校验 | 原 T7 | 专门 loader 测试能检出全 null/错日；跳空后不会出现成本高于目标仍 ELIGIBLE | 已完成 |
+| N1 | DataReadinessGate + qfq/raw 双口径 + 交易状态/复权采集 | N0 | 共同水位、错位/停牌/暖机错误码、除权日前后 fixture、按模板覆盖 POC | 进行中 |
+| N2 | 十项 qfq context、strategy_contract、模板实际窗口与七模板注册 | N1 | 四向字段合同；不再统一要求 250 根；第一波三模板先通过真实 runner | 进行中 |
+| N3 | ExecutionConstraintEvaluator、费用/滑点、T+1、涨跌停、ST、流动性、订单三价 | N1 | 原始信号与订单分离；成本后盈亏比、现金和可卖数量准确 | 待开始 |
+| N4 | 组合开放风险、行业开放风险、熔断和未完成订单预留 | N3 | 多票同时止损压力；熔断只阻止新增风险，不阻止退出 | 待开始 |
+| N5 | 生命周期策略版本、成交/订单/活跃意图/逐日事实数据模型与 API 合同 | N2、N3、N4 | 独立 lifecycle_policy_version；更正/撤销/部分成交/跨日未完成去重 | 待开始 |
+| N6 | PositionLifecycleManager：首仓、确认、弱化、止损、获利减仓、MA5 三日兑现 | N5 | 七模板优先级、真实成交推进、同日/跨日幂等、缺数据 fail-closed | 待开始 |
+| N7 | 报告/API/前端展示数据水位、双价格、成本、可交易性、开放风险和生命周期 | N6 | 明确实验/影子/人工建议状态；不出现收益承诺；完整 cursor 可审计 | 待开始 |
+| N8 | 真实 6,000 标的全链路性能、行业/因子 POC、完整栈 E2E | N1–N7 | 数据库侧逐票窗口；冻结 P95/内存/返回行数预算；无僵尸进程 | 待开始 |
+| N9 | 分三波 forward shadow 与晋级评审 | N8 | 预注册口径；成本后期望、回撤、MAE/MFE、可成交率、市场状态；未达门槛不晋级 | 待开始 |
+
+以下 T1–T8 为原基础任务的历史记录。
 
 | 编号 | 任务 | 依赖 | 状态 |
 |------|------|------|------|
@@ -21,6 +48,191 @@
 | T8 | 报告 API + cursor + 前端：决策投影/信号分页/策略页/组合设置/任务表单/量化面板 | T4、T7 | 已完成 |
 
 ## 任务
+
+### 维护优化 O1–O5（2026-09-20 验收记录）
+
+- **O1 已完成**：新建策略在 API schema 与服务层均要求非空白源码，并按 UTF-8 字节限制 12 KiB；OpenAPI/codegen 已同步，后端定向回归与前端 `pnpm run typecheck` 通过。
+- **O2 进行中**：`isfinite` 非数值/bool 返回 `False`、登记失败回收子进程、POSIX 子进程独立 session 的实现与自动测试均已落地；Windows 上相关回归通过，但 POSIX process-group 用例按平台跳过，部署到 POSIX 后才能勾成完成。
+- **O3 已完成**：取消/失租后的进程登记、批次提交和最终订单提交均有失活检查；异常路径执行进程回收与事务 rollback，定向取消测试通过。
+- **O4 已完成**：任一现有持仓缺行业归属时，新 BUY fail-closed；`SELL_PARTIAL` 等风险降低建议不被阻断，规划器回归通过。
+- **O5 已完成**：格式化错误不回显可能含源码的 stderr，`ruff` 已声明为平台运行依赖，格式化契约回归通过。
+- **本次复验**：`.venv\\Scripts\\python.exe -m pytest backend/tests/unit/quant_strategy/test_create_source.py backend/tests/unit/quant_strategy/test_execution_cancellation.py tests/strategy_sandbox/test_runner.py tests/agents/position/test_position_planner.py backend/tests/contract/api/test_quant_strategies.py -q` → `65 passed, 1 skipped`；跳过项仅为 POSIX 专用进程组测试。在 `frontend/` 目录执行 `pnpm run typecheck` → exit 0。
+
+### N0 当前执行阻断项修复
+
+- **目标**：先消除方案 C9/C10/C11 已识别的三个 P0 可信性缺陷，确保旧基础链路不会把错位因子、不可诊断的数据失败或跳空后的失真订单标为可执行。
+- **涉及文件（规划）**：
+  - 修改：`backend/modules/analysis/infrastructure/quant_execution_market_data.py`（按 `(ts_code, trade_date)` 等值对齐，统一日期类型）
+  - 修改：`backend/modules/quant_strategy/application/execution.py`、signals 仓储（数据错误样本及稳定错误码落库）
+  - 修改：`backend/modules/quant_strategy/application/position_planner.py`（以实际订单成本价再次校验三价关系、盈亏比与风险预算）
+  - 新建/修改：loader、execution、planner 专项单测
+- **依赖**：原 T7
+- **验收标准**（全部勾选才算完成）：
+  - [x] 使用日期和值均不同的日线/因子 fixture，逐日断言 MA/RSI 与 bar 同日；全 null、错日、最新日缺因子均不能调用 Sandbox。
+  - [x] `WARMUP_INCOMPLETE`、`STALE_DATA`、`INDICATOR_UNAVAILABLE`/`DATA_UNAVAILABLE` 等失败样本可从 signal cursor 查询，且不会被普通 HOLD 吞掉。
+  - [x] 构造当前原始价跳空高于信号 entry、接近或越过 take 的用例；成本价后二次校验失败时保留 BUY 信号、拒绝订单，不得出现成本价高于目标仍 `ELIGIBLE`。
+  - [x] 现有量化执行、规划器、signal cursor 回归通过，无新增源码泄漏或持仓写入。
+- **状态**：`已完成`（2026-09-21；因子日期键、错误信号落库、成本后二次三价/盈亏比/风险校验及专项回归已落地）
+
+### N1 数据准备门禁、双价格口径与采集底座
+
+- **目标**：落实 C1/C2/C9/C10，为每次执行固定共同市场水位，补齐股票技术因子、复权因子与交易状态采集，并建立 qfq 信号口径与 raw 交易口径的可信映射。
+- **涉及文件（规划）**：
+  - 修改：`AI/dataflows/providers/base_provider.py`、`AI/dataflows/providers/cn/tushare.py`（结构化股票因子/复权/交易状态接口）
+  - 修改：`db/instrument/ingest/`、`db/instrument/dao/factor_daily.py`、市场 schema/增量迁移（按交易日采集、状态与版本水位）
+  - 新建：`backend/modules/quant_strategy/application/data_readiness.py` 或同职责模块（`DataReadinessGate`）
+  - 修改：`backend/modules/analysis/infrastructure/quant_execution_market_data.py`（qfq OHLCV/十项因子、raw execution market、数据 hash）
+  - 新建/修改：采集、数据门禁、除权除息和停牌 fixture
+- **依赖**：N0
+- **验收标准**：
+  - [x] 任务开始先得到唯一 `market_as_of_trade_date`；日线、因子、交易状态与复权版本任一全局水位未齐时整任务不执行（行业为订单层独立 fail-closed 门禁）。
+  - [x] 上下文明确记录 requested/as-of/latest-bar/factor 日期和数据 hash；暖机不足、停牌旧 bar、字段空值、非有限值分别返回稳定错误码。
+  - [x] 技术信号只使用同版本 qfq OHLCV/指标，订单与成交只使用 raw 价格；复权缺失/版本不一致时 BUY fail-closed。
+  - [ ] 除权除息日前后 fixture 不产生机械假金叉、假突破或假止损；结构价映射回 raw 后保持严格三价关系。
+  - [ ] POC 同时输出 250 日历史质量和按模板实际窗口的可执行覆盖、暖机不足、缺失代码、截断、限流与重试；未达 100% 的模板不得晋级。
+- **状态**：`进行中`（2026-09-21；真实 POC：最新两日 qfq 因子覆盖约 98.95%，交易状态 100%；申万当前成员覆盖 93.62% 未过 95% 门槛，故买点保留、订单拒绝。待补除权 fixture、250 日质量报告及不足 100% 的暖机分类）
+
+### N2 策略合同、模板注册与七套参考源码
+
+- **目标**：落实 C3/C4 与 §4.6–§4.14，建立无业务依赖的字段合同、实际窗口门禁、不可变模板元数据和七套可验证参考策略；先验证第一波，不把 250 根误作统一资格门槛。
+- **涉及文件（规划）**：
+  - 新建：`AI/strategy_sandbox/strategy_contract.py`（允许路径、常量索引、七键合同）
+  - 修改：`AI/strategy_sandbox/validator.py`、`AI/strategy_sandbox/protocol.py`（从唯一合同读取）
+  - 新建：`backend/modules/quant_strategy/domain/templates.py`（七模板注册、参数 schema、required_fields、渲染器）
+  - 修改：策略版本迁移/ORM/DTO/service、`QuantTaskSubmissionService`（冻结 template 摘要、renderer version、source SHA）
+  - 新建：`backend/tests/unit/quant_strategy/test_strategy_templates.py` 及四向合同测试
+- **依赖**：N1
+- **验收标准**：
+  - [x] 十项 qfq 指标、OHLCV 常量下标和七键输出均由 `strategy_contract.py` 唯一声明；Sandbox 不反向依赖 backend 模板模块。
+  - [x] 每模板满足“源码实际读取集合 = required_fields ⊆ context 投影字段 ∩ Sandbox 允许字段”，动态下标、越界下标和未知路径发布失败。
+  - [x] 七模板参数默认值、边界、相邻越界、未知/缺失键、交叉约束和规范化 JSON 均有测试。
+  - [x] 七套默认/边界源码均通过真实 validator 与一次性 runner；BUY/SELL_ALL/HOLD 七键、固定原因码、分数和价格关系符合 §2.5。
+  - [x] 执行资格按模板实际索引和指标暖机判断；2/6/20/41 根需求分别覆盖，上市不足记 `WARMUP_INCOMPLETE`，不统一要求 250 根。
+  - [ ] 第一波 `ma_trend_cross_v1`、`trend_pullback_v1`、`volume_surge_confirm_v1` 通过真实 loader + runner 集成验证；其余模板保持实验注册态。
+  - [ ] 修改注册表显示名/渲染器后，旧任务 rerun 与报告仍使用 execution snapshot 冻结摘要。
+- **状态**：`进行中`（2026-09-21；七模板、模板 API/UI、不可变元数据和实际窗口已落地；真实浏览器已验证 ma_trend_cross_v1 全市场 loader+runner，另两项第一波模板及旧任务注册表变更回归待补）
+
+### N3 订单可执行性、费用与流动性约束
+
+- **目标**：落实 C5/C10/C11，把 Sandbox 原始信号与人工建议订单明确分层，以 raw 订单三价、交易状态、T+1、费用、滑点和流动性完成最终可执行性判断。
+- **涉及文件（规划）**：
+  - 新建：`OrderPriceNormalizer`、`PriceBasisMapper`、`ExecutionConstraintEvaluator`（落位于 quant_strategy application/domain）
+  - 修改：`PositionPlanner`、signals/建议订单 DTO 与仓储（raw signal 三价和 normalized order 三价并存）
+  - 修改：组合/任务快照合同（版本化费用、滑点、参与率与板块规则）
+  - 新建/修改：低价股、涨跌停、ST、停牌、T+1、费用和成交额参与率测试
+- **依赖**：N1；与 N2 可在字段合同稳定后并行收尾
+- **验收标准**：
+  - [ ] 信号始终保留 qfq `entry/stop/take`；订单单独保存 raw `order_entry/order_stop/order_take`，规范化不得覆盖信号原值。
+  - [ ] Decimal/tick 规范化、滑点和费用后重新校验严格三价、最低盈亏比、单笔风险和现金；失败保留信号并写稳定拒绝码。
+  - [ ] 停牌、ST/*ST、板块差异、涨跌停、100 股整手、T+1 可卖数量和 earliest execution date 均有 fixture。
+  - [ ] 佣金最低收费、印花税、过户费、显式滑点和成交额参与率纳入数量/现金计算；费用配置版本随任务快照冻结。
+  - [ ] SELL 风险降低意图在不可成交时仍保留并标明原因，不伪造已成交或已清仓。
+- **状态**：`待开始`（2026-09-20）
+
+### N4 组合开放风险、熔断与订单预留
+
+- **目标**：落实 C12，在现有市值比例约束之外加入组合/行业开放风险、单日新增风险、回撤/单日损失熔断和未完成订单预留。
+- **涉及文件（规划）**：
+  - 修改：组合迁移、ORM、DTO、service 与前端配置合同（新增风险参数和净值水位）
+  - 修改：`PositionPlanner`（开放风险逐单重算、行业桶、未完成订单预留、熔断）
+  - 新建/修改：组合风险计算器、仓储查询与压力 fixture
+- **依赖**：N3
+- **验收标准**：
+  - [ ] 开放风险按实际持仓到当前有效止损的损失额计算，不以持仓市值替代；缺止损/净值事实时拒绝新增风险。
+  - [ ] BUY/ADD 每接受一笔后重算组合与行业开放风险，并扣除未完成买卖订单的现金、数量和风险预留。
+  - [ ] 多票同方向、同一行业及相关标的同时止损压力用例不突破冻结上限。
+  - [ ] 触发组合回撤、单日损失或新增风险熔断后，只阻止 BUY/ADD；SELL_REDUCE/SELL_EXIT 继续评估。
+  - [ ] 组合参数采用 Decimal、乐观锁和任务快照冻结；历史任务不读取后来修改的账户配置。
+- **状态**：`待开始`（2026-09-20）
+
+### N5 生命周期数据模型、成交回写与 API 合同
+
+- **目标**：落实 §2.6、C6–C8 的持久化前置，先冻结物理合同，再实现独立 lifecycle policy、建议订单、成交、活跃目标意图、逐日事实与人工/券商成交回写。
+- **涉及文件（规划）**：
+  - 修改/新建：增量迁移、quant_strategy/investment_workspace ORM 与仓储
+  - 新建：lifecycle policy、suggested orders、fills、active intents、daily facts、lifecycle states、expectations、trailing stops 等实体（最终表名在本任务开始时写入 decisions.md）
+  - 新建/修改：成交确认/更正/撤销/对账 application service、API schema/router、OpenAPI 与 generated client
+  - 新建：迁移、并发、幂等、部分成交与跨日订单集成测试
+- **依赖**：N2、N3、N4
+- **验收标准**：
+  - [ ] 开工前在 `decisions.md` 固定表名、FK、唯一约束、状态机、保留周期、撤销/更正/对账语义，`issues.md` 第 7/8 项不再留物理合同 TBD。
+  - [ ] `lifecycle_policy_version_id` 独立且不可变；修改过参考源码的版本不得仅凭 `template_id` 自动继承生命周期。
+  - [ ] 首笔/追加/部分成交、拒绝、取消、更正均可审计；只有真实 fill 在同一事务更新实际仓位、订单剩余量与 `state_version`。
+  - [ ] 活跃意图跨日复用并扣除未完成订单；同一持仓/交易日/目标/原因不得重复创建建议。
+  - [ ] 逐日事实保存实际消费的行情、因子、价格口径、数据时间与 hash；同持仓同日重跑复用事实。
+  - [ ] downgrade/upgrade、并发 revision 冲突、事务回滚、OpenAPI 契约及 generated client typecheck 全部通过。
+- **状态**：`待开始`（2026-09-20）
+
+### N6 PositionLifecycleManager 与七模板成交后状态机
+
+- **目标**：落实 C6–C8 与 §4.15–§4.17，实现真实成交后的首仓 50%、确认/弱化、成本与移动止损、首次获利减仓、MA5 三日兑现及最终目标仓位仲裁。
+- **涉及文件（规划）**：
+  - 新建：`backend/modules/quant_strategy/application/position_lifecycle_manager.py`
+  - 修改：`QuantExecutionService`、`PositionPlanner`、生命周期仓储与成交回写服务
+  - 新建：`backend/tests/unit/quant_strategy/test_position_lifecycle_manager.py` 及事务/并发集成测试
+- **依赖**：N5
+- **验收标准**：
+  - [ ] 七模板首次真实成交均冻结风险容量、实际成本、初始止损、收益目标、模板/策略版本和 50% 初始目标；未成交建议不得初始化状态。
+  - [ ] 固定优先级为“成本/移动止损 → 模板完全失效或 MA5 超时 → 首次获利减仓 → 模板弱化 → 模板确认加仓”，同日只产生一个最终目标。
+  - [ ] 移动止损按前一交易日有效止损判断，`high_water_mark`/`active_stop_price` 单调不减；b/a/d 未显式合法配置时不启用。
+  - [ ] MA5 成交日不计数，只按成交后完整对齐 bar 消耗 3 日窗口；兑现、弱化 25%、超时清仓、缺数不计日与终态不可回退均有 fixture。
+  - [ ] 获利目标首次触达后目标不高于 50%；部分成交/拒绝不提前推进 `confirmation_completed`、`profit_trim_completed` 或终态。
+  - [ ] 通用 `SELL_PARTIAL` 与平台目标换算为绝对目标股数并取最低目标；实际持仓扣除未完成订单后只补差额。
+  - [ ] 圆弧底使用 BUY 同次上下文冻结的 `arc_neckline_price`，不得从后续滚动行情重算。
+  - [ ] 重复 worker、同日重跑、并发和缺成交/行情/因子全部 fail-closed，无双卖单或状态回退。
+- **状态**：`待开始`（2026-09-20）
+
+### N7 报告、API 与前端全链路展示
+
+- **目标**：把 N1–N6 的数据水位、双价格、可交易性、费用、开放风险、订单与生命周期完整投影到 API/报告/前端，并明确实验、影子和人工建议边界。
+- **涉及文件（规划）**：
+  - 修改：quant signals/持仓审计 cursor、`ArtifactBuilder`、`ReportDTO`、reports/strategies/portfolios routers 与 OpenAPI
+  - 修改：`frontend/src/api/generated/`（仅由 codegen 生成）
+  - 修改：策略页、组合设置、任务详情量化面板、报告 mapper 与原因码文案
+  - 新建/修改：后端契约、前端组件和完整分页测试
+- **依赖**：N6
+- **验收标准**：
+  - [ ] 报告明确展示 requested/as-of/latest-bar、qfq 信号三价、raw 订单三价、费用/滑点、交易状态、可卖数量、开放风险与拒绝码。
+  - [ ] 生命周期展示实际/目标仓位、阶段、冻结风险容量、初始/活动止损、高水位、确认/减仓/预期状态、关联订单与成交。
+  - [ ] signal、order、fill、intent、daily fact cursor 均按 attempt/position 隔离，稳定分页无重复无漏项；旧报告和旧任务保持兼容。
+  - [ ] UI 区分“实验”“forward shadow”“人工建议”，明确“日线信号、需人工确认、非收益承诺”，禁止“推荐”“高胜率”等未验证表述。
+  - [ ] OpenAPI 导出、codegen、后端契约测试、前端 typecheck/build/component tests 全绿；generated 文件不手改。
+- **状态**：`待开始`（2026-09-20）
+
+### N8 真实数据 POC、6,000 标的性能与完整栈 E2E
+
+- **目标**：完成 C1/C14 和历史遗留人工验收，在真实部署环境证明采集、数据库窗口、一次性 runner、取消回收及 frontend→backend→worker→报告全链路可用。
+- **涉及文件（规划）**：
+  - 修改：`MarketContextBatchLoader` SQL（数据库侧逐票 top-N/实际模板窗口）
+  - 新建：可重复执行的 benchmark/POC 脚本与结果记录（不纳入自动 pytest 的真实外部调用）
+  - 修改：`frontend/e2e/task-flow.spec.ts` 或独立量化 E2E
+  - 更新：`log.md`、`result.md`（环境、预算、实测数据与门禁结论）
+- **依赖**：N1–N7
+- **验收标准**：
+  - [ ] 真实 Tushare 代理 POC 完成行业覆盖与七模板所需股票因子/复权/交易状态覆盖报告；缺失、暖机、限流和重试均可追踪。
+  - [ ] 行情 SQL 在数据库侧按每票窗口裁剪；6,000 标的完整 context + 真实 runner + signal/order 落库记录 P50/P95、返回行数、峰值内存、失败率和取消回收时间。
+  - [ ] 用户在部署机冻结可接受的 P95、内存、数据库返回行数和取消回收预算；未达标时不以盲目增加并发掩盖问题。
+  - [ ] 完整栈 E2E 覆盖创建/发布策略、全市场扫描、BUY 信号、风控/可交易性拒绝、cursor 翻页、生命周期成交确认和报告展示。
+  - [ ] 取消/失租/异常路径无僵尸进程、无半提交订单、无意外持仓变更；POSIX 独立进程组用例通过后同步完成 O2。
+- **状态**：`进行中`（2026-09-21；真实完整栈已完成创建/发布策略→组合快照→全市场扫描→BUY/数据错误 cursor→报告页面：5565 标的、5507 完备、25 买点、58 数据拒绝、耗时约 73 秒；行业门禁未过故 0 建议订单。生命周期与用户冻结性能预算仍待 N3–N7 后验收）
+
+### N9 分波 forward shadow 与策略晋级评审
+
+- **目标**：落实 C13，在不自动下单的前提下按三波收集前向样本，使用观察前冻结的口径评估数据质量、可成交性、成本后表现和增量价值。
+- **涉及文件（规划）**：
+  - 新建/修改：shadow run 配置、观察记录、评估汇总和审计导出
+  - 修改：策略状态/前端标签（实验 → shadow → 人工建议）
+  - 更新：`decisions.md`（预注册门槛）、`log.md`、`result.md`（每波评审结论）
+- **依赖**：N8
+- **验收标准**：
+  - [ ] 每波开始前由用户冻结最小观察期、最小信号数、数据完整性、风险和晋级阈值；观察后不得回改同一批样本口径。
+  - [ ] 第一波：`ma_trend_cross_v1`、`trend_pullback_v1`、`volume_surge_confirm_v1`；先验证最短数据/成交/生命周期闭环。
+  - [ ] 第二波：`boll_volume_breakout_v1`、`macd_rsi_reversal_v1`、`ma5_pre_cross_v1`；验证信号非高度重复及三日预期状态机。
+  - [ ] 第三波：`arc_bottom_75a_v1`；单独报告误触发、行业集中与相对第一波的增量价值，默认不启用。
+  - [ ] 每波至少报告成本后期望、收益风险比、最大回撤、MAE/MFE、换手、信号到可成交转化率、拒绝原因、行业集中和分市场状态表现。
+  - [ ] 未达预注册门槛的模板保持实验/shadow，不进入人工建议、不默认启用；报告不得把 score 当作概率或收益承诺。
+  - [ ] 只有三波各自形成可审计结论后，才允许把统一方案状态改为完成并归档。
+- **状态**：`待开始`（2026-09-20；需先完成 N8，并在首轮 shadow 前取得用户对评估门槛的确认）
 
 ### T1 数据迁移：0008 + 0009
 

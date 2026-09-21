@@ -25,11 +25,33 @@ from backend.api.schemas.quant_strategies import (
     QuantStrategyPublishData,
     QuantStrategyPublishRequest,
     QuantStrategyVersionDTO,
+    QuantStrategyTemplateDTO,
+    QuantStrategyTemplateListData,
 )
 from backend.api.dependencies import open_quant_strategy_uow as _open_uow
 from backend.modules.quant_strategy.application.service import QuantStrategyService
+from backend.modules.quant_strategy.domain.templates import RENDERER_VERSION, list_templates
 
 router = APIRouter(prefix="/api/v1", tags=["quant-strategies"])
+
+
+@router.get("/quant-strategy-templates", response_model=Envelope[QuantStrategyTemplateListData])
+async def list_strategy_templates(request: Request, trace_id: str = Depends(ensure_trace_context)):
+    items = []
+    for definition in list_templates():
+        source, params = definition.render()
+        items.append(QuantStrategyTemplateDTO(
+            template_id=definition.template_id,
+            display_name=definition.display_name,
+            description=definition.description,
+            required_bars=definition.required_bars,
+            wave=definition.wave,
+            renderer_version=RENDERER_VERSION,
+            default_params=params,
+            source_code=source,
+        ))
+    meta = EnvelopeMeta(request_id=request.state.trace_id)
+    return Envelope(data=QuantStrategyTemplateListData(items=items), meta=meta).model_dump()
 
 
 @router.get("/quant-strategies", response_model=Envelope[QuantStrategyListData])
@@ -79,8 +101,7 @@ async def format_strategy_source(
         except subprocess.TimeoutExpired:
             raise ProblemError(422, "STRATEGY_FORMAT_FAILED", "格式化超时") from None
         if proc.returncode != 0:
-            detail = proc.stderr.decode("utf-8", errors="replace")[:512] or "格式化失败"
-            raise ProblemError(422, "STRATEGY_FORMAT_FAILED", detail)
+            raise ProblemError(422, "STRATEGY_FORMAT_FAILED", "代码格式化失败，请检查 Python 语法")
         return proc.stdout.decode("utf-8")
 
     formatted = await services.run(_do)
@@ -99,7 +120,8 @@ async def create_strategy(
     def _do():
         with _open_uow(services) as uow:
             return QuantStrategyService(uow).create(
-                payload.name, description=payload.description, source_code=payload.source_code
+                payload.name, description=payload.description, source_code=payload.source_code,
+                template_id=payload.template_id, template_params=payload.template_params,
             )
 
     dto = await services.run(_do)
@@ -237,6 +259,8 @@ def _version(dto) -> QuantStrategyVersionDTO:
     return QuantStrategyVersionDTO(
         id=dto.id, strategy_id=dto.strategy_id, version_no=dto.version_no, status=dto.status,
         source_hash=dto.source_hash, published_at=dto.published_at, archived_at=dto.archived_at,
+        template_id=dto.template_id, template_params=dto.template_params,
+        template_renderer_version=dto.template_renderer_version,
         version=dto.version, created_at=dto.created_at, updated_at=dto.updated_at,
     )
 
@@ -245,5 +269,7 @@ def _draft(dto) -> QuantStrategyDraftDTO:
     return QuantStrategyDraftDTO(
         id=dto.id, strategy_id=dto.strategy_id, version_no=dto.version_no, status=dto.status,
         source_code=dto.source_code, source_hash=dto.source_hash, version=dto.version,
+        template_id=dto.template_id, template_params=dto.template_params,
+        template_renderer_version=dto.template_renderer_version,
         created_at=dto.created_at, updated_at=dto.updated_at,
     )

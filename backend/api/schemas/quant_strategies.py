@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class QuantStrategyVersionDTO(BaseModel):
@@ -18,6 +18,9 @@ class QuantStrategyVersionDTO(BaseModel):
     version_no: int
     status: str
     source_hash: str
+    template_id: str | None = None
+    template_params: dict | None = None
+    template_renderer_version: str | None = None
     published_at: datetime | None
     archived_at: datetime | None
     version: int
@@ -42,7 +45,18 @@ class QuantStrategyListData(BaseModel):
 class QuantStrategyCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=64)
     description: str | None = Field(default=None, max_length=4096)
-    source_code: str = Field(default="", max_length=12 * 1024)
+    source_code: str = Field(min_length=1, max_length=12 * 1024)
+    template_id: str | None = Field(default=None, max_length=64)
+    template_params: dict | None = None
+
+    @field_validator("source_code")
+    @classmethod
+    def require_source(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("新建策略必须输入代码")
+        if len(value.encode("utf-8")) > 12 * 1024:
+            raise ValueError("策略源码不能超过 12 KiB")
+        return value
 
 
 class QuantStrategyDraftDTO(BaseModel):
@@ -54,6 +68,9 @@ class QuantStrategyDraftDTO(BaseModel):
     status: str
     source_code: str
     source_hash: str
+    template_id: str | None = None
+    template_params: dict | None = None
+    template_renderer_version: str | None = None
     version: int
     created_at: datetime
     updated_at: datetime
@@ -86,3 +103,18 @@ class QuantStrategyPublishRequest(BaseModel):
 class QuantStrategyPublishData(BaseModel):
     published: QuantStrategyVersionDTO
     next_draft: QuantStrategyDraftDTO
+
+
+class QuantStrategyTemplateDTO(BaseModel):
+    template_id: str
+    display_name: str
+    description: str
+    required_bars: int
+    wave: int
+    renderer_version: str
+    default_params: dict
+    source_code: str
+
+
+class QuantStrategyTemplateListData(BaseModel):
+    items: list[QuantStrategyTemplateDTO]

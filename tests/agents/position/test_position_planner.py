@@ -116,6 +116,15 @@ def test_rr_below_minimum_rejected():
     assert repo.updates[1]["order_status"] == pp.BUY_REJECTED_RR
 
 
+def test_gap_up_order_cost_rechecks_price_range_and_rr():
+    repo, _ = _run(None, [_buy(1, 90, entry=10, stop=9, take=12, valuation=12.1)])
+    assert repo.updates[1]["order_status"] == pp.BUY_REJECTED_PRICE_RANGE
+
+    repo2, _ = _run(None, [_buy(2, 90, entry=10, stop=9, take=13, valuation=11.5)])
+    # 成本后盈亏比 = 1.5 / 2.5 < 2，即使信号价盈亏比为 3 也必须拒绝。
+    assert repo2.updates[2]["order_status"] == pp.BUY_REJECTED_RR
+
+
 def test_total_limit_holds_existing_positions():
     # 已有市值 9 万（总资产 10 万 × 80% = 8 万上限）→ 已超限
     positions = [{"market": "CN", "symbol": "600519.SH", "quantity": "60.0000", "average_cost": "1500.0000"}]
@@ -159,6 +168,18 @@ def test_sector_limit_and_unknown_industry():
 def test_industry_unavailable_rejects_buy():
     repo, summary = _run(None, [_buy(1, 90)], industry_bucket_available=False)
     assert repo.updates[1]["order_status"] == pp.BUY_REJECTED_INDUSTRY_BUCKET
+
+
+def test_unknown_holding_industry_blocks_new_buy_but_keeps_partial_sell():
+    positions = [{"symbol": "600519.SH", "quantity": "500", "average_cost": "10"}]
+    repo, summary = _run(
+        None, [_buy(1, 90), _hold(2, "SELL_PARTIAL", ratio=0.5)],
+        positions=positions, closes={"600519.SH": Decimal("10")},
+    )
+    assert repo.updates[1]["order_status"] == pp.BUY_REJECTED_INDUSTRY_BUCKET
+    assert repo.updates[2]["shares"] == Decimal("200")
+    assert summary.suggested_buy_orders == 0
+    assert summary.suggested_sell_orders == 1
 
 
 def test_unallocated_negative_blocks_all_buys():

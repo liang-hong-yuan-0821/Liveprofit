@@ -1,4 +1,6 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { queryKeys } from '../../../api/queryKeys';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { renderWithRouter } from '../../../test/utils';
@@ -100,6 +102,39 @@ afterEach(() => {
 });
 
 describe('HotConceptsPanel', () => {
+  it('默认不指定日期；历史选择不会被后台刷新覆盖', async () => {
+    treeMock.mockResolvedValue(envelope(treeSnapshot([])));
+    const { queryClient } = renderWithRouter(<HotConceptsPanel />);
+    await screen.findByText('当前条件下暂无热门概念');
+    expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, undefined);
+    fireEvent.change(screen.getByLabelText('榜单日期'), { target: { value: '2026-08-31' } });
+    await waitFor(() => expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, '2026-08-31'));
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: queryKeys.conceptTree.all }); });
+    expect(screen.getByLabelText('榜单日期')).toHaveValue('2026-08-31');
+    expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, '2026-08-31');
+  });
+
+  it('StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询', async () => {
+    treeMock.mockResolvedValue(envelope(treeSnapshot([makeConcept('BK1753', '光刻胶', 1)])));
+    stockBarsMock.mockResolvedValue(envelope(barsData));
+    const { queryClient } = renderWithRouter(<StrictMode><HotConceptsPanel /></StrictMode>);
+    await screen.findByTestId('concept-treemap');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'click-stock' }));
+    await screen.findByTestId('kline-chart');
+    const before = stockBarsMock.mock.calls.length;
+    await act(async () => {
+      for (let index = 0; index < 100; index++) await queryClient.refetchQueries({ queryKey: queryKeys.stockBars.all, type: 'active' });
+    });
+    expect(stockBarsMock.mock.calls.length - before).toBe(100);
+    expect(stockBarsMock.mock.calls.filter(call => call[5] === 'ensure')).toHaveLength(1);
+    expect(stockBarsMock.mock.calls.slice(before).every(call => call[5] === 'cache_only')).toBe(true);
+    await userEvent.setup().click(screen.getByRole('button', { name: '关闭' }));
+    await waitFor(() => expect(screen.queryByTestId('kline-chart')).not.toBeInTheDocument());
+    const closed = stockBarsMock.mock.calls.length;
+    await act(async () => { await queryClient.refetchQueries({ queryKey: queryKeys.stockBars.all, type: 'active' }); });
+    expect(stockBarsMock).toHaveBeenCalledTimes(closed);
+  });
+
   it('NO_HOT_CONCEPTS / 空列表是正常空态', async () => {
     treeMock.mockResolvedValue(envelope({
       ...treeSnapshot([]), result_status: 'NO_HOT_CONCEPTS',
@@ -152,7 +187,8 @@ describe('HotConceptsPanel', () => {
     await screen.findByTestId('concept-treemap');
     await userEvent.setup().click(screen.getByRole('button', { name: 'click-stock' }));
     await waitFor(() => expect(screen.getByTestId('kline-chart')).toBeInTheDocument());
-    expect(stockBarsMock).toHaveBeenCalledTimes(1);
+    expect(stockBarsMock.mock.calls.filter(call => call[5] === 'ensure')).toHaveLength(1);
+    expect(stockBarsMock.mock.calls.filter(call => call[5] === 'cache_only')).toHaveLength(1);
     const [symbol, market, interval] = stockBarsMock.mock.calls[0];
     expect([symbol, market, interval]).toEqual(['600050.SH', 'CN', '1d']);
     expect(conceptBarsMock).not.toHaveBeenCalled();

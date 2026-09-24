@@ -183,7 +183,7 @@ describe('AiTaskDetailPage 加载与状态', () => {
     expect(screen.getByRole('button', { name: '重新读取报告' })).toBeInTheDocument();
     // NOT_REQUESTED：说明 + 引导新建
     expect(screen.getByText('本次分析未请求此区块。')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '新建包含该层级的分析' })).toHaveAttribute('href', '/ai?create=1');
+    expect(screen.getByRole('link', { name: '新建包含该层级的分析' })).toHaveAttribute('href', '/ai?create=1&layers=stock');
   });
 
   it('RETRYING 仅由 REST 呈现：attempt_no 与 next_retry_at 展示，时间线不伪造', async () => {
@@ -288,15 +288,17 @@ describe('AiTaskDetailPage 执行调用日志区块', () => {
     expect(panel.compareDocumentPosition(topology) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
-  it('SUCCEEDED 终态：面板位于报告区之前，静态展示', async () => {
+  it('SUCCEEDED 终态：报告优先，诊断默认折叠并按需加载', async () => {
     getTaskMock.mockResolvedValue(envelope(makeTask('SUCCEEDED')));
     renderPage();
 
     await screen.findByText('最新报告');
-    const panel = screen.getByTestId('execution-logs-panel');
+    expect(screen.queryByTestId('execution-logs-panel')).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: /执行过程与诊断/ }));
+    const panel = await screen.findByTestId('execution-logs-panel');
     const reportSection = document.getElementById('report');
     expect(reportSection).not.toBeNull();
-    expect(panel.compareDocumentPosition(reportSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(panel.compareDocumentPosition(reportSection!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
   it('终态翻转（false→true）瞬间补拉一次执行日志', async () => {
@@ -360,6 +362,7 @@ describe('单Agent重跑', () => {
   it('终态任务节点弹窗显示「重跑此Agent」，rerun_available=false 禁用并提示', async () => {
     renderPage();
     await screen.findByText('任务状态');
+    await userEvent.setup().click(screen.getByRole('button', { name: /执行过程与诊断/ }));
 
     // 点击 rerun_available=false 的节点（通过拓扑图 mock 注入 click）
     const { default: ReactECharts } = await import('echarts-for-react');
@@ -382,6 +385,7 @@ describe('单Agent重跑', () => {
     rerunMock.mockResolvedValue(envelope(RERUN_DTO));
     const { queryClient } = renderPage();
     await screen.findByText('任务状态');
+    await userEvent.setup().click(screen.getByRole('button', { name: /执行过程与诊断/ }));
 
     const { default: ReactECharts } = await import('echarts-for-react');
     const mockedChart = ReactECharts as unknown as ReturnType<typeof vi.fn>;
@@ -410,6 +414,7 @@ describe('单Agent重跑', () => {
     rerunMock.mockResolvedValue(envelope(RERUN_DTO));
     const { queryClient } = renderPage();
     await screen.findByText('任务状态');
+    await userEvent.setup().click(screen.getByRole('button', { name: /执行过程与诊断/ }));
 
     const observer = queryClient
       .getQueryCache()

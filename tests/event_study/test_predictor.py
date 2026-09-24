@@ -20,11 +20,15 @@ T3 增量（方案第三章）：
 """
 
 import json
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
+from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 
 from AI.eventStudy.prediction import predictor, similarity_search
+from AI.eventStudy.review import news_dao
 
 _PRED_TEST_DB = "liveprofit_predictor_test"
 _AS_OF = "2026-08-31T10:00:00+08:00"
@@ -472,8 +476,10 @@ def predict_db():
 
 @pytest.fixture()
 def db(predict_db):
-    """逐用例清空事件/影响/预测表（保留 assets 4 指数与行业码表种子）。"""
-    predict_db.execute("TRUNCATE events, event_impacts, predictions RESTART IDENTITY")
+    """逐用例清空事件及其新审计事实（保留 assets 与行业码表种子）。"""
+    predict_db.execute(
+        "TRUNCATE event_assessment, news, events, event_impacts, predictions RESTART IDENTITY"
+    )
     predict_db.commit()
     yield predict_db
 
@@ -482,15 +488,169 @@ def _insert_event(conn, title, announced_at, scope="market", refs=None,
                   status="approved", event_type="宏观", event_subtype="CPI",
                   event_condition="超预期", embedding=None):
     row = conn.execute(
-        "INSERT INTO events (title, content, announced_at, importance, status, "
+        "INSERT INTO events (title, content, announced_at, importance, status, canonical_key, "
         "  event_type, event_subtype, event_condition, event_scope, "
         "  affected_scope_refs, embedding) "
-        "VALUES (%s, '', %s::timestamptz, 3, %s, %s, %s, %s, %s, %s::jsonb, %s::vector) "
+        "VALUES (%s, '', %s::timestamptz, 3, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::vector) "
         "RETURNING event_id",
-        (title, announced_at, status, event_type, event_subtype, event_condition,
+        (title, announced_at, status, f"predictor-test:{uuid.uuid4()}",
+         event_type, event_subtype, event_condition,
          scope, None if refs is None else json.dumps(refs, ensure_ascii=False), embedding),
     ).fetchone()
     return int(row[0])
+
+
+def test_assessment_candidates_freeze_history_and_keep_disputes_from_hiding_acceptance(db, monkeypatch):
+    published_at = datetime(2026, 8, 31, 1, 0, tzinfo=timezone.utc)
+    available_at = datetime(2026, 8, 31, 2, 0, tzinfo=timezone.utc)
+    news = news_dao.persist_news(db, {
+        "source": "test", "source_item_id": "snapshot-1", "title": "原始来源标题",
+        "raw_content": "原始来源正文", "published_at": published_at,
+    }, first_seen_at=available_at)
+    replayed_news = news_dao.persist_news(db, {
+        "source": "test", "source_item_id": "snapshot-1", "title": "原始来源标题",
+        "raw_content": "原始来源正文", "published_at": published_at,
+    }, first_seen_at=available_at)
+    revised_news = news_dao.persist_news(db, {
+        "source": "test", "source_item_id": "snapshot-1", "title": "修订来源标题",
+        "raw_content": "修订来源正文", "published_at": published_at,
+    }, first_seen_at=available_at)
+    assert replayed_news.news_id == news.news_id and not replayed_news.inserted
+    assert revised_news.source_revision == 2 and revised_news.inserted
+    event_id, *_ = news_dao.get_or_create_event(
+        db, canonical_key="snapshot-event-1", title="当前投影标题", content="当前投影摘要",
+        announced_at=published_at, first_seen_at=available_at, status="approved",
+    )
+    labels = {
+        "fact": {
+            "title": "冻结的事实标题", "fact_summary": "冻结的事实摘要",
+            "identity": {"entity": "甲公司", "action": "回购", "reference_period": "2026"},
+            "event_type": "公司行为", "first_published_at": published_at.isoformat(),
+        },
+        "targets": [{
+            "target": "stock:000001.SZ", "scope": "stock", "scope_refs": ["stock:000001.SZ"],
+            "horizons": [{
+                "trading_days": 1, "direction": "bullish", "strength": 0.8, "confidence": 0.8,
+            }],
+        }],
+    }
+    accepted = news_dao.append_assessment(
+        db, news_id=news.news_id, event_id=event_id, fact_key="fact-1", novelty="new",
+        review_status="accepted", labels=labels, evidence=[], model_version="test",
+        prompt_version="test", operation_id="snapshot-accepted", available_at=available_at,
+        expected_revision=0,
+    )
+    disputed_at = datetime(2026, 9, 1, 2, 0, tzinfo=timezone.utc)
+    disputed = news_dao.append_assessment(
+        db, news_id=news.news_id, event_id=event_id, fact_key="fact-1", novelty="update",
+        review_status="disputed", labels={**labels, "fact": {**labels["fact"], "title": "未确认标题"}},
+        evidence=[], model_version="test", prompt_version="test", operation_id="snapshot-disputed",
+        available_at=disputed_at, expected_revision=1,
+    )
+    disputed_replay = news_dao.append_assessment(
+        db, news_id=news.news_id, event_id=event_id, fact_key="fact-1", novelty="update",
+        review_status="disputed", labels={**labels, "fact": {**labels["fact"], "title": "未确认标题"}},
+        evidence=[], model_version="test", prompt_version="test", operation_id="snapshot-disputed",
+        available_at=disputed_at, expected_revision=1,
+    )
+    assert disputed.revision == 2 and disputed.inserted
+    assert disputed_replay.assessment_id == disputed.assessment_id and not disputed_replay.inserted
+    assert db.execute(
+        "SELECT supersedes_id FROM event_assessment WHERE assessment_id = %s",
+        (disputed.assessment_id,),
+    ).fetchone()[0] == accepted.assessment_id
+
+    db.execute("SAVEPOINT rollback_assessment")
+    news_dao.append_assessment(
+        db, news_id=news.news_id, event_id=event_id, fact_key="rolled-back-fact", novelty="new",
+        review_status="accepted", labels=labels, evidence=[], model_version="test",
+        prompt_version="test", operation_id="snapshot-rollback", expected_revision=0,
+    )
+    db.execute("ROLLBACK TO SAVEPOINT rollback_assessment")
+    assert db.execute(
+        "SELECT count(*) FROM event_assessment WHERE event_id = %s AND fact_key = 'rolled-back-fact'",
+        (event_id,),
+    ).fetchone()[0] == 0
+    from AI.eventStudy.processing import event_vectorizer
+
+    monkeypatch.setattr(event_vectorizer, "get_model", lambda: object())
+    monkeypatch.setattr(event_vectorizer, "encode_texts", lambda texts: [[0.1] * 1024 for _ in texts])
+    assert event_vectorizer.vectorize_unembedded_assessments(db) == 2
+    assert event_vectorizer.vectorize_unembedded_assessments(db) == 0
+
+    legacy_event_id = _insert_event(
+        db, "未结构化的旧事件", datetime(2026, 8, 30, tzinfo=timezone.utc),
+    )
+    assert legacy_event_id != event_id
+    assert news_dao.count_unassessed_legacy_events(
+        db, as_of=datetime.now(timezone.utc), lookback_days=90,
+    ) == 1
+    db.execute(
+        "UPDATE events SET title = '后来修改的标题', content = '后来修改的摘要', "
+        "event_type = '后来修改的类型', status = 'ignored' WHERE event_id = %s", (event_id,),
+    )
+
+    now = datetime.now(timezone.utc)
+    current = news_dao.list_event_candidates(
+        db, as_of=now, lookback_days=90,
+        include_disputed=False, query_embedding=_EMB,
+    )
+    assert len(current) == 1
+    assert current[0]["assessment_id"] == accepted.assessment_id
+    assert current[0]["event_title"] == "冻结的事实标题"
+    assert current[0]["event_type"] == "公司行为"
+    assert current[0]["total_count"] == 1
+    assert current[0]["vector_similarity"] == pytest.approx(1.0)
+
+    from backend.modules.daily_research.application.quant_pipeline import (
+        _build_candidate_rows,
+        _event_adjustments,
+    )
+
+    strategy_version_id = uuid.uuid4()
+    event_adjustments = _event_adjustments(
+        current, as_of=now, universe={"000001.SZ"}, industries={}, sectors={},
+    )
+    scored, candidate_count = _build_candidate_rows(
+        [SimpleNamespace(
+            id=1, strategy_version_id=strategy_version_id, ts_code="000001.SZ",
+            score=Decimal(10), reason="测试策略信号",
+        )],
+        strategies={strategy_version_id: {"name": "测试策略", "version_no": 1}},
+        event_adjustments=event_adjustments,
+    )
+    assert candidate_count == 1
+    assert scored[0]["event_drivers"][0]["assessment_id"] == str(accepted.assessment_id)
+    assert scored[0]["event_score"] > 0
+
+    with_disputed = news_dao.list_event_candidates(
+        db, as_of=now, lookback_days=90,
+        include_disputed=True, query_embedding=_EMB,
+    )
+    assert len(with_disputed) == 1
+    assert with_disputed[0]["assessment_id"] == accepted.assessment_id
+
+    historical = news_dao.list_event_candidates(
+        db, as_of=datetime(2026, 8, 31, 12, 0, tzinfo=timezone.utc),
+        news_cutoff_at=datetime(2026, 8, 31, 12, 0, tzinfo=timezone.utc),
+        lookback_days=90, query_embedding=_EMB,
+    )
+    assert len(historical) == 1
+    assert historical[0]["event_title"] == "冻结的事实标题"
+    assert historical[0]["has_embedding"] is False
+    assert historical[0]["vector_similarity"] is None
+
+    news_dao.append_assessment(
+        db, news_id=news.news_id, event_id=event_id, fact_key="fact-1", novelty="update",
+        review_status="retracted", labels=labels, evidence=[], model_version="test",
+        prompt_version="test", operation_id="snapshot-retracted",
+        available_at=datetime(2026, 9, 3, tzinfo=timezone.utc), expected_revision=2,
+    )
+    news_dao.refresh_event_projection_status(db, event_id=event_id)
+    assert db.execute("SELECT status FROM events WHERE event_id = %s", (event_id,)).fetchone()[0] == "ignored"
+    assert news_dao.list_event_candidates(
+        db, as_of=datetime(2026, 9, 4, tzinfo=timezone.utc), lookback_days=90,
+    ) == []
 
 
 def _insert_impact(conn, event_id, car, ticker="000300.SH",
@@ -504,6 +664,39 @@ def _insert_impact(conn, event_id, car, ticker="000300.SH",
         "  cumulative_abnormal_return, direction, is_contaminated) "
         "VALUES (%s, %s, %s, 5, %s, %s, %s)",
         (event_id, asset_id, window_type, car, direction, contaminated),
+    )
+
+
+def test_schema_upgrade_preserves_existing_event_and_impact_rows(db):
+    """Legacy events/impacts survive the additive daily-research schema upgrade."""
+    from AI.eventStudy.db import connection as db_connection
+
+    event_id = _insert_event(
+        db, "旧结构中的正式事件", datetime(2026, 8, 30, tzinfo=timezone.utc),
+    )
+    _insert_impact(db, event_id, 0.012)
+    db.commit()
+
+    db.execute("DROP TABLE event_assessment CASCADE")
+    db.execute("DROP TABLE news CASCADE")
+    for column in ("canonical_key", "review_origin", "first_seen_at", "merged_into_event_id"):
+        db.execute(f"ALTER TABLE events DROP COLUMN {column} CASCADE")
+    db.commit()
+
+    assert db_connection.init_schema(db), "旧结构升级失败"
+    legacy = db.execute(
+        "SELECT title, canonical_key, review_origin, first_seen_at, merged_into_event_id "
+        "FROM events WHERE event_id = %s", (event_id,),
+    ).fetchone()
+    assert legacy == ("旧结构中的正式事件", f"legacy:{event_id}", "human", None, None)
+    assert db.execute(
+        "SELECT count(*) FROM event_impacts WHERE event_id = %s", (event_id,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT count(*) FROM assets WHERE ticker = '000300.SH'",
+    ).fetchone()[0] == 1
+    assert db.execute("SELECT to_regclass('public.news'), to_regclass('public.event_assessment')").fetchone() == (
+        "news", "event_assessment",
     )
 
 
@@ -717,10 +910,10 @@ def test_real_db_contamination_metadata(db, monkeypatch):
 def test_legacy_rows_visible_only_to_market_route(db, monkeypatch):
     """未回标旧事件（event_scope NULL）只在市场层可见，不误入 sector/stock 路由。"""
     db.execute(
-        "INSERT INTO events (title, content, announced_at, importance, status, "
+        "INSERT INTO events (title, content, announced_at, importance, status, canonical_key, "
         "  event_type, event_subtype, event_condition, event_scope, affected_scope_refs) "
         "VALUES ('迁移前旧事件', '', '2026-08-01T09:00:00+08:00'::timestamptz, 3, "
-        "        'approved', '宏观', 'CPI', '超预期', NULL, NULL)"
+        "        'approved', 'legacy:predictor-test', '宏观', 'CPI', '超预期', NULL, NULL)"
     )
     db.commit()
     legacy_id = db.execute(

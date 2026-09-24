@@ -1,9 +1,11 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import { fireEvent, act, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { renderWithRouter } from '../../../test/utils';
 import { daysAgoLocalDate, todayLocalDate } from '../../../shared/format/dateTime';
 import type { Drawing } from '../../../shared/charts/drawings';
 import { MarketIndicesPanel } from './MarketIndicesPanel';
+import { MarketDatesContext } from './refreshQueries';
 
 // 目录端点已删：MarketAssetsService mock 与 assetsMock 全部删除（目录写死
 // MARKET_INDEX_CATALOG）；MarketDataService mock 保留；CandlestickChart mock
@@ -102,6 +104,23 @@ async function inxResponseLanded(firstDaysAgo: number) {
 }
 
 describe('MarketIndicesPanel', () => {
+  it('新交易日推进最新窗口，同时保留用户手动平移的历史窗口', async () => {
+    let setMarketDate!: (day: string) => void;
+    function Harness() {
+      const [day, setDay] = useState('2026-09-22');
+      setMarketDate = setDay;
+      return <MarketDatesContext.Provider value={{ US: day }}><MarketIndicesPanel /></MarketDatesContext.Provider>;
+    }
+    renderWithRouter(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
+    await waitFor(() => expect(chartPropsList.at(-1)?.visibleRange).toMatchObject({ end: '2026-09-22' }));
+    act(() => setMarketDate('2026-09-23'));
+    await waitFor(() => expect(chartPropsList.at(-1)?.visibleRange).toMatchObject({ end: '2026-09-23' }));
+    act(() => (chartPropsList.at(-1)?.onDataZoom as (range: { start: string; end: string }) => void)({ start: '2026-07-01', end: '2026-08-01' }));
+    act(() => setMarketDate('2026-09-24'));
+    await waitFor(() => expect(chartPropsList.at(-1)?.visibleRange).toMatchObject({ start: '2026-07-01', end: '2026-08-01' }));
+  });
+
   it('目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）', async () => {
     renderWithRouter(<MarketIndicesPanel />);
 
@@ -119,6 +138,7 @@ describe('MarketIndicesPanel', () => {
 
   it('AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无"暂不可用"卡片', async () => {
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
     // US 3 + KS11 + CN 7 全部 AVAILABLE 发请求（渲染序 US → KR → CN）
@@ -134,6 +154,7 @@ describe('MarketIndicesPanel', () => {
   it('无 bars 不绘制空壳图，显示无可展示时序', async () => {
     barsMock.mockResolvedValue(envelope({ ...barsData, bars: [] }));
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
 
     expect(await screen.findByText('无可展示时序')).toBeInTheDocument();
     expect(screen.queryByTestId('candlestick-chart')).not.toBeInTheDocument();
@@ -142,16 +163,19 @@ describe('MarketIndicesPanel', () => {
   it('STALE 显示延迟标识；闭市显示闭市原因', async () => {
     barsMock.mockResolvedValue(envelope({ ...barsData, freshness_status: 'STALE' }));
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
 
     // 11 个 AVAILABLE 卡片同 mock 帧（US 3 + KS11 + CN 7；KOSDAQ 已移除不发请求）
-    await waitFor(() => expect(screen.getAllByText('数据可能延迟')).toHaveLength(11));
-    expect(screen.getAllByText(/闭市：已收盘/)).toHaveLength(11);
+    await waitFor(() => expect(screen.getAllByText('数据可能延迟')).toHaveLength(1));
+    expect(screen.getAllByText(/闭市：已收盘/)).toHaveLength(1);
+    expect(screen.getAllByText(/· (USD|KRW|CNY) · 可能延迟/)).toHaveLength(11);
   });
 
   it('旧后端无 indicators 字段：降级渲染纯 K 线', async () => {
     const { indicators: _dropped, ...barsWithoutIndicators } = barsData;
     barsMock.mockResolvedValue(envelope(barsWithoutIndicators));
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
 
     expect(await screen.findByTestId('candlestick-chart')).toBeInTheDocument();
   });
@@ -159,6 +183,7 @@ describe('MarketIndicesPanel', () => {
   it('按需加载初载：请求 from = 180 天前、图表收到 90 天可见窗口、首行 178 天前不误判到头', async () => {
     mockInxResponses([178]);
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
     // 请求参数：from = daysAgoLocalDate(180)、to = today（周期 1d）
@@ -174,6 +199,7 @@ describe('MarketIndicesPanel', () => {
   it('缩小到 100 天可见：扩展请求 from = 200 天前；响应首行前移（198 天前）未到头', async () => {
     mockInxResponses([178, 198]);
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
     act(() => {
@@ -190,6 +216,7 @@ describe('MarketIndicesPanel', () => {
   it('左平移逼近左界（leftBuffer 22d < 半屏）：预拉一屏，请求 from = 300 天前；首行 298 天前未到头', async () => {
     mockInxResponses([178, 198, 298]);
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
     act(() => {
@@ -215,6 +242,7 @@ describe('MarketIndicesPanel', () => {
   it('继续左平移 → 请求 400 天；响应首行未前移 → 到头，后续 onDataZoom 不再产生新请求', async () => {
     mockInxResponses([178, 198, 298, 298]);
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
     const zoom = (range: { start: string; end: string }) => {
@@ -250,6 +278,7 @@ describe('MarketIndicesPanel', () => {
     const seeded: Drawing[] = [{ id: 's1', kind: 'hline', p1: { date: '2026-09-01', price: 3000 } }];
     localStorage.setItem('liveprofit.market.drawings.v1..INX', JSON.stringify(seeded));
     renderWithRouter(<MarketIndicesPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
     // 仅 .INX 的 key 有种子 → 其图表收到 drawings；其余资产为空（同帧日期 key 会互相覆盖，按列表定位）
@@ -267,6 +296,7 @@ describe('MarketIndicesPanel', () => {
     });
     expect(JSON.parse(localStorage.getItem('liveprofit.market.drawings.v1..INX')!)).toHaveLength(2);
     // 其他标的 key 无 .INX 数据污染（各 section 挂载即保存自己的空数组，key 隔离成立）
-    expect(JSON.parse(localStorage.getItem('liveprofit.market.drawings.v1.399001.SZ')!)).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: '深证成指 展开 K 线' }));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('liveprofit.market.drawings.v1.399001.SZ')!)).toEqual([]));
   });
 });

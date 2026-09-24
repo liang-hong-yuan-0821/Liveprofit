@@ -100,6 +100,33 @@ class SectorLayerGraph:
         logger.info(f"[SectorLayerGraph] 编译完成，{len(self.ANALYSTS)} 个 Analyst")
         return workflow.compile()
 
+    def build_daily_research(self):
+        """Compile the bounded daily sector-news → tech → rotation path."""
+        workflow = StateGraph(AgentState)
+        for key in self.ANALYSTS:
+            label = self.LABELS[key]
+            factory = self.FACTORY_MAP[key]
+            if key in ("sector_news", "sector_tech"):
+                factory = functools.partial(
+                    factory, enable_structured_list=self.enable_structured_list
+                )
+            node = factory(self.llm, self.toolkit)
+            node_name = f"{label} Analyst"
+            workflow.add_node(
+                node_name,
+                guard_checkpoint(node_name)(track_node(node_name)(node)),
+            )
+            workflow.add_node(f"Msg Clear {label}", create_msg_delete())
+            workflow.add_edge(f"{label} Analyst", f"Msg Clear {label}")
+        workflow.add_edge(START, "Sector News Analyst")
+        for source, target in zip(self.ANALYSTS, self.ANALYSTS[1:]):
+            workflow.add_edge(
+                f"Msg Clear {self.LABELS[source]}",
+                f"{self.LABELS[target]} Analyst",
+            )
+        workflow.add_edge(f"Msg Clear {self.LABELS[self.ANALYSTS[-1]]}", END)
+        return workflow.compile()
+
     def _get_tools(self, key):
         """获取指定 key 的工具列表"""
         tool_names = {

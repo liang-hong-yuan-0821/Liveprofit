@@ -12,5 +12,12 @@ export type SuggestedOrderPreviewDTO = {
     stop_loss: (number | null);
     take_profit: (number | null);
     risk_bucket: (Record<string, any> | null);
+    order_entry_price?: (number | null);
+    order_stop_price?: (number | null);
+    order_take_price?: (number | null);
+    earliest_execution_trade_date?: (string | null);
+    estimated_fees?: (number | null);
+    estimated_slippage?: (number | null);
+    execution_policy_version?: (string | null);
 };
 

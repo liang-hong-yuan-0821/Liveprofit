@@ -74,7 +74,7 @@ export function MacroInformationPanel() {
       )}
 
       {query.data && items.length === 0 && (
-        <EmptyState title="暂无可展示的事件研究宏观信息" />
+        <EmptyState title="暂无可展示的事件研究宏观信息" action={(market || topic) ? <Button variant="outline" size="sm" onClick={() => { setMarket(''); setTopic(''); }}>清空筛选</Button> : undefined} />
       )}
 
       {items.length > 0 && (

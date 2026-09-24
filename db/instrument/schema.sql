@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS market.instrument (
     ts_code         VARCHAR(16) PRIMARY KEY,    -- 统一证券代码：000001.SZ / 000001.SH / 158013.SZ / .INX
     name            VARCHAR(128) NOT NULL,      -- 名称：上证综指 / 平安银行
     instrument_type VARCHAR(16) NOT NULL,       -- index / stock / fund（源表即类型，不靠前缀函数）
-    list_status     CHAR(1),                    -- L=上市 / D=退市 / P=暂停（stock_basic 口径；fund 行恒 NULL）
+    list_status     CHAR(1),                    -- L=上市 / D=退市 / P=暂停 / G=过会未交易 / U=未上市（源 UN 归一为 U；fund 恒 NULL）
     list_date       DATE,                       -- 上市日期：000001.SZ → 1991-04-03
     delist_date     DATE,                       -- 退市日期（仅退市标的）
     data_source     VARCHAR(32),                -- 数据采集来源：tushare / akshare

@@ -70,7 +70,7 @@ describe('ReportContent', () => {
     renderWithRouter(<ReportContent report={toReportViewModel(makeReport() as never)} />);
 
     expect(screen.getByText('本次分析未请求此区块。')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '新建包含该层级的分析' })).toHaveAttribute('href', '/ai?create=1');
+    expect(screen.getByRole('link', { name: '新建包含该层级的分析' })).toHaveAttribute('href', '/ai?create=1&layers=stock');
   });
 
   it('数据来源与风险说明展示', () => {

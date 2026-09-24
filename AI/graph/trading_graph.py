@@ -84,6 +84,7 @@ class TradingAgentsGraph:
         selectedLayer=None,
         debug=False,
         config: Dict[str, Any] = None,
+        daily_research: bool = False,
     ):
         """
         Args:
@@ -96,6 +97,7 @@ class TradingAgentsGraph:
             selectedLayer = ["market", "sector", "stock"]
 
         self.selectedLayer = selectedLayer
+        self.daily_research = bool(daily_research)
         self.debug = debug
         self.config = config or load_config()
 
@@ -195,6 +197,61 @@ class TradingAgentsGraph:
         个股逐票循环由 propagate() 层驱动（复用 self.stock_subgraph）。
         """
         workflow = StateGraph(AgentState)
+
+        if self.daily_research:
+            # Daily market, sector, and candidate-stock analyses share the same
+            # frozen news context. Stock-only candidate runs skip live news tools.
+            if "market" in self.selectedLayer:
+                market_subgraph = MarketLayerGraph(
+                    self.quick_thinking_llm, self.toolkit
+                ).build_daily_research()
+                workflow.add_node("Market Layer", market_subgraph)
+                previous = "Market Layer"
+                if "sector" in self.selectedLayer:
+                    sector_subgraph = SectorLayerGraph(
+                        self.quick_thinking_llm, self.toolkit,
+                        enable_structured_list=True,
+                    ).build_daily_research()
+                    workflow.add_node("Sector Layer", sector_subgraph)
+                    workflow.add_edge(previous, "Sector Layer")
+                    previous = "Sector Layer"
+                if "stock" in self.selectedLayer:
+                    stock_subgraph = StockLayerGraph(
+                        self.quick_thinking_llm,
+                        self.deep_thinking_llm,
+                        self.toolkit,
+                        self.bull_memory,
+                        self.bear_memory,
+                        self.trader_memory,
+                        self.invest_judge_memory,
+                        self.risk_manager_memory,
+                        self.conditional_logic,
+                        self.config,
+                    ).build_daily_research()
+                    workflow.add_node("Stock Layer", stock_subgraph)
+                    workflow.add_edge(previous, "Stock Layer")
+                    previous = "Stock Layer"
+                workflow.add_edge(START, "Market Layer")
+                workflow.add_edge(previous, END)
+            elif "stock" in self.selectedLayer:
+                stock_subgraph = StockLayerGraph(
+                    self.quick_thinking_llm,
+                    self.deep_thinking_llm,
+                    self.toolkit,
+                    self.bull_memory,
+                    self.bear_memory,
+                    self.trader_memory,
+                    self.invest_judge_memory,
+                    self.risk_manager_memory,
+                    self.conditional_logic,
+                    self.config,
+                ).build_daily_research()
+                workflow.add_node("Stock Layer", stock_subgraph)
+                workflow.add_edge(START, "Stock Layer")
+                workflow.add_edge("Stock Layer", END)
+            else:
+                raise ValueError("每日投研图必须包含 market 或 stock 层")
+            return workflow.compile()
 
         has_market = "market" in self.selectedLayer
         has_sector = "sector" in self.selectedLayer

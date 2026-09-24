@@ -67,12 +67,16 @@ def _service(*, events: bool = True, clock: FakeClock | None = None) -> tuple[Ta
 
 
 def _create_task(service: TaskService, task_type: TaskType = TaskType.SINGLE_STOCK, ticker: str = "000001.SZ", layers: tuple[str, ...] = ("market", "sector", "stock"), key: str | None = None) -> uuid.UUID:
+    quant = "position" in layers
     result = service.create_task(
         CreateAnalysisTaskCommand(
             task_type=task_type,
             ticker=ticker if task_type is TaskType.SINGLE_STOCK else None,
             requested_trade_date=date(2026, 9, 4),
             selected_layers=layers,
+            strategy_version_id=uuid.uuid4() if quant else None,
+            portfolio_id=uuid.uuid4() if quant else None,
+            expected_portfolio_version=1 if quant else None,
         ),
         idempotency_key=key,
         trace_id="trace-1",
@@ -156,9 +160,9 @@ def test_layer_validation_rules():
         )
     # 产品决策 2026-09-06 v3：全市场调研层级自由组合，market+sector 是合法子集
     _create_task(service, task_type=TaskType.MARKET_WIDE, layers=("market", "sector"))
-    with pytest.raises(TaskCreateInvalidError, match="position"):
-        _create_task(service, task_type=TaskType.MARKET_WIDE, layers=("market", "sector", "position"))
-    # position 随 screening 出现是合法组合（互斥规则的另一面）
+    # 2026-09-16 决策：position 可独立或与任意 AI 层组合，但必须携带量化绑定。
+    _create_task(service, task_type=TaskType.MARKET_WIDE, layers=("position",))
+    _create_task(service, task_type=TaskType.MARKET_WIDE, layers=("market", "sector", "position"))
     _create_task(service, task_type=TaskType.MARKET_WIDE, layers=("market", "sector", "screening", "position"))
 
 

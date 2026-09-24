@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Liveprofit</title>
+    <meta name="theme-color" content="#161a20" />
+    <script>
+      try {
+        const saved = JSON.parse(localStorage.getItem('liveprofit-ui-preferences') || '{}');
+        const light = saved.state?.themeMode === 'light';
+        document.documentElement.classList.toggle('light', light);
+        document.documentElement.classList.toggle('dark', !light);
+        document.querySelector('meta[name="theme-color"]').content = light ? '#f1efea' : '#161a20';
+      } catch { /* Dark remains the safe initial theme when storage is unavailable. */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>

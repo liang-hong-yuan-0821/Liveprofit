@@ -1,3 +1,7 @@
+import { normalizeEventText } from './normalizeEventText';
+import { ACTION_CHOICES } from './mappers/toPendingEventRowVM';
+import { Input } from '../../../../shared/ui/input';
+import { formatDateTime } from '../../../../shared/format/dateTime';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '../../../../shared/ui/badge';
@@ -33,6 +37,10 @@ export function PendingEventsTab() {
   const computeMutation = useComputeMutation();
   const refreshMutation = useRefreshMutation();
 
+  const [view, setView] = useState<'summary' | 'table'>('summary');
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [refreshOrigin, setRefreshOrigin] = useState('自动');
   const [rows, setRows] = useState<Record<number, PendingEventRowVM>>({});
   // 本地编辑过的行在 refetch 时保留本地值（预填/批量后的 invalidate 不清空用户输入）
   const [editedDraftIds, setEditedDraftIds] = useState<Set<number>>(new Set());
@@ -75,7 +83,7 @@ export function PendingEventsTab() {
   }, []);
 
   if (query.isPending) return <LoadingState label="加载待审事件…" />;
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
   }
   const items = query.data?.items ?? [];
@@ -165,7 +173,8 @@ export function PendingEventsTab() {
     }
   }
 
-  async function runRefresh() {
+  async function runRefresh(origin = '自动') {
+    setRefreshOrigin(origin);
     setRefreshing(true);
     setRefreshMsg('正在拉取最新事件…');
     try {
@@ -263,51 +272,62 @@ export function PendingEventsTab() {
   }
 
   const orderedRows = Object.values(rows);
+  const visibleRows = orderedRows.filter(row => (!typeFilter || row.eventType === typeFilter) && `${normalizeEventText(row.title)} ${row.source} ${row.draftId}`.toLowerCase().includes(search.toLowerCase()));
+  const selectedRows = orderedRows.filter(row => row.action !== 'skip');
+  const hiddenSelected = selectedRows.filter(row => !visibleRows.includes(row)).length;
+  const busy = refreshing || prelabeling || submitting;
+
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex min-w-0 flex-col gap-4">
+      <div role="status" aria-live="polite" aria-busy={refreshing || prelabeling} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
+        <p className="font-medium">{prelabeling ? 'AI 正在预填审核信息' : refreshing ? '正在采集最新事件' : '事件审核工作台'}</p>
+        <p className="mt-1 text-xs text-[var(--color-fg-muted)]">触发方式：{refreshOrigin} · <span>{refreshMsg ?? '进入页面时按 30 分钟间隔自动检查新事件。'}</span> <span>{prelabelMsg}</span></p>
+        <p className="mt-1 text-xs text-[var(--color-fg-muted)]">发现新事件后，会预填全部尚未填写的待审草稿；预填结果需要人工确认。</p>
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="outline"
           size="sm"
-          disabled={refreshing || prelabeling}
-          onClick={() => void runRefresh()}
+          disabled={busy}
+          onClick={() => void runRefresh('手动')}
         >
           {refreshing ? '拉取中…' : '🔄 重新拉取最新事件'}
         </Button>
-        {refreshMsg && (
-          <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-            {refreshMsg}
-          </p>
-        )}
+
         <Button
           variant="outline"
           size="sm"
-          disabled={prelabeling || refreshing || items.length === 0}
-          onClick={() => void runPrelabel()}
+          disabled={busy || items.length === 0}
+          onClick={() => { setRefreshOrigin('手动'); void runPrelabel(); }}
         >
           {prelabeling ? 'AI 预填中…' : '🤖 AI 预填全部待审事件'}
         </Button>
         <Button
           variant="outline"
           size="sm"
-          disabled={prelabeling || refreshing || items.length === 0}
-          onClick={() => void runPrelabel(true)}
+          disabled={busy || items.length === 0}
+          onClick={() => { setRefreshOrigin('手动'); void runPrelabel(true); }}
         >
           {prelabeling ? '强制重填中…' : '🤖 强制重填全部'}
         </Button>
-        {prelabelMsg && (
-          <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-            {prelabelMsg}
-          </p>
-        )}
+
       </div>
 
       {items.length === 0 ? (
-        <EmptyState title="暂无待审核事件" description="爬虫采集的事件草稿会出现在这里（草稿存 Redis，30 天过期）" />
+        <EmptyState title="暂无待审核事件" description="采集到的新事件会出现在这里，可点击上方按钮刷新。" />
       ) : (
         <>
-          <div className="overflow-x-auto">
+          <div className="flex flex-wrap gap-2">
+            <Input aria-label="搜索当前列表" className="max-w-sm" placeholder="搜索当前已加载列表的标题、来源或编号" value={search} onChange={event => setSearch(event.target.value)} />
+            <select aria-label="按事件类型筛选" value={typeFilter} onChange={event => setTypeFilter(event.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm"><option value="">全部类型</option>{[...new Set(orderedRows.map(row => row.eventType))].filter(Boolean).map(type => <option key={type}>{type}</option>)}</select>
+            <Button size="sm" variant="outline" onClick={() => setView(value => value === 'summary' ? 'table' : 'summary')}>{view === 'summary' ? '切换完整表格' : '切换摘要列表'}</Button>
+          </div>
+          <p className="text-xs text-[var(--color-fg-muted)]">当前显示 {visibleRows.length} / {orderedRows.length} 条已加载事件</p>
+          {view === 'summary' ? <div className="space-y-3">{visibleRows.map(vm => <article key={vm.draftId} className="glass-card rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--color-fg-muted)]"><span>#{vm.draftId}</span><span>{formatDateTime(vm.announcedAt)}</span><span>{vm.source}</span><Badge variant="secondary">{vm.eventType || '未分类'}</Badge><span>重要性 {vm.importance}/5</span>{editedDraftIds.has(vm.draftId) && <span className="text-amber-500">已修改 · 未提交</span>}</div>
+            <div className="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><h3 className="line-clamp-2 min-w-0 flex-1 text-sm font-medium" title={normalizeEventText(vm.title)}>{normalizeEventText(vm.title)}</h3><div className="flex shrink-0 gap-2"><select aria-label={`第${vm.draftId}行-操作`} value={vm.action} disabled={busy} onChange={event => patchRow(vm.draftId, { action: event.target.value as PendingEventRowVM['action'] })} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs">{ACTION_CHOICES.map(action => <option key={action.value} value={action.value}>{action.label}</option>)}</select><Button variant="outline" size="sm" aria-label={`第${vm.draftId}行-查看原文`} onClick={() => setDetailDraftId(vm.draftId)}>详情与审核</Button></div></div>
+          </article>)}</div> : <div className="max-w-full overflow-x-auto rounded-xl border border-[var(--color-border)] p-3">
             <div className={`${PENDING_ROW_GRID} pb-1 text-xs`} style={{ color: 'var(--color-fg-muted)' }}>
               <span>#</span>
               <span>时间</span>
@@ -324,16 +344,16 @@ export function PendingEventsTab() {
               <span>前值</span>
               <span>操作</span>
             </div>
-            {orderedRows.map((vm) => (
+            {visibleRows.map((vm) => (
               <PendingEventRow
                 key={vm.draftId}
                 vm={vm}
-                disabled={prelabeling}
+                disabled={busy}
                 onChange={(patch) => patchRow(vm.draftId, patch)}
                 onShowDetail={() => setDetailDraftId(vm.draftId)}
               />
             ))}
-          </div>
+          </div>}
           <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
             作用域/目标为 AI 预填建议（<span style={{ color: 'var(--color-accent)' }}>AI 预填，请确认</span>），
             人工可改；sector/stock 必须至少一个目标引用（缺目标阻止提交，可回退 market）。
@@ -342,7 +362,8 @@ export function PendingEventsTab() {
           <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
             预期/实际/前值默认取 AI 提取值；清空 = 该字段不落值。数值 0 是合法值。
           </p>
-          <div className="flex items-center gap-3">
+          <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xl">
+            <span className="mr-auto text-xs">通过 {selectedRows.filter(row => row.action === 'approve').length} · 忽略 {selectedRows.filter(row => row.action === 'ignore').length} · 已编辑 {orderedRows.filter(row => editedDraftIds.has(row.draftId)).length}{hiddenSelected > 0 ? ` · 筛选隐藏已选 ${hiddenSelected} 条` : ''}</span>
             <Button
               disabled={submitting || prelabeling || refreshing}
               onClick={() => {
@@ -403,7 +424,7 @@ export function PendingEventsTab() {
       <ConfirmDialog
         open={confirmOpen}
         title="批量提交审核"
-        description="将按各行的「操作」提交（通过/忽略），跳过行不处理；提交后草稿将从待审队列移除并写入事件库"
+        description={`将提交 ${selectedRows.length} 条事件，其中包含当前筛选隐藏的 ${hiddenSelected} 条。按各行操作通过或忽略，跳过行不处理；提交后移出待审队列。`}
         confirmLabel="提交"
         pending={submitting}
         onConfirm={() => void runBatch()}
@@ -414,6 +435,8 @@ export function PendingEventsTab() {
         open={detailDraftId !== null}
         vm={detailDraftId !== null ? rows[detailDraftId] ?? null : null}
         onClose={() => setDetailDraftId(null)}
+        disabled={busy}
+        onChange={patch => { if (detailDraftId !== null) patchRow(detailDraftId, patch); }}
       />
     </section>
   );

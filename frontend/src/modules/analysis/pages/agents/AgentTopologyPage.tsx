@@ -1,9 +1,12 @@
+import type { EChartsType } from 'echarts';
+import { useChartTheme } from '../../../../shared/charts/useChartTheme';
+import { TopologyNodeList } from '../../components/TopologyNodeList';
 // Agent 静态全局拓扑页（单Agent重跑与提示词编辑方案 3.5）。
 // 展示整个 Graph 架构（全层 market/sector/screening/stock），复用
 // AI/graph/topology.build_topology（后端 /agents/topology 端点）；
 // 已自定义提示词的节点琥珀色标记「 · 已自定义」；点击可编辑节点打开 PromptEditDialog。
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card, CardHeader, CardTitle } from '../../../../shared/ui/card';
 import { EmptyState } from '../../../../shared/feedback/EmptyState';
@@ -11,7 +14,7 @@ import { ErrorState } from '../../../../shared/feedback/ErrorState';
 import { LoadingState } from '../../../../shared/feedback/LoadingState';
 import { toApiError } from '../../../../api/client';
 import { PromptEditDialog } from '../../components/PromptEditDialog';
-import { buildTopologyChartOption, TOPOLOGY_Y_STEP } from '../../components/topologyChartOption';
+import { escapeTopologyText, alignTopologyLayers, buildTopologyChartOption, topologyBounds } from '../../components/topologyChartOption';
 import { useAgentsTopologyQuery } from './queries';
 
 const NODE_COLOR_HAS_OVERRIDE = '#f59e0b'; // 琥珀：已自定义提示词
@@ -26,6 +29,8 @@ interface TopologyChartParams {
 export function AgentTopologyPage() {
   const query = useAgentsTopologyQuery();
   const data = query.data;
+  const theme = useChartTheme();
+  const chartRef = useRef<EChartsType | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const selectedNode = useMemo(() => {
@@ -34,11 +39,7 @@ export function AgentTopologyPage() {
     return { node_id: node.id, label: node.label };
   }, [data, selectedNodeId]);
 
-  const height = useMemo(() => {
-    if (!data || data.nodes.length === 0) return 320;
-    const maxRow = Math.max(...data.nodes.map((n) => n.row));
-    return (maxRow + 1) * TOPOLOGY_Y_STEP + 120;
-  }, [data]);
+  const bounds = topologyBounds(data?.nodes ?? []);
 
   const option = useMemo(() => {
     if (!data) return null;
@@ -65,10 +66,13 @@ export function AgentTopologyPage() {
           : node.has_prompt
             ? '默认提示词 · 点击编辑'
             : '纯代码节点（无提示词）';
-        return `${node.label}<br/>${status}`;
+        return `${escapeTopologyText(node.label)}<br/>${status}`;
       },
+      theme,
     );
-  }, [data]);
+  }, [data, theme]);
+
+  useEffect(() => { if (chartRef.current && data?.nodes.length) alignTopologyLayers(chartRef.current, data.nodes); }, [option, data]);
 
   const handleChartEvents = useMemo<{ click: (params: TopologyChartParams) => void }>(
     () => ({
@@ -133,9 +137,10 @@ export function AgentTopologyPage() {
             </span>
             <span>虚线 = 条件边 / 逐票循环</span>
           </div>
-          <div data-testid="agent-topology-chart">
-            <ReactECharts option={option} style={{ height, width: '100%' }} notMerge onEvents={handleChartEvents} />
+          <div data-testid="agent-topology-chart" className="max-w-full overflow-x-auto" tabIndex={0} aria-label="拓扑画布，可横向滚动">
+            <ReactECharts onChartReady={(chart: EChartsType) => { chartRef.current = chart; alignTopologyLayers(chart, data.nodes); }} option={option} style={{ height: bounds.height, width: bounds.width }} notMerge onEvents={handleChartEvents} />
           </div>
+          <TopologyNodeList nodes={data.nodes} onSelect={setSelectedNodeId} />
         </div>
       )}
       <PromptEditDialog node={selectedNode} onClose={() => setSelectedNodeId(null)} />

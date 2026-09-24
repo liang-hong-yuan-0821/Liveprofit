@@ -4,6 +4,24 @@
 
 > 方案期决策快照见 [plan.md](plan.md)「已确认决策」节；本文件记录实施全程追加的决策（含方案期之后的新决策）。
 
+## 2026-09-24 七套参考策略均纳入每日扫描
+
+- **背景**：七套模板的代码和合同已实现，但当前数据库仅 `ma_trend_cross_v1` 有已发布版本；每日 21:00 批次通过 `_published_strategies` 只扫描已发布版本。
+- **选项**：保持分波次发布，或先发布七套并逐日记录扫描结果、分波次评估晋级。
+- **结论**：用户要求七套都新建且每天运行；保留现有均线策略，新增并发布其余六套默认参数模板，复用每日 21:00 调度。
+- **理由**：每日批次使用 `scan_only=True` 记录信号，不自动下单；数据质量和 forward shadow 门禁继续约束人工建议/实盘晋级，不阻止实验扫描。
+
+## 2026-09-21 N5 生命周期物理合同冻结
+
+- **背景**：N4 已完成，N5 开工前必须消除成交、活跃意图、逐日事实与移动止损的物理合同 TBD，避免 N6 在状态机实现中反向修改审计模型。
+- **表名与关系**：冻结 `lifecycle_policy_versions`、`suggested_orders`、`order_fill_events`、`position_intents`、`position_lifecycle_states`、`position_daily_facts`、`position_expectations`、`position_trailing_stops` 八表；`quant_strategy_versions.lifecycle_policy_version_id` 可空引用独立不可变策略版本。订单引用组合并保存证券快照，可空引用 signal/position/lifecycle/intent；成交事件引用订单及被冲正事件；生命周期引用组合、策略版本、策略规则版本和可空持仓，逐日事实/预期/移动止损归生命周期。
+- **唯一与并发**：策略规则以 `(policy_key, version_no)` 唯一且发布后不可变；同生命周期仅一个 ACTIVE/EXECUTING 意图，另以 `(lifecycle_id, trade_date, target_shares, reason_code)` 保证日内审计去重；同生命周期/交易日仅一份逐日事实；同确认请求 `idempotency_key` 唯一；订单、意图和生命周期分别使用 `revision`/`state_version` 乐观锁。
+- **状态机**：建议订单为 `PROPOSED → EXECUTING/PARTIALLY_FILLED → FILLED`，也可从非终态进入 `REJECTED/CANCELLED/RECONCILIATION_REQUIRED/SUPERSEDED`；意图为 `ACTIVE → EXECUTING → COMPLETED/CANCELLED/SUPERSEDED/RECONCILIATION_REQUIRED`；成交事件只追加 `CONFIRM/CORRECT/VOID`，禁止覆盖或删除原事件。
+- **成交语义**：只有成交事件服务在一个数据库事务内锁定订单/组合/持仓/生命周期，写 append-only 事件，更新订单累计成交与剩余预留、实际持仓、组合现金和 `state_version`。更正先以反向效果冲销被更正事件，再应用替代成交；撤销只允许冲销尚未被冲销的有效事件；拒绝/取消建议不改持仓。请求幂等命中返回原结果，不二次推进版本。
+- **跨日与对账**：生成相同目标先复用活跃意图并扣除未完成订单的有符号预留；状态不明进入 `RECONCILIATION_REQUIRED`，在人工/券商对账明确前不生成冲突订单。逐日事实保存实际输入 JSON、价格口径、`data_as_of`、输入 hash、规则版本和前后 state version，同日重跑复用。
+- **保留与删除**：八表均为长期审计记录，不随分析任务或 signal 删除级联；signal/position 使用 `ON DELETE SET NULL` 并保留订单证券、原因和价格快照，portfolio/strategy/policy 被历史记录引用时使用 `RESTRICT`。当前不设自动清理；未来归档只能搬迁，不能改写或丢弃成交链。
+- **移动止损**：`lifecycle_policy_versions.config` 冻结可空 b/a/d；未显式配置时不开启移动止损。配置时强制 `0<b≤a`、`0<d<1`，首笔成交复制到 `position_trailing_stops.config_snapshot`，后续策略规则修改不影响既有周期。
+
 ## 2026-09-19 评审后收敛数据、订单、生命周期与策略晋级
 
 - **背景**：仓库评审发现当前实现存在日期对齐、无界历史读取、信号价与实际订单风险不一致等缺口；七套策略及生命周期仍是方案，且没有收益有效性证据。

@@ -12,6 +12,7 @@ export function makeQueryKeys(domain: string) {
 }
 
 export const queryKeys = {
+  marketRefresh: makeQueryKeys('market-refresh'),
   marketBars: makeQueryKeys('market-bars'),
   marketCapTierTrends: makeQueryKeys('market-cap-tier-trends'),
   marketBoardTrends: makeQueryKeys('market-board-trends'),
@@ -33,6 +34,7 @@ export const queryKeys = {
   portfolios: makeQueryKeys('portfolios'),
   quantStrategies: makeQueryKeys('quant-strategies'),
   quantSignals: makeQueryKeys('quant-signals'),
+  dailyResearch: makeQueryKeys('daily-research'),
   eventStudyAssets: makeQueryKeys('event-study-assets'),
   eventStudyReview: makeQueryKeys('event-study-review'),
 } as const;

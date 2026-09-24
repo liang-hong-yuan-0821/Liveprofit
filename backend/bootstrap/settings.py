@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -71,6 +71,7 @@ class CoreSettings(BaseSettings):
 
     # 产物保留与限额（§2.4 / §5.1 P-6）
     artifact_root: Path = Path("var/runs")
+    research_dataset_root: Path = Path("var/research/datasets")
     artifact_retention_days: int = 90
     max_artifact_bytes_per_task: int = 100 * 1024 * 1024  # 100 MB
     max_artifact_file_bytes: int = 10 * 1024 * 1024  # 10 MB
@@ -100,7 +101,8 @@ class CoreSettings(BaseSettings):
         # 避免 psycopg 优先尝试 ::1 被黑洞挂起（2026-09-05 踩坑）
         if pg_host in ("localhost", "::1"):
             pg_host = "127.0.0.1"
-        url = f"postgresql+psycopg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+        from urllib.parse import quote
+        url = f"postgresql+psycopg://{quote(pg_user, safe='')}:{quote(pg_password, safe='')}@{pg_host}:{pg_port}/{quote(pg_database, safe='')}"
         return f"{url}?sslmode={sslmode}" if sslmode else url
 
     def resolved_redis_url(self) -> str | None:
@@ -120,6 +122,30 @@ class CoreSettings(BaseSettings):
             redis_host = "127.0.0.1"
         auth = f":{redis_password}@" if redis_password else ""
         return f"redis://{auth}{redis_host}:{redis_port}/{redis_db}"
+
+    def resolved_market_dsn(self) -> str | None:
+        """平台行情连接与平台数据库同库；凭据转义交给 psycopg。"""
+        url = self.resolved_database_url()
+        if url is None:
+            return None
+        return database_url_to_dsn(url)
+
+
+def database_url_to_dsn(url: str) -> str:
+    """SQLAlchemy PostgreSQL URL → psycopg conninfo，保留连接选项。"""
+    from psycopg.conninfo import make_conninfo
+    from sqlalchemy.engine import make_url
+
+    parsed = make_url(url)
+    if parsed.get_backend_name() != "postgresql":
+        raise ValueError("市场数据库必须使用 PostgreSQL")
+    values = dict(parsed.query)
+    values.update({k: v for k, v in {
+        "host": "127.0.0.1" if parsed.host in ("localhost", "::1") else parsed.host,
+        "port": parsed.port, "dbname": parsed.database,
+        "user": parsed.username, "password": parsed.password,
+    }.items() if v is not None})
+    return make_conninfo(**values)
 
 
 def resolve_execution_logs_root(core: CoreSettings) -> Path:
@@ -187,6 +213,18 @@ class DispatcherSettings(BaseSettings):
     idle_backoff_seconds: float = 5.0
 
 
+class DailyResearchSettings(BaseSettings):
+    """每日投研准入与原文采集节奏；调度只由平台 Dispatcher 执行。"""
+
+    model_config = SettingsConfigDict(env_prefix="LIVEPROFIT_DAILY_RESEARCH_", extra="ignore")
+
+    enabled: bool = True
+    schedule_check_seconds: int = Field(default=30, gt=0)
+    news_capture_interval_seconds: int = Field(default=300, gt=0)
+    news_analysis_interval_seconds: int = Field(default=1800, gt=0)
+    max_news_per_run: int = Field(default=100, ge=1, le=1000)
+
+
 class MarketIngestionSettings(BaseSettings):
     """行情/热点/宏观信息采集进程配置（二期启用，仅占位）。"""
 
@@ -205,6 +243,69 @@ class EventStudySettings(BaseSettings):
     timeout_seconds: int = 30
 
 
+class MarketRefreshSettings(BaseSettings):
+    """六组日线补齐策略；环境变量统一 MARKET_REFRESH_*。"""
+
+    model_config = SettingsConfigDict(env_prefix="MARKET_REFRESH_", extra="ignore")
+
+    enabled: bool = True
+    auto_enabled: bool = True
+    key_prefix: str = "liveprofit:market-refresh:"
+    broker_namespace: str = "dramatiq"
+    publish_lag_seconds: dict[str, int] = Field(default_factory=lambda: {
+        "CN_INDEX_BARS": 18000, "CN_INDEX_FACTORS": 18000,
+        "US_INDEX_BARS": 14400, "KR_INDEX_BARS": 14400,
+        "CN_STOCK_DAILY": 18000, "CN_SECTOR_DAILY": 18000,
+    })
+    window_sessions: int = Field(default=3, ge=1)
+    check_interval_seconds: int = Field(default=60, gt=0)
+    coverage_check_interval_seconds: int = Field(default=300, gt=0)
+    coverage_ttl_seconds: int = Field(default=60, gt=0)
+    auto_max_attempts: int = Field(default=3, ge=1)
+    rolling_max_attempts: int = Field(default=6, ge=1)
+    rolling_window_seconds: int = Field(default=86400, gt=0)
+    auto_retry_delays_seconds: tuple[int, ...] = (900, 3600)
+    manual_cooldown_seconds: int = Field(default=300, gt=0)
+    max_dispatches: int = Field(default=3, ge=1)
+    dispatch_retry_delays_seconds: tuple[int, ...] = (300, 900)
+    lock_retry_seconds: int = Field(default=30, gt=0)
+    lease_ttl_seconds: int = Field(default=180, gt=0)
+    heartbeat_interval_seconds: int = Field(default=15, gt=0)
+    worker_ttl_seconds: int = Field(default=45, gt=0)
+    child_timeout_seconds: int = Field(default=5400, gt=0)
+    actor_timeout_seconds: int = Field(default=5700, gt=0)
+    terminate_grace_seconds: int = Field(default=10, gt=0)
+    kill_grace_seconds: int = Field(default=20, gt=0)
+    terminal_ttl_seconds: int = Field(default=86400, gt=0)
+    retired_attempts_ttl_seconds: int = Field(default=604800, gt=0)
+    changed_ttl_seconds: int = Field(default=604800, gt=0)
+    budget_ttl_seconds: int = Field(default=172800, gt=0)
+    factor_cooldown_seconds: int = Field(default=900, gt=0)
+    progress_interval_seconds: int = Field(default=5, gt=0)
+
+    @model_validator(mode="after")
+    def validate_bounds(self):
+        resources = {"CN_INDEX_BARS", "CN_INDEX_FACTORS", "US_INDEX_BARS",
+                     "KR_INDEX_BARS", "CN_STOCK_DAILY", "CN_SECTOR_DAILY"}
+        if set(self.publish_lag_seconds) != resources or any(v < 0 for v in self.publish_lag_seconds.values()):
+            raise ValueError("publish_lag_seconds 必须包含六资源的非负发布缓冲")
+        if not self.key_prefix or not self.key_prefix.endswith(":") or not self.broker_namespace:
+            raise ValueError("业务前缀必须以冒号结尾，Broker namespace 不得为空")
+        if any(c in self.key_prefix + self.broker_namespace for c in "*?[]"):
+            raise ValueError("命名空间不得包含 Redis glob 字符")
+        if self.heartbeat_interval_seconds * 2 >= min(self.lease_ttl_seconds, self.worker_ttl_seconds):
+            raise ValueError("心跳间隔必须小于租约和 Worker TTL 的一半")
+        if self.actor_timeout_seconds <= self.child_timeout_seconds + self.terminate_grace_seconds + self.kill_grace_seconds:
+            raise ValueError("actor 超时必须大于子进程超时加回收宽限")
+        if self.budget_ttl_seconds < self.rolling_window_seconds:
+            raise ValueError("预算 TTL 不得短于滚动窗口")
+        for attempts, delays in ((self.auto_max_attempts, self.auto_retry_delays_seconds),
+                                 (self.max_dispatches, self.dispatch_retry_delays_seconds)):
+            if len(delays) < attempts - 1 or any(delay <= 0 for delay in delays):
+                raise ValueError("重试延迟须为正，且覆盖全部重试轮次")
+        return self
+
+
 class Settings(BaseSettings):
     """顶层配置聚合；每个进程通过 validate_for_process() 只校验其启用能力。"""
 
@@ -214,20 +315,24 @@ class Settings(BaseSettings):
     api: ApiSettings = Field(default_factory=ApiSettings)
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
     dispatcher: DispatcherSettings = Field(default_factory=DispatcherSettings)
+    daily_research: DailyResearchSettings = Field(default_factory=DailyResearchSettings)
     market_ingestion: MarketIngestionSettings = Field(default_factory=MarketIngestionSettings)
+    market_refresh: MarketRefreshSettings = Field(default_factory=MarketRefreshSettings)
     event_study: EventStudySettings = Field(default_factory=EventStudySettings)
 
     def _collect(self, errors: list[str], ok: bool, message: str) -> None:
         if not ok:
             errors.append(message)
 
-    def validate_for_process(self, process: Literal["api", "worker", "dispatcher", "market_ingestion"]) -> None:
+    def validate_for_process(self, process: Literal["api", "worker", "dispatcher", "market_ingestion", "market_worker"]) -> None:
         """fail-fast 校验：只校验该进程实际启用的能力。"""
+        if process not in {"api", "worker", "dispatcher", "market_ingestion", "market_worker"}:
+            raise SettingsValidationError(["未知平台进程类型"])
         errors: list[str] = []
 
-        needs_db = process in {"api", "worker", "dispatcher", "market_ingestion"}
+        needs_db = process in {"api", "worker", "dispatcher", "market_ingestion", "market_worker"}
         # Dispatcher 也需要 Redis：Outbox 确认后发布 queued 事件 + Dramatiq Broker
-        needs_redis = process in {"api", "worker", "dispatcher", "market_ingestion"}
+        needs_redis = process in {"api", "worker", "dispatcher", "market_ingestion", "market_worker"}
 
         if needs_db:
             self._collect(errors, self.core.resolved_database_url() is not None,
@@ -264,6 +369,12 @@ class Settings(BaseSettings):
             self._collect(errors, self.dispatcher.poll_interval_seconds > 0, "poll_interval_seconds 必须为正")
             self._collect(errors, self.dispatcher.batch_size >= 1, "batch_size 必须 >= 1")
             self._collect(errors, self.dispatcher.recovery_interval_seconds > 0, "recovery_interval_seconds 必须为正")
+            self._collect(errors, self.daily_research.schedule_check_seconds > 0,
+                          "daily_research.schedule_check_seconds 必须为正")
+            self._collect(errors, self.daily_research.news_capture_interval_seconds > 0,
+                          "daily_research.news_capture_interval_seconds 必须为正")
+            self._collect(errors, self.daily_research.news_analysis_interval_seconds > 0,
+                          "daily_research.news_analysis_interval_seconds 必须为正")
 
         if process == "market_ingestion":
             self._collect(errors, self.market_ingestion.poll_interval_seconds > 0, "poll_interval_seconds 必须为正")

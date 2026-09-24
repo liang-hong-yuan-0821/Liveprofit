@@ -65,7 +65,7 @@ def _iso_ts(text: str) -> str:
 
 
 def _normalize(title: str, content: str, url: str, announced_at: str,
-               importance_hint=None, source: str = "") -> dict:
+               importance_hint=None, source: str = "", source_item_id: str | None = None) -> dict:
     """标准化事件结构（与方案 3.1.1 数据结构示例一致）。"""
     ts = _iso_ts(announced_at)
     if not ts:
@@ -74,6 +74,7 @@ def _normalize(title: str, content: str, url: str, announced_at: str,
         "title": (title or "").strip(),
         "content": (content or "").strip(),
         "source_url": url or "",
+        "source_item_id": str(source_item_id or url or "").strip(),
         "announced_at": ts,
         "importance_hint": importance_hint,  # 爬虫星级提示，仅供审核参考
         "source": source,
@@ -103,7 +104,12 @@ def _normalize_cls_item(item: dict):
         item.get("ctime"),
         importance_hint=_CLS_IMPORTANCE_BY_LEVEL.get(level),
         source="财联社电报",
+        source_item_id=str(item.get("id") or "").strip() or None,
     )
+
+
+class SourceFetchError(RuntimeError):
+    """单个新闻来源的请求/响应失败；区别正常无新新闻。"""
 
 
 def _fetch_cls_telegraph():
@@ -114,6 +120,7 @@ def _fetch_cls_telegraph():
     """
     cfg = CRAWLER_CONFIG["cls_telegraph"]
     events = []
+    primary_ok = False
     # 主：v1 接口（带签名）
     try:
         params = {
@@ -127,8 +134,10 @@ def _fetch_cls_telegraph():
         }
         params["sign"] = _make_cls_sign(params)
         resp = _session().get(cfg["url"], params=params, timeout=15)
+        resp.raise_for_status()
         data = resp.json()
         if data.get("errno") in (None, 0, "0"):
+            primary_ok = True
             roll = (data.get("data") or {}).get("roll_data") or []
             for item in roll:
                 ev = _normalize_cls_item(item)
@@ -139,6 +148,7 @@ def _fetch_cls_telegraph():
     if events:
         return events
     # 回退：nodeapi 接口（无需签名）
+    fallback_ok = False
     try:
         resp = _session().get(
             cfg.get("nodeapi_url", ""),
@@ -146,8 +156,10 @@ def _fetch_cls_telegraph():
                     "sv": cfg.get("sv", "8.4.6"), "rn": "30"},
             timeout=15,
         )
+        resp.raise_for_status()
         data = resp.json()
         if data.get("error") == 0:
+            fallback_ok = True
             roll = (data.get("data") or {}).get("roll_data") or []
             for item in roll:
                 ev = _normalize_cls_item(item)
@@ -155,6 +167,9 @@ def _fetch_cls_telegraph():
                     events.append(ev)
     except Exception as e:
         logger.warning(f"财联社 nodeapi 回退抓取失败: {e}")
+        fallback_ok = False
+    if not primary_ok and not fallback_ok:
+        raise SourceFetchError("财联社电报主源与备源均不可用")
     return events
 
 
@@ -169,6 +184,7 @@ def _fetch_jin10_flash():
         resp = _session().get(
             url, params={"channel": "-8200", "vip": "1"}, headers=headers, timeout=15
         )
+        resp.raise_for_status()
         items = resp.json().get("data") or []
         events = []
         for item in items:
@@ -181,13 +197,14 @@ def _fetch_jin10_flash():
                 item.get("time") or inner.get("time"),
                 importance_hint=int(star) if star else None,
                 source="金十数据",
+                source_item_id=str(item.get("id") or "").strip() or None,
             )
             if ev and ev["title"]:
                 events.append(ev)
         return events
     except Exception as e:
         logger.warning(f"金十数据快讯抓取失败: {e}")
-        return []
+        raise SourceFetchError("金十数据快讯不可用") from e
 
 
 def _fetch_sina_724():
@@ -200,6 +217,7 @@ def _fetch_sina_724():
                     "tag_id": 0, "dire": "f", "dpc": 1},
             timeout=15,
         )
+        resp.raise_for_status()
         feed = (((resp.json().get("result") or {}).get("data") or {}).get("feed") or {})
         events = []
         for item in feed.get("list") or []:
@@ -211,13 +229,14 @@ def _fetch_sina_724():
                 item.get("docurl") or "",
                 item.get("create_time"),
                 source="新浪7x24",
+                source_item_id=str(item.get("docid") or item.get("id") or item.get("docurl") or "").strip() or None,
             )
             if ev and ev["title"]:
                 events.append(ev)
         return events
     except Exception as e:
         logger.warning(f"新浪 7x24 抓取失败: {e}")
-        return []
+        raise SourceFetchError("新浪7x24不可用") from e
 
 
 def _fetch_eastmoney_flash():
@@ -230,6 +249,7 @@ def _fetch_eastmoney_flash():
                     "sortEnd": "", "pageSize": 30, "req_trace": ""},
             timeout=15,
         )
+        resp.raise_for_status()
         items = ((resp.json().get("data") or {}).get("fastNewsList") or [])
         events = []
         for item in items:
@@ -239,13 +259,14 @@ def _fetch_eastmoney_flash():
                 f"https://finance.eastmoney.com/a/{item.get('code', '')}.html",
                 item.get("showTime"),
                 source="东财快讯",
+                source_item_id=str(item.get("code") or item.get("id") or "").strip() or None,
             )
             if ev and ev["title"]:
                 events.append(ev)
         return events
     except Exception as e:
         logger.warning(f"东方财富快讯抓取失败: {e}")
-        return []
+        raise SourceFetchError("东方财富快讯不可用") from e
 
 
 _SOURCE_FETCHERS = {
@@ -253,6 +274,14 @@ _SOURCE_FETCHERS = {
     "jin10_flash": _fetch_jin10_flash,
     "sina_724": _fetch_sina_724,
     "eastmoney_flash": _fetch_eastmoney_flash,
+}
+
+# The current endpoints are deliberately fetched with their documented first-page
+# limits. Until a verified cursor is available, a saturated page is a coverage gap.
+_SOURCE_PAGE_LIMITS = {
+    "cls_telegraph": 30,
+    "sina_724": 30,
+    "eastmoney_flash": 30,
 }
 
 
@@ -268,7 +297,11 @@ def fetch_events_from_crawler() -> list[dict]:
     for name, cfg in CRAWLER_CONFIG.items():
         if not cfg.get("enabled", False):
             continue
-        fetched = _SOURCE_FETCHERS[name]()
+        try:
+            fetched = _SOURCE_FETCHERS[name]()
+        except Exception as exc:  # legacy 预审仍尽量展示其他可用来源
+            logger.warning("[事件采集] %s 来源失败：%s", name, exc)
+            continue
         logger.info(f"[事件采集] {name}: {len(fetched)} 条")
         events.extend(fetched)
     # 按标题去重（同源/跨源转载）
@@ -282,6 +315,74 @@ def fetch_events_from_crawler() -> list[dict]:
         deduped.append(ev)
     deduped.sort(key=lambda e: e["announced_at"], reverse=True)
     return deduped
+
+
+def fetch_source_batch() -> dict:
+    """保留来源状态与来源内身份的结构化增量采集接口。
+
+    此接口故意不做标题/跨来源去重；原文版本去重由持久层负责，事实重复由
+    Agent A 判定。旧审核入口继续使用 fetch_events_from_crawler()。
+    """
+    fetched_at = datetime.now(timezone.utc)
+    items: list[dict] = []
+    source_results: list[dict] = []
+    enabled = [(name, cfg) for name, cfg in CRAWLER_CONFIG.items() if cfg.get("enabled", False)]
+    for name, cfg in enabled:
+        try:
+            source_items = _SOURCE_FETCHERS[name]()
+            page_limit = _SOURCE_PAGE_LIMITS.get(name)
+            has_more = page_limit is not None and len(source_items) >= page_limit
+            for item in source_items:
+                if not item.get("title"):
+                    continue
+                item = dict(item)
+                # 有稳定来源 ID 时优先使用；无 ID 时 DAO 以来源+URL/内容哈希生成身份。
+                item.setdefault("source_item_id", item.get("source_url") or None)
+                item["raw_content"] = item.get("content") or ""
+                item["published_at"] = item.get("announced_at")
+                item["source_key"] = name
+                items.append(item)
+            source_results.append({
+                "source": name,
+                "status": "partial" if has_more else "ok",
+                "coverage_complete": not has_more,
+                "coverage_status": "page_full" if has_more else "complete",
+                "has_more": has_more,
+                "item_count": len(source_items),
+                "last_success_at": fetched_at.isoformat(),
+                "error": None,
+            })
+        except Exception as exc:  # noqa: BLE001 - 来源独立降级，不伪装为空列表
+            logger.warning("[事件采集] %s 来源失败", name, exc_info=True)
+            source_results.append({
+                "source": name,
+                "status": "failed",
+                "item_count": 0,
+                "last_success_at": None,
+                "error": type(exc).__name__,
+            })
+    succeeded = sum(row["status"] in {"ok", "partial"} for row in source_results)
+    failed = sum(row["status"] == "failed" for row in source_results)
+    incomplete = sum(row["status"] == "partial" for row in source_results)
+    if not source_results or failed == len(source_results):
+        status = "failed"
+    elif failed or incomplete:
+        status = "partial"
+    else:
+        status = "ok"
+    items.sort(key=lambda item: item.get("announced_at") or "", reverse=True)
+    return {
+        "status": status,
+        "items": items,
+        "sources": source_results,
+        "fetched_at": fetched_at.isoformat(),
+        "cursor": None,
+        "coverage": {
+            "enabled": len(source_results), "succeeded": succeeded,
+            "failed": failed, "incomplete": incomplete,
+        },
+        "error": "没有启用的新闻来源" if not source_results else None,
+    }
 
 
 def _title_hash(title: str) -> str:

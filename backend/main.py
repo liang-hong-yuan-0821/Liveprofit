@@ -22,13 +22,16 @@ from backend.api.routers import (
     analysis_dashboard,
     analysis_events,
     analysis_tasks,
+    daily_research,
     event_studies,
     event_study_review,
     execution_logs,
     graph_topology,
     health,
+    lifecycle,
     macro_information,
     market_data,
+    market_refresh,
     metrics,
     portfolios,
     quant_signals,
@@ -60,7 +63,8 @@ async def lifespan(app: FastAPI):
     app.state.market_calendar = _build_market_calendar()
     # market_conn 注入链的生产端（market_data 路由依赖；漏赋值则 get_bars 首次调用 AttributeError）
     from db.instrument.db import get_connection as market_get_connection
-    app.state.market_conn = market_get_connection
+    from functools import partial
+    app.state.market_conn = partial(market_get_connection, settings.core.resolved_market_dsn())
     metrics_collector, metrics_cache, refresh_task = await _install_metrics(app, container)
     try:
         yield
@@ -77,9 +81,9 @@ async def lifespan(app: FastAPI):
 
 def _build_market_calendar():
     """市场新鲜度/开闭市判定日历（CN；测试可注入 FakeCalendar 覆盖 app.state.market_calendar）。"""
-    from backend.modules.market_data.infrastructure.calendar_adapter import CNCalendarAdapter
+    from backend.modules.market_data.infrastructure.calendar_adapter import MarketCalendarAdapter
 
-    return CNCalendarAdapter()
+    return MarketCalendarAdapter()
 
 
 async def _install_metrics(app: FastAPI, container: ApiContainer):
@@ -180,14 +184,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(analysis_dashboard.router)
     app.include_router(analysis_events.router)
     app.include_router(reports.router)
+    app.include_router(daily_research.router)
     app.include_router(event_studies.router)
     app.include_router(event_study_review.router)
     app.include_router(macro_information.router)
     app.include_router(watchlists.router)
     app.include_router(portfolios.router)
+    app.include_router(lifecycle.router)
     app.include_router(quant_strategies.router)
     app.include_router(quant_signals.router)
     app.include_router(market_data.router)
+    app.include_router(market_refresh.router)
     register_exception_handlers(app)
 
     @app.middleware("http")

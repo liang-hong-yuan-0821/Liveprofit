@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from db.instrument.db import get_connection
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, changed=None) -> int:
     parser = argparse.ArgumentParser(
         prog="market_ingest",
         description="采集 market schema（指数日线+因子、个股基金日线+复权、板块周刷，幂等可重复执行）",
@@ -27,6 +27,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--end", type=date.fromisoformat, default=None, help="结束日期 YYYY-MM-DD（默认今天）")
     parser.add_argument("--days", type=int, default=90, help="未指定 --start 时的回溯天数")
     parser.add_argument("--market", default="CN", help="保留兼容参数（采集范围由 INDEX_TARGETS 决定，不再校验）")
+    parser.add_argument("--initialize-catalog", action="store_true",
+                        help="仅初始化股票基础目录和东财板块字典/成员，不采行情、基金或qfq")
+    parser.add_argument("--stock-directory-only", action="store_true",
+                        help="与 --initialize-catalog 合用：仅更新股票目录，跳过已有板块成员刷新")
     parser.add_argument(
         "--skip-bars",
         action="store_true",
@@ -45,6 +49,24 @@ def main(argv: list[str] | None = None) -> int:
         help="强制跳过本次行业成员刷新",
     )
     args = parser.parse_args(argv)
+    if args.stock_directory_only and not args.initialize_catalog:
+        parser.error("--stock-directory-only requires --initialize-catalog")
+    if args.initialize_catalog and (args.start is not None or args.skip_bars):
+        parser.error("--initialize-catalog cannot be combined with --start or --skip-bars")
+    if changed is None:
+        from backend.modules.market_data.application.refresh_service import best_effort_market_changed
+        changed = best_effort_market_changed
+    from db.instrument.ingest.guard import IngestGuard
+    from backend.bootstrap.settings import CoreSettings
+    market_dsn = CoreSettings().resolved_market_dsn()
+
+    if args.initialize_catalog:
+        from db.instrument.ingest.refresh import initialize_catalog
+        with get_connection(market_dsn) as conn, IngestGuard(conn, changed=changed) as guard:
+            summary = initialize_catalog(conn, guard=guard, refresh_sectors=not args.stock_directory_only)
+        print(f"目录初始化完成：{summary}")
+        result = summary["sectors"].get("dc", {})
+        return 1 if result.get("error") or result.get("failed") else 0
 
     end = args.end or date.today()
     start = args.start or (end - timedelta(days=args.days))
@@ -63,12 +85,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.start is not None or args.skip_bars:
         # 回填模式（显式 --start 或 --skip-bars 均走 backfill 路径）
         from db.instrument.ingest.backfill import run_backfill
-        with get_connection() as conn:
+        with get_connection(market_dsn) as conn, IngestGuard(conn, changed=changed) as guard:
             summary = run_backfill(
                 conn, start.isoformat(), end.isoformat(),
                 provider_factory=provider_factory,
                 fallback_provider_factory=fallback_provider_factory,
                 skip_daily=args.skip_bars,
+                guard=guard,
             )
         print(f"回填完成：指数 bars={summary['index'].get('bars', 0)} "
               f"factors={summary['index'].get('factors', 0)} / "
@@ -77,10 +100,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # 增量模式（默认窗口）
     from db.instrument.ingest.incremental import collect_incremental
-    with get_connection() as conn:
+    with get_connection(market_dsn) as conn, IngestGuard(conn, changed=changed) as guard:
         summary = collect_incremental(
             conn, provider_factory, fallback_provider_factory,
-            refresh_industries=args.refresh_industries)
+            refresh_industries=args.refresh_industries, guard=guard)
     print(f"增量完成：{summary}")
     return 0 if "error" not in summary else 1
 

@@ -44,13 +44,18 @@ class TradingGraphAdapter:
         task: ClaimedTask,
         on_progress: ProgressCallback,
         rerun_from: str | None = None,
+        *,
+        daily_research: bool = False,
     ) -> Any:
         """执行 AI 图；返回 final_state（Artifact 提取由 artifact_builder 完成）。
 
         判定依据 = rerun_from 参数（消息级触发源，不读 init_state/task 行）：
         非 None → 走 rerun_from_node（checkpoint_state 由 initial_state_factory 注入）。
         """
-        graph = self._graph_factory(list(task.selected_layers))  # 每次新建，禁止跨任务复用
+        if daily_research:
+            graph = self._graph_factory(list(task.selected_layers), daily_research=True)
+        else:
+            graph = self._graph_factory(list(task.selected_layers))  # 每次新建，禁止跨任务复用
         init_state = self._initial_state_factory(task)
         if rerun_from is not None:
             checkpoint_state = init_state.pop("checkpoint_state")

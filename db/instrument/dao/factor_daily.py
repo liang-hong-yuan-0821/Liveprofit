@@ -7,7 +7,7 @@ instrument_daily 反查填充（方案 3.7.1）。
 
 import pandas as pd
 
-from db.instrument.dao._common import _clean_frame, _bulk_upsert
+from db.instrument.dao._common import _bulk_upsert, _clean_frame
 
 TABLE = "market.factor_daily"
 PK = ["ts_code", "trade_date"]
@@ -33,6 +33,26 @@ def bulk_upsert_factor_daily(conn, df: pd.DataFrame, update: bool = False) -> in
     if df.empty:
         return 0
     return _bulk_upsert(conn, TABLE, FACTOR_DAILY_COLS, PK, df, update)
+
+
+def upsert_observed_bfq_factors(conn, df: pd.DataFrame) -> int:
+    """Update observed bfq columns only; never erase existing qfq or null-fill.
+
+    Column selection happens before cleaning (which otherwise manufactures null
+    columns), and SQL COALESCE protects existing observations on partial rows.
+    """
+    if df is None or df.empty:
+        return 0
+    allowed = [c for c in FACTOR_DAILY_COLS
+               if c in PK or c in ("close", "updated_at") or "_bfq" in c]
+    cols = [c for c in allowed if c in df.columns]
+    if not all(c in cols for c in PK):
+        raise ValueError("bfq observation requires ts_code and trade_date")
+    if not any("_bfq" in c for c in cols):
+        return 0
+    frame = _clean_frame(df, cols).drop_duplicates(subset=PK, keep="last")
+    return _bulk_upsert(conn, TABLE, cols, PK, frame, True,
+                        preserve_null=tuple(c for c in cols if c not in PK))
 
 
 def query_range(conn, ts_code: str, start_date: str, end_date: str) -> pd.DataFrame:

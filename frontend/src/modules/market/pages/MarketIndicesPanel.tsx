@@ -1,3 +1,6 @@
+import { daysBefore, useMarketDate } from './refreshQueries';
+import { ChevronDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { toIndexQuote } from './mappers/toIndexQuote';
 import { useEffect, useRef, useState } from 'react';
 import { toApiError } from '../../../api/client';
 import { ErrorState } from '../../../shared/feedback/ErrorState';
@@ -5,7 +8,7 @@ import { EmptyState } from '../../../shared/feedback/EmptyState';
 import { LoadingState } from '../../../shared/feedback/LoadingState';
 import { Badge } from '../../../shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card';
-import { todayLocalDate, daysAgoLocalDate, daysBetween } from '../../../shared/format/dateTime';
+import { daysBetween } from '../../../shared/format/dateTime';
 import { CandlestickChart } from '../../../shared/charts/CandlestickChart';
 import { loadDrawings, saveDrawings, type Drawing } from '../../../shared/charts/drawings';
 import { useMarketBarsQuery } from './queries';
@@ -49,6 +52,7 @@ const MARKET_LABELS: Record<string, string> = { US: '美国', KR: '韩国', CN: 
 const DEFAULT_INTERVAL = '1d';
 
 export function MarketIndicesPanel() {
+  const [expanded, setExpanded] = useState<Record<string, string | null>>({});
   const groups = MARKET_GROUP_ORDER.map((market) => ({
     market,
     assets: MARKET_INDEX_CATALOG.filter((entry) => entry.market === market),
@@ -62,15 +66,46 @@ export function MarketIndicesPanel() {
           {group.assets.length === 0 ? (
             <EmptyState title="该市场暂无可用资产" />
           ) : (
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {group.assets.map((asset) => (
-                <IndexCandlestickSection key={`${asset.market}-${asset.symbol}`} asset={asset} />
+                <IndexQuoteCard key={`${asset.market}-${asset.symbol}`} asset={asset} expanded={expanded[group.market] === asset.symbol} onToggle={() => setExpanded(current => ({ ...current, [group.market]: current[group.market] === asset.symbol ? null : asset.symbol }))} />
               ))}
             </div>
           )}
+          {group.assets.filter(asset => asset.symbol === expanded[group.market]).map(asset => <div key={`${asset.market}-${asset.symbol}`} className="mt-4" id={`chart-${asset.market}-${asset.symbol}`}><IndexCandlestickSection asset={asset} /></div>)}
         </section>
       ))}
     </div>
+  );
+}
+
+function IndexQuoteCard({ asset, expanded, onToggle }: { asset: CatalogEntry; expanded: boolean; onToggle: () => void }) {
+  const marketDate = useMarketDate(asset.market);
+  const query = useMarketBarsQuery(asset.symbol, { market: asset.market, interval: DEFAULT_INTERVAL, from: daysBefore(marketDate, INITIAL_LOADED_DAYS), to: marketDate }, asset.availability === 'AVAILABLE');
+  const quote = toIndexQuote(query.data?.bars ?? []);
+  const pct = quote.changePct;
+  const tone = pct == null || pct === 0 ? 'var(--color-fg-muted)' : pct > 0 ? '#ef4444' : '#22c55e';
+  const min = Math.min(...quote.closes); const max = Math.max(...quote.closes);
+  const points = quote.closes.map((v, i) => `${i * 100 / Math.max(1, quote.closes.length - 1)},${30 - (v - min) / (max - min || 1) * 26}`).join(' ');
+  return (
+    <button type="button" className="quote-card glass-card relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left" onClick={onToggle} aria-expanded={expanded} aria-controls={expanded ? `chart-${asset.market}-${asset.symbol}` : undefined} aria-label={`${asset.name} ${expanded ? '收起' : '展开'} K 线`}>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 truncate text-sm font-medium">{asset.name}</span>
+        <span className="shrink-0 text-[10px] tracking-wide text-[var(--color-fg-muted)]">{asset.symbol}</span>
+        <ChevronDown className={`ml-auto size-4 shrink-0 text-[var(--color-fg-muted)] transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </span>
+      <span className="mt-4 flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        {query.isPending ? <span className="data-skeleton block h-8 w-28 rounded" aria-label="行情加载中" /> : <span className="text-2xl font-semibold tracking-tight tabular-nums">{quote.close?.toLocaleString('zh-CN', { maximumFractionDigits: 2, minimumFractionDigits: 2 }) ?? '—'}</span>}
+        <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums" style={{ color: tone }} title={quote.previousDate ? `较 ${quote.previousDate} 日线` : undefined}>
+          {pct != null && (pct >= 0 ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />)}
+          {pct == null ? '涨跌幅暂无数据' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`}
+        </span>
+      </span>
+      <span className="mt-3 flex min-w-0 items-end justify-between gap-2 text-[10px] text-[var(--color-fg-muted)]">
+        <span className="min-w-0">{query.isError ? '更新失败 · 展开重试' : `${quote.date ?? '无行情日期'} · ${asset.currency}${query.data?.freshness_status === 'STALE' ? ' · 可能延迟' : ''}${query.data?.market_session_status === 'CLOSED' ? ' · 已闭市' : ''}`}</span>
+        {quote.closes.length > 1 && <svg viewBox="0 0 100 36" className="h-8 w-16 shrink-0 opacity-60" aria-hidden="true"><polyline points={points} fill="none" stroke={tone} strokeWidth="1.5" /></svg>}
+      </span>
+    </button>
   );
 }
 
@@ -82,13 +117,15 @@ const HYSTERESIS = 1.1; // 10% 迟滞，防滚轮逐像素触发重复扩展
 const PAN_EDGE_RATIO = 0.5; // 左平移触发：可见窗口左缘距加载左界 < 半屏即预拉
 
 function IndexCandlestickSection({ asset }: { asset: CatalogEntry }) {
+  const marketDate = useMarketDate(asset.market);
   const interval = DEFAULT_INTERVAL;
   const available = asset.availability === 'AVAILABLE';
-  const [loadedFrom, setLoadedFrom] = useState(daysAgoLocalDate(INITIAL_LOADED_DAYS));
+  const [loadedFrom, setLoadedFrom] = useState(daysBefore(marketDate, INITIAL_LOADED_DAYS));
   const [visible, setVisible] = useState({
-    start: daysAgoLocalDate(INITIAL_VISIBLE_DAYS),
-    end: todayLocalDate(),
+    start: daysBefore(marketDate, INITIAL_VISIBLE_DAYS),
+    end: marketDate,
   });
+  const previousMarketDate = useRef(marketDate);
   const [exhausted, setExhausted] = useState(false);
   // 画线持久化（§3.6.1）：组件已按 symbol 作 key（MarketIndicesPanel 渲染处），
   // 切标的自动重挂载 → 懒初始化即载入对应标的 key，无需 symbol 变化 effect
@@ -101,9 +138,21 @@ function IndexCandlestickSection({ asset }: { asset: CatalogEntry }) {
     saveDrawings(asset.symbol, drawings);
   }, [asset.symbol, drawings]);
 
+  useEffect(() => {
+    const previous = previousMarketDate.current;
+    previousMarketDate.current = marketDate;
+    if (previous === marketDate) return;
+    const shift = daysBetween(previous, marketDate);
+    // A window still anchored to the latest market day follows the new bar.
+    // A user-panned historical window retains its chosen dates.
+    setVisible(current => current.end === previous
+      ? { start: daysBefore(current.start, -shift), end: marketDate }
+      : current);
+  }, [marketDate]);
+
   const barsQuery = useMarketBarsQuery(
     asset.symbol,
-    { market: asset.market, interval, from: loadedFrom, to: todayLocalDate() },
+    { market: asset.market, interval, from: loadedFrom, to: marketDate },
     available,
   );
 
@@ -131,16 +180,16 @@ function IndexCandlestickSection({ asset }: { asset: CatalogEntry }) {
     setVisible(range);
     if (exhausted || barsQuery.isFetching) return;
     const visibleDays = daysBetween(range.start, range.end); // 自然日差
-    const loadedDays = daysBetween(loadedFrom, todayLocalDate());
+    const loadedDays = daysBetween(loadedFrom, marketDate);
     const leftBuffer = daysBetween(loadedFrom, range.start); // 左缘距加载左界
     // 路径① 滚轮缩小破坏缓冲不变量 loaded ≥ 2×visible → 扩展至 2×visible（≥ 初始 180 天）
     if (visibleDays * BUFFER_RATIO > loadedDays * HYSTERESIS) {
-      setLoadedFrom(daysAgoLocalDate(Math.max(INITIAL_LOADED_DAYS, visibleDays * BUFFER_RATIO)));
+      setLoadedFrom(daysBefore(marketDate, Math.max(INITIAL_LOADED_DAYS, visibleDays * BUFFER_RATIO)));
       return;
     }
     // 路径② 向左平移逼近加载左界（< 半屏）→ 预拉一屏
     if (leftBuffer < visibleDays * PAN_EDGE_RATIO) {
-      setLoadedFrom(daysAgoLocalDate(Math.max(INITIAL_LOADED_DAYS, loadedDays + visibleDays)));
+      setLoadedFrom(daysBefore(marketDate, Math.max(INITIAL_LOADED_DAYS, loadedDays + visibleDays)));
     }
   }
 
@@ -200,7 +249,7 @@ function IndexCandlestickSection({ asset }: { asset: CatalogEntry }) {
               onDrawingsChange={setDrawings}
             />
             <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-              来源 {barsQuery.data.source ?? '—'} · as_of {barsQuery.data.as_of ?? '—'}
+              来源 {barsQuery.data.source ?? '—'} · 数据日期 {barsQuery.data.as_of ?? '—'}
               {barsQuery.data.source_updated_at ? ` · 源更新时间 ${barsQuery.data.source_updated_at}` : ''}
             </p>
           </>

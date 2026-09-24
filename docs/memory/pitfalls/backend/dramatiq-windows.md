@@ -20,3 +20,9 @@
 
 - **表象**：`dramatiq.cli.main(args)` 里 `args.path` AttributeError。
 - **正确姿势**：`sys.argv = ["liveprofit-worker", "模块", "--processes", ...]` 后无参调用 `main()`，且以 try/except SystemExit 收口。
+
+## 同进程发布第二个 Broker 命名空间（2026-09-23）
+
+- **表象**：Dispatcher 已装配分析队列后，市场任务使用隔离 `broker_namespace` 投递时报“Broker 已装配，不能在同一进程切换连接或命名空间”。
+- **根因**：`configure_broker` 是进程全局单例；发布第二个 namespace 时再次调用会触发配置冲突。
+- **正确姿势**：市场发布端单独持有 `RedisBroker(url, namespace)` 并直接 `enqueue(Message(...))`，不调用 `dramatiq.set_broker`；专用 Worker 进程再单独注册 `market-data` actor。`backend/tests/integration/market_data/test_refresh_worker.py` 在隔离 Redis 中验证分析 Broker 身份不变且市场消息被消费。

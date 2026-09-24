@@ -1,3 +1,4 @@
+import { normalizeEventText } from './normalizeEventText';
 import { Button } from '../../../../shared/ui/button';
 import { Input } from '../../../../shared/ui/input';
 import { formatDateTime } from '../../../../shared/format/dateTime';
@@ -41,8 +42,8 @@ export function PendingEventRow({
         {formatDateTime(vm.announcedAt)}
       </span>
       <span className="truncate text-xs">{vm.source}</span>
-      <span className="truncate text-sm" title={vm.title}>
-        {vm.title}
+      <span className="truncate text-sm" title={normalizeEventText(vm.title)}>
+        {normalizeEventText(vm.title)}
       </span>
       <Input
         aria-label={label('事件类型')}
@@ -136,7 +137,7 @@ export function PendingEventRow({
       />
       <select
         aria-label={label('操作')}
-        className={selectClass}
+        className={`${selectClass} sticky right-0 bg-[var(--color-surface)]`}
         style={{ borderColor: 'var(--color-border)', color: 'var(--color-fg)' }}
         value={vm.action}
         disabled={disabled}

@@ -17,6 +17,14 @@ INSTRUMENT_COLS = [
 ]
 DATE_COLS = ["list_date", "delist_date"]
 
+# Daily quant's market scan and its preflight denominator must be the same
+# currently listed A-share stock set. Keep this predicate in the market DAO so
+# refresh coverage cannot accidentally include DC members or stale P/D rows.
+ACTIVE_CN_STOCK_FILTER = (
+    "instrument_type = 'stock' AND list_status = 'L' "
+    "AND ts_code ~ '^[0-9]{6}\\.(SH|SZ|BJ)$'"
+)
+
 
 def upsert_instrument(conn, df: pd.DataFrame, update: bool = True) -> int:
     """instrument 表 ON CONFLICT (ts_code) upsert 通用列。
@@ -61,3 +69,11 @@ def list_instruments(conn, instrument_type: str = None) -> pd.DataFrame:
     sql += " ORDER BY ts_code"
     rows = conn.execute(sql, params).fetchall()
     return pd.DataFrame(rows, columns=INSTRUMENT_COLS)
+
+
+def list_active_cn_stocks(conn) -> list[str]:
+    """Return the sorted A-share universe used by all-market quant execution."""
+    rows = conn.execute(
+        f"SELECT ts_code FROM {TABLE} WHERE {ACTIVE_CN_STOCK_FILTER} ORDER BY ts_code"
+    ).fetchall()
+    return [row[0] for row in rows]

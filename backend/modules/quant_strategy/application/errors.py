@@ -45,3 +45,23 @@ class StrategyValidationFailedError(QuantStrategyError):
     def __init__(self, issues: list[StrategyValidationIssue]) -> None:
         self.issues = issues
         super().__init__(f"策略源码校验失败：{len(issues)} 处问题")
+
+
+class LifecycleNotFoundError(QuantStrategyError):
+    code = "LIFECYCLE_RESOURCE_NOT_FOUND"
+    http_status = 404
+
+
+class LifecycleRevisionConflictError(QuantStrategyError):
+    code = "LIFECYCLE_REVISION_CONFLICT"
+    http_status = 409
+
+
+class LifecycleInvalidStateError(QuantStrategyError):
+    code = "LIFECYCLE_INVALID_STATE"
+    http_status = 409
+
+
+class FillValidationError(QuantStrategyError):
+    code = "FILL_VALIDATION_FAILED"
+    http_status = 422

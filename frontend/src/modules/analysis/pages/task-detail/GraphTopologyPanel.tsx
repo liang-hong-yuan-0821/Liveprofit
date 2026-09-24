@@ -1,4 +1,7 @@
-import { useMemo, useState } from 'react';
+import type { EChartsType } from 'echarts';
+import { useChartTheme } from '../../../../shared/charts/useChartTheme';
+import { TopologyNodeList } from '../../components/TopologyNodeList';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card, CardHeader, CardTitle } from '../../../../shared/ui/card';
 import { EmptyState } from '../../../../shared/feedback/EmptyState';
@@ -7,7 +10,7 @@ import { LoadingState } from '../../../../shared/feedback/LoadingState';
 import { toApiError } from '../../../../api/client';
 import { useGraphTopologyQuery } from './queries';
 import { NodeLogsDialog } from './NodeLogsDialog';
-import { buildTopologyChartOption, TOPOLOGY_Y_STEP } from '../../components/topologyChartOption';
+import { escapeTopologyText, alignTopologyLayers, buildTopologyChartOption, topologyBounds } from '../../components/topologyChartOption';
 
 // 执行拓扑面板：echarts graph 展示静态图拓扑（三层 + 层内主节点）叠加本次运行状态。
 // 固定网格布局（row=层行、order=层内列），状态着色（灰/蓝/琥珀/红），
@@ -46,6 +49,8 @@ export function GraphTopologyPanel({
 }: GraphTopologyPanelProps) {
   const query = useGraphTopologyQuery(taskId, true, terminal);
   const data = query.data;
+  const theme = useChartTheme();
+  const chartRef = useRef<EChartsType | null>(null);
   // 只存选中节点 id：弹窗内容从最新 data 实时派生（5s 轮询/终态补拉后状态与 dirs
   // 不滞留旧快照）；节点从新数据中消失时弹窗自动关闭
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -54,11 +59,7 @@ export function GraphTopologyPanel({
     [data, selectedNodeId],
   );
 
-  const height = useMemo(() => {
-    if (!data || data.nodes.length === 0) return 240;
-    const maxRow = Math.max(...data.nodes.map((n) => n.row));
-    return (maxRow + 1) * TOPOLOGY_Y_STEP + 120;
-  }, [data]);
+  const bounds = topologyBounds(data?.nodes ?? []);
 
   const option = useMemo(() => {
     if (!data) return null;
@@ -80,10 +81,13 @@ export function GraphTopologyPanel({
         const node = data.nodes.find((n) => n.id === id);
         if (!node) return '';
         const meta = STATUS_META[node.status];
-        return `${node.label}<br/>状态：${meta.label}<br/>调用次数：${node.invocation_count}`;
+        return `${escapeTopologyText(node.label)}<br/>状态：${meta.label}<br/>调用次数：${node.invocation_count}`;
       },
+      theme,
     );
-  }, [data]);
+  }, [data, theme]);
+
+  useEffect(() => { if (chartRef.current && data?.nodes.length) alignTopologyLayers(chartRef.current, data.nodes); }, [option, data]);
 
   const handleChartEvents = useMemo(
     () => ({
@@ -131,7 +135,7 @@ export function GraphTopologyPanel({
           {terminal ? '' : ' · 每 5 秒自动刷新'}
         </span>
       </CardHeader>
-      {!data.available ? (
+      {!data.available || data.nodes.length === 0 ? (
         <EmptyState title="暂无执行拓扑" description="任务尚未开始写入执行日志" />
       ) : (
         <div className="flex flex-col gap-2">
@@ -149,9 +153,10 @@ export function GraphTopologyPanel({
               任务失败，但未定位到节点级错误——错误可能发生在图外或首个 DP 调用前
             </p>
           )}
-          <div data-testid="topology-chart">
-            <ReactECharts option={option} style={{ height, width: '100%' }} notMerge onEvents={handleChartEvents} />
+          <div data-testid="topology-chart" className="max-w-full overflow-x-auto" tabIndex={0} aria-label="拓扑画布，可横向滚动">
+            <ReactECharts onChartReady={(chart: EChartsType) => { chartRef.current = chart; alignTopologyLayers(chart, data.nodes); }} option={option} style={{ height: bounds.height, width: bounds.width }} notMerge onEvents={handleChartEvents} />
           </div>
+          <TopologyNodeList nodes={data.nodes} onSelect={setSelectedNodeId} />
         </div>
       )}
       <NodeLogsDialog

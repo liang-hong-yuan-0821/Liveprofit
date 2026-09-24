@@ -34,6 +34,14 @@ PLATFORM_TABLES = {
     "quant_strategies",
     "quant_strategy_versions",
     "quant_execution_signals",
+    "lifecycle_policy_versions",
+    "suggested_orders",
+    "order_fill_events",
+    "position_intents",
+    "position_lifecycle_states",
+    "position_daily_facts",
+    "position_expectations",
+    "position_trailing_stops",
 }
 
 EVENT_STUDY_TABLES = {"assets", "events", "market_data", "event_impacts", "market_context", "predictions"}

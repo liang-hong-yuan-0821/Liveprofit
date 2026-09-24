@@ -36,6 +36,7 @@ class RiskDebateState(TypedDict):
 
 # 主状态
 class AgentState(MessagesState):
+    daily_research_context: Annotated[dict, "每日投研冻结的 accepted 事件与时点信息；新闻 Agent 消费，技术 Agent 不消费"]
     company_of_interest: Annotated[str, "待分析的股票"]
     trade_date: Annotated[str, "分析日期（校正后的有效数据日期）"]
     requested_trade_date: Annotated[str, "原始请求日期（校正前，用于透明度标注）"]

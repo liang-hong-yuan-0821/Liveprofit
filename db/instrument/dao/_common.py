@@ -52,7 +52,7 @@ def _clean_frame(df: pd.DataFrame, cols: list) -> pd.DataFrame:
 
 
 def _bulk_upsert(conn, table: str, cols: list, pk_cols: list,
-                 df: pd.DataFrame, update: bool) -> int:
+                 df: pd.DataFrame, update: bool, preserve_null: tuple[str, ...] = ()) -> int:
     """COPY → 临时表（表名带 pid + 随机后缀防并发）→ INSERT ... ON CONFLICT，用完即删。
 
     table 为带 schema 限定名（如 `market.instrument_daily`）——SQL 中不整体引号
@@ -78,7 +78,10 @@ def _bulk_upsert(conn, table: str, cols: list, pk_cols: list,
             if update:
                 settable = [c for c in cols if c not in pk_cols]
                 if settable:
-                    sets = ", ".join(f'"{c}" = EXCLUDED."{c}"' for c in settable)
+                    sets = ", ".join(
+                        f'"{c}" = COALESCE(EXCLUDED."{c}", {table}."{c}")'
+                        if c in preserve_null else f'"{c}" = EXCLUDED."{c}"'
+                        for c in settable)
                 else:
                     # 全列均属 PK：空更新（保持 DO UPDATE 语义，实际等价 DO NOTHING）
                     sets = f'"{pk_cols[0]}" = EXCLUDED."{pk_cols[0]}"'

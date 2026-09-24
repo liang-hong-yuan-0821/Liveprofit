@@ -14,20 +14,47 @@ import re
 import time
 import logging
 import contextvars
+import threading
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 import pandas as pd
 
-from ..base_provider import BaseStockDataProvider
+from ..base_provider import BaseStockDataProvider, ProviderNetworkAccessDenied
 from . import daily_matrix_utils
 from .limit_ladder_utils import calc_break_rate, calc_promotion_rates, format_ladder_matrix
 from AI.utils.dataprovider_log import wrap_tushare_api
 
 logger = logging.getLogger(__name__)
 
+_STOCK_BASIC_LIST_STATUSES = ("L", "D", "P", "G", "UN")
+_STOCK_BASIC_EXCHANGES = ("SSE", "SZSE", "BSE")
+
+
+def _is_network_access_denied(exc: BaseException) -> bool:
+    """Detect Windows WSAEACCES even when Requests/urllib3 wraps the socket error."""
+    pending = [exc]
+    seen = set()
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        if getattr(current, "winerror", None) == 10013:
+            return True
+        if "winerror 10013" in str(current).lower():
+            return True
+        for name in ("__cause__", "__context__", "reason"):
+            child = getattr(current, name, None)
+            if isinstance(child, BaseException):
+                pending.append(child)
+    return False
+
 # Tushare API 单次调用超时上限（秒），可通过环境变量 TUSHARE_TIMEOUT 覆盖
 _TUSHARE_TIMEOUT = int(os.getenv("TUSHARE_TIMEOUT", "30"))
+# stk_factor_pro 全历史单票可返回约 4,000 行/2MB；实测 30 秒会偶发超时，
+# 为该端点单独放宽，避免超时线程尚未结束时回填重试产生重复在途请求。
+_TUSHARE_FACTOR_TIMEOUT = int(os.getenv("TUSHARE_FACTOR_TIMEOUT", "90"))
 
 # 技术因子端点字段集合（不自算决策，2026-09-12；技术指标数据源切换方案 §3.1.1）。
 # INDEX：大盘页契约消费的 10 因子 + close（入库前与 bars 对齐自检用，mapper 不落库）。
@@ -56,7 +83,7 @@ except ImportError:
     ts = None
 
 
-def _run_with_timeout(fn, timeout, *args, **kwargs):
+def _run_with_timeout(fn, timeout, *args, _on_exception=None, **kwargs):
     """在线程池中执行 fn，超时则抛 FutureTimeout。
 
     注意：不能使用 with ThreadPoolExecutor，因为 __exit__ 会调用
@@ -67,8 +94,17 @@ def _run_with_timeout(fn, timeout, *args, **kwargs):
     # _current_dp_call 上下文必须手动带入，否则 worker 内读到 None 不落盘
     ctx = contextvars.copy_context()
     pool = ThreadPoolExecutor(max_workers=1)
+
+    def invoke():
+        try:
+            return fn(*args, **kwargs)
+        except Exception as exc:
+            if _on_exception is not None:
+                _on_exception(exc)
+            raise
+
     try:
-        future = pool.submit(ctx.run, fn, *args, **kwargs)
+        future = pool.submit(ctx.run, invoke)
         return future.result(timeout=timeout)
     finally:
         pool.shutdown(wait=False)
@@ -160,6 +196,10 @@ def _fmt_concept_entry(name: str, pct: float, turnover) -> str:
 class TushareProvider(BaseStockDataProvider):
     """Tushare 数据提供器（接口与 AKShareProvider 对齐）"""
 
+    # 首次连接失败不能永久污染进程级 provider 单例。后续业务调用读取 connected
+    # 时按冷却期懒重连；一分钟内不重复探测，避免上游故障时形成请求风暴。
+    CONNECT_RETRY_COOLDOWN_SECONDS = 60.0
+
     # ==================== 类属性（与 AKShareProvider 一致） ====================
 
     # 全球科技指数映射：key -> (display_name, tushare_code)
@@ -213,27 +253,54 @@ class TushareProvider(BaseStockDataProvider):
     def __init__(self):
         super().__init__("Tushare")
         self.api = None
+        self._lazy_reconnect = True
+        self._last_connect_attempt = 0.0
+        self._network_access_lock = threading.Lock()
         self._connect()
 
+    @property
+    def connected(self) -> bool:
+        connected = bool(getattr(self, "_connected", False))
+        if connected or not getattr(self, "_lazy_reconnect", False):
+            return connected
+        now = time.monotonic()
+        last = float(getattr(self, "_last_connect_attempt", 0.0))
+        if now - last >= self.CONNECT_RETRY_COOLDOWN_SECONDS:
+            self._connect()
+        return bool(getattr(self, "_connected", False))
+
+    @connected.setter
+    def connected(self, value: bool) -> None:
+        # BaseStockDataProvider.__init__ 与既有测试均直接赋值 connected；保留该接口。
+        self._connected = bool(value)
+
     def _connect(self):
+        self._last_connect_attempt = time.monotonic()
+        self._connected = False
+        self._connection_error = None
+        self._network_access_error = None
+        self.api = None
         if not TUSHARE_AVAILABLE:
             logger.error("Tushare 库未安装，请运行: pip install tushare")
             return
         token = os.getenv("TUSHARE_TOKEN", "")
         if token and token != "your-tushare-token":
             try:
-                ts.set_token(token)
-                self.api = ts.pro_api()
+                # token 直接交给 SDK，不调用 ts.set_token：后者无条件写 ~/tk.csv，
+                # 在受限服务账户下会 PermissionError，导致 provider 永久未连接。
+                self.api = ts.pro_api(token)
                 self.api._DataApi__http_url = "https://ts.gyzcloud.top/api"  # 自定义 Tushare 端点
                 wrap_tushare_api(self.api)  # 端点调用子日志（挂当前 DP 调用目录的 tushare/ 下）
                 self.api._lp_probe_next = True  # 标记连通性探测调用（meta.probe=true）
                 test = self._api_call(self.api.stock_basic, list_status="L", limit=1)
                 if test is not None and not test.empty:
-                    self.connected = True
+                    self._connected = True
                     logger.info("Tushare 连接成功")
                 else:
                     logger.warning("Tushare 连接测试失败")
             except Exception as e:
+                if isinstance(e, ProviderNetworkAccessDenied):
+                    self._connection_error = e
                 logger.error(f"Tushare 连接失败: {e}")
         else:
             logger.warning("Tushare Token 未配置，请在 .env 中设置 TUSHARE_TOKEN")
@@ -245,12 +312,44 @@ class TushareProvider(BaseStockDataProvider):
 
         超时时记录 warning 日志并返回 None，调用方通过 None 检查自然降级。
         """
+        if isinstance(getattr(self, "_network_access_error", None),
+                      ProviderNetworkAccessDenied):
+            return None
         _timeout = timeout if timeout is not None else _TUSHARE_TIMEOUT
         try:
-            return _run_with_timeout(fn, _timeout, *args, **kwargs)
+            return _run_with_timeout(
+                fn, _timeout, *args,
+                _on_exception=self._remember_network_access_error,
+                **kwargs,
+            )
         except FutureTimeout:
             logger.warning("Tushare API 调用超时 (%ds): %s", _timeout, getattr(fn, '__name__', str(fn)))
             return None
+        except Exception as exc:
+            if _is_network_access_denied(exc):
+                self._remember_network_access_error(exc)
+                return None
+            raise
+
+    def _remember_network_access_error(self, exc: BaseException) -> None:
+        """Latch WSAEACCES even when its worker thread fails after caller timeout."""
+        if not _is_network_access_denied(exc):
+            return
+        lock = getattr(self, "_network_access_lock", None)
+        if lock is None:
+            lock = threading.Lock()
+            self._network_access_lock = lock
+        with lock:
+            error = getattr(self, "_network_access_error", None)
+            if not isinstance(error, ProviderNetworkAccessDenied):
+                error = ProviderNetworkAccessDenied(
+                    "Tushare endpoint connection denied by local network policy"
+                )
+                self._network_access_error = error
+                self._connection_error = error
+                self._connected = False
+                self._last_connect_attempt = time.monotonic()
+                logger.error("Tushare 请求被本机网络策略拒绝；暂停自动重试，需检查 worker 出站权限")
 
     def _normalize_code(self, code: str) -> str:
         code = code.strip().upper()
@@ -2155,7 +2254,8 @@ class TushareProvider(BaseStockDataProvider):
     def get_stock_factor_df(self, ts_code: str, start_date: str, end_date: str, fields: str | None = None):
         """个股每日技术面因子（stk_factor_pro）→ DataFrame，单次调用。
 
-        消费方传入短区间（AI 个股报告 ≤30 天），行数远小于 8000 上限，不分页。
+        当前消费窗口包括 AI 短区间与 2010 年以来的历史回填；老股实测约 4,000 行，
+        仍低于端点单次 8,000 行上限，因此不分页。全历史帧单独使用 90 秒超时。
         返回列：trade_date（升序，YYYY-MM-DD str）+ 各因子列（to_numeric）。失败返回 None。
         """
         if not self.connected:
@@ -2165,6 +2265,7 @@ class TushareProvider(BaseStockDataProvider):
         try:
             df = self._api_call(
                 self.api.stk_factor_pro,
+                timeout=_TUSHARE_FACTOR_TIMEOUT,
                 ts_code=code,
                 start_date=start_date.replace("-", ""),
                 end_date=end_date.replace("-", ""),
@@ -2373,8 +2474,8 @@ class TushareProvider(BaseStockDataProvider):
                 fields="ts_code,trade_date,up_limit,down_limit",
             )
             suspended = self._api_call(
-                self.api.suspend_d, suspend_date=td,
-                fields="ts_code,suspend_date",
+                self.api.suspend_d, trade_date=td,
+                fields="ts_code,trade_date,suspend_type",
             )
             basics = getattr(self, "_quant_trade_status_basics", None)
             if basics is None:
@@ -2386,11 +2487,35 @@ class TushareProvider(BaseStockDataProvider):
         except Exception as exc:
             logger.warning("股票交易状态 %s 拉取失败: %s", trade_date, exc)
             return None
-        if basics is None or basics.empty or limits is None:
+        if basics is None or basics.empty or limits is None or suspended is None:
+            return None
+        # The proxy ignores suspend_date and returns a capped, undated history.
+        # trade_date returns the requested day's S/R events, including a dated
+        # field we can verify. It also ignores suspend_type filtering, so R
+        # must be removed locally rather than counted as a suspension.
+        if len(suspended) >= 5000:
+            return None
+        # None is failure, not proof of an empty suspension set. The proxy's
+        # 6000-row cap and malformed/undated responses are likewise unknown.
+        required = ((basics, ("ts_code", "name", "market")),
+                    (limits, ("ts_code", "trade_date", "up_limit", "down_limit")),
+                    (suspended, ("ts_code", "trade_date", "suspend_type")))
+        for data, columns in required:
+            if len(data) >= 6000 or any(c not in data.columns for c in columns):
+                return None
+            if data["ts_code"].isna().any() or data["ts_code"].duplicated().any():
+                return None
+        for data, column in ((limits, "trade_date"), (suspended, "trade_date")):
+            dates = pd.to_datetime(data[column].astype(str), errors="coerce")
+            if dates.isna().any() or not dates.dt.strftime("%Y%m%d").eq(td).all():
+                return None
+        if not set(suspended["suspend_type"].astype(str)) <= {"S", "R"}:
+            return None
+        if basics[["name", "market"]].isna().any().any():
             return None
         if limits.empty:
             limits = pd.DataFrame(columns=["ts_code", "up_limit", "down_limit"])
-        suspended_codes = set() if suspended is None or suspended.empty else set(suspended["ts_code"].astype(str))
+        suspended_codes = set(suspended.loc[suspended["suspend_type"] == "S", "ts_code"].astype(str))
         frame = basics[["ts_code", "name", "market"]].merge(
             limits[[c for c in ("ts_code", "up_limit", "down_limit") if c in limits.columns]],
             on="ts_code", how="left",
@@ -2404,18 +2529,63 @@ class TushareProvider(BaseStockDataProvider):
         ]]
 
     def get_stock_basic_df(self):
-        """股票基本信息全量（stock_basic 不传 list_status，含退市 D/暂停 P，
-        含 area 地域原生字段），标准列归一。失败返回 None。"""
+        """全量获取股票目录的所有生命周期状态并归一为标准列。
+
+        stock_basic 默认 list_status='L'，因此必须逐状态请求，避免遗漏暂停、退市、
+        过会未交易和未上市证券。某个状态请求失败时拒绝返回不完整目录。
+        """
         if not self.connected:
             return None
         try:
-            df = self._api_call(
-                self.api.stock_basic,
-                fields="ts_code,name,market,exchange,industry,area,"
-                       "list_status,list_date,delist_date",
-            )
-            return self._reindex_store_cols(df, self._STORE_BASIC_COLS) \
-                if df is not None else None
+            frames = []
+            fields = "ts_code,name,market,exchange,industry,area,list_status,list_date,delist_date"
+            # Partition by exchange as well as lifecycle status. Tushare caps an
+            # individual response at 6000 rows; the listed universe was already
+            # close to that ceiling, so a single all-exchange query could silently
+            # truncate as the market grows.
+            for status in _STOCK_BASIC_LIST_STATUSES:
+                for exchange in _STOCK_BASIC_EXCHANGES:
+                    frame = self._api_call(
+                        self.api.stock_basic, exchange=exchange,
+                        list_status=status, fields=fields,
+                    )
+                    if frame is None:
+                        return None
+                    if len(frame) >= 6000:
+                        logger.warning("stock_basic 响应达到 6000 行上限，拒绝保存不完整目录 [%s/%s]",
+                                       exchange, status)
+                        return None
+                    if not set(fields.split(",")).issubset(frame.columns):
+                        logger.warning("stock_basic 缺少请求字段，拒绝保存目录 [%s/%s]: %s",
+                                       exchange, status, sorted(set(fields.split(",")) - set(frame.columns)))
+                        return None
+                    if frame.empty:
+                        continue
+                    if frame["ts_code"].isna().any():
+                        return None
+                    observed_statuses = set(frame["list_status"].astype(str).str.strip().str.upper())
+                    if observed_statuses != {status}:
+                        logger.warning("stock_basic 状态过滤与返回数据不一致 [%s/%s]: %s",
+                                       exchange, status, sorted(observed_statuses))
+                        return None
+                    normalized_exchanges = frame["exchange"].astype("string").str.strip().str.upper()
+                    observed_exchanges = set(normalized_exchanges.dropna())
+                    if normalized_exchanges.isna().any() or (normalized_exchanges == "").any() or observed_exchanges != {exchange}:
+                        logger.warning("stock_basic 交易所过滤与返回数据不一致 [%s]: %s",
+                                       exchange, sorted(observed_exchanges))
+                        return None
+                    frames.append(frame)
+            if not frames:
+                return pd.DataFrame(columns=self._STORE_BASIC_COLS)
+            combined = pd.concat(frames, ignore_index=True)
+            if "ts_code" not in combined.columns or combined["ts_code"].isna().any():
+                return None
+            # A code in two lifecycle partitions makes the stock universe
+            # ambiguous; choosing the first status could invent or omit quotes.
+            if combined["ts_code"].duplicated().any():
+                logger.warning("stock_basic 同一代码重复出现在目录分区，拒绝保存")
+                return None
+            return self._reindex_store_cols(combined, self._STORE_BASIC_COLS)
         except Exception as e:
             logger.warning("获取股票基本信息全量失败: %s", e)
             return None
@@ -2536,6 +2706,55 @@ class TushareProvider(BaseStockDataProvider):
             return df
         # 日线行序升序归一（dc_daily 降序返回，实测；踩坑见 tushare-endpoints.md）
         return _sort_asc_by_trade_date(df).reset_index(drop=True)
+
+    def get_sector_daily_fallback_df(self, source: str, ts_code: str,
+                                     start_date: str, end_date: str):
+        """Read Eastmoney's original DC K-line only for a confirmed daily gap."""
+        if source != "dc" or not re.fullmatch(r"BK\d{4}\.DC", ts_code):
+            return None
+        import requests
+
+        try:
+            response = requests.get(
+                "https://push2his.eastmoney.com/api/qt/stock/kline/get",
+                params={
+                    "secid": f"90.{ts_code[:-3]}",
+                    "fields1": "f1,f2,f3,f4,f5,f6",
+                    "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61",
+                    "klt": "101", "fqt": "0", "beg": start_date,
+                    "end": end_date,
+                },
+                timeout=8,
+            )
+            response.raise_for_status()
+            data = response.json().get("data")
+            if not isinstance(data, dict) or data.get("code") != ts_code[:-3] or data.get("market") != 90:
+                return None
+            rows = []
+            for line in data.get("klines") or []:
+                parts = line.split(",")
+                if len(parts) != 11:
+                    return None
+                rows.append(dict(zip(
+                    ("trade_date", "open", "close", "high", "low", "vol",
+                     "amount", "swing", "pct_change", "change", "turnover_rate"),
+                    parts,
+                )))
+            if not rows:
+                return None
+            frame = pd.DataFrame(rows)
+            frame["trade_date"] = pd.to_datetime(frame["trade_date"], errors="coerce").dt.strftime("%Y%m%d")
+            if frame["trade_date"].isna().any() or frame["trade_date"].duplicated().any():
+                return None
+            if not frame["trade_date"].between(start_date, end_date).all():
+                return None
+            frame["ts_code"] = ts_code
+            return frame.sort_values("trade_date").reset_index(drop=True)
+        except Exception as exc:
+            if _is_network_access_denied(exc):
+                self._remember_network_access_error(exc)
+            logger.warning("东财板块日线兜底失败 [%s]: %s", ts_code, type(exc).__name__)
+            return None
 
     # ==================== 市场特征层 — 结构化接口（T5） ====================
     # 契约见 AI/dataflows/market_features.py 模块头部；实现约束来自 T1 POC 实测

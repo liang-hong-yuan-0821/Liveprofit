@@ -1,3 +1,4 @@
+import { layersName } from '../../shared/analysisLayers';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toApiError } from '../../../../api/client';
@@ -103,47 +104,20 @@ function DeleteTaskConfirm({
 function TaskRow({ task, onDeleteRequest }: { task: TaskListItemDTO; onDeleteRequest: (task: TaskListItemDTO) => void }) {
   const terminal = task.status === 'SUCCEEDED' || task.status === 'FAILED' || task.status === 'CANCELLED';
   return (
-    <li>
-      <Link
-        to={`/ai/tasks/${task.id}`}
-        className="flex items-center justify-between gap-4 rounded-md border p-3 hover:bg-[var(--color-surface)]"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        <div className="flex items-center gap-3">
-          <Badge variant="outline">{task.task_type === 'SINGLE_STOCK' ? '单股' : '全市场'}</Badge>
-          <span className="text-sm font-medium">{task.ticker ?? '—'}</span>
-          <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-            {task.effective_trade_date ?? '—'}
-          </span>
+    <li className="glass-card flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+      <Link to={`/ai/tasks/${task.id}`} className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 rounded-lg p-1">
+        <div className="min-w-0">
+          <span className="text-sm font-medium">{layersName(task.selected_layers ?? [])} · <span>{task.ticker ?? '全市场'}</span></span>
+          <p className="mt-1 text-xs text-[var(--color-fg-muted)]">交易日 {task.effective_trade_date ?? '—'} · #{task.id.slice(0, 8)}</p>
+          {task.status === 'FAILED' && task.error_summary && <p className="mt-1 text-xs text-red-400">{task.error_summary}</p>}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Badge variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Badge>
-          <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-            第 {task.attempt_no} 次尝试
-          </span>
-          {task.status === 'FAILED' && task.error_summary && (
-            <span className="max-w-48 truncate text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-              {task.error_summary}
-            </span>
-          )}
-          <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-            {formatDateTime(task.updated_at)}
-          </span>
-          {terminal && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onDeleteRequest(task);
-              }}
-            >
-              删除
-            </Button>
-          )}
+          <span className="text-xs text-[var(--color-fg-muted)]">第 {task.attempt_no} 次尝试</span>
+          <span className="text-xs text-[var(--color-fg-muted)]">{formatDateTime(task.updated_at)}</span>
         </div>
       </Link>
+      {terminal && <Button size="sm" variant="ghost" onClick={() => onDeleteRequest(task)}>删除</Button>}
     </li>
   );
 }

@@ -15,6 +15,7 @@ export type QuantStrategyDraftDTO = {
     template_id?: (string | null);
     template_params?: (Record<string, any> | null);
     template_renderer_version?: (string | null);
+    lifecycle_policy_version_id?: (string | null);
     version: number;
     created_at: string;
     updated_at: string;

@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
+import logging
 
 import pandas as pd
 
@@ -30,12 +31,16 @@ from backend.modules.market_data.application.indicators import (
     compute_indicators,
 )
 from backend.shared.clock import Clock, SystemClock
+from backend.modules.market_data.application.refresh_policy import KLINE_FACTOR_COLUMNS, RefreshPolicy
+
+logger = logging.getLogger(__name__)
 
 # 技术指标不自算（技术指标数据源切换方案 §3.3）：指数/个股主路径指标值取自
 # idx_factor_pro/stk_factor_pro 入库数据（上游用区间前历史计算，因子行自带全历史
 # 窗口），无需补窗口。显式例外（板块概念Treemap方案 m7，用户拍板 2026-09-16）：
 # ① 概念（板块指数）无任何上游因子源 → get_sector_bars 自算（indicators.py）；
-# ② 个股因子表无行 → 按需拉取 stk_factor_pro 入库缓存（factor_daily 即缓存层）。
+# ② 个股因子缓存未完整覆盖请求区间 → 按需拉取 stk_factor_pro 入库补齐
+#   （factor_daily 即缓存层，_factor_rows_cover 判定覆盖）。
 # 概念自算预热窗口（自然日，口径沿用归档 K线指标叠加方案 3.1）：
 # MA60 需 59 个前导交易日 ≈ 88 自然日，另留长假休市余量取 120；板块库内历史短
 # （首跑 ~33 根），预热取到多少算多少——历史不足处指标为 None（数据缺失是事实）。
@@ -63,6 +68,35 @@ CAP_TIER_INDEXES: list[tuple[str, str]] = [
 BOARD_INDEXES: list[tuple[str, str]] = [
     ("000001.SH", "上证综指"), ("399006.SZ", "创业板指"), ("000688.SH", "科创50"),
 ]
+
+def _factor_rows_cover(fdf: pd.DataFrame, expected_dates: set[str]) -> bool:
+    """个股因子缓存是否逐日覆盖本次实际展示的 bars。
+
+    每日增量采集只写最新 1~2 天个股因子：仅判 empty 会让残段挡住历史补拉——
+    指标以残段对齐 bars、其余全 None（2026-09-21 买点卡无均线实况）。
+    请求端点是否交易日、股票何时上市均已反映在 bars 日期集合中，无需再猜自然日
+    容差或 list_date；区间内部缺任意交易日也会返回 False。
+    """
+    if not expected_dates:
+        return True
+    if fdf.empty or "trade_date" not in fdf.columns:
+        return False
+    rows = fdf.copy()
+    rows["_date_key"] = rows["trade_date"].map(
+        lambda value: pd.Timestamp(value).date().isoformat()
+    )
+    requested = rows[rows["_date_key"].isin(expected_dates)]
+    factor_dates = set(requested["_date_key"])
+    if not expected_dates.issubset(factor_dates):
+        return False
+    # 每日增量路径可能只写 qfq 列：虽然同日 factor 行存在，K 线使用的 bfq
+    # 指标却全部为空。每个展示日至少要有一个可画的 bfq 值，否则触发按需补拉。
+    available = [c for c in KLINE_FACTOR_COLUMNS if c in requested.columns]
+    if not available:
+        return False
+    return bool(requested.groupby("_date_key")[available].apply(
+        lambda group: group.notna().any(axis=None)
+    ).all())
 
 
 @dataclass(frozen=True)
@@ -110,6 +144,18 @@ class BarsDTO:
     market_closed_reason: str | None
 
 
+@dataclass(frozen=True)
+class ConceptResult:
+    as_of: date | None
+    requested_as_of: date | None
+    date_mode: str
+    items: list[dict]
+    result_status: str
+    freshness_status: str
+    source_updated_at: object
+    coverage: dict
+
+
 def default_stock_factor_fetcher(symbol: str, start: str, end: str):
     """个股因子按需拉取生产默认（m7）：AI 数据流接口层（provider 单例，按
     LIVEPROFIT_DATA_SOURCE 选源，AKShare 源下基类默认返回 None）。失败返回 None
@@ -127,6 +173,9 @@ class MarketDataService:
         calendar=None,
         market_conn=None,
         stock_factor_fetcher: Callable[[str, str, str], object] | None = None,
+        factor_gate: Callable[[str, str, str], bool] | None = None,
+        factor_changed: Callable[[str], None] | None = None,
+        publish_lag_seconds=None,
     ) -> None:
         """market_conn = db.instrument.get_connection 工厂（contextmanager）。
 
@@ -141,11 +190,15 @@ class MarketDataService:
         self._calendar = calendar
         self._market_conn = market_conn
         self._stock_factor_fetcher = stock_factor_fetcher
+        self._factor_gate = factor_gate
+        self._factor_changed = factor_changed
+        self._refresh_policy = RefreshPolicy(calendar=calendar, publish_lag_seconds=publish_lag_seconds)
 
     # ---- K 线 ----
 
     def get_bars(
-        self, *, market: str, symbol: str, interval: str, from_date: date, to_date: date
+        self, *, market: str, symbol: str, interval: str, from_date: date, to_date: date,
+        factor_policy: str = "ensure",
     ) -> BarsDTO:
         # from>to 校验保留（K 线方案把原"超 365 天"用例替换为 from>to——
         # 365 上限已由该方案移除，本方案保留 from>to 拒绝语义）
@@ -153,11 +206,16 @@ class MarketDataService:
             raise RangeTooLargeError("查询范围无效：开始日期晚于结束日期")
         if interval != "1d":
             raise IntervalNotSupportedError(f"该资产不支持周期：{interval}")
+        if factor_policy not in {"ensure", "cache_only"}:
+            raise ValueError("factor_policy must be ensure or cache_only")
 
         # market 形参保留仅契约兼容（回显），不参与查询条件——instrument 无 market 列
         # （决策 9②）；资产存在性 = instrument 查询（instrument_type ∈ index/stock——
         # 板块概念Treemap方案 3.3 放宽个股，fund 仍 404）
         from db.instrument.dao.instrument import get_instrument
+        from backend.modules.market_data.infrastructure.refresh_repository import _valid_sql
+        expected_date = self._last_trading_day(market)
+        target_available = False
         with self._market_conn() as conn:
             inst = get_instrument(conn, symbol)
             bars_full = None
@@ -175,6 +233,11 @@ class MarketDataService:
                 ).fetchone()
                 latest = latest_row[0] if latest_row else None
                 source_updated = latest_row[1] if latest_row else None
+                target_available = conn.execute(
+                    f"SELECT EXISTS(SELECT 1 FROM market.instrument_daily d WHERE d.ts_code=%s "
+                    f"AND d.trade_date=%s AND {_valid_sql(['open', 'high', 'low', 'close'])})",
+                    (symbol, expected_date),
+                ).fetchone()[0]
 
         if inst is None:
             raise MarketAssetNotFoundError(f"资产不存在：{market} {symbol}")
@@ -184,10 +247,9 @@ class MarketDataService:
 
         freshness = "UNAVAILABLE"
         if latest is not None:
-            last_trading = self._last_trading_day()
-            freshness = "FRESH" if last_trading is not None and latest >= last_trading else "STALE"
+            freshness = "FRESH" if target_available else "STALE"
 
-        session_status, closed_reason = self._session_status()
+        session_status, closed_reason = self._session_status(market)
 
         bar_dicts = []
         if bars_full is not None and not bars_full.empty:
@@ -201,19 +263,25 @@ class MarketDataService:
                     "volume": float(row["vol"]) if pd.notna(row["vol"]) else None,
                 }
                 for _, row in bars_full.iterrows()
+                if all(pd.notna(row[column]) for column in ("open", "high", "low", "close"))
             ]
         indicators = None
         if bar_dicts:
             with self._market_conn() as conn:
                 from db.instrument.dao.factor_daily import query_range as factors_range
                 fdf = factors_range(conn, symbol, from_date.isoformat(), to_date.isoformat())
-            # 个股因子表无行 → 按需拉取 stk_factor_pro 并入库缓存（板块概念Treemap
-            # 方案 m7，用户拍板 2026-09-16：个股接因子、概念自算）。拉取失败/无数据
-            # → indicators=None 纯 K 线（原 3.3 语义，降级不阻断 K 线）；指数路径
-            # 保持全 null 数组降级语义（契约测试 test_market_data.py:77-81 冻结断言，
-            # 不得全局改 None）
-            if inst["instrument_type"] == "stock" and fdf.empty:
-                fdf = self._fetch_stock_factors_into_table(symbol, from_date, to_date)
+            # 个股因子缓存未完整覆盖请求区间 → 按需拉取 stk_factor_pro 并入库缓存
+            # （板块概念Treemap方案 m7，用户拍板 2026-09-16：个股接因子、概念自算）。
+            # 仅判 fdf.empty 会被每日增量采集写的最新 1~2 天个股因子挡住历史补拉——
+            # 指标以残段对齐 bars、其余全 None，图上无均线（2026-09-21 买点卡实况）。
+            # 拉取失败/无数据 → indicators=None 纯 K 线（原 3.3 语义，降级不阻断 K 线）；
+            # 指数路径保持全 null 数组降级语义（契约测试 test_market_data.py:77-81
+            # 冻结断言，不得全局改 None）
+            if factor_policy == "ensure" and inst["instrument_type"] == "stock" and not _factor_rows_cover(
+                fdf,
+                {str(bar["timestamp"])[:10] for bar in bar_dicts},
+            ):
+                fdf = self._fetch_stock_factors_into_table(symbol, from_date, to_date, cached=fdf)
             # 个股拉取后仍无行 → 短路 indicators=None 纯 K 线；指数路径不短路——
             # 空因子表仍产全 null 数组指标（冻结用例固化语义，不得全局改 None）
             if not (inst["instrument_type"] == "stock" and fdf.empty):
@@ -225,7 +293,7 @@ class MarketDataService:
                     for b in bar_dicts:
                         row = factor_map.get(b["timestamp"])
                         value = row[name] if row is not None else None
-                        values.append(float(value) if value is not None else None)
+                        values.append(float(value) if pd.notna(value) else None)
                     return values
 
                 indicators = {
@@ -277,7 +345,9 @@ class MarketDataService:
         if from_date > to_date:
             raise RangeTooLargeError("查询范围无效：开始日期晚于结束日期")
         from db.instrument.dao import instrument_daily
+        from backend.modules.market_data.infrastructure.refresh_repository import _valid_sql
         codes = [symbol for symbol, _name in indexes]
+        expected_date = self._last_trading_day()
         with self._market_conn() as conn:
             series = []
             for symbol, name in indexes:
@@ -294,53 +364,65 @@ class MarketDataService:
                 "WHERE ts_code = ANY(%s) GROUP BY ts_code",
                 (codes,),
             ).fetchall()
+            covered = conn.execute(
+                f"SELECT count(DISTINCT d.ts_code) FROM market.instrument_daily d "
+                f"WHERE d.ts_code=ANY(%s) AND d.trade_date=%s AND {_valid_sql(['open','high','low','close'])}",
+                (codes, expected_date),
+            ).fetchone()[0]
         as_of = max((r[1] for r in rows if r[1] is not None), default=None)
         freshness = "UNAVAILABLE"
         if as_of is not None:
-            last_trading = self._last_trading_day()
-            freshness = (
-                "FRESH" if last_trading is not None and as_of >= last_trading else "STALE")
+            # A latest point in one series cannot cover missing peer indexes.
+            freshness = "FRESH" if expected_date is not None and covered == len(set(codes)) else "STALE"
         return TrendsDTO(
             from_date=from_date, to_date=to_date, series=series,
             as_of=as_of, freshness_status=freshness,
         )
 
     def _fetch_stock_factors_into_table(
-        self, symbol: str, from_date: date, to_date: date
+        self, symbol: str, from_date: date, to_date: date, *, cached: pd.DataFrame | None = None
     ) -> pd.DataFrame:
-        """个股因子按需拉取（m7）：调 stk_factor_pro 拉 [from, to] 因子帧，入库
-        factor_daily（即缓存层——下次同区间查询走表、不再调上游），返回库内该区间
-        因子帧。拉取失败/无数据 → 返回空 DataFrame（调用方降级纯 K 线）。
+        """Interactive bfq fill: same-connection PG lock, then Redis cooldown.
 
-        stk_factor_pro 帧无 close/ts_code 列：close 由 DAO 清洗置 None（宽表可空，
-        仅供指数路径对齐自检，个股路径不读）；ts_code 由本方法补。上游因子行自带
-        全历史窗口（区间前历史计算），区间首根即有值，按 [from, to] 拉取即可。
+        Failures retain cached observations and the cooldown. Automatic reads
+        never enter this method, and no empty qfq columns are manufactured.
         """
+        from db.instrument.dao.factor_daily import upsert_observed_bfq_factors, query_range
+        from db.instrument.ingest.guard import IngestGuard, IngestBusy
+
+        fallback = cached if cached is not None else pd.DataFrame()
+        if self._factor_gate is None:
+            return fallback
         fetcher = self._stock_factor_fetcher or default_stock_factor_fetcher
         try:
-            df = fetcher(symbol, from_date.isoformat(), to_date.isoformat())
-        except Exception:
-            logger.warning("个股 %s 因子按需拉取异常（降级纯 K 线）", symbol, exc_info=True)
-            return pd.DataFrame()
-        if df is None or df.empty:
-            return pd.DataFrame()
-        df = df.copy()
-        df["ts_code"] = symbol
-        df["updated_at"] = pd.Timestamp.now()
-        try:
-            from db.instrument.dao.factor_daily import (
-                bulk_upsert_factor_daily,
-                query_range as factors_range,
-            )
-
             with self._market_conn() as conn:
-                bulk_upsert_factor_daily(conn, df, update=True)
-                conn.commit()  # get_connection 不自管 commit，缓存必须落盘
-                return factors_range(conn, symbol, from_date.isoformat(), to_date.isoformat())
+                with IngestGuard(conn, changed=self._factor_changed) as guard:
+                    if not self._factor_gate(symbol, from_date.isoformat(), to_date.isoformat()):
+                        return fallback
+                    guard.assert_alive()
+                    df = fetcher(symbol, from_date.isoformat(), to_date.isoformat())
+                    if df is None or df.empty or "trade_date" not in df.columns:
+                        return fallback
+                    df = df.copy()
+                    if "ts_code" in df.columns:
+                        df = df[df["ts_code"] == symbol].copy()
+                    dates = pd.to_datetime(df["trade_date"], errors="coerce").dt.date
+                    df = df[dates.notna() & (dates >= from_date) & (dates <= to_date)].copy()
+                    if df.empty:
+                        return fallback
+                    df["trade_date"] = dates.loc[df.index]
+                    df["ts_code"] = symbol
+                    df["updated_at"] = self._clock.now()
+                    guard.assert_alive()
+                    written = upsert_observed_bfq_factors(guard.connection, df)
+                    if written:
+                        guard.commit("CN_STOCK_DAILY")
+                    return query_range(conn, symbol, from_date.isoformat(), to_date.isoformat())
+        except IngestBusy:
+            return fallback
         except Exception:
-            # 入库失败不阻断 K 线（降级纯 K 线）；下次点击重试拉取
-            logger.warning("个股 %s 因子入库失败（降级纯 K 线）", symbol, exc_info=True)
-            return pd.DataFrame()
+            logger.warning("Stock factor refresh unavailable symbol=%s; retaining cache", symbol, exc_info=True)
+            return fallback
 
     def get_sector_bars(
         self, *, market: str, source: str, sector_code: str,
@@ -357,6 +439,9 @@ class MarketDataService:
         """
         if from_date > to_date:
             raise RangeTooLargeError("查询范围无效：开始日期晚于结束日期")
+        from backend.modules.market_data.infrastructure.refresh_repository import _valid_sql
+        expected_date = self._last_trading_day(market)
+        target_available = False
         with self._market_conn() as conn:
             sector = conn.execute(
                 "SELECT name FROM market.sector WHERE source = %s AND sector_code = %s",
@@ -384,16 +469,20 @@ class MarketDataService:
                 ).fetchone()
                 latest = latest_row[0] if latest_row else None
                 source_updated = latest_row[1] if latest_row else None
+                target_available = conn.execute(
+                    f"SELECT EXISTS(SELECT 1 FROM market.sector_daily d WHERE d.source=%s AND d.sector_code=%s "
+                    f"AND d.trade_date=%s AND {_valid_sql(['open','high','low','close'])})",
+                    (source, sector_code, expected_date),
+                ).fetchone()[0]
 
         if sector is None:
             raise MarketAssetNotFoundError(f"资产不存在：{market} {sector_code}")
 
         freshness = "UNAVAILABLE"
         if latest is not None:
-            last_trading = self._last_trading_day()
-            freshness = "FRESH" if last_trading is not None and latest >= last_trading else "STALE"
+            freshness = "FRESH" if target_available else "STALE"
 
-        session_status, closed_reason = self._session_status()
+        session_status, closed_reason = self._session_status(market)
 
         bar_dicts = []
         if bars_full is not None and not bars_full.empty:
@@ -464,94 +553,20 @@ class MarketDataService:
             },
         }
 
-    def _last_trading_day(self) -> date | None:
-        if self._calendar is None:
+    def _last_trading_day(self, market: str = "CN") -> date | None:
+        if market not in {"CN", "US", "KR"}:
             return None
-        return self._calendar.last_trading_day(self._clock.now().date())
+        return self._refresh_policy.target(f"{market}_INDEX_BARS", self._clock.now()).expected_trade_date
 
-    def _session_status(self) -> tuple[str, str | None]:
-        """开闭市与新鲜度正交：CLOSED 不是错误。无日历注入时默认 CLOSED（保守）。"""
-        if self._calendar is None:
-            return "CLOSED", "开闭市判定待交易日历接入"
-        today = self._clock.now().date()
-        if self._calendar.is_trading_day(today):
-            return "OPEN", None
-        return "CLOSED", "休市/已收盘"
+    def _session_status(self, market: str = "CN") -> tuple[str, str | None]:
+        if market not in {"CN", "US", "KR"}:
+            return "UNKNOWN", "交易日历不可用"
+        status = self._refresh_policy.session_status(market, self._clock.now())
+        reason = {"CLOSED": "休市/已收盘", "BREAK": "盘中休息", "UNKNOWN": "交易日历不可用"}
+        return status, reason.get(status)
 
-    # ---- 热点现场计算（决策 13） ----
-
-    def get_hot_concepts(
-        self, *, market: str, as_of: date | None, limit: int
-    ) -> tuple[date | None, list[dict], str, str, object]:
-        """读 market.sector_daily 现场计算热度（heat_v1：pct×0.6 + vol_change×0.4）。
-
-        - market≠CN 返回空态（sector_daily 仅 CN 板块数据，503 语义删除）
-        - 无数据为正常业务态（NO_HOT_CONCEPTS，200 空 items）
-        - as_of 省略时取 sector_daily（source='dc'）最新 trade_date——数据到哪算到哪
-        - 窗口不足降级三段口径（M3 定稿，与 provider len(df) 分支逐段对齐）：
-          ① ≤1 行：热度 = 最新行 pct_chg × 0.6；② 2 ≤ 行 ≤ 10：按可得行算 pct、
-          vol_change=0；③ >10 行：完整公式
-        """
-        if market != "CN":
-            return None, [], "NO_HOT_CONCEPTS", "STALE", None
-        with self._market_conn() as conn:
-            if as_of is None:
-                row = conn.execute(
-                    "SELECT max(trade_date) FROM market.sector_daily "
-                    "WHERE source = 'dc'"
-                ).fetchone()
-                as_of = row[0] if row and row[0] is not None else None
-            if as_of is None:
-                return None, [], "NO_HOT_CONCEPTS", "STALE", None
-
-            from db.instrument.dao.sector_daily import query_by_window
-            start_row = conn.execute(
-                "SELECT DISTINCT trade_date FROM market.sector_daily "
-                "WHERE source = 'dc' AND trade_date <= %s "
-                "ORDER BY trade_date DESC LIMIT %s",
-                (as_of, HEAT_QUERY_DAYS),
-            ).fetchall()
-            if not start_row:
-                return as_of, [], "NO_HOT_CONCEPTS", self._freshness(as_of), None
-            window_start = start_row[-1][0]
-
-            df = query_by_window(conn, "dc", window_start.isoformat(),
-                                 as_of.isoformat())
-            if df.empty:
-                return as_of, [], "NO_HOT_CONCEPTS", self._freshness(as_of), None
-            names = {r[0]: r[1] for r in conn.execute(
-                "SELECT sector_code, name FROM market.sector "
-                "WHERE source = 'dc'").fetchall()}
-
-        # 逐板块计算（三段降级口径）
-        top = self._compute_sector_heat(df)[:limit]
-
-        items = []
-        max_updated = None
-        for rank, (code, _score, period_return, g) in enumerate(top, 1):
-            # M5：daily_changes 只含有值条目（pct_chg NULL 的日跳过——
-            # 契约 change_pct 非 Optional，NULL 会使整个响应 500）
-            daily_changes = [
-                {"date": str(r["trade_date"]),
-                 "change_pct": float(r["pct_chg"])}
-                for _, r in g.tail(HEAT_WINDOW_DAYS).iterrows()
-                if pd.notna(r["pct_chg"])
-            ]
-            last_updated = g["updated_at"].dropna().iloc[-1] \
-                if pd.notna(g["updated_at"]).any() else None
-            if last_updated is not None and (max_updated is None or last_updated > max_updated):
-                max_updated = last_updated
-            items.append({
-                "sector_code": code,
-                "sector_name": names.get(code),
-                "rank": rank,
-                "hotness_reason": None,  # LLM 理由生成未实现，契约字段保留恒 NULL
-                "period_return": period_return,
-                "daily_changes": daily_changes,
-                "updated_at": last_updated,  # 该板块行 updated_at（m5 定稿）
-                "bars": [],  # 首版无板块 K 线读模型：卡片显示不可用状态（契约允许）
-            })
-        return as_of, items, "OK", self._freshness(as_of), max_updated
+    def get_hot_concepts(self, *, market: str, as_of: date | None, limit: int) -> ConceptResult:
+        return self._concept_data(market=market, as_of=as_of, limit=limit, include_members=False)
 
     def _compute_sector_heat(self, df) -> list[tuple]:
         """逐板块三段降级打分（heat_v1，get_hot_concepts 与 get_concept_tree 共用）。
@@ -586,108 +601,106 @@ class MarketDataService:
         scored.sort(key=lambda x: -x[1])
         return scored
 
-    def get_concept_tree(
-        self, *, market: str, as_of: date | None, limit: int
-    ) -> tuple[date | None, list[dict], str, str, object]:
-        """概念树（板块概念Treemap方案 3.2）：热度 top N + as_of 当日涨跌幅 + 成分股。
+    def get_concept_tree(self, *, market: str, as_of: date | None, limit: int) -> ConceptResult:
+        return self._concept_data(market=market, as_of=as_of, limit=limit, include_members=True)
 
-        - market≠CN / 无数据 / 窗口不足：与 get_hot_concepts 同语义（NO_HOT_CONCEPTS）
-        - heat_score 为 tree 契约新增字段（旧 hot 契约不加列）；pct_chg 显式按
-          as_of 过滤取值（板块当日无行情行 → None，不得静默取更早日期）
-        - members = dc 成分（LEFT JOIN instrument 取名称、缺失以 ts_code 兜底；
-          LEFT JOIN instrument_daily 取当日横截面 pct_chg，停牌/无行 → None），
-          按 |pct_chg| 降序截断 MEMBERS_PER_CONCEPT，member_total 标全量数
-        """
+    def _concept_data(self, *, market: str, as_of: date | None, limit: int, include_members: bool) -> ConceptResult:
+        """Rank only boards with valid quotes on the exact effective date."""
+        from backend.modules.market_data.infrastructure.refresh_repository import RefreshRepository, _valid_sql
+        from db.instrument.dao.sector_daily import query_by_window
+
+        requested = as_of
+        mode = "HISTORICAL" if requested is not None else "LATEST"
+        empty_counts = lambda: dict(expected_count=0, available_count=0, exempt_count=0, missing_count=0)
+        coverage = {"boards": empty_counts(), "members": empty_counts() if include_members else None}
+        def result(items=None, updated=None):
+            freshness = "UNAVAILABLE"
+            if items:
+                freshness = self._freshness(as_of) if not coverage["boards"]["missing_count"] else "STALE"
+            return ConceptResult(as_of, requested, mode, items or [], "OK" if items else "NO_HOT_CONCEPTS",
+                                 freshness, updated, coverage)
         if market != "CN":
-            return None, [], "NO_HOT_CONCEPTS", "STALE", None
+            return result()
         with self._market_conn() as conn:
+            names = dict(conn.execute("SELECT sector_code,name FROM market.sector WHERE source='dc'").fetchall())
+            coverage["boards"]["expected_count"] = len(names)
+            coverage["boards"]["missing_count"] = len(names)
             if as_of is None:
-                row = conn.execute(
-                    "SELECT max(trade_date) FROM market.sector_daily "
-                    "WHERE source = 'dc'"
-                ).fetchone()
-                as_of = row[0] if row and row[0] is not None else None
+                as_of = RefreshRepository().concept_display_date(conn=conn)
             if as_of is None:
-                return None, [], "NO_HOT_CONCEPTS", "STALE", None
-
-            from db.instrument.dao.sector_daily import query_by_window
-            start_row = conn.execute(
-                "SELECT DISTINCT trade_date FROM market.sector_daily "
-                "WHERE source = 'dc' AND trade_date <= %s "
-                "ORDER BY trade_date DESC LIMIT %s",
-                (as_of, HEAT_QUERY_DAYS),
+                return result()
+            candidates = [row[0] for row in conn.execute(
+                f"SELECT d.sector_code FROM market.sector_daily d WHERE d.source='dc' AND d.trade_date=%s "
+                f"AND d.sector_code=ANY(%s) AND {_valid_sql(['open', 'high', 'low', 'close', 'pct_chg'])}",
+                (as_of, list(names)),
+            ).fetchall()]
+            coverage["boards"]["available_count"] = len(candidates)
+            coverage["boards"]["missing_count"] = len(names) - len(candidates)
+            if not candidates:
+                return result()
+            dates = conn.execute(
+                "SELECT DISTINCT trade_date FROM market.sector_daily WHERE source='dc' AND trade_date<=%s "
+                "AND sector_code=ANY(%s) ORDER BY trade_date DESC LIMIT %s",
+                (as_of, candidates, HEAT_QUERY_DAYS),
             ).fetchall()
-            if not start_row:
-                return as_of, [], "NO_HOT_CONCEPTS", self._freshness(as_of), None
-            window_start = start_row[-1][0]
+            frame = query_by_window(conn, "dc", dates[-1][0].isoformat(), as_of.isoformat())
+            frame = frame[frame["sector_code"].isin(candidates)]
+            top = self._compute_sector_heat(frame)[:limit]
+            members_by_code, totals_by_code = {}, {}
+            if include_members and top:
+                top_codes = [code for code, *_ in top]
+                member_rows = conn.execute(
+                    "WITH classified AS (SELECT m.sector_code,m.ts_code,COALESCE(i.name,m.ts_code) AS name,"
+                    " d.pct_chg, CASE "
+                    "WHEN i.list_date>%s OR i.delist_date<=%s "
+                    " OR (i.list_status IN ('G','U') AND i.list_date IS NULL) THEN 'EXCLUDED' "
+                    "WHEN i.list_date IS NULL OR i.list_status IS NULL OR i.list_status NOT IN ('L','P','D','G','U') "
+                    " OR (i.list_status='D' AND i.delist_date IS NULL) THEN 'MISSING' "
+                    f"WHEN {_valid_sql(['open', 'high', 'low', 'close', 'pct_chg'])} THEN 'AVAILABLE' "
+                    "WHEN t.is_suspended AND t.source='tushare' THEN 'EXEMPT' ELSE 'MISSING' END AS state "
+                    "FROM (SELECT DISTINCT sector_code,ts_code FROM market.sector_member "
+                    "WHERE source='dc' AND sector_code=ANY(%s)) m "
+                    "LEFT JOIN market.instrument i ON i.ts_code=m.ts_code AND i.instrument_type='stock' "
+                    "LEFT JOIN market.instrument_daily d ON d.ts_code=m.ts_code AND d.trade_date=%s "
+                    "LEFT JOIN market.trade_status_daily t ON t.ts_code=m.ts_code AND t.trade_date=%s), "
+                    "ranked AS (SELECT *,count(*) OVER w AS member_total, "
+                    "count(*) FILTER(WHERE state!='EXCLUDED') OVER w AS expected_count, "
+                    "count(*) FILTER(WHERE state='AVAILABLE') OVER w AS available_count, "
+                    "count(*) FILTER(WHERE state='EXEMPT') OVER w AS exempt_count, "
+                    "count(*) FILTER(WHERE state='MISSING') OVER w AS missing_count, "
+                    "row_number() OVER(PARTITION BY sector_code ORDER BY abs(pct_chg) DESC NULLS LAST,ts_code) AS rn "
+                    "FROM classified WINDOW w AS (PARTITION BY sector_code)) "
+                    "SELECT sector_code,ts_code,name,pct_chg,member_total,expected_count,available_count,exempt_count,missing_count "
+                    "FROM ranked WHERE rn<=%s ORDER BY sector_code,rn",
+                    (as_of, as_of, top_codes, as_of, as_of, MEMBERS_PER_CONCEPT),
+                ).fetchall()
+                for code, symbol, name, pct, total, expected, available, exempt, missing in member_rows:
+                    members_by_code.setdefault(code, []).append({"ts_code": symbol, "name": name,
+                                                               "pct_chg": float(pct) if pd.notna(pct) else None})
+                    if code not in totals_by_code:
+                        totals_by_code[code] = total
+                        for key, value in zip(coverage["members"], (expected, available, exempt, missing)):
+                            coverage["members"][key] += value
+        items, max_updated = [], None
+        for rank, (code, score, period_return, group) in enumerate(top, 1):
+            timestamps = group["updated_at"].dropna()
+            updated = timestamps.max() if not timestamps.empty else None
+            if updated is not None and (max_updated is None or updated > max_updated):
+                max_updated = updated
+            item = dict(sector_code=code, sector_name=names[code], rank=rank, heat_window_rows=len(group))
+            if include_members:
+                today = group[group["trade_date"] == as_of].iloc[-1]
+                item.update(heat_score=score, pct_chg=float(today["pct_chg"]),
+                            members=members_by_code.get(code, []), member_total=totals_by_code.get(code, 0))
+            else:
+                item.update(hotness_reason=None, period_return=period_return, updated_at=updated, bars=[],
+                            daily_changes=[{"date": row["trade_date"], "change_pct": float(row["pct_chg"])}
+                                           for _, row in group.tail(HEAT_WINDOW_DAYS).iterrows() if pd.notna(row["pct_chg"])])
+            items.append(item)
+        return result(items, max_updated)
 
-            df = query_by_window(conn, "dc", window_start.isoformat(),
-                                 as_of.isoformat())
-            if df.empty:
-                return as_of, [], "NO_HOT_CONCEPTS", self._freshness(as_of), None
-            names = {r[0]: r[1] for r in conn.execute(
-                "SELECT sector_code, name FROM market.sector "
-                "WHERE source = 'dc'").fetchall()}
-
-            top = self._compute_sector_heat(df)[:limit]
-            top_codes = [code for code, _, _, _ in top]
-            # 截断在 SQL 侧完成（ROW_NUMBER 窗口 + 外层 rn 过滤）——热度榜偏向成分多的
-            # 大板块（dc 实测 top 30 合计 29,062 成分），Python 侧截断会把全部成分
-            # （~2.9 万行）拉出库再排序，SQL 截断后出库量 ≤ limit×100 ≈ 3,000 行；
-            # member_total 用 COUNT(*) OVER 同查询产出（截断不影响全量计数）
-            member_rows = conn.execute(
-                "SELECT sector_code, ts_code, name, pct_chg, member_total FROM ("
-                "  SELECT m.sector_code, m.ts_code, "
-                "         COALESCE(i.name, m.ts_code) AS name, d.pct_chg, "
-                "         COUNT(*) OVER (PARTITION BY m.sector_code) AS member_total, "
-                "         ROW_NUMBER() OVER (PARTITION BY m.sector_code "
-                "           ORDER BY abs(d.pct_chg) DESC NULLS LAST, m.ts_code) AS rn "
-                "  FROM market.sector_member m "
-                "  LEFT JOIN market.instrument i ON i.ts_code = m.ts_code "
-                "  LEFT JOIN market.instrument_daily d "
-                "    ON d.ts_code = m.ts_code AND d.trade_date = %s "
-                "  WHERE m.source = 'dc' AND m.sector_code = ANY(%s)"
-                ") t WHERE rn <= %s ORDER BY sector_code, rn",
-                (as_of, top_codes, MEMBERS_PER_CONCEPT),
-            ).fetchall()
-
-        members_by_code: dict = {}
-        totals_by_code: dict = {}
-        for s_code, ts_code, name, pct, total in member_rows:
-            members_by_code.setdefault(s_code, []).append({
-                "ts_code": ts_code,
-                "name": name,
-                "pct_chg": float(pct) if pct is not None else None,
-            })
-            totals_by_code[s_code] = int(total)
-
-        items = []
-        max_updated = None
-        for rank, (code, score, _period_return, g) in enumerate(top, 1):
-            day_rows = g[g["trade_date"] == as_of]
-            pct_chg = None
-            if not day_rows.empty:
-                v = day_rows["pct_chg"].iloc[-1]
-                pct_chg = float(v) if pd.notna(v) else None
-            members = members_by_code.get(code, [])   # SQL 已按 |pct_chg| 降序截断
-            member_total = totals_by_code.get(code, 0)
-            last_updated = g["updated_at"].dropna().iloc[-1] \
-                if pd.notna(g["updated_at"]).any() else None
-            if last_updated is not None and (max_updated is None or last_updated > max_updated):
-                max_updated = last_updated
-            items.append({
-                "sector_code": code,
-                "sector_name": names.get(code),
-                "rank": rank,
-                "heat_score": score,
-                "pct_chg": pct_chg,
-                "member_total": member_total,
-                "members": members,
-            })
-        return as_of, items, "OK", self._freshness(as_of), max_updated
-
-    def _freshness(self, snapshot_date: date) -> str:
-        if self._calendar is None:
-            return "STALE"  # 无日历：保守标记
-        last_trading = self._calendar.last_trading_day(self._clock.now().date())
-        return "FRESH" if snapshot_date >= last_trading else "STALE"
+    def _freshness(self, snapshot_date: date | None, market: str = "CN") -> str:
+        if snapshot_date is None:
+            return "UNAVAILABLE"
+        expected = self._last_trading_day(market)
+        return "FRESH" if expected is not None and snapshot_date >= expected else "STALE"

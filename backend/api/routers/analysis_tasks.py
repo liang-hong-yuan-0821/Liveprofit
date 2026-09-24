@@ -242,6 +242,7 @@ async def rerun_task(
 
 def _to_list_item(item) -> TaskListItemDTO:
     return TaskListItemDTO(
+        selected_layers=item.selected_layers,
         id=item.id,
         task_type=item.task_type.value,
         ticker=item.ticker,

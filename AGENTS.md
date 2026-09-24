@@ -2,6 +2,13 @@
 
 ## 工作流程规则
 
+### 架构与存储设计原则（2026-09-23 用户明确）
+
+- **以最适合业务的整体设计为目标，不以少建表或复用旧结构为目标。** 根据当前需求、合理可预见的演进和实际代码选择方案；不能因为用户询问“能否复用”，就默认复用优于新增，也不能为了形式上的分层或实现方便过度拆表。
+- **比较方案后给出明确推荐。** 新建表、扩展旧表、使用 JSONB 或 Redis，都应从业务语义与职责、数据生命周期与审计、约束和查询、事务一致性、性能、迁移成本及长期维护成本判断；说明主要收益与代价，不把“能存进去”等同于“设计合适”。
+- **独立业务事实应有清晰的持久化模型，共性能力优先复用。** 生命周期、约束或查询方式明显不同的数据，可以新增业务表；任务、重试、调度等能力在既有模型适合时复用。不得把核心业务历史强塞进通用任务/报告 JSON 以规避建表，也不得重复建设已有的任务系统。
+- **按数据性质选择存储。** 原文、业务结论及其修订等需审计的事实可靠持久化；Redis 适合可重建缓存、去重加速和冷却状态，不能作为关键事实或唯一幂等约束的替代。关键身份、版本及一致性约束应由持久层保证。
+
 ### docs/ 目录结构
 
 ```
@@ -198,8 +205,8 @@ docs/memory/
 
 - **一个主题一个文件**（主题 = 模块/领域，如 `pitfalls/backend/dramatiq-windows.md`）；同一主题的新内容**追加到既有文件**（按时间倒序），不新建散文件
 - **分类判据**：**"做错了会坏"的教训 → pitfalls**（文件格式：顶部一句话结论，正文按"表象 → 根因 → 正确姿势"分条，附代码位置引用）；**"照着做能对"的做法 → best-practices**（已验证的机制设计、统一约定、可复用技巧，写入时注明验证方式或实测结论）
-- **CLAUDE.md 只保留配套的强制规则**（一行式"必须/禁止"），故事与细节一律在 memory 文件里
-- 新增经验三步：① 写入/追加对应 memory 文件 ② 若衍生出新强制规则，在 CLAUDE.md 对应章节加一行 ③ 更新 [docs/memory/index.md](docs/memory/index.md)
+- **AGENTS.md 只保留配套的强制规则**（一行式"必须/禁止"），故事与细节一律在 memory 文件里
+- 新增经验三步：① 写入/追加对应 memory 文件 ② 若衍生出新强制规则，在 AGENTS.md 对应章节加一行 ③ 更新 [docs/memory/index.md](docs/memory/index.md)
 - 出现两类装不下的主题时，新建类别目录并同步更新本规则与 index.md
 
 ### 经验记录使用规则
@@ -211,12 +218,12 @@ docs/memory/
 3. **实现收尾时**：Code Review 前，对照方案涉及领域的经验文件过一遍——pitfalls 的"正确姿势"逐条确认没重蹈覆辙（如 tushare 消费点升序归一、共享 PG conn 的 except 分支 rollback），best-practices 的约定确认已遵守（如 markdown 一律走 MarkdownView）
 4. **排查异常现象时**：挂起/静默失败/行为异常，先按表象到 pitfalls 对应类别文件中找匹配的坑（多数坑文件按"表象 → 根因 → 正确姿势"组织，可从表象反查）；命中则按正确姿势处理，未命中且确认为新坑 → 按「经验沉淀规则」回写
 5. **设计新机制/新模块时**：先扫 best-practices 同类主题——已验证的机制设计与统一约定直接复用，避免重新发明（如每日批处理可直接参考补跑三层触发设计）
-6. **新经验回写后**：按「经验沉淀规则」把衍生的强制规则同步到 CLAUDE.md 对应章节，让后续会话不经查文件也能规避/遵守
+6. **新经验回写后**：按「经验沉淀规则」把衍生的强制规则同步到 AGENTS.md 对应章节，让后续会话不经查文件也能规避/遵守
 
-### CLAUDE.md 自我更新规则
+### AGENTS.md 自我更新规则
 
 - **每次完成一个任务/分析（方案评审收尾、实现完成、Code Review 通过、踩坑解决）后，检查是否有值得沉淀的内容**，有则直接更新，无需用户提醒
-- 值得写入 **CLAUDE.md**：新确认的约定或决策、流程规则变更、经验衍生的强制规则（一行式）、用户明确要求"记住"的内容
+- 值得写入 **AGENTS.md**：新确认的约定或决策、流程规则变更、经验衍生的强制规则（一行式）、用户明确要求"记住"的内容
 - 值得写入 **docs/memory/pitfalls/**：踩坑的故事与细节、技术细节参考（新数据源/新端点用法细节、库机制坑）
 - 值得写入 **docs/memory/best-practices/**：已验证有效的做法、统一约定、机制设计（非坑的正向沉淀，如"这个方案实测无差距，后续可直接复用"）
 - 不写入任何地方：任务本身的状态与进度（属于任务 README.md 状态块）、一次性命令与临时信息、可由代码/git 推导的事实
@@ -270,6 +277,10 @@ docs/memory/
 
 - **确定性拓扑必须用 `compiled.builder`**（`builder.nodes` 声明序、`builder.branches[src][router_key].ends` 保留条件目标声明序）——`get_graph()` 的 edges 是 set 无序，不能用于确定性顺序提取。实现见 AI/graph/topology.py
 - 正确姿势详见 [docs/memory/best-practices/ai/langgraph-topology.md](docs/memory/best-practices/ai/langgraph-topology.md)
+
+### 事件研究严格历史检索
+
+- **每日事件快照必须分别校验来源 `published_at`/`first_seen_at <= news_cutoff_at`，判断 `available_at <= report_as_of`，以及向量 `embedding_available_at <= report_as_of`；缺少向量可用时间时按当时无向量处理，禁止用事后回填向量改变历史召回。** 详见 [docs/memory/pitfalls/ai/strict-event-vector-as-of.md](docs/memory/pitfalls/ai/strict-event-vector-as-of.md)
 
 ### 单Agent重跑与提示词编辑
 
@@ -334,6 +345,7 @@ docs/memory/
 ### Tushare 代理端点与数据接口（关键不变量）
 
 - **日线消费必须先 `_sort_asc_by_trade_date` 升序归一**（端点返回降序，直接 tail 取到最旧数据）；**全市场拉取禁区间查询**（静默截断，必须 trade_date 单日 + 截断降级分批）；**概念成分参数硬约束**（ths 用 ts_code、dc 用 ts_code+trade_date）；**技术指标不自算**（指数走 idx_factor_pro、个股走 stk_factor_pro，stk_factor 旧端点已废）
+- **超时线程内捕获并保留迟到的 `WinError 10013`**：`FutureTimeout` 只停止调用方等待、不取消底层请求；只在调用线程捕获会漏分类并重新触发采集重试。
 - 代理端点 URL 覆写、端点子日志与其余细节见 [docs/memory/pitfalls/ai/tushare-endpoints.md](docs/memory/pitfalls/ai/tushare-endpoints.md)
 
 ### 证券市场数据库命名规范（2026-09-13 起，与用户共同制定）

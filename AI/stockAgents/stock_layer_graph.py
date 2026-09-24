@@ -76,7 +76,7 @@ class StockLayerGraph:
         self.conditional_logic = conditional_logic
         self.config = config or {}
 
-    def build(self, selected_analysts=None):
+    def build(self, selected_analysts=None, *, daily_research: bool = False):
         """编译并返回个股层子图
 
         Args:
@@ -106,7 +106,9 @@ class StockLayerGraph:
 
             if key in self.LOOP_KEYS:
                 # 工具循环模式
-                tools = self._get_tools(key)
+                # Daily news is already frozen by the pipeline; a live tool loop
+                # would read past the requested cutoff.
+                tools = [] if daily_research and key == "news" else self._get_tools(key)
                 if tools:
                     workflow.add_node(f"tools_{key}", ToolNode(tools))
                     workflow.add_conditional_edges(
@@ -212,6 +214,10 @@ class StockLayerGraph:
         logger.info(f"[StockLayerGraph] 编译完成，{len(stock_analysts)} 个分析师 "
                      "+ 辩论 + 交易 + 风险")
         return workflow.compile()
+
+    def build_daily_research(self):
+        """Compile the stock chain with news restricted to its frozen daily snapshot."""
+        return self.build(daily_research=True)
 
     def _get_tools(self, key):
         """获取指定 key 的工具列表（仅工具循环类调用）"""

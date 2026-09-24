@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Market = Literal["US", "KR", "CN"]
 Freshness = Literal["FRESH", "STALE", "UNAVAILABLE"]
-Session = Literal["OPEN", "CLOSED"]
+Session = Literal["OPEN", "CLOSED", "BREAK", "UNKNOWN"]
 
 
 class BarDTO(BaseModel):
@@ -105,16 +105,32 @@ class HotConceptDTO(BaseModel):
     daily_changes: list[DailyChangeDTO] | None
     updated_at: datetime | None
     bars: list[BarDTO]
+    heat_window_rows: int
+
+
+class CoverageCountDTO(BaseModel):
+    expected_count: int
+    available_count: int
+    exempt_count: int
+    missing_count: int
+
+
+class ConceptCoverageDTO(BaseModel):
+    boards: CoverageCountDTO
+    members: CoverageCountDTO | None
 
 
 class HotConceptsData(BaseModel):
     as_of: date | None
+    requested_as_of: date | None
+    date_mode: Literal["LATEST", "HISTORICAL"]
+    coverage: ConceptCoverageDTO
     algorithm_version: str
     result_status: Literal["OK", "NO_HOT_CONCEPTS"]
     items: list[HotConceptDTO]
     source: str | None
     source_updated_at: datetime | None
-    freshness_status: Literal["FRESH", "STALE"]
+    freshness_status: Freshness
 
 
 class ConceptMemberDTO(BaseModel):
@@ -138,16 +154,20 @@ class ConceptTreeNodeDTO(BaseModel):
     pct_chg: float | None
     member_total: int
     members: list[ConceptMemberDTO]
+    heat_window_rows: int
 
 
 class ConceptTreeData(BaseModel):
     as_of: date | None
+    requested_as_of: date | None
+    date_mode: Literal["LATEST", "HISTORICAL"]
+    coverage: ConceptCoverageDTO
     algorithm_version: str
     result_status: Literal["OK", "NO_HOT_CONCEPTS"]
     items: list[ConceptTreeNodeDTO]
     source: str | None
     source_updated_at: datetime | None
-    freshness_status: Literal["FRESH", "STALE"]
+    freshness_status: Freshness
 
 
 class TrendPointDTO(BaseModel):

@@ -60,6 +60,9 @@ class QuantStrategyVersion(Base, TimestampMixin):
     template_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     template_params: Mapped[dict | None] = mapped_column(JSONB(), nullable=True)
     template_renderer_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    lifecycle_policy_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lifecycle_policy_versions.id", ondelete="RESTRICT"), nullable=True
+    )
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     published_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)

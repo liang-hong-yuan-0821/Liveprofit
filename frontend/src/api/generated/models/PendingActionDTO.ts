@@ -9,6 +9,7 @@ export type PendingActionDTO = {
     task_type: PendingActionDTO.task_type;
     ticker: (string | null);
     effective_trade_date: (string | null);
+    selected_layers: Array<string>;
     updated_at: string;
     error_code: (string | null);
     error_summary: (string | null);
@@ -23,6 +24,7 @@ export namespace PendingActionDTO {
     export enum task_type {
         SINGLE_STOCK = 'SINGLE_STOCK',
         MARKET_WIDE = 'MARKET_WIDE',
+        DAILY_RESEARCH = 'DAILY_RESEARCH',
     }
 }
 

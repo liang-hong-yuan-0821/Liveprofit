@@ -12,7 +12,7 @@ AnalysisLayer = Literal["market", "sector", "stock", "screening", "position"]
 TaskStatusValue = Literal[
     "PENDING", "QUEUED", "RUNNING", "RETRYING", "SUCCEEDED", "FAILED", "CANCELLED", "CANCEL_REQUESTED"
 ]
-TaskTypeValue = Literal["SINGLE_STOCK", "MARKET_WIDE"]
+TaskTypeValue = Literal["SINGLE_STOCK", "MARKET_WIDE", "DAILY_RESEARCH"]
 
 
 class AnalysisOptions(BaseModel):
@@ -63,6 +63,7 @@ class RerunTaskRequest(BaseModel):
 
 
 class TaskListItemDTO(BaseModel):
+    selected_layers: list[str] = Field(default_factory=list)
     id: UUID
     task_type: TaskTypeValue
     ticker: str | None

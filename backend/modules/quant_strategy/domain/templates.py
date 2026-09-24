@@ -99,6 +99,45 @@ def _p(path: tuple[str, str], *indices: int, positive: bool = False) -> FieldReq
     return FieldRequirement(path, tuple(indices), positive)
 
 
+def freeze_template_contract(definition: StrategyTemplateDefinition) -> dict:
+    """生成任务快照可持久化的最小字段门禁；执行期不得再依赖可变注册表。"""
+    return {
+        "template_id": definition.template_id,
+        "display_name": definition.display_name,
+        "renderer_version": RENDERER_VERSION,
+        "required_bars": definition.required_bars,
+        "required_fields": [
+            {
+                "section": requirement.path[0],
+                "field": requirement.path[1],
+                "indices": list(requirement.indices),
+                "must_be_positive": requirement.must_be_positive,
+            }
+            for requirement in definition.required_fields
+        ],
+    }
+
+
+def validate_frozen_template_context(contract: dict, context: dict) -> str | None:
+    """按已冻结 JSON 合同校验；合同损坏一律 fail-closed。"""
+    try:
+        required_bars = int(contract["required_bars"])
+        fields = contract["required_fields"]
+        if int(context.get("meta", {}).get("bars_count") or 0) < required_bars:
+            return "WARMUP_INCOMPLETE"
+        for item in fields:
+            values = context[item["section"]][item["field"]]
+            for index in item["indices"]:
+                value = values[int(index)]
+                if value is None or not isfinite(float(value)):
+                    return "INDICATOR_UNAVAILABLE"
+                if bool(item.get("must_be_positive")) and float(value) <= 0:
+                    return "INDICATOR_UNAVAILABLE"
+    except (KeyError, IndexError, TypeError, ValueError, OverflowError):
+        return "INDICATOR_UNAVAILABLE"
+    return None
+
+
 def _return(action: str, score: str, reason: str, *, buy: bool = False) -> str:
     if buy:
         return (

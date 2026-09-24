@@ -1,3 +1,4 @@
+import { useChartTheme, CHART_THEMES } from './useChartTheme';
 import { memo, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { LineSeriesOption } from 'echarts/charts';
@@ -19,8 +20,8 @@ export const LINE_SERIES_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500'];
 const NEUTRAL_LINE_COLOR = '#94a3b8'; // 超出槽位数的兜底中性色（CandlestickChart MA_FALLBACK 同款）
 
 // 图表 chrome 色：与 CandlestickChart 暗色主题同款 token（styles.css --color-fg-muted / --color-border）
-const AXIS_LABEL_COLOR = '#8b95a1';
-const AXIS_LINE_COLOR = '#232a33';
+
+
 
 export interface LineChartSeries {
   name: string;
@@ -32,7 +33,7 @@ export interface LineChartViewModel {
   series: LineChartSeries[];
 }
 
-export function buildLineOption(vm: LineChartViewModel): EChartsOption {
+export function buildLineOption(vm: LineChartViewModel, theme = CHART_THEMES.dark): EChartsOption {
   const colorOf = (index: number, explicit?: string) =>
     explicit ?? LINE_SERIES_COLORS[index] ?? NEUTRAL_LINE_COLOR;
   const series: LineSeriesOption[] = vm.series.map((s, i) => ({
@@ -52,25 +53,26 @@ export function buildLineOption(vm: LineChartViewModel): EChartsOption {
     legend: {
       top: 0,
       itemGap: 16,
-      textStyle: { color: AXIS_LABEL_COLOR, fontSize: 11 },
+      textStyle: { color: theme.text, fontSize: 11 },
       // 显式列出全部序列名：空序列（data: []）也占 legend 位（降级契约）
       data: vm.series.map((s) => s.name),
     },
     tooltip: {
       trigger: 'axis',
+      backgroundColor: theme.surface, borderColor: theme.grid, textStyle: { color: theme.neutral },
       axisPointer: { type: 'cross' },
       order: 'valueDesc', // 按值降序展示（归一曲线贴近时大值在上）
     },
     xAxis: {
       type: 'time',
-      axisLabel: { color: AXIS_LABEL_COLOR },
-      axisLine: { lineStyle: { color: AXIS_LINE_COLOR } },
+      axisLabel: { color: theme.text },
+      axisLine: { lineStyle: { color: theme.grid } },
     },
     yAxis: {
       type: 'value',
       scale: true, // 关键显示参数：归一值域不设从 0 起
-      axisLabel: { color: AXIS_LABEL_COLOR },
-      splitLine: { lineStyle: { color: AXIS_LINE_COLOR } },
+      axisLabel: { color: theme.text },
+      splitLine: { lineStyle: { color: theme.grid } },
     },
     series,
   };
@@ -93,7 +95,8 @@ const ChartCore = memo(function ChartCore({ option, height }: {
 });
 
 export function LineChart({ model, height = 240 }: LineChartProps) {
-  const option = useMemo(() => buildLineOption(model), [model]);
+  const theme = useChartTheme();
+  const option = useMemo(() => buildLineOption(model, theme), [model, theme]);
   return (
     <div data-testid="line-chart">
       <ChartCore option={option} height={height} />

@@ -1,3 +1,4 @@
+import { unavailableSummary } from '../../shared/resultPresentation';
 import { Link } from 'react-router';
 import { ErrorState } from '../../../../shared/feedback/ErrorState';
 import { EmptyState } from '../../../../shared/feedback/EmptyState';
@@ -5,6 +6,7 @@ import { LoadingState } from '../../../../shared/feedback/LoadingState';
 import { Badge } from '../../../../shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card';
 import { formatDateTime } from '../../../../shared/format/dateTime';
+import { layersName } from '../../shared/analysisLayers';
 import { useDashboardSectionQuery } from './queries';
 import type { PendingActionDTO } from '../../../../api/generated';
 
@@ -14,10 +16,9 @@ export function PendingActionsPanel() {
   const query = useDashboardSectionQuery('pending_actions');
 
   if (query.isPending) return <LoadingState label="待我处理加载中…" />;
-  if (query.isError) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
+  if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
-  const items = query.data;
-  if (!items || items.length === 0) return <EmptyState title="当前没有待处理事项" />;
+  const items = query.data ?? [];
 
   return (
     <Card>
@@ -25,6 +26,8 @@ export function PendingActionsPanel() {
         <CardTitle>待我处理</CardTitle>
       </CardHeader>
       <CardContent>
+        {items.length === 0 && <EmptyState title="当前没有待处理事项" />}
+        {query.isError && <p role="status" className="text-xs text-amber-500">更新失败，当前显示上次结果。<button type="button" className="ml-2 underline" onClick={() => void query.refetch()}>重新加载</button></p>}
         {items.map((item) => (
           <PendingActionRow key={`${item.kind}-${item.task_id}`} item={item} />
         ))}
@@ -48,7 +51,12 @@ function PendingActionRow({ item }: { item: PendingActionDTO }) {
           <Badge variant={isFailed ? 'destructive' : 'warning'}>
             {isFailed ? '任务失败' : '报告区块不可用'}
           </Badge>
-          <span className="text-sm font-medium">{item.ticker ?? '全市场'}</span>
+          <span className="text-sm font-medium">{layersName(item.selected_layers)}</span>
+          {item.ticker && (
+            <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+              {item.ticker}
+            </span>
+          )}
         </div>
         <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
           {formatDateTime(item.updated_at)}
@@ -57,9 +65,7 @@ function PendingActionRow({ item }: { item: PendingActionDTO }) {
       <p className="mt-1 text-sm" style={{ color: 'var(--color-fg-muted)' }}>
         {isFailed
           ? (item.error_summary ?? item.error_code ?? '任务执行失败')
-          : (item.unavailable_blocks ?? [])
-              .map((block) => `${block.block}${block.reason ? `：${block.reason}` : ''}`)
-              .join('；')}
+          : unavailableSummary(item.unavailable_blocks)}
       </p>
     </Link>
   );

@@ -1,6 +1,21 @@
 """db.instrument DAO 单测共享伪连接（迁移自 tests/dataflows/store/test_stock_daily_dao）。"""
 
 
+def add_ingest_lock_responses(conn, cursor):
+    """Give mocked collector SQL a separate lock/PID response from data queries."""
+    from unittest.mock import MagicMock
+    conn.execute.return_value = cursor
+    def execute(sql, params=None):
+        if "pg_try_advisory_lock" in sql:
+            return MagicMock(fetchone=lambda: (True, 123))
+        if "pg_backend_pid" in sql:
+            return MagicMock(fetchone=lambda: (123,))
+        if "pg_advisory_unlock" in sql:
+            return MagicMock(fetchone=lambda: (True,))
+        return cursor
+    conn.execute.side_effect = execute
+
+
 class _FakeCopier:
     def __init__(self):
         self.rows = []

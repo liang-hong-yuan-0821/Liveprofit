@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../shared/ui/dialog';
 import { CandlestickChart } from '../../../shared/charts/CandlestickChart';
 import { loadDrawings, saveDrawings, type Drawing } from '../../../shared/charts/drawings';
 import { LoadingState } from '../../../shared/feedback/LoadingState';
 import { ErrorState } from '../../../shared/feedback/ErrorState';
-import { toApiError } from '../../../api/client';
-import { daysAgoLocalDate, todayLocalDate } from '../../../shared/format/dateTime';
+import { requestEnvelope, toApiError } from '../../../api/client';
+import { queryKeys } from '../../../api/queryKeys';
+import { MarketDataService } from '../../../api/generated/services/MarketDataService';
+import type { BarsData } from '../../../api/generated';
+import { daysBefore, useMarketDate } from '../pages/refreshQueries';
 import { barsToCandlestickViewModel } from '../pages/mappers/toChartViewModels';
 import { useConceptBarsQuery, useStockBarsQuery } from '../pages/queries';
 import type { TreemapNodeClick } from './conceptTreeOption';
@@ -30,6 +34,13 @@ export interface KLineDialogProps {
 }
 
 export function KLineDialog({ node, open, onOpenChange }: KLineDialogProps) {
+  const client = useQueryClient();
+  const marketDate = useMarketDate('CN');
+  // This is a user-selected window. Server midnight must not re-run factor ensure.
+  const [windowEnd] = useState(marketDate);
+  const [visibleRange, setVisibleRange] = useState<{ start: string; end: string }>();
+  const onDataZoom = useCallback((range: { start: string; end: string }) => setVisibleRange(range), []);
+  const ensured = useRef(new Set<string>());
   const [drawings, setDrawings] = useState<Drawing[]>(() => loadDrawings(node.code));
   useEffect(() => {
     saveDrawings(node.code, drawings);
@@ -38,9 +49,23 @@ export function KLineDialog({ node, open, onOpenChange }: KLineDialogProps) {
   const filters = {
     market: 'CN',
     interval: '1d',
-    from: daysAgoLocalDate(KLINE_DIALOG_DAYS),
-    to: todayLocalDate(),
+    from: daysBefore(windowEnd, KLINE_DIALOG_DAYS),
+    to: windowEnd,
   };
+  const { market, interval, from, to } = filters;
+  useEffect(() => {
+    if (!open || node.kind !== 'stock') return;
+    const trigger = `${node.code}:${from}:${to}`;
+    if (ensured.current.has(trigger)) return;
+    ensured.current.add(trigger);
+    const key = queryKeys.stockBars.list({ symbol: node.code, market, interval, from, to });
+    // Explicit user interaction only. Automatic query/refetch always uses cache_only.
+    void requestEnvelope<BarsData>(MarketDataService.stockBarsApiV1MarketDataStocksSymbolBarsGet(node.code, market, interval, from, to, 'ensure'))
+      .then(async ({ data }) => {
+        await client.cancelQueries({ queryKey: key, exact: true });
+        client.setQueryData(key, data);
+      }).catch(() => { /* Cached bars remain usable; the backend enforces ensure cooldown. */ });
+  }, [client, node.kind, node.code, open, market, interval, from, to]);
   const conceptQuery = useConceptBarsQuery(
     node.kind === 'concept' ? node.code : '',
     { ...filters, source: 'dc' },
@@ -78,6 +103,8 @@ export function KLineDialog({ node, open, onOpenChange }: KLineDialogProps) {
             height={460}
             drawings={drawings}
             onDrawingsChange={setDrawings}
+            visibleRange={visibleRange}
+            onDataZoom={onDataZoom}
           />
         )}
       </DialogContent>

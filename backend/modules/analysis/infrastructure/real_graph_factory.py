@@ -63,11 +63,16 @@ class RealTradingGraphFactory:
     def __init__(self, run_config: CoreRunConfig) -> None:
         self._run_config = run_config
 
-    def __call__(self, selected_layers: list[str] | None):
+    def __call__(self, selected_layers: list[str] | None, *, daily_research: bool = False):
         from AI.graph.trading_graph import TradingAgentsGraph  # 延迟导入：平台进程专属
 
         config = self._run_config.as_kernel_config()
-        graph = TradingAgentsGraph(selectedLayer=selected_layers or None, debug=self._run_config.debug, config=config)
+        graph = TradingAgentsGraph(
+            selectedLayer=selected_layers or None,
+            debug=self._run_config.debug,
+            config=config,
+            daily_research=daily_research,
+        )
         return _RealGraphAdapter(graph)
 
 
@@ -122,11 +127,20 @@ def build_real_initial_state(
     init_state["selected_layers"] = list(task.selected_layers)
     init_state["task_id"] = str(task.task_id)
     init_state["attempt_no"] = task.attempt_no
+    request_params = getattr(task, "request_params", None)
+    daily_workflow = (request_params or {}).get("daily_research") if isinstance(request_params, dict) else None
     if execution_logs_root is not None:
-        init_state["platform_log_dir"] = str(
-            execution_logs_root / "tasks" / str(task.task_id) / str(task.attempt_no))
+        log_dir = execution_logs_root / "tasks" / str(task.task_id) / str(task.attempt_no)
+        if isinstance(daily_workflow, dict) and daily_workflow.get("stock_candidate"):
+            ticker_dir = str(task.ticker or "unknown").replace("/", "_").replace("\\", "_")
+            log_dir = log_dir / "stock-candidates" / ticker_dir
+        init_state["platform_log_dir"] = str(log_dir)
     if prompt_overrides is not None:
         init_state["prompt_overrides"] = dict(prompt_overrides)
+    if isinstance(daily_workflow, dict):
+        context = daily_workflow.get("research_context")
+        if isinstance(context, dict):
+            init_state["daily_research_context"] = context
     if rerun_from_node_id is not None:
         init_state["checkpoint_state"] = _load_rerun_checkpoint(
             task, execution_logs_root, rerun_from_node_id)
@@ -163,7 +177,7 @@ def make_real_graph_factory(settings) -> Callable[[], Any]:
     """worker wiring 使用：为每个任务新建 factory（fresh graph per execution）。"""
     run_config = build_core_run_config(settings)
 
-    def factory(selected_layers: list[str] | None = None):
-        return RealTradingGraphFactory(run_config)(selected_layers)
+    def factory(selected_layers: list[str] | None = None, *, daily_research: bool = False):
+        return RealTradingGraphFactory(run_config)(selected_layers, daily_research=daily_research)
 
     return factory

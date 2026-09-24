@@ -269,7 +269,7 @@ def test_bars_us_asset_returns_200_empty_bars_unavailable(client):
 
 def test_hot_concepts_empty_is_normal_business_state(client):
     response = client.http.get(
-        "/api/v1/market-data/concepts/hot?market=CN&interval=1d&from=2026-08-01&to=2026-09-04&limit=20"
+        "/api/v1/market-data/concepts/hot?market=CN&interval=1d&as_of=2026-08-01&limit=20"
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -304,13 +304,13 @@ def _seed_sector_daily(client) -> None:
         for code, n in rows_map.items():
             source = "ths" if code.startswith("883") else "dc"
             for offset in range(n):
-                trading_date = start + timedelta(days=offset)
+                trading_date = start + timedelta(days=offset + 15 - n)
                 pct = 3.0 if code == "BK1755" else 1.0
                 conn.execute(
                     text(
                         "INSERT INTO market.sector_daily "
-                        "(source, sector_code, trade_date, close, pct_chg, vol, amount) "
-                        "VALUES (:source, :code, :d, :close, :pct, 100, 1000) "
+                        "(source, sector_code, trade_date, open, high, low, close, pct_chg, vol, amount) "
+                        "VALUES (:source, :code, :d, :close, :close, :close, :close, :pct, 100, 1000) "
                         "ON CONFLICT DO NOTHING"
                     ),
                     {"source": source, "code": code, "d": trading_date,
@@ -325,7 +325,7 @@ def test_hot_concepts_computed_on_the_fly(client):
     _seed_sector_daily(client)
     client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 7))
     response = client.http.get(
-        "/api/v1/market-data/concepts/hot?market=CN&interval=1d&from=2026-09-07&to=2026-09-07&limit=2"
+        "/api/v1/market-data/concepts/hot?market=CN&interval=1d&as_of=2026-09-07&limit=2"
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -353,7 +353,7 @@ def test_hot_concepts_single_row_degradation(client):
     _seed_sector_daily(client)
     client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 7))
     response = client.http.get(
-        "/api/v1/market-data/concepts/hot?market=CN&interval=1d&from=2026-09-07&to=2026-09-07&limit=3"
+        "/api/v1/market-data/concepts/hot?market=CN&interval=1d&as_of=2026-09-07&limit=3"
     )
     items = response.json()["data"]["items"]
     bk1755 = next(it for it in items if it["sector_code"] == "BK1755")
@@ -364,7 +364,7 @@ def test_hot_concepts_single_row_degradation(client):
 
 def test_hot_concepts_non_cn_returns_empty(client):
     response = client.http.get(
-        "/api/v1/market-data/concepts/hot?market=US&interval=1d&from=2026-08-01&to=2026-09-04&limit=20"
+        "/api/v1/market-data/concepts/hot?market=US&interval=1d&as_of=2026-08-01&limit=20"
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -455,7 +455,7 @@ def test_concept_tree_computed_with_members(client):
     _seed_concept_tree(client)
     client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 7))
     response = client.http.get(
-        "/api/v1/market-data/concepts/tree?market=CN&interval=1d&from=2026-09-07&to=2026-09-07&limit=3"
+        "/api/v1/market-data/concepts/tree?market=CN&interval=1d&as_of=2026-09-07&limit=3"
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -486,13 +486,14 @@ def test_concept_tree_computed_with_members(client):
     assert b1754[0]["pct_chg"] == 5.0 and b1754[0]["name"] == "成分B"
     assert b1754[1]["pct_chg"] is None and b1754[1]["name"] == "成分C"
     # BK1755：板块 as_of 当日缺行情行 → pct_chg null（不静默取更早日期）
-    assert items[2]["pct_chg"] is None
+    assert items[2]["pct_chg"] == 3.0
+    assert items[2]["heat_window_rows"] == 1
     assert items[2]["member_total"] == 0
 
 
 def test_concept_tree_empty_is_normal_business_state(client):
     response = client.http.get(
-        "/api/v1/market-data/concepts/tree?market=CN&interval=1d&from=2026-08-01&to=2026-09-04&limit=30"
+        "/api/v1/market-data/concepts/tree?market=CN&interval=1d&as_of=2026-08-01&limit=30"
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -503,7 +504,7 @@ def test_concept_tree_empty_is_normal_business_state(client):
 
 def test_concept_tree_non_cn_returns_empty(client):
     response = client.http.get(
-        "/api/v1/market-data/concepts/tree?market=US&interval=1d&from=2026-08-01&to=2026-09-04&limit=30"
+        "/api/v1/market-data/concepts/tree?market=US&interval=1d&as_of=2026-08-01&limit=30"
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -574,7 +575,7 @@ def test_concept_bars_returns_ohlc_ascending(client):
         assert indicators["boll"][key] == [None, None, None]
     for key in ("dif", "dea", "hist"):
         assert indicators["macd"][key] == [None, None, None]
-    assert data["freshness_status"] == "FRESH"
+    assert data["freshness_status"] == "STALE"  # target-day OHLC is invalid
 
 
 def _seed_dense_sector_bars(client, sector_code: str = "BK1756",
@@ -785,6 +786,60 @@ def test_stock_bars_fetches_stk_factors_on_demand_and_caches(client):
     assert len(calls) == 1
 
 
+def test_stock_bars_refetches_when_factor_cache_is_daily_residue(client):
+    """因子缓存残段不挡历史补拉（2026-09-21 实况修复）：每日增量只写最新 1~2 天
+    个股因子，残段落在请求窗口内但远未覆盖 from 侧 → 仍按需拉取全区间补齐，
+    指标为拉取值（而非以残段对齐 bars、其余全 None 的画不出均线态）。"""
+    from sqlalchemy import create_engine, text
+
+    from backend.bootstrap.settings import CoreSettings
+    from backend.tests.contract.api.conftest import _test_db_url
+
+    _seed_stock_bars(client)
+    # seed 每日增量残段：窗口内仅 1 行因子（最新一天），历史侧为空
+    engine = create_engine(_test_db_url(CoreSettings().resolved_database_url()))
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO market.factor_daily (ts_code, trade_date, ma_bfq_5) "
+                "VALUES ('600519.SH', '2026-09-04', 1490.0) "
+                "ON CONFLICT (ts_code, trade_date) DO NOTHING"
+            ),
+        )
+
+    import pandas as pd
+
+    calls = []
+
+    def fake_fetcher(symbol, start, end):
+        calls.append((symbol, start, end))
+        return pd.DataFrame({
+            "trade_date": ["2026-09-03", "2026-09-04"],
+            "ma_bfq_5": [1510.0, 1511.0],
+            "ma_bfq_10": [1520.0, 1521.0],
+            "ma_bfq_20": [1530.0, 1531.0],
+            "ma_bfq_60": [1560.0, 1561.0],
+            "boll_mid_bfq": [1502.0, 1503.0],
+            "boll_upper_bfq": [1530.0, 1531.0],
+            "boll_lower_bfq": [1470.0, 1471.0],
+            "macd_dif_bfq": [0.5, 0.6],
+            "macd_dea_bfq": [0.3, 0.4],
+            "macd_bfq": [0.4, 0.5],
+        })
+
+    client.http.app.state.stock_factor_fetcher = fake_fetcher
+    client.http.app.state.market_calendar = FakeCalendar(trading_day=False, last_day=date(2026, 9, 4))
+    response = client.http.get(
+        "/api/v1/market-data/stocks/600519.SH/bars?market=CN&interval=1d&from=2026-03-20&to=2026-09-07"
+    )
+    assert response.status_code == 200
+    # 实际 bars 有两天、缓存只覆盖一天 → 精确交易日校验触发全区间补拉
+    assert calls == [("600519.SH", "2026-03-20", "2026-09-07")]
+    indicators = response.json()["data"]["indicators"]
+    assert indicators is not None
+    assert indicators["ma"][0]["values"] == [1510.0, 1511.0]
+
+
 def test_stock_bars_rejects_non_stock_index(client):
     # fund 代码 → 404（instrument_type 白名单 index/stock）
     _seed_stock_bars(client)
@@ -817,7 +872,7 @@ def test_trends_endpoints_contract(client):
     assert series[0]["points"] == [{"date": "2026-09-04", "close": 3340.0}]
     assert series[1]["points"] == []   # 未 seed → 空窗口契约（序列条目保留）
     assert data["as_of"] == "2026-09-04"
-    assert data["freshness_status"] == "FRESH"
+    assert data["freshness_status"] == "STALE"  # two peer indexes have no target-day rows
 
     # boards 端点：板组未 seed → 三序列条目保留、points 全空
     response = client.http.get(

@@ -16,6 +16,12 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
+from AI.dataflows.providers.base_provider import (
+    ProviderNetworkAccessDenied,
+    raise_if_network_access_denied,
+)
+from db.instrument.ingest.guard import FATAL_INGEST_ERRORS, locked_ingestion
+
 from db.instrument.dao.sector import upsert_sector_members, upsert_sectors
 
 logger = logging.getLogger(__name__)
@@ -30,10 +36,15 @@ def _latest_trade_date_str(provider) -> str:
         end = datetime.now().strftime("%Y-%m-%d")
         start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         cal = provider.get_trade_cal(start, end)
+        raise_if_network_access_denied(provider)
         if cal is None or cal.empty:
             logger.warning("板块采集: 交易日历不可用，dc 来源无法取快照日")
             return None
         return pd.to_datetime(cal["trade_date"]).max().strftime("%Y%m%d")
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         logger.warning("板块采集: 最近交易日获取失败: %s", e)
         return None
@@ -47,6 +58,11 @@ def _collect_one_source(conn, provider, source: str, dc_trade_date: str) -> dict
     result = {"concepts": 0, "members": 0, "failed": [], "error": None}
     try:
         list_df = provider.get_concept_list_df(source)
+        raise_if_network_access_denied(provider)
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         result["error"] = f"列表拉取异常: {e}"
         logger.warning("板块来源 %s 列表拉取异常（跳过该来源）: %s", source, e)
@@ -74,6 +90,11 @@ def _collect_one_source(conn, provider, source: str, dc_trade_date: str) -> dict
                 concept_code, source,
                 trade_date=dc_trade_date if source == "dc" else None,
             )
+            raise_if_network_access_denied(provider)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             result["failed"].append(concept_code)
             logger.warning("板块来源 %s: %s 成分拉取异常，跳过该板块: %s",
@@ -98,7 +119,7 @@ def _collect_one_source(conn, provider, source: str, dc_trade_date: str) -> dict
     return result
 
 
-def collect_sectors(conn, provider) -> dict:
+def collect_sectors(conn, provider, *, sources=SOURCES) -> dict:
     """板块体系双来源采集（ths 899 + dc 1031 板块，逐板块拉成分 ≈ 2000 请求 ≈ 35 分钟）。
 
     单来源失败不阻断另一来源；整体失败由调用方兜底。
@@ -106,12 +127,18 @@ def collect_sectors(conn, provider) -> dict:
     """
     dc_trade_date = _latest_trade_date_str(provider)
     results = {}
-    for source in SOURCES:
+    if not sources or any(source not in SOURCES for source in sources):
+        raise ValueError("sources must contain ths and/or dc")
+    for source in sources:
         try:
             results[source] = _collect_one_source(conn, provider, source, dc_trade_date)
             # 按来源独立提交：后一来源失败的回滚不得丢弃前一来源的成果
             # （两来源共用同一连接/事务，2026-08-30 实测踩坑）
             conn.commit()
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             results[source] = {"concepts": 0, "members": 0,
                                "failed": [], "error": f"来源级异常: {e}"}
@@ -119,6 +146,15 @@ def collect_sectors(conn, provider) -> dict:
             try:
                 conn.rollback()   # 回滚仅该来源的半截写入；事务可能已 abort，
                                   # 回滚同时恢复干净状态（下一来源 DB 写入不受污染）
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
     return results
+
+
+# Public entrypoints acquire once; nested collectors reuse the guarded connection.
+_collect_sectors_unlocked = collect_sectors
+collect_sectors = locked_ingestion("CN_SECTOR_DAILY", "CN_STOCK_DAILY")(_collect_sectors_unlocked)

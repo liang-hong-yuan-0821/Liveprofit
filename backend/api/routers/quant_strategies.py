@@ -25,6 +25,7 @@ from backend.api.schemas.quant_strategies import (
     QuantStrategyPublishData,
     QuantStrategyPublishRequest,
     QuantStrategyVersionDTO,
+    LifecyclePolicyBindingRequest,
     QuantStrategyTemplateDTO,
     QuantStrategyTemplateListData,
 )
@@ -226,6 +227,29 @@ async def publish_version(
     ).model_dump()
 
 
+@router.put(
+    "/quant-strategies/{strategy_id}/versions/{version_id}/lifecycle-policy",
+    response_model=Envelope[QuantStrategyDraftDTO],
+)
+async def bind_lifecycle_policy(
+    strategy_id: uuid.UUID,
+    version_id: uuid.UUID,
+    payload: LifecyclePolicyBindingRequest,
+    request: Request,
+    trace_id: str = Depends(ensure_trace_context),
+):
+    services = request.app.state.analysis_services
+
+    def _do():
+        with _open_uow(services) as uow:
+            return QuantStrategyService(uow).bind_lifecycle_policy(
+                strategy_id, version_id, payload.lifecycle_policy_version_id, payload.expected_version,
+            )
+
+    dto = await services.run(_do)
+    return Envelope(data=_draft(dto), meta=EnvelopeMeta(request_id=request.state.trace_id)).model_dump()
+
+
 @router.post(
     "/quant-strategies/{strategy_id}/versions/{version_id}/archive",
     response_model=Envelope[QuantStrategyVersionDTO],
@@ -261,6 +285,7 @@ def _version(dto) -> QuantStrategyVersionDTO:
         source_hash=dto.source_hash, published_at=dto.published_at, archived_at=dto.archived_at,
         template_id=dto.template_id, template_params=dto.template_params,
         template_renderer_version=dto.template_renderer_version,
+        lifecycle_policy_version_id=dto.lifecycle_policy_version_id,
         version=dto.version, created_at=dto.created_at, updated_at=dto.updated_at,
     )
 
@@ -271,5 +296,6 @@ def _draft(dto) -> QuantStrategyDraftDTO:
         source_code=dto.source_code, source_hash=dto.source_hash, version=dto.version,
         template_id=dto.template_id, template_params=dto.template_params,
         template_renderer_version=dto.template_renderer_version,
+        lifecycle_policy_version_id=dto.lifecycle_policy_version_id,
         created_at=dto.created_at, updated_at=dto.updated_at,
     )

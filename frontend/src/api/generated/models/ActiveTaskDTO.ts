@@ -7,6 +7,7 @@ export type ActiveTaskDTO = {
     task_type: ActiveTaskDTO.task_type;
     ticker: (string | null);
     effective_trade_date: (string | null);
+    selected_layers: Array<string>;
     status: ActiveTaskDTO.status;
     attempt_no: number;
     updated_at: string;
@@ -16,6 +17,7 @@ export namespace ActiveTaskDTO {
     export enum task_type {
         SINGLE_STOCK = 'SINGLE_STOCK',
         MARKET_WIDE = 'MARKET_WIDE',
+        DAILY_RESEARCH = 'DAILY_RESEARCH',
     }
     export enum status {
         PENDING = 'PENDING',

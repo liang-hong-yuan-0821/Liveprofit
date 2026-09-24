@@ -109,25 +109,28 @@ afterEach(() => {
 });
 
 describe('AnalysisTaskForm（恒为全市场调研）', () => {
-  it('无目标标的输入框；市场/板块/筛选默认勾选且可独立取消', async () => {
+  it('无目标标的输入框；分析层级默认全不勾选且可独立勾选/取消', async () => {
     const user = userEvent.setup();
     renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
 
     expect(screen.queryByLabelText(/标的/)).not.toBeInTheDocument();
-    for (const name of ['市场', '板块', '筛选']) {
+    for (const name of ['市场', '板块', '筛选', '仓位']) {
       const checkbox = screen.getByRole('checkbox', { name: new RegExp('^' + name) });
-      expect(checkbox).toBeChecked();
+      expect(checkbox).not.toBeChecked();
       expect(checkbox).toBeEnabled();
     }
-    await user.click(screen.getByRole('checkbox', { name: /^板块/ }));
-    expect(screen.getByRole('checkbox', { name: /^板块/ })).not.toBeChecked();
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
+    expect(screen.getByRole('checkbox', { name: /^市场/ })).toBeChecked();
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
+    expect(screen.getByRole('checkbox', { name: /^市场/ })).not.toBeChecked();
   });
 
-  it('层级自由组合：取消板块后提交，请求体只含所选层级', async () => {
+  it('层级自由组合：勾选市场与筛选后提交，请求体只含所选层级', async () => {
     const user = userEvent.setup();
     renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
 
-    await user.click(screen.getByRole('checkbox', { name: /^板块/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^筛选/ }));
     await user.click(screen.getByRole('button', { name: '提交分析' }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalled());
@@ -137,13 +140,10 @@ describe('AnalysisTaskForm（恒为全市场调研）', () => {
     expect(body.selected_layers).toEqual(['market', 'screening']);
   });
 
-  it('至少选择一个层级：全部取消后提交被阻止', async () => {
+  it('至少选择一个层级：默认全不勾选时直接提交被阻止', async () => {
     const user = userEvent.setup();
     renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
 
-    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
-    await user.click(screen.getByRole('checkbox', { name: /^板块/ }));
-    await user.click(screen.getByRole('checkbox', { name: /^筛选/ }));
     await user.click(screen.getByRole('button', { name: '提交分析' }));
 
     expect(await screen.findByText('请至少选择一个分析层级')).toBeInTheDocument();
@@ -174,10 +174,24 @@ describe('AnalysisTaskForm（恒为全市场调研）', () => {
     expect(screen.queryByLabelText('已发布策略版本')).not.toBeInTheDocument();
   });
 
+  it('仓位说明不直显为文案：以问号 icon 悬浮提示承载', async () => {
+    renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
+
+    // 仓位 checkbox 的可达名不再包含长文案，提示由独立 icon 承载
+    expect(screen.getByRole('checkbox', { name: '仓位' })).toBeInTheDocument();
+    expect(screen.getByLabelText('仓位说明')).toBeInTheDocument();
+    expect(
+      screen.getByText('量化全市场扫描：选择已发布策略与组合，建议订单需人工确认、不自动下单'),
+    ).toBeInTheDocument();
+  });
+
   it('提交恒为 MARKET_WIDE：ticker 为 null，层级为市场/板块/筛选', async () => {
     const user = userEvent.setup();
     renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
 
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^板块/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^筛选/ }));
     await user.click(screen.getByRole('button', { name: '提交分析' }));
 
     expect(await screen.findByTestId('task-detail-sentinel')).toHaveTextContent('task-detail:task-new');
@@ -199,7 +213,7 @@ describe('AnalysisTaskForm（恒为全市场调研）', () => {
 
     await waitFor(() => expect(createMock).toHaveBeenCalled());
     const body = createMock.mock.calls[0][0];
-    expect(body.selected_layers).toEqual(['market', 'sector', 'screening', 'position']);
+    expect(body.selected_layers).toEqual(['position']);
     expect(body.strategy_version_id).toBe('version-1');
     expect(body.portfolio_id).toBe('portfolio-1');
     expect(body.expected_portfolio_version).toBe(1);
@@ -224,6 +238,7 @@ describe('AnalysisTaskForm（恒为全市场调研）', () => {
     );
     renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
 
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
     await user.click(screen.getByRole('button', { name: '提交分析' }));
     expect(await screen.findByText('行情上游暂不可用')).toBeInTheDocument();
     const firstKey = createMock.mock.calls[0][1];
@@ -249,6 +264,7 @@ describe('AnalysisTaskForm（恒为全市场调研）', () => {
     );
     renderWithRouter(<AnalysisTaskForm onCancel={() => {}} />);
 
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
     await user.click(screen.getByRole('button', { name: '提交分析' }));
     expect(await screen.findByText('参数不合法')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '重试' })).not.toBeInTheDocument();

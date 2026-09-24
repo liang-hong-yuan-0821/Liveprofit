@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -90,6 +90,15 @@ class PortfolioDTO(BaseModel):
     max_total_position_pct: float
     max_single_stock_pct: float
     max_sector_pct: float
+    max_portfolio_open_risk_pct: float
+    max_sector_open_risk_pct: float
+    max_daily_new_risk_pct: float
+    max_drawdown_pct: float
+    max_daily_loss_pct: float
+    net_asset_value: float | None
+    peak_net_asset_value: float | None
+    day_start_net_asset_value: float | None
+    risk_facts_as_of: date | None
     created_at: datetime
     updated_at: datetime
 
@@ -108,6 +117,15 @@ class PortfolioCreateRequest(BaseModel):
     max_total_position_pct: float | None = Field(default=None, gt=0, le=1)
     max_single_stock_pct: float | None = Field(default=None, gt=0, le=1)
     max_sector_pct: float | None = Field(default=None, gt=0, le=1)
+    max_portfolio_open_risk_pct: float | None = Field(default=None, gt=0, le=1)
+    max_sector_open_risk_pct: float | None = Field(default=None, gt=0, le=1)
+    max_daily_new_risk_pct: float | None = Field(default=None, gt=0, le=1)
+    max_drawdown_pct: float | None = Field(default=None, gt=0, le=1)
+    max_daily_loss_pct: float | None = Field(default=None, gt=0, le=1)
+    net_asset_value: float | None = Field(default=None, gt=0)
+    peak_net_asset_value: float | None = Field(default=None, gt=0)
+    day_start_net_asset_value: float | None = Field(default=None, gt=0)
+    risk_facts_as_of: date | None = None
 
 
 class PortfolioUpdateRequest(BaseModel):
@@ -121,6 +139,15 @@ class PortfolioUpdateRequest(BaseModel):
     max_total_position_pct: float = Field(gt=0, le=1)
     max_single_stock_pct: float = Field(gt=0, le=1)
     max_sector_pct: float = Field(gt=0, le=1)
+    max_portfolio_open_risk_pct: float = Field(gt=0, le=1)
+    max_sector_open_risk_pct: float = Field(gt=0, le=1)
+    max_daily_new_risk_pct: float = Field(gt=0, le=1)
+    max_drawdown_pct: float = Field(gt=0, le=1)
+    max_daily_loss_pct: float = Field(gt=0, le=1)
+    net_asset_value: float | None = Field(default=None, gt=0)
+    peak_net_asset_value: float | None = Field(default=None, gt=0)
+    day_start_net_asset_value: float | None = Field(default=None, gt=0)
+    risk_facts_as_of: date | None = None
     expected_version: int = Field(ge=1)
 
 
@@ -130,6 +157,7 @@ class PortfolioPositionDTO(BaseModel):
     symbol: str
     quantity: float
     average_cost: float
+    active_stop_price: float | None
     updated_at: datetime
 
 
@@ -142,6 +170,7 @@ class PortfolioPositionsData(BaseModel):
 class PositionUpsertRequest(BaseModel):
     quantity: float
     average_cost: float
+    active_stop_price: float | None = Field(default=None, gt=0)
     expected_portfolio_revision: int = Field(ge=1)
 
 

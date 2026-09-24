@@ -45,11 +45,13 @@ export default function AiTaskDetailPage() {
   const cancelMutation = useCancelTaskMutation(taskId);
   const deleteMutation = useDeleteTaskMutation(taskId);
   const rerunMutation = useRerunTaskMutation(taskId);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   // 单Agent重跑与提示词编辑（方案 3.6）：节点弹窗内两动作的状态
   const [editPromptNode, setEditPromptNode] = useState<{ node_id: string; label: string } | null>(null);
   const [rerunConfirmNodeId, setRerunConfirmNodeId] = useState<string | null>(null);
   const navigate = useNavigate();
+  useEffect(() => { if (task && !isTerminalStatus(task.status)) setDiagnosticsOpen(true); }, [task?.status]);
 
   // 收到 completed/failed/cancelled 业务帧 → 立即失效 Task Query（REST 终态收口并关闭流）
   useEffect(() => {
@@ -90,7 +92,7 @@ export default function AiTaskDetailPage() {
   // #report 锚点定位：报告区实际挂载（Report Query 成功）后再滚动
   useEffect(() => {
     if (location.hash === '#report' && reportQuery.isSuccess && reportSectionRef.current) {
-      reportSectionRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      reportSectionRef.current.scrollIntoView?.({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     }
   }, [location.hash, reportQuery.isSuccess]);
 
@@ -117,7 +119,7 @@ export default function AiTaskDetailPage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold">任务详情</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-fg-muted)' }}>
@@ -156,6 +158,26 @@ export default function AiTaskDetailPage() {
         </>
       )}
 
+      {task.status === 'SUCCEEDED' && (
+        <section id="report" ref={reportSectionRef}>
+          {reportQuery.isPending ? (
+            <LoadingState label="报告加载中…" />
+          ) : reportQuery.isError ? (
+            <ErrorState
+              error={toApiError(reportQuery.error)}
+              onRetry={toApiError(reportQuery.error).retryable ? () => void reportQuery.refetch() : undefined}
+            />
+          ) : reportQuery.data ? (
+            <ReportContent report={toReportViewModel(reportQuery.data)} onRetryReport={() => void reportQuery.refetch()} />
+          ) : null}
+        </section>
+      )}
+
+      <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <button type="button" className="flex w-full items-center justify-between text-sm font-medium" aria-expanded={!terminal || diagnosticsOpen} onClick={() => setDiagnosticsOpen(value => !value)} disabled={!terminal}>
+          执行过程与诊断 <span className="text-xs text-[var(--color-fg-muted)]">{!terminal || diagnosticsOpen ? '已展开' : '查看日志与拓扑 ＋'}</span>
+        </button>
+        {(!terminal || diagnosticsOpen) && <div className="mt-4 flex flex-col gap-4">
       <GraphTopologyPanel
         taskId={taskId}
         terminal={terminal}
@@ -171,6 +193,9 @@ export default function AiTaskDetailPage() {
       />
 
       <ExecutionLogsPanel taskId={taskId} terminal={terminal} />
+
+        </div>}
+      </section>
 
       {/* 节点弹窗动作：编辑提示词（全局覆盖，对新建任务生效）+ 重跑确认 */}
       <PromptEditDialog
@@ -196,20 +221,6 @@ export default function AiTaskDetailPage() {
         onCancel={() => setRerunConfirmNodeId(null)}
       />
 
-      {task.status === 'SUCCEEDED' && (
-        <section id="report" ref={reportSectionRef}>
-          {reportQuery.isPending ? (
-            <LoadingState label="报告加载中…" />
-          ) : reportQuery.isError ? (
-            <ErrorState
-              error={toApiError(reportQuery.error)}
-              onRetry={toApiError(reportQuery.error).retryable ? () => void reportQuery.refetch() : undefined}
-            />
-          ) : reportQuery.data ? (
-            <ReportContent report={toReportViewModel(reportQuery.data)} onRetryReport={() => void reportQuery.refetch()} />
-          ) : null}
-        </section>
-      )}
 
       <ConfirmDialog
         open={deleteConfirmOpen}

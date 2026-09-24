@@ -207,6 +207,15 @@ export interface UpdatePortfolioVariables {
   maxTotalPositionPct: number;
   maxSingleStockPct: number;
   maxSectorPct: number;
+  maxPortfolioOpenRiskPct: number;
+  maxSectorOpenRiskPct: number;
+  maxDailyNewRiskPct: number;
+  maxDrawdownPct: number;
+  maxDailyLossPct: number;
+  netAssetValue: number | null;
+  peakNetAssetValue: number | null;
+  dayStartNetAssetValue: number | null;
+  riskFactsAsOf: string | null;
   expectedVersion: number;
 }
 
@@ -225,6 +234,15 @@ export function useUpdatePortfolioMutation() {
             max_total_position_pct: vars.maxTotalPositionPct,
             max_single_stock_pct: vars.maxSingleStockPct,
             max_sector_pct: vars.maxSectorPct,
+            max_portfolio_open_risk_pct: vars.maxPortfolioOpenRiskPct,
+            max_sector_open_risk_pct: vars.maxSectorOpenRiskPct,
+            max_daily_new_risk_pct: vars.maxDailyNewRiskPct,
+            max_drawdown_pct: vars.maxDrawdownPct,
+            max_daily_loss_pct: vars.maxDailyLossPct,
+            net_asset_value: vars.netAssetValue,
+            peak_net_asset_value: vars.peakNetAssetValue,
+            day_start_net_asset_value: vars.dayStartNetAssetValue,
+            risk_facts_as_of: vars.riskFactsAsOf,
             expected_version: vars.expectedVersion,
           }),
         )
@@ -276,6 +294,7 @@ export function useUpsertPositionMutation(portfolioId: string) {
       symbol: string;
       quantity: number;
       averageCost: number;
+      activeStopPrice: number | null;
       expectedPortfolioRevision: number;
     }): Promise<PortfolioPositionMutationData> =>
       (
@@ -284,7 +303,11 @@ export function useUpsertPositionMutation(portfolioId: string) {
             portfolioId,
             vars.market,
             vars.symbol,
-            { quantity: vars.quantity, average_cost: vars.averageCost, expected_portfolio_revision: vars.expectedPortfolioRevision },
+            {
+              quantity: vars.quantity, average_cost: vars.averageCost,
+              active_stop_price: vars.activeStopPrice,
+              expected_portfolio_revision: vars.expectedPortfolioRevision,
+            },
           ),
         )
       ).data,

@@ -8,6 +8,7 @@ import MarketOverviewPage from './MarketOverviewPage';
 // MarketAssetsService mock 与 cnAsset 夹具已删（目录写死）。
 vi.mock('../../../api/generated/services/MarketDataService', () => ({
   MarketDataService: {
+    refreshStatusApiV1MarketDataRefreshStatusGet: vi.fn().mockResolvedValue({ data: { groups: [], refresh_available: false, worker_online: false }, meta: { request_id: 'r', schema_version: 'v1' } }),
     indexBarsApiV1MarketDataIndicesSymbolBarsGet: vi.fn(),
     conceptTreeApiV1MarketDataConceptsTreeGet: vi.fn(),
     capTierTrendsApiV1MarketDataTrendsCapTiersGet: vi.fn(),
@@ -91,7 +92,7 @@ describe('MarketOverviewPage', () => {
 
     // 市场区块：写死目录资产与 K 线
     expect(await screen.findByText('上证综指')).toBeInTheDocument();
-    expect(await screen.findByTestId('candlestick-chart')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '上证综指 展开 K 线' })).toBeInTheDocument();
     // 信息区块：正常空态
     expect(screen.getByText('暂无可展示的事件研究宏观信息')).toBeInTheDocument();
     // 板块区块：独立错误态 + 重试
@@ -121,5 +122,7 @@ describe('MarketOverviewPage', () => {
     expect(screen.getByRole('heading', { name: '板块' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '信息' })).toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.queryByText('个股日线')).not.toBeInTheDocument();
+    expect(screen.getByText('板块日线')).toBeInTheDocument();
   });
 });

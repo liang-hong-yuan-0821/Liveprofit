@@ -16,7 +16,9 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
+from AI.dataflows.providers.base_provider import ProviderNetworkAccessDenied
 from db.instrument.ingest import backfill as bf
+from tests.db.instrument._helpers import add_ingest_lock_responses
 from db.instrument.ingest.frames import StoreFetchError
 
 
@@ -34,6 +36,19 @@ def _small_daily(ts_code, trade_date="20260828"):
 def _small_factor(ts_code, trade_date="20260828"):
     return pd.DataFrame({"ts_code": [ts_code], "trade_date": [trade_date],
                          "adj_factor": [1.0]})
+
+
+def test_network_access_denial_does_not_retry_single_day_backfill(monkeypatch):
+    provider = MagicMock()
+    blocked = ProviderNetworkAccessDenied("blocked by local policy")
+    monkeypatch.setattr(bf, "_run_day", MagicMock(side_effect=blocked))
+    monkeypatch.setattr(bf.time, "sleep", MagicMock())
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        bf._run_day_with_retry(MagicMock(), provider, "20260923", [], [])
+
+    assert bf._run_day.call_count == 1
+    bf.time.sleep.assert_not_called()
 
 
 def _mock_provider(daily_frames=None, factor_frames=None, cal_days=None,
@@ -82,7 +97,7 @@ def _patch_run_env(monkeypatch, provider):
     conn = MagicMock()
     _cursor = MagicMock()
     _cursor.fetchall.return_value = []
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     monkeypatch.setattr(bf, "bulk_upsert_daily", MagicMock(return_value=2))
     monkeypatch.setattr(bf, "bulk_upsert_factor", MagicMock(return_value=2))
     monkeypatch.setattr(bf, "collect_sectors", MagicMock())
@@ -90,6 +105,79 @@ def _patch_run_env(monkeypatch, provider):
     monkeypatch.setattr(bf, "backfill_index_history",
                         MagicMock(return_value={"bars": 0, "factors": 0}))
     return conn
+
+
+def test_calendar_network_access_denial_stops_backfill(monkeypatch):
+    provider = _mock_provider()
+    provider._network_access_error = None
+    blocked = ProviderNetworkAccessDenied("blocked by local policy")
+
+    def deny_calendar(*args, **kwargs):
+        provider._network_access_error = blocked
+        return None
+
+    provider.get_trade_cal.side_effect = deny_calendar
+    conn = _patch_run_env(monkeypatch, provider)
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        bf.run_backfill(
+            conn, "2026-09-23", "2026-09-23", provider_factory=lambda: provider,
+            skip_concepts=True, skip_index=True,
+        )
+
+    provider.get_trade_cal.assert_called_once()
+
+
+def test_connection_probe_network_denial_keeps_typed_backfill_error(monkeypatch):
+    provider = _mock_provider()
+    provider.connected = False
+    provider._network_access_error = ProviderNetworkAccessDenied("blocked by local policy")
+    conn = _patch_run_env(monkeypatch, provider)
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        bf.run_backfill(
+            conn, "2026-09-23", "2026-09-23", provider_factory=lambda: provider,
+            skip_concepts=True, skip_index=True, skip_daily=True,
+        )
+
+
+def test_backfill_rechecks_connection_before_daily_phase(monkeypatch):
+    wrapped_provider = _mock_provider()
+    wrapped_provider.get_trade_cal.return_value = pd.DataFrame()
+
+    class ReconnectingProvider:
+        checks = 0
+
+        @property
+        def connected(self):
+            self.checks += 1
+            return self.checks > 1
+
+        def __getattr__(self, name):
+            return getattr(wrapped_provider, name)
+
+    provider = ReconnectingProvider()
+    conn = _patch_run_env(monkeypatch, provider)
+
+    bf.run_backfill(
+        conn, "2026-09-23", "2026-09-23", provider_factory=lambda: provider,
+        skip_concepts=True, skip_index=True,
+    )
+
+    assert provider.checks == 2
+    wrapped_provider.get_trade_cal.assert_called_once()
+
+
+def test_stock_factor_connection_probe_keeps_typed_network_error():
+    provider = MagicMock()
+    provider.connected = False
+    provider._network_access_error = ProviderNetworkAccessDenied("blocked by local policy")
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        bf._run_stock_factor_backfill_unlocked(
+            MagicMock(), "2026-09-23", "2026-09-23",
+            provider_factory=lambda: provider,
+        )
 
 
 # ==================== fetch_day_frames：截断降级 ====================
@@ -350,7 +438,7 @@ def test_backfill_index_history_do_update_and_bootstrap(monkeypatch):
     conn = MagicMock()
     _cursor = MagicMock()
     _cursor.fetchall.return_value = []
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     upsert = MagicMock(return_value=2)
     monkeypatch.setattr(bf, "_bootstrap_instruments", MagicMock())
     monkeypatch.setattr(bf, "bulk_upsert_daily", upsert)
@@ -382,7 +470,7 @@ def test_backfill_index_history_skips_existing_days(monkeypatch):
                                      (pd.Timestamp("2026-08-27"),)]
     # 缺列行检查：fetchone 返回 None = 无缺列行（跳过条件满足）
     _cursor.fetchone.return_value = None
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     monkeypatch.setattr(bf, "_bootstrap_instruments", MagicMock())
     monkeypatch.setattr(bf, "bulk_upsert_daily", MagicMock())
 
@@ -403,7 +491,7 @@ def test_backfill_index_history_reruns_missing_column_rows(monkeypatch):
     _cursor.fetchall.return_value = [(pd.Timestamp("2026-08-26"),),
                                      (pd.Timestamp("2026-08-27"),)]
     _cursor.fetchone.return_value = (1,)   # 存在缺列行
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     monkeypatch.setattr(bf, "_bootstrap_instruments", MagicMock())
     upsert = MagicMock(return_value=2)
     monkeypatch.setattr(bf, "bulk_upsert_daily", upsert)
@@ -424,7 +512,7 @@ def test_backfill_index_factor_missing_chunks_rejected(monkeypatch):
     conn = MagicMock()
     _cursor = MagicMock()
     _cursor.fetchall.return_value = []
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     upsert_factor = MagicMock()
     monkeypatch.setattr(bf, "_bootstrap_instruments", MagicMock())
     monkeypatch.setattr(bf, "bulk_upsert_daily", MagicMock(return_value=1))
@@ -449,7 +537,7 @@ def test_backfill_index_history_non_cn_fallback_source_tagged(monkeypatch):
     _cursor = MagicMock()
     _cursor.fetchall.return_value = []
     _cursor.fetchone.return_value = None
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     upsert = MagicMock(return_value=2)
     monkeypatch.setattr(bf, "_bootstrap_instruments", MagicMock())
     monkeypatch.setattr(bf, "bulk_upsert_daily", upsert)
@@ -479,7 +567,7 @@ def test_backfill_index_history_skips_factors_for_non_cn(monkeypatch):
     _cursor = MagicMock()
     _cursor.fetchall.return_value = []
     _cursor.fetchone.return_value = None
-    conn.execute.return_value = _cursor
+    add_ingest_lock_responses(conn, _cursor)
     monkeypatch.setattr(bf, "_bootstrap_instruments", MagicMock())
     monkeypatch.setattr(bf, "bulk_upsert_daily", MagicMock(return_value=1))
     monkeypatch.setattr(bf, "bulk_upsert_factor_daily", MagicMock(return_value=1))

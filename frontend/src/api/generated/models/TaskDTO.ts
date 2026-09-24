@@ -42,6 +42,7 @@ export namespace TaskDTO {
     export enum task_type {
         SINGLE_STOCK = 'SINGLE_STOCK',
         MARKET_WIDE = 'MARKET_WIDE',
+        DAILY_RESEARCH = 'DAILY_RESEARCH',
     }
     export enum status {
         PENDING = 'PENDING',

@@ -1,46 +1,38 @@
 import { Link, NavLink } from 'react-router';
-import { BarChart3, Bot, ChevronLeft, ChevronRight, FlaskConical, Star } from 'lucide-react';
+import { BarChart3, Bot, ChevronLeft, ChevronRight, FlaskConical, Star, Activity, Newspaper } from 'lucide-react';
 import { useUiPreferenceStore } from '../../stores/uiPreferenceStore';
 import { ThemeToggle } from './ThemeToggle';
 
 const NAV_ITEMS = [
   { to: '/market', label: '大盘', icon: BarChart3 },
   { to: '/watchlist', label: '自选', icon: Star },
-  { to: '/ai', label: 'AI', icon: Bot },
+  { to: '/ai', label: 'AI 研究', icon: Bot },
+  { to: '/daily-research', label: '每日研究', icon: Newspaper },
   { to: '/event-study', label: '事件研究', icon: FlaskConical },
 ] as const;
 
-export function SidebarNav() {
-  const collapsed = useUiPreferenceStore((state) => state.sidebarCollapsed);
+export function SidebarNav({ collapsed = false, allowCollapse = true, onNavigate }: { collapsed?: boolean; allowCollapse?: boolean; onNavigate?: () => void }) {
   const setSidebarCollapsed = useUiPreferenceStore((state) => state.setSidebarCollapsed);
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: 'var(--color-surface)' }}>
-      <div className="flex items-center gap-2 px-3 py-4">
-        <Link to="/market" className="truncate font-semibold" title="返回大盘">
-          {collapsed ? 'LP' : 'Liveprofit'}
-        </Link>
-      </div>
+    <div className="flex h-full flex-col py-3">
+      <Link to="/market" onClick={onNavigate} className="mb-8 flex items-center gap-3 px-4 py-4" title="返回大盘">
+        <span className="brand-mark flex size-10 shrink-0 items-center justify-center rounded-xl"><Activity className="size-6" /></span>
+        {!collapsed && <span><span className="block text-lg font-semibold tracking-tight">Liveprofit</span><span className="text-[10px] tracking-[.16em] text-[var(--color-fg-muted)]">投资研究工作台</span></span>}
+      </Link>
+      {!collapsed && <p className="mb-3 px-5 text-[10px] font-medium tracking-[.18em] text-[var(--color-fg-muted)]">WORKSPACE / 工作区</p>}
 
       <nav className="flex flex-col gap-1 px-2">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
-            end={to === '/ai'}
+            onClick={onNavigate}
             title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              `flex items-center gap-2 rounded px-2 py-2 text-sm ${
-                isActive ? 'font-medium' : ''
-              }`
-            }
-            style={({ isActive }) =>
-              isActive
-                ? { backgroundColor: 'var(--color-accent)', color: '#fff' }
-                : { color: 'var(--color-fg-muted)' }
-            }
+            aria-label={label}
+            className="nav-item flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium"
           >
-            <Icon className="size-4 shrink-0" aria-hidden />
+            <Icon className="size-5 shrink-0" aria-hidden />
             {!collapsed && <span>{label}</span>}
           </NavLink>
         ))}
@@ -48,7 +40,7 @@ export function SidebarNav() {
 
       <div className="mt-auto flex flex-col gap-1 border-t px-2 py-3" style={{ borderColor: 'var(--color-border)' }}>
         <ThemeToggle collapsed={collapsed} />
-        <button
+        {allowCollapse && <button
           type="button"
           onClick={() => setSidebarCollapsed(!collapsed)}
           title={collapsed ? '展开侧栏' : '折叠侧栏'}
@@ -57,7 +49,7 @@ export function SidebarNav() {
         >
           {collapsed ? <ChevronRight className="size-4" aria-hidden /> : <ChevronLeft className="size-4" aria-hidden />}
           {!collapsed && <span>折叠侧栏</span>}
-        </button>
+        </button>}
       </div>
     </div>
   );

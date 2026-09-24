@@ -1,0 +1,12 @@
+import { Input } from '../../../../shared/ui/input';
+import { ACTION_CHOICES, CONDITION_OPTIONS, SCOPE_CHOICES, type PendingEventRowVM } from './mappers/toPendingEventRowVM';
+export function EventReviewFields({ vm, disabled, onChange }: { vm: PendingEventRowVM; disabled: boolean; onChange: (patch: Partial<PendingEventRowVM>) => void }) {
+  const textFields = [['eventType', '事件类型'], ['eventSubtype', '事件子类型'], ['affectedScopeRefs', '目标引用'], ['expectedValue', '预期值'], ['actualValue', '实际值'], ['previousValue', '前值']] as const;
+  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    {textFields.map(([key, label]) => <label key={key} className="flex flex-col gap-1.5 text-xs">{label}<Input disabled={disabled} value={vm[key]} type={key.endsWith('Value') ? 'number' : 'text'} step="any" onChange={event => onChange({ [key]: event.target.value })} /></label>)}
+    <label className="flex flex-col gap-1.5 text-xs">关键条件<select disabled={disabled} value={vm.eventCondition} className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2" onChange={event => onChange({ eventCondition: event.target.value })}>{CONDITION_OPTIONS.map(value => <option key={value} value={value}>{value || '未选择'}</option>)}</select></label>
+    <label className="flex flex-col gap-1.5 text-xs">重要性<select disabled={disabled} value={vm.importance} className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2" onChange={event => onChange({ importance: Number(event.target.value) })}>{[1,2,3,4,5].map(value => <option key={value}>{value}</option>)}</select></label>
+    <label className="flex flex-col gap-1.5 text-xs">作用域<select disabled={disabled} value={vm.eventScope} className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2" onChange={event => onChange({ eventScope: event.target.value as PendingEventRowVM['eventScope'] })}>{SCOPE_CHOICES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+    <label className="flex flex-col gap-1.5 text-xs">操作<select disabled={disabled} value={vm.action} className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2" onChange={event => onChange({ action: event.target.value as PendingEventRowVM['action'] })}>{ACTION_CHOICES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+  </div>;
+}

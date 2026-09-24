@@ -1,9 +1,10 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ApiError } from '../../../../api/client';
 import { renderWithRouter } from '../../../../test/utils';
 import AiDashboardPage from './AiDashboardPage';
+import { queryKeys } from '../../../../api/queryKeys';
 
 vi.mock('../../../../api/generated/services/AnalysisDashboardService', () => ({
   AnalysisDashboardService: { getDashboardApiV1AnalysisDashboardGet: vi.fn() },
@@ -24,6 +25,7 @@ const fullDashboard = {
       task_type: 'SINGLE_STOCK',
       ticker: '000001.SZ',
       effective_trade_date: '2026-09-03',
+      selected_layers: ['market', 'sector', 'stock'],
       updated_at: '2026-09-05T09:15:00Z',
       error_code: 'PROVIDER_UNAVAILABLE',
       error_summary: '行情数据暂不可用',
@@ -37,6 +39,7 @@ const fullDashboard = {
       task_type: 'SINGLE_STOCK',
       ticker: '600000.SH',
       effective_trade_date: '2026-09-04',
+      selected_layers: ['market', 'sector', 'screening'],
       status: 'RETRYING',
       attempt_no: 2,
       updated_at: '2026-09-05T09:30:00Z',
@@ -49,6 +52,7 @@ const fullDashboard = {
       task_type: 'SINGLE_STOCK',
       ticker: '000858.SZ',
       effective_trade_date: '2026-09-04',
+      selected_layers: ['market'],
       completed_at: '2026-09-05T09:05:00Z',
       conclusion_summary: '估值偏低，情绪面偏多',
       risk_flag: false,
@@ -90,11 +94,23 @@ afterEach(() => {
 });
 
 describe('AiDashboardPage', () => {
+  it('empty cached sections retain refresh failure messages and retry actions', async () => {
+    fetchMock.mockReset().mockResolvedValue(envelope(emptyDashboard));
+    const { queryClient } = renderWithRouter(<AiDashboardPage />);
+    await screen.findByText('暂无最近结论'); await screen.findByText('当前没有待处理事项');
+    fetchMock.mockRejectedValue(new ApiError({ code: 'NETWORK_ERROR', retryable: true, status: 503 }));
+    await act(async () => { await Promise.all(['pending_actions', 'recent_conclusions'].map(section => queryClient.refetchQueries({ queryKey: queryKeys.analysisDashboard.detail(section) }))); });
+    expect(await screen.findAllByText(/更新失败，当前显示上次结果/)).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '重新加载' })).toHaveLength(2);
+  });
   it('三区块独立加载/失败：active_tasks 失败仅重试自身，其余区块正常展示', async () => {
     renderWithRouter(<AiDashboardPage />);
 
     expect(await screen.findByText('行情数据暂不可用')).toBeInTheDocument();
     expect(screen.getByText('估值偏低，情绪面偏多')).toBeInTheDocument();
+    // 任务名称 = 实行的分析层级（不再显示 ticker/全市场）
+    expect(screen.getByText('市场·板块·个股')).toBeInTheDocument();
+    expect(screen.getByText('市场')).toBeInTheDocument();
     // active_tasks 区块显示独立错误态与重试入口
     expect(screen.getByText('上游不可用')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
@@ -104,6 +120,7 @@ describe('AiDashboardPage', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: '重试' }));
 
     expect(await screen.findByText('第 2 次尝试')).toBeInTheDocument();
+    expect(screen.getByText('市场·板块·筛选')).toBeInTheDocument();
     expect(fetchMock.mock.calls.length).toBe(callsBefore + 1);
   });
 
@@ -120,19 +137,19 @@ describe('AiDashboardPage', () => {
     expect(location.dataset.search).not.toContain('create');
   });
 
-  it('主 CTA 打开创建面板：恒为全市场调研，默认勾选市场/板块/筛选且可独立取消，无标的输入', async () => {
+  it('主 CTA 打开创建面板：恒为全市场调研，分析层级默认全不勾选且可独立勾选，无标的输入', async () => {
     const user = userEvent.setup();
     renderWithRouter(<AiDashboardPage />);
 
     await user.click(screen.getAllByRole('button', { name: '新建分析' })[0]);
     expect(await screen.findByRole('heading', { name: '新建分析' })).toBeInTheDocument();
-    for (const name of ['市场', '板块', '筛选']) {
-      expect(screen.getByRole('checkbox', { name: new RegExp('^' + name) })).toBeChecked();
+    for (const name of ['市场', '板块', '筛选', '仓位']) {
+      expect(screen.getByRole('checkbox', { name: new RegExp('^' + name) })).not.toBeChecked();
     }
     expect(screen.queryByLabelText(/标的/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('checkbox', { name: /^板块/ }));
-    expect(screen.getByRole('checkbox', { name: /^板块/ })).not.toBeChecked();
+    await user.click(screen.getByRole('checkbox', { name: /^市场/ }));
+    expect(screen.getByRole('checkbox', { name: /^市场/ })).toBeChecked();
   });
 
   it('所有区块均为空时展示整体空态并引导新建分析', async () => {
@@ -192,7 +209,7 @@ describe('AiDashboardPage 双 tab', () => {
 
   it('默认渲染任务 tab（看板内容）', async () => {
     renderWithRouter(<AiDashboardPage />, { initialEntries: ['/ai'] });
-    expect(await screen.findByText(/此刻该做什么/)).toBeInTheDocument();
+    expect(await screen.findByText(/聚焦关键结论/)).toBeInTheDocument();
   });
 
   it('URL ?tab=agents 直接进入 Agent 拓扑页', async () => {
@@ -203,10 +220,10 @@ describe('AiDashboardPage 双 tab', () => {
   it('点击 Agent tab 按钮切换到拓扑页，点击任务切回', async () => {
     const user = userEvent.setup();
     renderWithRouter(<AiDashboardPage />, { initialEntries: ['/ai'] });
-    await screen.findByText(/此刻该做什么/);
-    await user.click(screen.getByRole('button', { name: 'Agent' }));
+    await screen.findByText(/聚焦关键结论/);
+    await user.click(screen.getByRole('button', { name: 'Agent 架构' }));
     expect(await screen.findByText('Agent 架构拓扑')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '任务' }));
-    expect(await screen.findByText(/此刻该做什么/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '研究看板' }));
+    expect(await screen.findByText(/聚焦关键结论/)).toBeInTheDocument();
   });
 });

@@ -9,11 +9,12 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -35,6 +36,11 @@ class QuantExecutionSignal(Base):
     task_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("analysis_tasks.id", ondelete="CASCADE"), nullable=False
     )
+    strategy_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("quant_strategy_versions.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
     attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
     signal_kind: Mapped[str] = mapped_column(String(16), nullable=False)  # BUY / HOLDING / ERROR
     ts_code: Mapped[str] = mapped_column(String(16), nullable=False)
@@ -53,6 +59,20 @@ class QuantExecutionSignal(Base):
     order_cost_price: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
     valuation_price: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
     risk_bucket: Mapped[dict | None] = mapped_column(JSONB(), nullable=True)
+    # 策略信号使用 qfq；建议订单使用 raw。两套价格不可互相覆盖。
+    signal_trade_date: Mapped[date | None] = mapped_column(Date(), nullable=True)
+    signal_price_basis: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    execution_price_basis: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    adj_factor_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    execution_market: Mapped[dict | None] = mapped_column(JSONB(), nullable=True)
+    order_entry_price: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
+    order_stop_price: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
+    order_take_price: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
+    earliest_execution_trade_date: Mapped[date | None] = mapped_column(Date(), nullable=True)
+    available_sell_quantity: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
+    estimated_fees: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
+    estimated_slippage: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
+    execution_policy_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
     # 错误样本行
     error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -70,6 +90,10 @@ class QuantExecutionSignal(Base):
             "id",
         ),
         Index("ix_quant_execution_signals_task_attempt", "task_id", "attempt_no"),
+        Index(
+            "ix_quant_execution_signals_task_strategy_score",
+            "task_id", "strategy_version_id", sa_text("score DESC"), "ts_code", "id",
+        ),
     )
 
 

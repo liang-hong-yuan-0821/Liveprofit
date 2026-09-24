@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type PortfolioSnapshotDTO = {
+    id?: (string | null);
     name: string;
     version: number;
     total_assets: string;

@@ -14,16 +14,19 @@ from dramatiq.brokers.redis import RedisBroker
 logger = logging.getLogger(__name__)
 
 _configured = False
+_configuration: tuple[str, str] | None = None
 
 
-def configure_broker(redis_url: str) -> dramatiq.Broker:
+def configure_broker(redis_url: str, *, namespace: str = "dramatiq") -> dramatiq.Broker:
     """幂等装配：进程启动时调用一次；Worker 与 Dispatcher 共用同一 Broker 配置。
 
     注意：Worker 子进程（spawn/fork）会各自执行一次——诊断日志记录 host/db/密码有无，
     便于排查子进程认证问题（HELLO 认证错误 = 子进程拿到无密码 URL）。
     """
-    global _configured
+    global _configured, _configuration
     if _configured:
+        if _configuration != (redis_url, namespace):
+            raise RuntimeError("Broker 已装配，不能在同一进程切换连接或命名空间")
         return dramatiq.get_broker()
     parsed = urlsplit(redis_url)
     logger.info(
@@ -31,7 +34,8 @@ def configure_broker(redis_url: str) -> dramatiq.Broker:
         parsed.hostname, parsed.port, parsed.path.lstrip("/") or "0",
         "已设置" if parsed.password else "缺失",
     )
-    broker = RedisBroker(url=redis_url)
+    broker = RedisBroker(url=redis_url, namespace=namespace)
     dramatiq.set_broker(broker)
     _configured = True
+    _configuration = (redis_url, namespace)
     return broker

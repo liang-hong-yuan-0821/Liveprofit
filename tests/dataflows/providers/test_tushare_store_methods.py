@@ -11,10 +11,15 @@
 """
 
 from unittest.mock import MagicMock
+from threading import Event
 
 import pandas as pd
 import pytest
 
+from AI.dataflows.providers.base_provider import (
+    ProviderNetworkAccessDenied,
+    raise_if_network_access_denied,
+)
 from AI.dataflows.providers.cn.tushare import TushareProvider
 
 
@@ -31,6 +36,21 @@ STANDARD_DAILY_COLS = [
     "ts_code", "trade_date", "open", "high", "low", "close",
     "pre_close", "change", "pct_chg", "vol", "amount",
 ]
+STOCK_BASIC_COLS = [
+    "ts_code", "name", "market", "exchange", "industry", "area",
+    "list_status", "list_date", "delist_date",
+]
+
+
+def _stock_basic_frame(codes=(), exchanges=(), statuses=(), list_dates=(), delist_dates=()):
+    count = len(codes)
+    return pd.DataFrame({
+        "ts_code": list(codes), "name": [f"股票{i}" for i in range(count)],
+        "market": ["主板"] * count, "exchange": list(exchanges),
+        "industry": ["银行"] * count, "area": ["中国"] * count,
+        "list_status": list(statuses), "list_date": list(list_dates),
+        "delist_date": list(delist_dates),
+    }, columns=STOCK_BASIC_COLS)
 
 
 # ==================== get_full_market_daily_df ====================
@@ -111,21 +131,140 @@ def test_factor_unknown_market_returns_none():
 
 def test_stock_basic_passes_fields_and_normalizes():
     api = MagicMock()
-    api.stock_basic.return_value = pd.DataFrame({
-        "ts_code": ["000001.SZ"], "name": ["平安银行"], "market": ["主板"],
-        "exchange": ["SZSE"], "industry": ["银行"], "area": ["深圳"],
-        "list_status": ["L"], "list_date": ["19910403"], "delist_date": [None],
-    })
+    statuses = ("L", "D", "P", "G", "UN")
+    exchanges = ("SSE", "SZSE", "BSE")
+    suffixes = {"SSE": "SH", "SZSE": "SZ", "BSE": "BJ"}
+    list_dates = {"L": "19910403", "D": "19910403", "P": "19910403",
+                  "G": "20260925", "UN": None}
+    delist_dates = {"L": None, "D": "20200101", "P": None, "G": None, "UN": None}
+    api.stock_basic.side_effect = [
+        _stock_basic_frame(
+            [f"{i:06d}.{suffixes[exchange]}"], [exchange], [status],
+            [list_dates[status]], [delist_dates[status]],
+        )
+        for i, (status, exchange) in enumerate(
+            ((status, exchange) for status in statuses for exchange in exchanges), start=1
+        )
+    ]
     prov = _new_provider(api)
     df = prov.get_stock_basic_df()
-    assert list(df.columns) == [
-        "ts_code", "name", "market", "exchange", "industry", "area",
-        "list_status", "list_date", "delist_date",
+    assert list(df.columns) == STOCK_BASIC_COLS
+    assert df["list_status"].tolist() == [status for status in statuses for _ in exchanges]
+    assert [(call.kwargs["list_status"], call.kwargs["exchange"])
+            for call in api.stock_basic.call_args_list] == [
+                (status, exchange) for status in statuses for exchange in exchanges]
+    assert all("fields" in call.kwargs for call in api.stock_basic.call_args_list)
+
+
+def test_stock_basic_refuses_partial_catalog_when_one_status_query_fails():
+    api = MagicMock()
+    api.stock_basic.side_effect = [
+        _stock_basic_frame(["600000.SH"], ["SSE"], ["L"], ["19910403"], [None]),
+        None,
     ]
-    # 全量拉取：不传 list_status（含退市 D/暂停 P）
-    _, kwargs = api.stock_basic.call_args
-    assert "list_status" not in kwargs
-    assert "fields" in kwargs
+    prov = _new_provider(api)
+    assert prov.get_stock_basic_df() is None
+    assert api.stock_basic.call_count == 2
+
+
+def test_stock_basic_refuses_same_code_in_two_lifecycle_partitions():
+    api = MagicMock()
+    empty = _stock_basic_frame()
+    api.stock_basic.side_effect = [
+        _stock_basic_frame(["600000.SH"], ["SSE"], ["L"], ["19910403"], [None]),
+        *[empty] * 2,
+        _stock_basic_frame(["600000.SH"], ["SSE"], ["D"], ["19910403"], ["20200101"]),
+        *[empty] * 11,
+    ]
+    assert _new_provider(api).get_stock_basic_df() is None
+
+
+@pytest.mark.parametrize("bad_response", [
+    _stock_basic_frame(["600000.SH", "600001.SH"], ["SSE", None], ["L", "L"],
+                       ["19910403", "19910403"], [None, None]),
+    _stock_basic_frame(["600000.SH"], ["SSE"], ["D"], ["19910403"], ["20200101"]),
+    _stock_basic_frame([f"{i:06d}.SH" for i in range(6000)], ["SSE"] * 6000,
+                       ["L"] * 6000, ["19910403"] * 6000, [None] * 6000),
+])
+def test_stock_basic_refuses_malformed_or_truncated_partition(bad_response):
+    api = MagicMock()
+    api.stock_basic.return_value = bad_response
+    prov = _new_provider(api)
+
+    assert prov.get_stock_basic_df() is None
+    api.stock_basic.assert_called_once()
+
+
+def test_stock_basic_rejects_empty_frame_without_expected_schema():
+    api = MagicMock()
+    api.stock_basic.return_value = pd.DataFrame()
+    prov = _new_provider(api)
+
+    assert prov.get_stock_basic_df() is None
+    api.stock_basic.assert_called_once()
+
+
+def test_stock_basic_accepts_empty_frame_with_expected_schema():
+    api = MagicMock()
+    api.stock_basic.return_value = _stock_basic_frame()
+    prov = _new_provider(api)
+
+    df = prov.get_stock_basic_df()
+
+    assert df.empty
+    assert list(df.columns) == STOCK_BASIC_COLS
+    assert api.stock_basic.call_count == 15
+
+
+def test_network_permission_error_is_preserved_for_refresh_policy():
+    api = MagicMock()
+    denied = OSError("[WinError 10013] An attempt was made to access a socket")
+    denied.winerror = 10013
+    api.stock_basic.side_effect = denied
+    prov = _new_provider(api)
+    prov._connection_error = None
+    prov._api_call = TushareProvider._api_call.__get__(prov)
+    # Provider-facing structured APIs still honor the None-on-failure contract;
+    # the ingestion boundary promotes the retained local-policy error.
+    assert prov.get_stock_basic_df() is None
+    assert api.stock_basic.call_count == 1
+    with pytest.raises(ProviderNetworkAccessDenied) as raised:
+        raise_if_network_access_denied(prov)
+    assert raised.value.refresh_error_code == "SOURCE_NETWORK_ACCESS_DENIED"
+
+
+def test_network_permission_error_is_retained_if_worker_fails_after_timeout():
+    api = MagicMock()
+    started = Event()
+    release = Event()
+    finished = Event()
+    denied = OSError("[WinError 10013] An attempt was made to access a socket")
+    denied.winerror = 10013
+
+    def delayed_denial():
+        started.set()
+        try:
+            release.wait(timeout=2)
+            raise denied
+        finally:
+            finished.set()
+
+    api.daily.side_effect = delayed_denial
+    prov = _new_provider(api)
+    prov._connection_error = None
+    prov._network_access_error = None
+    prov._api_call = TushareProvider._api_call.__get__(prov)
+
+    assert prov._api_call(api.daily, timeout=0.01) is None
+    assert started.wait(timeout=1)
+    release.set()
+    assert finished.wait(timeout=1)
+    with pytest.raises(ProviderNetworkAccessDenied):
+        raise_if_network_access_denied(prov)
+
+    later_call = MagicMock()
+    assert prov._api_call(later_call, timeout=0.1) is None
+    later_call.assert_not_called()
 
 
 def test_fund_basic_passthrough_market_e():

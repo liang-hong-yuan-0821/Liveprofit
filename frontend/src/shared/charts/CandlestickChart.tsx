@@ -1,3 +1,4 @@
+import { useChartTheme } from './useChartTheme';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { BarSeriesOption, CandlestickSeriesOption, LineSeriesOption } from 'echarts/charts';
@@ -32,6 +33,17 @@ export interface CandlestickChartProps {
   /** 画线集合；仅传 onDrawingsChange 时渲染画线工具栏 */
   drawings?: Drawing[];
   onDrawingsChange?: (next: Drawing[]) => void;
+  /** 参考价横线（数据驱动，如止损/止盈）：虚线贯穿可见窗口全宽，非画线工具、不可编辑 */
+  referenceLines?: CandlestickReferenceLine[];
+}
+
+export interface CandlestickReferenceLine {
+  /** 参考价；主图 y 轴自动扩展以包含该价（scale:true + 函数形式 min/max） */
+  price: number;
+  /** 线左端上方标签；缺省为 price.toFixed(2) */
+  label?: string;
+  /** 缺省 '#38bdf8'（与画线同色） */
+  color?: string;
 }
 
 export interface CandlestickChartViewModel {
@@ -183,6 +195,7 @@ function buildLegendOptions(params: {
   legendMacd: string[];
   idx: number;
   legendSelected: Record<string, boolean> | undefined;
+  neutralColor?: string;
 }): Array<Record<string, unknown>> {
   const { model, hasVolume, legendMain, legendMacd, idx, legendSelected } = params;
   const row = model.ohlc[idx];
@@ -209,7 +222,7 @@ function buildLegendOptions(params: {
       return v === null ? label : `${label} ${v}`;
     },
     selected: selectedSubset(names),
-    data: names.map((name) => ({ name, textStyle: { color: legendItemColor(name, up) } })),
+    data: names.map((name) => ({ name, textStyle: { color: name === 'DIF' ? (params.neutralColor ?? MACD_DIF_COLOR) : legendItemColor(name, up) } })),
   });
   const legends: Array<Record<string, unknown>> = [
     legendFor(0, hasVolume ? [...FIXED_OHLC_NAMES, '成交量'] : FIXED_OHLC_NAMES),
@@ -226,7 +239,10 @@ export function CandlestickChart({
   onDataZoom,
   drawings,
   onDrawingsChange,
+  referenceLines,
 }: CandlestickChartProps) {
+  const chartTheme = useChartTheme();
+  const initialTheme = useRef(chartTheme).current;
   const { series, legendMain, legendMacd, hasVolume, hasMacd } = useMemo(() => {
     const built: Array<CandlestickSeriesOption | LineSeriesOption | BarSeriesOption> = [
       {
@@ -322,12 +338,12 @@ export function CandlestickChart({
               typeof params.value === 'number' && params.value >= 0 ? MACD_HIST_UP : MACD_HIST_DOWN,
           },
         },
-        { name: 'DIF', type: 'line', data: model.macd.dif, xAxisIndex: macdAxisIndex, yAxisIndex: macdAxisIndex, symbol: 'none', lineStyle: { width: 1, color: MACD_DIF_COLOR }, itemStyle: { color: MACD_DIF_COLOR } },
+        { name: 'DIF', type: 'line', data: model.macd.dif, xAxisIndex: macdAxisIndex, yAxisIndex: macdAxisIndex, symbol: 'none', lineStyle: { width: 1, color: initialTheme.neutral }, itemStyle: { color: initialTheme.neutral } },
         { name: 'DEA', type: 'line', data: model.macd.dea, xAxisIndex: macdAxisIndex, yAxisIndex: macdAxisIndex, symbol: 'none', lineStyle: { width: 1, color: MACD_DEA_COLOR }, itemStyle: { color: MACD_DEA_COLOR } },
       );
     }
     return { series: built, legendMain: mainLegend, legendMacd: macdLegend, hasVolume: volumeOn, hasMacd: macdOn };
-  }, [model]);
+  }, [model, initialTheme.neutral]);
 
   // ---- 画线（§3.6）----
   const hasDrawings = Boolean(onDrawingsChange && drawings);
@@ -838,6 +854,7 @@ export function CandlestickChart({
     inst.setOption(
       {
         legend: buildLegendOptions({
+          neutralColor: chartTheme.neutral,
           model,
           hasVolume,
           legendMain,
@@ -848,7 +865,7 @@ export function CandlestickChart({
       },
       { notMerge: false },
     );
-  }, [hoverIdx, fallbackIdx, model, hasVolume, legendMain, legendMacd, legendSelected]);
+  }, [chartTheme.neutral, hoverIdx, fallbackIdx, model, hasVolume, legendMain, legendMacd, legendSelected]);
 
   // option 全量构建收敛进 useMemo：grid/xAxis/yAxis/dataZoom/legend 的对象引用必须稳定——
   // 外层 hover 等逐像素 state 变化时不重建 → ChartCore memo 拦截、无 setOption 风暴。
@@ -873,21 +890,21 @@ export function CandlestickChart({
 
     // 轴数组按 grid 顺序构造（每个 grid 一个轴对象）：主图 0、成交量 1、MACD 2。
     // 日期标签只在最底副图显示（主图与成交量隐藏 axisLabel）。
-    const xAxisBase = { type: 'category' as const, data: model.xAxisData, axisLabel: { color: '#8b95a1' }, axisLine: { lineStyle: { color: '#232a33' } } };
-    const yAxisBase = { scale: true, axisLabel: { color: '#8b95a1' }, splitLine: { lineStyle: { color: '#232a33' } } };
+    const xAxisBase = { type: 'category' as const, data: model.xAxisData, axisLabel: { color: initialTheme.text }, axisLine: { lineStyle: { color: initialTheme.grid } } };
+    const yAxisBase = { scale: true, axisLabel: { color: initialTheme.text }, splitLine: { lineStyle: { color: initialTheme.grid } } };
     // 成交量 y 轴独立量纲：可见纵轴（标签量级缩写 万/亿手，splitNumber 2；
     // 与价格轴共用暗色轴样式，不与价格轴共享量纲）
     const volumeYAxis = {
       ...yAxisBase,
       gridIndex: 1,
       splitNumber: 2,
-      axisLabel: { color: '#8b95a1', formatter: (value: number) => formatVolume(value) },
+      axisLabel: { color: initialTheme.text, formatter: (value: number) => formatVolume(value) },
     };
     const xAxis = grids.length > 1
       ? grids.map((_g, i) => ({
           ...xAxisBase,
           gridIndex: i,
-          axisLabel: i === grids.length - 1 ? { color: '#8b95a1' } : { show: false, color: '#8b95a1' },
+          axisLabel: i === grids.length - 1 ? { color: initialTheme.text } : { show: false, color: initialTheme.text },
         }))
       : xAxisBase;
     // 成交量轴只挂在它实际存在的 grid 上（hasVolume=false 时索引 1 是 MACD grid——
@@ -895,15 +912,25 @@ export function CandlestickChart({
     // MACD 副图矮（69.5px）：splitNumber 3 防默认 5 分度刻度标签逐刻度挤压
     const volumeAxisIndex = hasVolume ? 1 : -1;
     const macdAxisIndex = hasMacd ? (hasVolume ? 2 : 1) : -1;
+    // 参考价横线（止损/止盈）：主图 y 轴以函数形式 min/max 在自动 extent 基础上
+    // 再扩展——scale:true 下回调仍生效（echarts 6 实测），保证参考价恒在轴域内；
+    // 未传不注入，保持既有 extent 行为
+    const refMin = referenceLines && referenceLines.length > 0 ? Math.min(...referenceLines.map((r) => r.price)) : null;
+    const refMax = referenceLines && referenceLines.length > 0 ? Math.max(...referenceLines.map((r) => r.price)) : null;
+    const mainYAxis = {
+      ...yAxisBase,
+      ...(refMin !== null ? { min: (value: { min: number }) => Math.min(value.min, refMin) } : {}),
+      ...(refMax !== null ? { max: (value: { max: number }) => Math.max(value.max, refMax) } : {}),
+    };
     const yAxis = grids.length > 1
       ? grids.map((_g, i) => (
           i === volumeAxisIndex
             ? volumeYAxis
             : i === macdAxisIndex
               ? { ...yAxisBase, gridIndex: i, splitNumber: 3 }
-              : { ...yAxisBase, gridIndex: i }
+              : { ...mainYAxis, gridIndex: i }
         ))
-      : yAxisBase;
+      : mainYAxis;
 
     // dataZoom 覆盖全部副图（[0..gridCount-1]）；单 grid 不设 xAxisIndex（现状行为）。
     // 日期锚定（§3.3）：visibleRange 传入时用 startValue/endValue（category 轴字符串吸附最近类目），
@@ -922,8 +949,8 @@ export function CandlestickChart({
       {
         type: 'slider', xAxisIndex: zoomAxes, height: 14, bottom: 2, showDetail: false,
         borderColor: 'transparent', backgroundColor: 'rgba(35, 42, 51, 0.6)',
-        fillerColor: 'rgba(148, 163, 184, 0.25)', handleStyle: { color: '#8b95a1' },
-        textStyle: { color: '#8b95a1', fontSize: 10 },
+        fillerColor: 'rgba(148, 163, 184, 0.25)', handleStyle: { color: initialTheme.text },
+        textStyle: { color: initialTheme.text, fontSize: 10 },
         ...zoomWindow,
       },
     ];
@@ -932,6 +959,7 @@ export function CandlestickChart({
     // 纯文字（icon none）、逐项系列色（实测默认文字色 #54555a 不继承系列色）、
     // 点击隐藏变灰（inactiveColor）、left 0 + itemWidth 0 + 紧凑 gap（值为本随行显示，无右侧读条）
     const legends = buildLegendOptions({
+          neutralColor: initialTheme.neutral,
       model,
       hasVolume,
       legendMain,
@@ -956,9 +984,23 @@ export function CandlestickChart({
       series,
     };
   }, [
-    hasVolume, hasMacd, model.xAxisData, visibleRange?.start, visibleRange?.end,
-    panLocked, legendMain, legendMacd, legendSelected, series, fallbackIdx,
+    initialTheme, hasVolume, hasMacd, model.xAxisData, visibleRange?.start, visibleRange?.end,
+    panLocked, legendMain, legendMacd, legendSelected, series, fallbackIdx, referenceLines,
   ]);
+
+  // Theme changes merge presentation only: never replay dataZoom or recreate the chart.
+  // Also runs after an ordinary full option update so current theme stays authoritative.
+  useEffect(() => {
+    const inst = instanceRef.current;
+    if (!inst) return;
+    const axisCount = 1 + Number(hasVolume) + Number(hasMacd);
+    inst.setOption({
+      xAxis: Array.from({ length: axisCount }, () => ({ axisLabel: { color: chartTheme.text }, axisLine: { lineStyle: { color: chartTheme.grid } } })),
+      yAxis: Array.from({ length: axisCount }, () => ({ axisLabel: { color: chartTheme.text }, splitLine: { lineStyle: { color: chartTheme.grid } } })),
+      ...(hasMacd ? { series: [{ name: 'DIF', lineStyle: { color: chartTheme.neutral }, itemStyle: { color: chartTheme.neutral } }] } : {}),
+      legend: buildLegendOptions({ model, hasVolume, legendMain, legendMacd, idx: hoverIdxRef.current ?? fallbackIdx, legendSelected, neutralColor: chartTheme.neutral }),
+    }, { notMerge: false });
+  }, [chartTheme, option]);
 
   // 已提交画线的覆盖层元素（SVG，§3.6）：线段走 renderedSegment（与编辑命中检测同源几何，
   // §3.6.1），像素经 pxOf 纯数学换算——小数锚点精确落在按点像素；渲染即覆盖层，
@@ -996,6 +1038,26 @@ export function CandlestickChart({
     }
     return { lines, texts };
   }, [hasDrawings, viewport, drawings, model.xAxisData, windowIdx, selectedId, draggingId, mode, eraserHoverId]);
+
+  // 参考价横线覆盖层（虚线，数据驱动、非画线工具）：与画线同几何——pxOf 纯像素换算、
+  // 真实 extent 判定；extent 已由 option 主图 y 轴 min/max 扩展保证包含参考价
+  const refOverlay = useMemo(() => {
+    const lines: Array<{ id: string; x1: number; y1: number; x2: number; y2: number; color: string }> = [];
+    const texts: Array<{ id: string; x: number; y: number; content: string; color: string }> = [];
+    if (!viewport || !referenceLines || referenceLines.length === 0) return { lines, texts };
+    for (const r of referenceLines) {
+      if (!Number.isFinite(r.price)) continue;
+      if (r.price < viewport.extent.min - EXTENT_EPS || r.price > viewport.extent.max + EXTENT_EPS) continue;
+      const a = pxOf(windowIdx.startIdx - 0.5, r.price);
+      const b = pxOf(windowIdx.endIdx + 0.5, r.price);
+      if (!a || !b) continue;
+      const color = r.color ?? DRAWING_COLOR;
+      const key = `ref-${r.price}`;
+      lines.push({ id: `${key}-line`, x1: a.x, y1: a.y, x2: b.x, y2: b.y, color });
+      texts.push({ id: `${key}-label`, x: a.x, y: a.y - 4, content: r.label ?? r.price.toFixed(2), color });
+    }
+    return { lines, texts };
+  }, [viewport, referenceLines, windowIdx]);
 
   return (
     <div data-testid="candlestick-chart">
@@ -1100,8 +1162,8 @@ export function CandlestickChart({
       )}
       <div style={{ position: 'relative', cursor: mode === 'eraser' ? 'pointer' : undefined }}>
         <ChartCore option={option} onEvents={onEvents} onChartReady={onChartReady} height={height} />
-        {hasDrawings && viewport && (
-          // 画线覆盖层：pointerEvents none——滚轮/悬浮/点击全部穿透给 ECharts 画布
+        {(hasDrawings || (referenceLines && referenceLines.length > 0)) && viewport && (
+          // 画线/参考价覆盖层：pointerEvents none——滚轮/悬浮/点击全部穿透给 ECharts 画布
           <svg
             data-testid="drawing-overlay"
             style={{
@@ -1125,7 +1187,24 @@ export function CandlestickChart({
                 strokeWidth={l.width}
               />
             ))}
+            {refOverlay.lines.map((l) => (
+              <line
+                key={l.id}
+                x1={l.x1}
+                y1={l.y1}
+                x2={l.x2}
+                y2={l.y2}
+                stroke={l.color}
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+              />
+            ))}
             {overlay.texts.map((t) => (
+              <text key={t.id} x={t.x} y={t.y} fill={t.color} fontSize={10}>
+                {t.content}
+              </text>
+            ))}
+            {refOverlay.texts.map((t) => (
               <text key={t.id} x={t.x} y={t.y} fill={t.color} fontSize={10}>
                 {t.content}
               </text>

@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TaskListItemDTO = {
+    selected_layers?: Array<string>;
     id: string;
     task_type: TaskListItemDTO.task_type;
     ticker: (string | null);
@@ -18,6 +19,7 @@ export namespace TaskListItemDTO {
     export enum task_type {
         SINGLE_STOCK = 'SINGLE_STOCK',
         MARKET_WIDE = 'MARKET_WIDE',
+        DAILY_RESEARCH = 'DAILY_RESEARCH',
     }
     export enum status {
         PENDING = 'PENDING',

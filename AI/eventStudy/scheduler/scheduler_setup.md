@@ -1,6 +1,12 @@
 # 定时任务调度配置说明（Windows 任务计划程序）
 
-每天早间触发 `daily_job.py` 有**两种方案**，二选一（同时开启也安全：运行标记文件防重复拉起）：
+事件研究旧维护批处理 `daily_job.py` 有下方两种启动方式。**每日投研主流程由平台 Dispatcher 调度**，不再用该旧任务代替；部署每日投研时应保持旧 APScheduler 关闭，并检查是否仍注册了 Windows `LiveProfit事件研究每日批处理`，避免与平台新闻采集重复。
+
+每日投研默认由 `LIVEPROFIT_DAILY_RESEARCH_ENABLED=true` 启用：平台 Dispatcher 在 Asia/Shanghai 每天09:00和21:00准入新闻批次、21:00准入量化批次；每5分钟抓取并保存原文，有待处理新闻时最多每30分钟准入一次增量研判。多 Dispatcher 的重复准入由数据库幂等键约束。页面手动入口与定时入口共用 task/outbox、报告和 worker。
+
+需要运行后端 API 与 worker/Dispatcher 常驻；只启动本事件研究 FastAPI（端口8100）不会启用每日投研。
+
+旧 `daily_job.py` 的人工/维护批处理方式仍保留如下：
 
 | 方案 | 机制 | 适用 |
 |------|------|------|

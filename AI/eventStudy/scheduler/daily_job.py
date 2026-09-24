@@ -47,11 +47,16 @@ def step_crawl_events(conn):
     return len(ids)
 
 
-def step_collect_market(conn, *, refresh_sectors: bool | None = None, refresh_industries: bool | None = None):
+def step_collect_market(conn, *, refresh_sectors: bool | None = None,
+                        refresh_industries: bool | None = None, changed=None):
     """步骤 2：统一市场采集 → market schema（指数日线+因子、个股基金日线+复权、
     板块周刷、行业成员周刷；原步骤 2 market_data 与步骤 3 store 合并，统一方案 3.4.1）。"""
     from AI.eventStudy.collectors.config import get_provider
     from db.instrument.ingest.incremental import collect_incremental, _providers_from_env
+    from db.instrument.ingest.guard import IngestGuard
+    if changed is None:
+        from backend.modules.market_data.application.refresh_service import best_effort_market_changed
+        changed = best_effort_market_changed
 
     # 双源兜底接线（CR BLOCKER 2）：get_provider 只按 env 返回主源实例，
     # 兜底源经公共装配传入
@@ -59,10 +64,13 @@ def step_collect_market(conn, *, refresh_sectors: bool | None = None, refresh_in
         _, fallback_cls = _providers_from_env()
         return fallback_cls()
 
-    result = collect_incremental(
-        conn, get_provider, fallback_factory,
-        refresh_sectors=refresh_sectors, refresh_industries=refresh_industries,
-    )
+    # Release before the shared connection proceeds to market-context/AI work.
+    with IngestGuard(conn, changed=changed) as guard:
+        result = collect_incremental(
+            conn, get_provider, fallback_factory,
+            refresh_sectors=refresh_sectors, refresh_industries=refresh_industries,
+            guard=guard,
+        )
     logger.info(f"[2/5] 统一市场采集完成: {result}")
     return result
 
@@ -75,10 +83,11 @@ def step_update_market_context(conn, start_date, end_date):
 
 
 def step_vectorize(conn):
-    """步骤 4：为新增 approved 事件生成向量。"""
-    n = event_vectorizer.vectorize_unembedded(conn)
-    logger.info(f"[4/5] 事件向量化完成: {n} 条")
-    return n
+    """步骤 4：向量化兼容事件投影与每日研究事实版本。"""
+    events = event_vectorizer.vectorize_unembedded(conn)
+    assessments = event_vectorizer.vectorize_unembedded_assessments(conn)
+    logger.info("[4/5] 事件向量化完成: legacy=%s 条，assessment=%s 条", events, assessments)
+    return events + assessments
 
 
 def _draft_has_error(draft: dict) -> bool:
@@ -131,6 +140,7 @@ def step_event_study(conn):
 
 
 def run_daily_job():
+    from db.instrument.ingest.guard import FATAL_INGEST_ERRORS
     parser = argparse.ArgumentParser(description="事件研究系统每日批处理")
     parser.add_argument("--start-date", default=None, help="行情/上下文起始日期 YYYY-MM-DD，默认 2 年前")
     parser.add_argument("--end-date", default=None, help="截止日期 YYYY-MM-DD，默认今天")
@@ -167,6 +177,8 @@ def run_daily_job():
                 continue
             try:
                 fn()
+            except FATAL_INGEST_ERRORS:
+                raise  # Lost market write session must not proceed into AI work.
             except Exception as e:
                 logger.exception(f"步骤 {name} 失败（继续执行后续步骤）")
         logger.info("每日批处理完成")

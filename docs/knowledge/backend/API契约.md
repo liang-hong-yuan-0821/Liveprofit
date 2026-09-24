@@ -23,6 +23,10 @@
 | 分析任务 | GET /api/v1/analysis-tasks/{taskId}/execution-logs/content?file= | 第一阶段（2026-09-06 增补） |
 | 分析任务 | GET /api/v1/analysis-tasks/{taskId}/graph-topology | 第一阶段（2026-09-08 增补） |
 | AI 看板 | GET /api/v1/analysis-dashboard | 第一阶段 |
+| 每日研究 | POST /api/v1/daily-research/runs（Idempotency-Key，202） | 第一阶段（2026-09-23 增补） |
+| 每日研究 | GET /api/v1/daily-research/runs?kind=&cursor=&limit= | 第一阶段（2026-09-23 增补） |
+| 每日研究 | GET /api/v1/daily-research/runs/latest?kind=&event_id= | 第一阶段（2026-09-23 增补） |
+| 每日研究 | GET /api/v1/daily-research/runs/{task_id} | 第一阶段（2026-09-23 增补） |
 | 事件研究 | POST /api/v1/event-studies/predictions | 第一阶段 |
 | 事件研究 | GET /api/v1/event-studies/assets | 第一阶段 |
 | 事件研究审核 | GET /api/v1/event-studies/review/pending-events | 第一阶段（2026-09-08 增补） |
@@ -44,6 +48,16 @@
 | 组合 | /api/v1/portfolios 及其 positions 子资源 | 第二阶段 |
 
 Base URL：前端经 Nginx 同源反代访问，业务路径即 `/api/v1/...`（本地 loopback，如 `http://127.0.0.1:3000/api/v1/...`）。
+
+## 每日研究 API（2026-09-23）
+
+- `POST /api/v1/daily-research/runs` 请求体为 `{ "kind": "news" | "quant" }`，必须提供 `Idempotency-Key`；返回 202 与 `task_id`、任务状态和 `idempotent_replay`。该接口只准入既有 analysis task/outbox，不在请求线程运行模型或策略。
+- `GET /api/v1/daily-research/runs` 支持可选 `kind`、`cursor`、`limit`（1–100），按创建时间倒序返回任务摘要；分页游标放在 envelope 的 `meta.next_cursor`。
+- `GET /api/v1/daily-research/runs/latest?kind=news|quant&event_id=` 返回最新报告；指定 `event_id` 时只选取确实包含该事件的新闻报告，没有则 `item=null`。
+- `GET /api/v1/daily-research/runs/{task_id}` 返回该任务最新的冻结日报快照与报告版本。任务 `status` 与报告里的 `status` 含义不同：前者表示可靠任务生命周期，后者表示研究覆盖（如 `completed`、`partial`、`empty`）。
+- 新闻报告在 `report.event_forecast` 中保存本批次纳入的事件预测及截至该版可观察到的行情验证；`report.market_outlook.horizons` 是 1/5/20 交易日的市场事件证据汇总。量化报告在 `report.candidates` 保存扫描排名与事件加减分。21:00 量化若因新闻积压而 partial，后续完整新闻批次清空积压后会以 `quant_news_refresh` 创建刷新任务，复用原候选量化分，只重算事件加减分、排序及重点候选深研；历史批次不被覆盖。`position_planning.status=out_of_scope`，不会生成建议仓位或订单。
+
+日报创建复用 `analysis_tasks`、`task_outbox` 与 `analysis_reports`。前端由 `backend/openapi/openapi.v1.json` 生成 DTO/client；OpenAPI 是接口字段的最终事实来源。
 
 ---
 
@@ -262,7 +276,7 @@ Query：`cursor`（可选）、`limit`（可选，默认 20，范围 1..100）�
 }
 ```
 
-TaskListItemDTO 字段：`id: UUID、task_type、ticker?: string、effective_trade_date?: date、status、attempt_no: int、error_code?: string、error_summary?: string、created_at、updated_at`。列表不返回请求参数、幂等键、租约、Outbox、事件历史、artifact 路径、报告正文。
+TaskListItemDTO 字段：`id: UUID、task_type、selected_layers: string[]（默认空数组）、ticker?: string、effective_trade_date?: date、status、attempt_no: int、error_code?: string、error_summary?: string、created_at、updated_at`。列表不返回请求参数、幂等键、租约、Outbox、事件历史、artifact 路径、报告正文。
 
 错误：422 INVALID_TASK_FILTER（status 非法）。
 
@@ -402,9 +416,9 @@ TaskListItemDTO 字段：`id: UUID、task_type、ticker?: string、effective_tra
 
 | 数组 | 元素字段 | 语义 |
 |------|----------|------|
-| pending_actions | kind、task_id、task_type、ticker?、effective_trade_date?、updated_at、error_code、error_summary、unavailable_blocks?、retryable | kind=FAILED_TASK 时 error_code/error_summary 必填、unavailable_blocks 为 null（retryable 恒 false，终态）；kind=REPORT_SECTION_UNAVAILABLE 时 unavailable_blocks 非空（同任务多区块聚合为一条）、error 字段为 null、retryable 取区块并集。RETRYING/CANCELLED/NOT_REQUESTED/字段缺失不进待处理 |
+| pending_actions | kind、task_id、task_type、ticker?、effective_trade_date?、updated_at、error_code、error_summary、unavailable_blocks?、retryable | kind=FAILED_TASK 时 error_code/error_summary 必填、unavailable_blocks 为 null（retryable 恒 false，终态）；kind=REPORT_SECTION_UNAVAILABLE 时 unavailable_blocks 通常非空（同任务多区块聚合为一条；历史非法结构过滤后可为空，前端显示通用提示）、error 字段为 null、retryable 取区块并集。RETRYING/CANCELLED/NOT_REQUESTED/字段缺失不进待处理 |
 | active_tasks | task_id、task_type、ticker?、effective_trade_date?、status（仅 PENDING/QUEUED/RUNNING/RETRYING）、attempt_no、updated_at、next_retry_at? | 不带阶段日志；进度仅由详情 SSE 提供；看板不建立 SSE |
-| recent_conclusions | task_id、task_type、ticker?、effective_trade_date?、completed_at、conclusion_summary?（≤200 字）、risk_flag: bool、risk_hint?、has_report: bool、updated_at | 只包含具备可阅读报告的 SUCCEEDED 任务；conclusion_summary 为 null 时只展示任务元信息 + "查看完整报告"入口，**不得截取报告正文兜底**；has_report=false 不带 #report 锚点 |
+| recent_conclusions | unavailable_blocks: UnavailableBlockDTO[]（默认空数组）、task_id、task_type、ticker?、effective_trade_date?、completed_at、conclusion_summary?（≤200 字）、risk_flag: bool、risk_hint?、has_report: bool、updated_at | 只包含具备可阅读报告的 SUCCEEDED 任务；conclusion_summary 为 null 时只展示任务元信息 + "查看完整报告"入口，**不得截取报告正文兜底**；has_report=false 不带 #report 锚点；不可用区块直接从本条报告提取，不从限长待办列表关联；仅保留 dict/list 结构下的 UNAVAILABLE 与 market/sector/stock/decision 白名单，reason 仅字符串、retryable 仅 true；空列表不能推断整份报告完整 |
 
 ---
 
@@ -700,13 +714,15 @@ Query 全部必填：`market`（US/KR/CN）、`interval`（目录白名单）、
 
 与 §8.2 指数 K 线同契约（复用 `BarsData`）。**m7 修订（2026-09-16）**：`indicators` 不再恒 null——factor_daily 无该股因子行时按需调 stk_factor_pro 拉 [from, to] 真因子并入库 factor_daily（DO UPDATE，缓存层；下次同区间查询走表不调上游），指标逐值透传入库因子；拉取失败/上游无数据 → `indicators=null` 纯 K 线（降级不阻断 K 线响应）。`instrument_type` 白名单 index/stock（fund 等 → 404 RESOURCE_NOT_FOUND）。错误与 freshness 语义同 §8.2。
 
+2026-09-23 自动补齐接入后增加 `factor_policy=ensure|cache_only`：省略时 `ensure` 保持旧交互契约，读取缺失因子时持公共采集锁并受 Redis 15 分钟冷却约束；自动刷新查询必须传 `cache_only`，仅读已入库因子。用户主动打开或扩展 K 线区间时才请求 `ensure`。
+
 ### 8.2.2 概念 K 线 GET /api/v1/market-data/concepts/{sector_code}/bars
 
 Query：`market`（回显 'CN'）、`source`（缺省 'dc'，当前唯一可采源）、`interval`（恒 '1d'）、`from`、`to`。读 `market.sector_daily`（历史 = 采集启动日起积累的长度，非全历史）。响应复用 `BarsData`。**m7 修订（2026-09-16）**：`indicators` 为后端自算值（板块指数无上游因子源——tushare 无板块指数因子端点，"技术指标不自算"决策的显式例外）——预热窗口 [from−120d, to] 全段计算 MA/BOLL/MACD 后各数组切回请求窗口，与 bars 等长按 index 对齐；口径沿用归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1 已批纯函数设计（MA 滚动均值前 period−1 根 null、BOLL σ 总体标准差 ddof=0、MACD EMA 前 period 根 SMA 作种子 + hist=2×(dif−dea)）。板块历史不足处指标为 null（数据缺失是事实）。`asset` = {market, symbol=sector_code, name=sector 表名称}；`as_of` = 该板块最新 trade_date；错误同 §8.2（未知板块 404、from>to 422）。
 
 ### 8.3 热门概念 GET /api/v1/market-data/concepts/hot
 
-Query：`market`（首期仅 CN）、`interval`、`from`、`to`、`limit`（必填，上限 30）；`as_of`（可选）——**from 作为 as_of 透传（m6 定稿）、to 忽略**；省略 as_of 时取 market.sector_daily（source='dc'）最新 trade_date（数据到哪算到哪）。热度由后端读 sector_daily 现场计算（heat_v1：pct×0.6 + vol_change×0.4），不落快照表不进 Redis（决策 13）；支持任意历史日期。首期 top_n≤30 全量返回，无 cursor 分页（meta.next_cursor 恒 null）。
+Query：`market`（首期仅 CN）、`limit`（必填，上限 30）、`as_of`（可选）；`from/to/interval` 不再作为本端点参数。省略 `as_of` 时读取 dc 板块实际最新日；显式历史日期只读该日，不暗换其他日期。响应以 `requested_as_of`、`date_mode=LATEST|HISTORICAL`、`coverage` 标明口径。热度由后端读 sector_daily 现场计算（heat_v1：pct×0.6 + vol_change×0.4），不落快照表不进 Redis（决策 13）；支持任意历史日期。首期 top_n≤30 全量返回，无 cursor 分页（meta.next_cursor 恒 null）。
 
 成功 200：
 
@@ -743,7 +759,7 @@ Query：`market`（首期仅 CN）、`interval`、`from`、`to`、`limit`（必�
 
 ### 8.3.1 概念树 GET /api/v1/market-data/concepts/tree
 
-Query：`market`（首期仅 CN）、`interval`（恒 '1d'）、`from`、`to`、`limit`（**必填**，1..30）；`as_of`（可选）——**from 作为 as_of 透传、to 忽略**（同 hot 端点 m6 口径）；省略 as_of 时取 sector_daily（source='dc'）最新 trade_date。热度计算与 hot 端点同一 heat_v1 公式（服务内共用）。
+Query：`market`（首期仅 CN）、`limit`（**必填**，1..30）、`as_of`（可选）；不再接受无用途的 `interval/from/to`。省略 `as_of` 时取 dc 板块实际最新日，显式历史日期只读该日。响应携带 `requested_as_of`、`date_mode`、`coverage`；热度计算与 hot 端点同一 heat_v1 公式（服务内共用）。
 
 成功 200：
 
@@ -774,8 +790,16 @@ Query：`market`（首期仅 CN）、`interval`（恒 '1d'）、`from`、`to`、
 }
 ```
 
-- 语义（板块概念Treemap方案 3.2）：`heat_score` = 矩形大小（仅 tree 契约字段，hot 契约不加列）；`pct_chg` = as_of 当日板块涨跌幅（该板块当日无行情行 → null，不取更早日期）；`members` = dc 成分按 |pct_chg| 降序**截断 top 100**（`member_total` 标全量数，UI 可注明"仅展示当日波动前 100"），个股 `pct_chg` = as_of 当日涨跌幅（停牌/无行 → null），`name` 缺失时以 ts_code 兜底。
+- 语义（板块概念Treemap方案 3.2）：`heat_score` = 矩形大小（仅 tree 契约字段，hot 契约不加列）；`pct_chg` = as_of 当日板块涨跌幅（该板块当日无行情行 → null，不取更早日期）；`members` = dc 成分按 |pct_chg| 降序**截断 top 100**（`member_total` 标全量数，UI 可注明"仅展示当日波动前 100"），个股 `pct_chg` = as_of 当日涨跌幅（停牌/无行 → null），`name` 缺失时以 ts_code 兜底。`coverage.members` 在 top 100 截断前按全字典成分计算，`heat_window_rows` 标记真实参与热度窗口的行数；当日无行情的候选不进榜单。
 - 空态/错误/STALE 语义同 §8.3。
+
+### 8.3.2 市场数据自动补齐（2026-09-23）
+
+- `GET /api/v1/market-data/refresh-status`：只读返回 `server_time`、`refresh_available`、`worker_online`、`concept_display_date` 与六组 `groups`。每组含市场本地 `market_date`、已到发布时间的 `expected_trade_date`、`next_ready_at`、最近三交易日 `window_coverage`、`freshness`、`data_version`、独立的 `auto_eligibility`/`manual_eligibility` 及当前任务。GET 不投递任务，也不调用数据源。
+- `POST /api/v1/market-data/refresh`：body 为 `resources`（六组枚举，1–6 项）和 `mode=auto|retry`，按组返回 `QUEUED`、`IN_PROGRESS`、`UP_TO_DATE`、`BLOCKED` 或 `COOLDOWN` 决策；存在排队/进行中任务时返回 202，仅已齐/阻止/冷却时返回 200。Redis 不可用返回 503；已入库行情仍可从原行情接口读取。
+- `GET /api/v1/market-data/refresh-jobs/{job_id}`：读取可重建的近期 Redis 任务状态；不存在返回 404。任务仅传 `job_id` 给专用 market-data Worker；PG 现有行情表及可信停牌表是真实覆盖依据，任务状态不是永久审计记录。
+- 股票/板块目录为空返回 `CATALOG_UNAVAILABLE`；股票目录含未知上市生命周期时返回 `CATALOG_INCOMPLETE` 并阻止自动补齐，须先运行目录初始化维护。交易日历不支持时为 `CALENDAR_UNAVAILABLE`，不会按工作日推测目标日期。
+- `CN_STOCK_DAILY` 的分母只取 `market.instrument` 股票主目录并按上市/退市日期过滤；`sector_member` 是分类关系，可先于 IPO 上市出现，不作为应有日线的证明。真实停牌事实仅接受 `suspend_d(trade_date=目标日)` 返回且日期匹配的 S 类型，R 不豁免。`CN_SECTOR_DAILY` 目标日代理缺有效 OHLC 时可对该板块校验东财原始 K 线后补入现有表。`HISTORY_GAP` 仅提示近三日自动窗口以前已知历史缺口，不改变当前目标日的 `FRESH` 判定；旧终态任务不得覆盖新的覆盖结果。
 
 ### 8.4 宏观信息 GET /api/v1/macro-information
 

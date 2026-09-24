@@ -58,10 +58,11 @@ function draftItem(
   };
 }
 
-function setupPending(items: unknown[], options: { items?: unknown[] } = {}) {
+async function setupPending(items: unknown[], options: { items?: unknown[] } = {}) {
   pendingMock.mockResolvedValue(envelope({ items: options.items ?? items }));
   impactMock.mockResolvedValue(envelope({ items: [] }));
   renderWithRouter(<PendingEventsTab />);
+  if ((options.items ?? items).length) await userEvent.setup().click(await screen.findByRole('button', { name: '切换完整表格' }));
 }
 
 beforeEach(() => {
@@ -78,7 +79,7 @@ afterEach(() => {
 
 describe('PendingEventsTab', () => {
   it('行渲染：ai_suggestions 默认值 + 默认动作跳过', async () => {
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-事件类型');
     expect(screen.getByLabelText('第1行-事件类型')).toHaveValue('宏观数据');
     expect(screen.getByLabelText('第1行-事件子类型')).toHaveValue('CPI');
@@ -93,7 +94,7 @@ describe('PendingEventsTab', () => {
 
   it('路由字段回填：sector 建议回填作用域与目标，提交 payload 含路由字段', async () => {
     const user = userEvent.setup();
-    setupPending([
+    await setupPending([
       draftItem(1, '半导体政策', {
         event_scope: 'sector',
         affected_scope_refs: ['SW:801080', 'CONCEPT:BK1753.DC'],
@@ -123,7 +124,7 @@ describe('PendingEventsTab', () => {
 
   it('下层作用域缺目标：阻止提交（不开确认框、不调 batch），提示可回退 market', async () => {
     const user = userEvent.setup();
-    setupPending([draftItem(1, '某行业政策', { event_scope: 'sector', affected_scope_refs: [] })]);
+    await setupPending([draftItem(1, '某行业政策', { event_scope: 'sector', affected_scope_refs: [] })]);
     await screen.findByLabelText('第1行-操作');
     expect(screen.getByLabelText('第1行-作用域')).toHaveValue('sector');
 
@@ -142,7 +143,7 @@ describe('PendingEventsTab', () => {
 
   it('market 作用域提交空数组（表单残留目标文本不落库）', async () => {
     const user = userEvent.setup();
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     fireEvent.change(screen.getByLabelText('第1行-目标'), { target: { value: 'SW:801080' } });
     await user.selectOptions(screen.getByLabelText('第1行-操作'), 'approve');
@@ -161,7 +162,7 @@ describe('PendingEventsTab', () => {
   });
 
   it('空态：无草稿时不渲染表格与预填按钮可用性', async () => {
-    setupPending([], { items: [] });
+    await setupPending([], { items: [] });
     expect(await screen.findByText('暂无待审核事件')).toBeInTheDocument();
     expect(screen.queryByLabelText('第1行-操作')).not.toBeInTheDocument();
   });
@@ -178,7 +179,7 @@ describe('PendingEventsTab', () => {
 
   it('二次确认：取消不提交；确认后提交且跳过行不进 payload', async () => {
     const user = userEvent.setup();
-    setupPending([draftItem(1), draftItem(2)]);
+    await setupPending([draftItem(1), draftItem(2)]);
     await screen.findByLabelText('第1行-操作');
 
     await user.click(screen.getByRole('button', { name: '🚀 批量提交' }));
@@ -204,7 +205,7 @@ describe('PendingEventsTab', () => {
 
   it('分块：12 行非跳过 → 两次调用 10+2，进度文案出现', async () => {
     const user = userEvent.setup();
-    setupPending(Array.from({ length: 12 }, (_, i) => draftItem(i + 1)));
+    await setupPending(Array.from({ length: 12 }, (_, i) => draftItem(i + 1)));
     const op = await screen.findByLabelText('第1行-操作');
     expect(op).toBeInTheDocument();
     for (let i = 1; i <= 12; i += 1) {
@@ -232,7 +233,7 @@ describe('PendingEventsTab', () => {
 
   it('行结果：计算失败显示重试按钮并调用补算', async () => {
     const user = userEvent.setup();
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     await user.selectOptions(screen.getByLabelText('第1行-操作'), 'approve');
     batchMock.mockResolvedValue(
@@ -253,7 +254,7 @@ describe('PendingEventsTab', () => {
 
   it('预填循环：remaining 收敛到 0 共 3 次调用', async () => {
     const user = userEvent.setup();
-    setupPending([draftItem(1), draftItem(2)]);
+    await setupPending([draftItem(1), draftItem(2)]);
     await screen.findByLabelText('第1行-操作');
     prelabelMock
       .mockResolvedValueOnce(envelope({ prelabeled: 10, remaining: 50 }))
@@ -266,7 +267,7 @@ describe('PendingEventsTab', () => {
 
   it('预填护栏：prelabeled=0 且 remaining>0 时停止并提示', async () => {
     const user = userEvent.setup();
-    setupPending([draftItem(1), draftItem(2)]);
+    await setupPending([draftItem(1), draftItem(2)]);
     await screen.findByLabelText('第1行-操作');
     prelabelMock.mockResolvedValue(envelope({ prelabeled: 0, remaining: 2 }));
     await user.click(screen.getByRole('button', { name: '🤖 AI 预填全部待审事件' }));
@@ -277,7 +278,7 @@ describe('PendingEventsTab', () => {
   it('强制重填：按 50 条/片分片提交 draft_ids，完成后提示', async () => {
     const user = userEvent.setup();
     const items = Array.from({ length: 12 }, (_, i) => draftItem(i + 1));
-    setupPending(items);
+    await setupPending(items);
     await screen.findByLabelText('第1行-操作');
     prelabelMock.mockResolvedValue(envelope({ prelabeled: 12, remaining: 0 }));
     await user.click(screen.getByRole('button', { name: '🤖 强制重填全部' }));
@@ -292,7 +293,7 @@ describe('PendingEventsTab', () => {
   it('强制重填：60 条草稿分两片提交', async () => {
     const user = userEvent.setup();
     const items = Array.from({ length: 60 }, (_, i) => draftItem(i + 1));
-    setupPending(items);
+    await setupPending(items);
     await screen.findByLabelText('第1行-操作');
     prelabelMock
       .mockResolvedValueOnce(envelope({ prelabeled: 50, remaining: 10 }))
@@ -308,7 +309,7 @@ describe('PendingEventsTab', () => {
   it('强制重填护栏：片内 prelabeled=0 提前终止', async () => {
     const user = userEvent.setup();
     const items = Array.from({ length: 60 }, (_, i) => draftItem(i + 1));
-    setupPending(items);
+    await setupPending(items);
     await screen.findByLabelText('第1行-操作');
     prelabelMock.mockResolvedValue(envelope({ prelabeled: 0, remaining: 60 }));
     await user.click(screen.getByRole('button', { name: '🤖 强制重填全部' }));
@@ -319,7 +320,7 @@ describe('PendingEventsTab', () => {
   it('挂载自动拉取：新增事件后自动 AI 预填', async () => {
     refreshMock.mockResolvedValue(envelope({ fetched: 2, new_drafts: 2, skipped_reason: null }));
     prelabelMock.mockResolvedValue(envelope({ prelabeled: 2, remaining: 0 }));
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     expect(await screen.findByText('新增 2 条事件，开始 AI 预填…')).toBeInTheDocument();
     expect(await screen.findByText('已预填 2 条')).toBeInTheDocument();
@@ -331,7 +332,7 @@ describe('PendingEventsTab', () => {
 
   it('30 分钟内重复进入不自动拉取（sessionStorage 节流）', async () => {
     sessionStorage.setItem('eventStudyReview.lastAutoRefresh', String(Date.now()));
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     await waitFor(() => expect(pendingMock).toHaveBeenCalled());
     expect(refreshMock).not.toHaveBeenCalled();
@@ -342,7 +343,7 @@ describe('PendingEventsTab', () => {
     sessionStorage.setItem('eventStudyReview.lastAutoRefresh', String(Date.now()));
     refreshMock.mockResolvedValue(envelope({ fetched: 3, new_drafts: 1, skipped_reason: null }));
     prelabelMock.mockResolvedValue(envelope({ prelabeled: 1, remaining: 0 }));
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     expect(refreshMock).not.toHaveBeenCalled(); // 挂载自动被节流跳过
 
@@ -355,7 +356,7 @@ describe('PendingEventsTab', () => {
     refreshMock.mockRejectedValue(
       new ApiError({ code: 'INTERNAL_ERROR', message: '服务不可用', retryable: false, status: 500 }),
     );
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     expect(await screen.findByText(/拉取失败：服务不可用/)).toBeInTheDocument();
     expect(prelabelMock).not.toHaveBeenCalled();
@@ -363,7 +364,7 @@ describe('PendingEventsTab', () => {
 
   it('锁占用降级：提示拉取进行中且不预填', async () => {
     refreshMock.mockResolvedValue(envelope({ fetched: 0, new_drafts: 0, skipped_reason: 'locked' }));
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     expect(await screen.findByText('已有拉取正在进行中，本次跳过')).toBeInTheDocument();
     expect(prelabelMock).not.toHaveBeenCalled();
@@ -371,7 +372,7 @@ describe('PendingEventsTab', () => {
 
   it('拉取降级失败：提示稍后重试且不预填', async () => {
     refreshMock.mockResolvedValue(envelope({ fetched: 0, new_drafts: 0, skipped_reason: 'failed' }));
-    setupPending([draftItem(1)]);
+    await setupPending([draftItem(1)]);
     await screen.findByLabelText('第1行-操作');
     expect(await screen.findByText('拉取失败，可稍后重试')).toBeInTheDocument();
     expect(prelabelMock).not.toHaveBeenCalled();

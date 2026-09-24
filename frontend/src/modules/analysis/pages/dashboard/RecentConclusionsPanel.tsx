@@ -1,3 +1,4 @@
+import { unavailableSummary } from '../../shared/resultPresentation';
 import { Link } from 'react-router';
 import { ErrorState } from '../../../../shared/feedback/ErrorState';
 import { EmptyState } from '../../../../shared/feedback/EmptyState';
@@ -6,6 +7,7 @@ import { Badge } from '../../../../shared/ui/badge';
 import { Button } from '../../../../shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card';
 import { formatDateTime } from '../../../../shared/format/dateTime';
+import { layersName } from '../../shared/analysisLayers';
 import { useDashboardSectionQuery } from './queries';
 
 // 最近结论：成功任务的服务端 conclusion_summary/risk_flag/risk_hint/has_report。
@@ -14,10 +16,9 @@ export function RecentConclusionsPanel() {
   const query = useDashboardSectionQuery('recent_conclusions');
 
   if (query.isPending) return <LoadingState label="最近结论加载中…" />;
-  if (query.isError) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
+  if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
-  const items = query.data;
-  if (!items || items.length === 0) return <EmptyState title="暂无最近结论" />;
+  const items = query.data ?? [];
 
   return (
     <Card>
@@ -28,6 +29,8 @@ export function RecentConclusionsPanel() {
         </Button>
       </CardHeader>
       <CardContent>
+        {items.length === 0 && <EmptyState title="暂无最近结论" />}
+        {query.isError && <p role="status" className="text-xs text-amber-500">更新失败，当前显示上次结果。<button type="button" className="ml-2 underline" onClick={() => void query.refetch()}>重新加载</button></p>}
         {items.map((item) => (
           <Link
             key={item.task_id}
@@ -35,10 +38,16 @@ export function RecentConclusionsPanel() {
             className="rounded-md border p-3 hover:bg-[var(--color-bg)]"
             style={{ borderColor: 'var(--color-border)' }}
           >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="success">成功</Badge>
-                <span className="text-sm font-medium">{item.ticker ?? '全市场'}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="success">执行完成</Badge>
+                {!!item.unavailable_blocks?.length && <Badge variant="warning">报告部分不可用</Badge>}
+                <span className="text-sm font-medium">{layersName(item.selected_layers)}</span>
+                {item.ticker && (
+                  <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+                    {item.ticker}
+                  </span>
+                )}
                 {item.risk_flag && <Badge variant="warning">风险提示</Badge>}
               </div>
               <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
@@ -46,8 +55,9 @@ export function RecentConclusionsPanel() {
               </span>
             </div>
             <p className="mt-1 text-sm" style={{ color: 'var(--color-fg-muted)' }}>
-              {item.conclusion_summary ?? '（服务端暂无可靠摘要）'}
+              {item.conclusion_summary ?? '暂无摘要，可查看报告'}
             </p>
+            {!!item.unavailable_blocks?.length && <p className="mt-2 text-xs text-amber-500">{unavailableSummary(item.unavailable_blocks)}</p>}
             {item.risk_flag && item.risk_hint && (
               <p className="mt-1 text-xs" style={{ color: 'var(--color-fg-muted)' }}>
                 {item.risk_hint}

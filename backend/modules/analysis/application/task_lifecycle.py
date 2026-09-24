@@ -8,12 +8,13 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import json
 import re
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from backend.modules.analysis.application.contracts import (
     AnalysisDashboardDTO,
@@ -50,7 +51,6 @@ from backend.modules.analysis.domain.ports import (
     AnalysisTaskRepository,
     Clock,
     SystemClock,
-    TaskEventStreamPort,
     TaskMessagePublisherPort,
     TaskOutboxRepository,
     TradeDateCalendarPort,
@@ -63,7 +63,12 @@ from backend.modules.analysis.domain.state_machine import (
 from backend.modules.analysis.infrastructure.models import AnalysisReport, AnalysisTask, TaskOutbox
 from backend.shared.ids import new_token, new_uuid
 
+if TYPE_CHECKING:
+    from backend.modules.analysis.application.reporting import ReportService
+    from backend.modules.analysis.application.task_events import TaskEventService
+
 _IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+logger = logging.getLogger(__name__)
 
 # 任务创建后即置 PENDING 的 Outbox 投递消息类型
 MESSAGE_TYPE_ANALYSIS_TASK = "analysis_task"
@@ -155,7 +160,9 @@ class TaskService:
         result = self.stage_create_task(
             command, request_params, input_hash, idempotency_key=idempotency_key, trace_id=trace_id
         )
-        self._uow.commit()
+        # 幂等回放是纯读，不制造第二次事务提交；新建任务仍只提交一次 task+outbox。
+        if not result.idempotent_replay:
+            self._uow.commit()
         return result
 
     def stage_create_task(
@@ -277,6 +284,7 @@ class TaskService:
                     task_type=TaskType(task.task_type),
                     ticker=task.ticker,
                     effective_trade_date=task.effective_trade_date,
+                    selected_layers=list(task.selected_layers),
                     updated_at=task.updated_at,
                     error_code=task.error_code,
                     error_summary=task.error_summary,
@@ -293,6 +301,7 @@ class TaskService:
                     task_type=TaskType(task.task_type),
                     ticker=task.ticker,
                     effective_trade_date=task.effective_trade_date,
+                    selected_layers=list(task.selected_layers),
                     updated_at=task.updated_at,
                     error_code=None,
                     error_summary=None,
@@ -313,6 +322,7 @@ class TaskService:
                 task_type=TaskType(t.task_type),
                 ticker=t.ticker,
                 effective_trade_date=t.effective_trade_date,
+                selected_layers=list(t.selected_layers),
                 status=TaskStatus(t.status),
                 attempt_no=t.attempt_no,
                 updated_at=t.updated_at,
@@ -325,10 +335,12 @@ class TaskService:
         for task, report in self._uow.tasks.list_recent_succeeded(limit=DASHBOARD_LIMITS["recent_conclusions"]):
             conclusions.append(
                 DashboardConclusionDTO(
+                    unavailable_blocks=_unavailable_blocks(report),
                     task_id=task.id,
                     task_type=TaskType(task.task_type),
                     ticker=task.ticker,
                     effective_trade_date=task.effective_trade_date,
+                    selected_layers=list(task.selected_layers),
                     completed_at=report.generated_at or task.finished_at or task.updated_at,
                     conclusion_summary=report.conclusion_summary,
                     risk_flag=bool(report.risk_flag),
@@ -556,9 +568,15 @@ class TaskService:
         if not (task.status == TaskStatus.RUNNING.value and task.attempt_no == attempt_no and task.lease_token == lease_token):
             raise LeaseConflictError(f"任务 {task_id} 当前 attempt/租约已失效，失败/重试被拒绝")
 
-        if error.retryable and attempt_no < self._retry.max_retry_attempts:
+        readiness_retry = _should_retry_task_readiness(task, now, error.code)
+        if error.retryable and (attempt_no < self._retry.max_retry_attempts or readiness_retry):
             next_attempt = attempt_no + 1
-            next_retry_at = now + timedelta(seconds=self._retry.retry_base_delay_seconds * (2 ** (attempt_no - 1)))
+            if readiness_retry:
+                deadline = _task_readiness_deadline(task, error.code)
+                assert deadline is not None
+                next_retry_at = min(now + timedelta(minutes=5), deadline)
+            else:
+                next_retry_at = now + timedelta(seconds=self._retry.retry_base_delay_seconds * (2 ** (attempt_no - 1)))
             ok = self._uow.tasks.conditional_update(
                 task_id,
                 expect={"status": TaskStatus.RUNNING.value, "attempt_no": attempt_no, "lease_token": lease_token},
@@ -714,7 +732,8 @@ class TaskService:
         cancelled_ids: list[tuple] = []
 
         for task in expired:
-            if task.attempt_no >= self._retry.max_retry_attempts:
+            readiness_retry = _should_retry_task_readiness(task, now)
+            if task.attempt_no >= self._retry.max_retry_attempts and not readiness_retry:
                 ok = self._uow.tasks.conditional_update(
                     task.id,
                     expect={
@@ -740,7 +759,12 @@ class TaskService:
                     failed_ids.append((task.id, task.attempt_no))
                 continue
             next_attempt = task.attempt_no + 1
-            next_retry_at = now + timedelta(seconds=self._retry.retry_base_delay_seconds * (2 ** (task.attempt_no - 1)))
+            if readiness_retry:
+                deadline = _task_readiness_deadline(task)
+                assert deadline is not None
+                next_retry_at = min(now + timedelta(minutes=5), deadline)
+            else:
+                next_retry_at = now + timedelta(seconds=self._retry.retry_base_delay_seconds * (2 ** (task.attempt_no - 1)))
             ok = self._uow.tasks.conditional_update(
                 task.id,
                 expect={
@@ -842,6 +866,7 @@ class TaskService:
     @staticmethod
     def _to_list_item_dto(task: AnalysisTask) -> TaskListItemDTO:
         return TaskListItemDTO(
+            selected_layers=list(task.selected_layers or []),
             id=task.id,
             task_type=TaskType(task.task_type),
             ticker=task.ticker,
@@ -983,16 +1008,63 @@ def _status_filter_to_statuses(status: str) -> set[str]:
     return mapping[status]
 
 
+def _task_readiness_deadline(task: AnalysisTask, error_code: str | None = None) -> datetime | None:
+    workflow = (task.request_params or {}).get("daily_research")
+    if not isinstance(workflow, dict):
+        return None
+    kind = workflow.get("kind")
+    supported = (
+        kind == "quant" and error_code in {
+            None,
+            "QUANT_DATA_NOT_READY",
+            "QUANT_INPUTS_NOT_READY",
+            "QUANT_INPUT_TARGET_MISMATCH",
+            "QUANT_UNIVERSE_CHANGED",
+            "DAILY_NEWS_NOT_READY",
+        }
+    ) or (
+        kind == "news" and error_code in {None, "DAILY_NEWS_NOT_READY"}
+    )
+    if not supported:
+        return None
+    value = workflow.get("wait_until")
+    if not value:
+        return None
+    try:
+        deadline = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if deadline.tzinfo is None:
+        return None
+    return deadline
+
+
+def _should_retry_task_readiness(
+    task: AnalysisTask, now: datetime, error_code: str | None = None,
+) -> bool:
+    deadline = _task_readiness_deadline(task, error_code)
+    return bool(deadline is not None and now < deadline)
+
+
 def _unavailable_blocks(report: AnalysisReport) -> list[dict]:
-    sections = (report.report_json or {}).get("sections", [])
+    payload = report.report_json
+    if not isinstance(payload, dict) or not isinstance(payload.get("sections", []), list):
+        logger.warning("Invalid report sections structure; unavailable blocks omitted")
+        return []
     blocks = []
-    for section in sections or []:
-        if isinstance(section, dict) and section.get("status") == "UNAVAILABLE":
-            blocks.append(
-                {
-                    "block": section.get("block"),
-                    "reason": section.get("unavailable_reason"),
-                    "retryable": section.get("retryable", False),
-                }
-            )
+    for section in payload.get("sections", []):
+        if not isinstance(section, dict):
+            logger.warning("Invalid report section entry omitted")
+            continue
+        if section.get("status") != "UNAVAILABLE":
+            continue
+        if section.get("block") not in ("market", "sector", "stock", "decision"):
+            logger.warning("Unknown unavailable report block omitted")
+            continue
+        reason = section.get("unavailable_reason")
+        blocks.append({
+            "block": section["block"],
+            "reason": reason if isinstance(reason, str) else None,
+            "retryable": section.get("retryable") is True,
+        })
     return blocks

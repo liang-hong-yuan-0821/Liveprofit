@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 
 import pytest
 from sqlalchemy import text
@@ -17,6 +18,14 @@ from backend.modules.quant_strategy.application.execution import (
     QuantExecutionService,
     StrategySnapshotInvalidError,
 )
+from backend.modules.investment_workspace.infrastructure.models import Portfolio, PortfolioPosition
+from backend.modules.quant_strategy.application.lifecycle_service import LifecyclePolicyService
+from backend.modules.quant_strategy.infrastructure.lifecycle_models import (
+    PositionLifecycleState,
+    SuggestedOrder,
+)
+from backend.modules.quant_strategy.infrastructure.models import QuantStrategy, QuantStrategyVersion
+from backend.modules.quant_strategy.infrastructure.signals import QuantExecutionSignal
 from db.instrument.dao import ingest_state as state_dao
 
 EFFECTIVE = date(2026, 9, 15)
@@ -34,7 +43,7 @@ def strategy(context):
                 "sell_ratio": None, "reason": "清仓"}
     if price > 1:
         return {"action": "BUY", "score": 90, "entry_price": price,
-                "stop_loss": round(price * 0.9, 2), "take_profit": round(price * 1.2, 2),
+                "stop_loss": round(price * 0.9, 2), "take_profit": round(price * 1.3, 2),
                 "sell_ratio": None, "reason": "买入"}
     return {"action": "HOLD", "score": 50, "entry_price": None,
             "stop_loss": None, "take_profit": None,
@@ -142,8 +151,17 @@ def _factors(ts_code: str, days: int, start: date = date(2026, 9, 15)):
 
 
 def _snapshot(source_code: str, positions: list[dict]) -> dict:
+    frozen_positions = [
+        {
+            **position,
+            "active_stop_price": position.get(
+                "active_stop_price", str(float(position["average_cost"]) * 0.9),
+            ),
+        }
+        for position in positions
+    ]
     return {
-        "schema_version": "quant_execution_snapshot_v1",
+        "schema_version": "quant_execution_snapshot_v2",
         "strategy": {
             "strategy_id": str(uuid.uuid4()),
             "version_id": str(uuid.uuid4()),
@@ -165,9 +183,19 @@ def _snapshot(source_code: str, positions: list[dict]) -> dict:
                 "max_total_position_pct": "0.800000",
                 "max_single_stock_pct": "0.100000",
                 "max_sector_pct": "0.300000",
+                "max_portfolio_open_risk_pct": "0.500000",
+                "max_sector_open_risk_pct": "0.500000",
+                "max_daily_new_risk_pct": "0.500000",
+                "max_drawdown_pct": "0.200000",
+                "max_daily_loss_pct": "0.100000",
+                "net_asset_value": "100000.0000",
+                "peak_net_asset_value": "100000.0000",
+                "day_start_net_asset_value": "100000.0000",
+                "risk_facts_as_of": EFFECTIVE.isoformat(),
             },
         },
-        "positions": positions,
+        "positions": frozen_positions,
+        "pending_orders": [],
     }
 
 
@@ -247,7 +275,7 @@ def test_full_flow_buy_sell_and_orders(env):
     assert summary["summary"]["data_complete"] == 3
     assert summary["summary"]["buy_matches"] == 2
     assert summary["summary"]["suggested_sell_orders"] == 1
-    assert any("风险门控未启用" in w for w in summary["warnings"])
+    assert any("组合开放风险与熔断已启用" in w for w in summary["warnings"])
 
     rows = _signals_rows(env, task_id)
     kinds = {(r["signal_kind"], r["ts_code"]) for r in rows}
@@ -261,16 +289,150 @@ def test_full_flow_buy_sell_and_orders(env):
     # BUY 订单：风险手数 100000×1%/(10-9)=1000 股，三价落列
     buy = next(r for r in rows if r["ts_code"] == "000001.SZ")
     assert buy["order_status"] == "ELIGIBLE"
-    assert float(buy["shares"]) == 1000.0
+    assert float(buy["shares"]) == 900.0
     assert float(buy["entry_price"]) == 10.0
     assert float(buy["stop_loss"]) == 9.0
-    assert float(buy["take_profit"]) == 12.0
+    assert float(buy["take_profit"]) == 13.0
     # 估值价 = 本票最新收盘价（000001 close=10.0，000002 close=11.0，600519 close=12.0）
     assert float(buy["valuation_price"]) == 10.0
     buy2 = next(r for r in rows if r["ts_code"] == "000002.SZ")
     assert float(buy2["valuation_price"]) == 11.0
     sell = next(r for r in rows if r["ts_code"] == "600519.SH")
     assert float(sell["valuation_price"]) == 12.0
+
+
+def test_eligible_signal_materializes_one_persisted_suggested_order(env):
+    task_id = _make_task(env)
+    snapshot = _snapshot(STRATEGY, [])
+    snapshot["strategy"]["lifecycle_policy"] = {
+        "id": str(uuid.uuid4()), "content_hash": "d" * 64,
+        "config": {"template_id": "ma_trend_cross_v1", "initial_exposure_pct": "0.50"},
+    }
+    portfolio_id = uuid.UUID(snapshot["portfolio"]["id"])
+    with env["session_factory"]() as session:
+        session.add(Portfolio(
+            id=portfolio_id, name=f"exec-{uuid.uuid4().hex[:8]}", version=1,
+            total_assets=Decimal("100000"), available_cash=Decimal("35000"),
+        ))
+        session.commit()
+
+    with env["session_factory"]() as session:
+        service = QuantExecutionService(
+            task_id=task_id, attempt_no=1, snapshot=snapshot,
+            market_conn=_market_conn(extra_inst=["000001.SZ"]), session=session,
+            execution_control=_control(task_id), effective_trade_date=EFFECTIVE,
+        )
+        service.run()
+        service._persist_suggested_orders(  # noqa: SLF001 - retry idempotency contract
+            snapshot["portfolio"], positions=[],
+            industry_map={"000001.SZ": {"industry_code": "801080", "industry_name": "电子"}},
+        )
+        session.commit()
+
+    with env["session_factory"]() as session:
+        orders = session.query(SuggestedOrder).filter_by(portfolio_id=portfolio_id).all()
+        assert len(orders) == 1
+        order = orders[0]
+        signal = session.get(QuantExecutionSignal, order.source_signal_id)
+        assert order.source_signal_id is not None
+        assert order.side == "BUY"
+        assert order.symbol == "000001.SZ"
+        assert order.industry_code == "801080"
+        assert order.status == "PROPOSED"
+        assert signal.shares == Decimal("900.0000")
+        assert order.quantity == Decimal("400.0000")
+        assert order.reserved_cash > 0
+
+
+def test_arc_bottom_buy_freezes_same_context_neckline_seed(env):
+    task_id = _make_task(env)
+    snapshot = _snapshot(STRATEGY, [])
+    snapshot["strategy"].update({
+        "template_id": "arc_bottom_75a_v1",
+        "required_bars": 75,
+    })
+    with env["session_factory"]() as session:
+        QuantExecutionService(
+            task_id=task_id, attempt_no=1, snapshot=snapshot,
+            market_conn=_market_conn(extra_inst=["000001.SZ"]), session=session,
+            execution_control=_control(task_id), effective_trade_date=EFFECTIVE,
+        ).run()
+
+    with env["session_factory"]() as session:
+        signal = session.query(QuantExecutionSignal).filter_by(
+            task_id=task_id, ts_code="000001.SZ",
+        ).one()
+        seed = signal.execution_market["lifecycle_seed"]
+        assert Decimal(seed["arc_neckline_price"]) == Decimal("10")
+        assert seed["input_hash"]
+
+
+def test_existing_lifecycle_arbitrates_script_sell_into_one_delta_order(env):
+    task_id = _make_task(env)
+    with env["session_factory"]() as session:
+        policy = LifecyclePolicyService(session).publish(
+            policy_key=f"exec-life-{uuid.uuid4().hex[:8]}", required_fields=[],
+            config={"template_id": "ma_trend_cross_v1", "reward_multiple": "2.5"},
+        )
+    portfolio_id, position_id = uuid.uuid4(), uuid.uuid4()
+    with env["session_factory"]() as session:
+        strategy = QuantStrategy(id=uuid.uuid4(), name=f"exec-life-{uuid.uuid4().hex[:8]}", version=1)
+        version = QuantStrategyVersion(
+            id=uuid.uuid4(), strategy_id=strategy.id, version_no=1, status="PUBLISHED",
+            source_code=STRATEGY, source_hash=hashlib.sha256(STRATEGY.encode()).hexdigest(),
+            template_id="ma_trend_cross_v1", lifecycle_policy_version_id=policy.id, version=1,
+        )
+        portfolio = Portfolio(
+            id=portfolio_id, name=f"exec-life-p-{uuid.uuid4().hex[:8]}", version=1,
+            total_assets=Decimal("100000"), available_cash=Decimal("35000"),
+        )
+        position = PortfolioPosition(
+            id=position_id, portfolio_id=portfolio_id, market="CN", symbol="600519.SH",
+            quantity=Decimal("500"), average_cost=Decimal("10"), active_stop_price=Decimal("9"),
+        )
+        session.add_all([strategy, portfolio])
+        session.flush()
+        session.add_all([version, position])
+        session.flush()
+        lifecycle = PositionLifecycleState(
+            id=uuid.uuid4(), portfolio_id=portfolio_id, position_id=position_id,
+            market="CN", symbol="600519.SH", strategy_version_id=version.id,
+            lifecycle_policy_version_id=policy.id, initial_fill_price=Decimal("10"),
+            initial_stop_price=Decimal("9"), risk_capacity_shares=Decimal("1000"),
+            target_exposure_pct=Decimal("0.50"), target_shares=Decimal("500"),
+            phase="INITIALIZED", profit_take_price=Decimal("12.5"), state_version=1,
+        )
+        session.add(lifecycle)
+        session.commit()
+
+    snapshot = _snapshot(
+        STRATEGY,
+        [{"market": "CN", "symbol": "600519.SH", "quantity": "500", "average_cost": "10"}],
+    )
+    snapshot["portfolio"]["id"] = str(portfolio_id)
+    snapshot["strategy"].update({
+        "version_id": str(version.id), "template_id": "ma_trend_cross_v1", "required_bars": 2,
+        "lifecycle_policy": {
+            "id": str(policy.id), "content_hash": policy.content_hash, "config": policy.config,
+        },
+    })
+    with env["session_factory"]() as session:
+        result = QuantExecutionService(
+            task_id=task_id, attempt_no=1, snapshot=snapshot,
+            market_conn=_market_conn(), session=session,
+            execution_control=_control(task_id), effective_trade_date=EFFECTIVE,
+        ).run()
+    assert result["summary"]["suggested_sell_orders"] == 1
+    with env["session_factory"]() as session:
+        orders = session.query(SuggestedOrder).filter_by(
+            portfolio_id=portfolio_id, symbol="600519.SH",
+        ).all()
+        assert len(orders) == 1
+        assert orders[0].side == "SELL"
+        assert orders[0].quantity == Decimal("500.0000")
+        assert orders[0].reason_code == "SCRIPT_SELL_ALL"
+        signal = session.query(QuantExecutionSignal).filter_by(task_id=task_id, ts_code="600519.SH").one()
+        assert signal.order_status == "MANAGED_BY_LIFECYCLE"
 
 
 def test_snapshot_hash_mismatch_fatal(env):
@@ -320,6 +482,33 @@ def test_data_unavailable_counted_not_blocking(env):
     error = next(r for r in rows if r["ts_code"] == "000002.SZ")
     assert error["signal_kind"] == "ERROR"
     assert error["error_code"] == "WARMUP_INCOMPLETE"
+
+
+def test_execution_uses_frozen_template_contract_after_registry_changes(env, monkeypatch):
+    from backend.modules.quant_strategy.domain.templates import TEMPLATES, freeze_template_contract
+    from backend.modules.quant_strategy.application import execution as execution_module
+
+    task_id = _make_task(env)
+    snapshot = _snapshot(STRATEGY, [])
+    snapshot["strategy"].update({
+        "template_id": "ma_trend_cross_v1",
+        "required_bars": 2,
+        "template_contract": freeze_template_contract(TEMPLATES["ma_trend_cross_v1"]),
+        "name": "冻结显示名",
+    })
+
+    def registry_must_not_be_read(_template_id):
+        raise AssertionError("新快照执行期不得读取可变模板注册表")
+
+    monkeypatch.setattr(execution_module, "get_template", registry_must_not_be_read)
+    with env["session_factory"]() as session:
+        result = QuantExecutionService(
+            task_id=task_id, attempt_no=1, snapshot=snapshot,
+            market_conn=_market_conn(), session=session,
+            execution_control=_control(task_id), effective_trade_date=EFFECTIVE,
+        ).run()
+    assert result["strategy"]["name"] == "冻结显示名"
+    assert result["summary"]["scanned"] == 3
 
 
 def test_loader_aligns_factor_values_by_trade_date_and_rejects_missing_latest():

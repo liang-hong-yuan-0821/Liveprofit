@@ -178,11 +178,10 @@ describe('PredictionTab', () => {
   it('资产下拉来自 assets 接口，不硬编码名单', async () => {
     renderWithRouter(<PredictionTab />);
 
-    const datalist = await screen.findByRole('listbox', { hidden: true });
-    expect(datalist).toBeTruthy();
-    // 表单常驻渲染，选项在 assets 加载后填充
-    await waitFor(() => expect(datalist.querySelector('option')).toHaveValue('000001.SH'));
-    // 自由输入仍允许（无接口名单硬编码：datalist 仅 1 项）
-    expect(datalist.querySelectorAll('option')).toHaveLength(1);
+    await userEvent.setup().click(screen.getByLabelText('目标资产'));
+    const list = await screen.findByRole('listbox');
+    await waitFor(() => expect(list.querySelectorAll('[role="option"]')).toHaveLength(1));
+    expect(list.textContent).toContain('000001.SH');
+
   });
 });

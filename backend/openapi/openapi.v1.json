@@ -812,6 +812,365 @@
         }
       }
     },
+    "/api/v1/daily-research/runs": {
+      "post": {
+        "tags": [
+          "daily-research"
+        ],
+        "summary": "Create Manual Research Run",
+        "operationId": "create_manual_research_run_api_v1_daily_research_runs_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyResearchManualRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DailyResearchManualData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "daily-research"
+        ],
+        "summary": "List Research Runs",
+        "operationId": "list_research_runs_api_v1_daily_research_runs_get",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "news",
+                    "quant"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DailyResearchRunListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/daily-research/runs/latest": {
+      "get": {
+        "tags": [
+          "daily-research"
+        ],
+        "summary": "Get Latest Research Run",
+        "operationId": "get_latest_research_run_api_v1_daily_research_runs_latest_get",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "news",
+                "quant"
+              ],
+              "type": "string",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DailyResearchRunDetailData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/daily-research/runs/{task_id}": {
+      "get": {
+        "tags": [
+          "daily-research"
+        ],
+        "summary": "Get Research Run",
+        "operationId": "get_research_run_api_v1_daily_research_runs__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DailyResearchRunDetailData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/daily-research/assessments/disputed": {
+      "get": {
+        "tags": [
+          "daily-research"
+        ],
+        "summary": "List Disputed Event Assessments",
+        "description": "List the current unresolved event labels backed by immutable PG assessments.",
+        "operationId": "list_disputed_event_assessments_api_v1_daily_research_assessments_disputed_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DisputedAssessmentListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/daily-research/assessments/{assessment_id}/review": {
+      "post": {
+        "tags": [
+          "daily-research"
+        ],
+        "summary": "Review Disputed Event Assessment",
+        "operationId": "review_disputed_event_assessment_api_v1_daily_research_assessments__assessment_id__review_post",
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assessment Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AssessmentReviewResponseData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/event-studies/predictions": {
       "post": {
         "tags": [
@@ -2016,6 +2375,665 @@
         }
       }
     },
+    "/api/v1/lifecycle-policy-versions": {
+      "get": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "List Policy Versions",
+        "operationId": "list_policy_versions_api_v1_lifecycle_policy_versions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_LifecyclePolicyListData_"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "Publish Policy Version",
+        "operationId": "publish_policy_version_api_v1_lifecycle_policy_versions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecyclePolicyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_LifecyclePolicyVersionDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}/suggested-orders": {
+      "get": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "List Orders",
+        "operationId": "list_orders_api_v1_portfolios__portfolio_id__suggested_orders_get",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "position_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Position Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_SuggestedOrderListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggested-orders/{order_id}/fills": {
+      "get": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "List Fills",
+        "operationId": "list_fills_api_v1_suggested_orders__order_id__fills_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_OrderFillListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "Confirm Fill",
+        "operationId": "confirm_fill_api_v1_suggested_orders__order_id__fills_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FillConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_FillMutationData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}/position-lifecycles": {
+      "get": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "List Position Lifecycles",
+        "operationId": "list_position_lifecycles_api_v1_portfolios__portfolio_id__position_lifecycles_get",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "position_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Position Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PositionLifecyclePageData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/position-lifecycles/{lifecycle_id}/intents": {
+      "get": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "List Position Intents",
+        "operationId": "list_position_intents_api_v1_position_lifecycles__lifecycle_id__intents_get",
+        "parameters": [
+          {
+            "name": "lifecycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lifecycle Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PositionIntentPageData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/position-lifecycles/{lifecycle_id}/daily-facts": {
+      "get": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "List Position Daily Facts",
+        "operationId": "list_position_daily_facts_api_v1_position_lifecycles__lifecycle_id__daily_facts_get",
+        "parameters": [
+          {
+            "name": "lifecycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lifecycle Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PositionDailyFactPageData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order-fills/{fill_id}/correct": {
+      "post": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "Correct Fill",
+        "operationId": "correct_fill_api_v1_order_fills__fill_id__correct_post",
+        "parameters": [
+          {
+            "name": "fill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Fill Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FillCorrectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_FillMutationData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order-fills/{fill_id}/void": {
+      "post": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "Void Fill",
+        "operationId": "void_fill_api_v1_order_fills__fill_id__void_post",
+        "parameters": [
+          {
+            "name": "fill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Fill Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FillVoidRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_FillMutationData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggested-orders/{order_id}/status": {
+      "patch": {
+        "tags": [
+          "position-lifecycle"
+        ],
+        "summary": "Set Order Status",
+        "operationId": "set_order_status_api_v1_suggested_orders__order_id__status_patch",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_SuggestedOrderDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quant-strategy-templates": {
       "get": {
         "tags": [
@@ -2339,6 +3357,69 @@
         }
       }
     },
+    "/api/v1/quant-strategies/{strategy_id}/versions/{version_id}/lifecycle-policy": {
+      "put": {
+        "tags": [
+          "quant-strategies"
+        ],
+        "summary": "Bind Lifecycle Policy",
+        "operationId": "bind_lifecycle_policy_api_v1_quant_strategies__strategy_id__versions__version_id__lifecycle_policy_put",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Strategy Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecyclePolicyBindingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_QuantStrategyDraftDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quant-strategies/{strategy_id}/versions/{version_id}/archive": {
       "post": {
         "tags": [
@@ -2631,6 +3712,20 @@
               "format": "date",
               "title": "To"
             }
+          },
+          {
+            "name": "factor_policy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "ensure",
+                "cache_only"
+              ],
+              "type": "string",
+              "default": "ensure",
+              "title": "Factor Policy"
+            }
           }
         ],
         "responses": {
@@ -2754,7 +3849,7 @@
           "market-data"
         ],
         "summary": "Concept Tree",
-        "description": "概念树（板块概念Treemap方案 3.2）：热度 top N + 当日涨跌幅 + 成分股。\n\nfrom_ 作为 as_of 透传、to 忽略（m6 定稿同款口径）；limit 必填（同 hot 端点）。",
+        "description": "Latest actual sector date by default; explicit as_of reads exactly that day.",
         "operationId": "concept_tree_api_v1_market_data_concepts_tree_get",
         "parameters": [
           {
@@ -2773,26 +3868,6 @@
             "schema": {
               "type": "string",
               "title": "Interval"
-            }
-          },
-          {
-            "name": "from",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "title": "From"
-            }
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "title": "To"
             }
           },
           {
@@ -2872,26 +3947,6 @@
             "schema": {
               "type": "string",
               "title": "Interval"
-            }
-          },
-          {
-            "name": "from",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "title": "From"
-            }
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "title": "To"
             }
           },
           {
@@ -3054,6 +4109,110 @@
           }
         }
       }
+    },
+    "/api/v1/market-data/refresh-status": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Refresh Status",
+        "operationId": "refresh_status_api_v1_market_data_refresh_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RefreshStatusData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/refresh": {
+      "post": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_api_v1_market_data_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RefreshDecisionsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/refresh-jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "market-data"
+        ],
+        "summary": "Refresh Job",
+        "operationId": "refresh_job_api_v1_market_data_refresh_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RefreshJob_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3069,7 +4228,8 @@
             "type": "string",
             "enum": [
               "SINGLE_STOCK",
-              "MARKET_WIDE"
+              "MARKET_WIDE",
+              "DAILY_RESEARCH"
             ],
             "title": "Task Type"
           },
@@ -3095,6 +4255,13 @@
               }
             ],
             "title": "Effective Trade Date"
+          },
+          "selected_layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Layers"
           },
           "status": {
             "type": "string",
@@ -3134,6 +4301,7 @@
           "task_type",
           "ticker",
           "effective_trade_date",
+          "selected_layers",
           "status",
           "attempt_no",
           "updated_at",
@@ -3347,6 +4515,132 @@
         "title": "AnalysisOptions",
         "description": "接口定义的其余选项（扩展点，服务层复验）。"
       },
+      "AssessmentReviewData": {
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Id"
+          },
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "fact_key": {
+            "type": "string",
+            "title": "Fact Key"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "review_status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected",
+              "retracted"
+            ],
+            "title": "Review Status"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "task_status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED",
+              "CANCEL_REQUESTED"
+            ],
+            "title": "Task Status"
+          },
+          "idempotent_replay": {
+            "type": "boolean",
+            "title": "Idempotent Replay",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "assessment_id",
+          "event_id",
+          "fact_key",
+          "revision",
+          "review_status",
+          "task_status"
+        ],
+        "title": "AssessmentReviewData"
+      },
+      "AssessmentReviewRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "review_status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected",
+              "retracted"
+            ],
+            "title": "Review Status"
+          },
+          "labels": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels"
+          },
+          "review_note": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Review Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "review_status",
+          "review_note"
+        ],
+        "title": "AssessmentReviewRequest"
+      },
+      "AssessmentReviewResponseData": {
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/AssessmentReviewData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item"
+        ],
+        "title": "AssessmentReviewResponseData"
+      },
       "AssetListData": {
         "properties": {
           "items": {
@@ -3522,7 +4816,9 @@
             "type": "string",
             "enum": [
               "OPEN",
-              "CLOSED"
+              "CLOSED",
+              "BREAK",
+              "UNKNOWN"
             ],
             "title": "Market Session Status"
           },
@@ -3803,6 +5099,29 @@
         "type": "object",
         "title": "ComputeRequest"
       },
+      "ConceptCoverageDTO": {
+        "properties": {
+          "boards": {
+            "$ref": "#/components/schemas/CoverageCountDTO"
+          },
+          "members": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoverageCountDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "boards",
+          "members"
+        ],
+        "title": "ConceptCoverageDTO"
+      },
       "ConceptMemberDTO": {
         "properties": {
           "ts_code": {
@@ -3847,6 +5166,29 @@
               }
             ],
             "title": "As Of"
+          },
+          "requested_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested As Of"
+          },
+          "date_mode": {
+            "type": "string",
+            "enum": [
+              "LATEST",
+              "HISTORICAL"
+            ],
+            "title": "Date Mode"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/ConceptCoverageDTO"
           },
           "algorithm_version": {
             "type": "string",
@@ -3894,7 +5236,8 @@
             "type": "string",
             "enum": [
               "FRESH",
-              "STALE"
+              "STALE",
+              "UNAVAILABLE"
             ],
             "title": "Freshness Status"
           }
@@ -3902,6 +5245,9 @@
         "type": "object",
         "required": [
           "as_of",
+          "requested_as_of",
+          "date_mode",
+          "coverage",
           "algorithm_version",
           "result_status",
           "items",
@@ -3950,6 +5296,10 @@
             },
             "type": "array",
             "title": "Members"
+          },
+          "heat_window_rows": {
+            "type": "integer",
+            "title": "Heat Window Rows"
           }
         },
         "type": "object",
@@ -3960,7 +5310,8 @@
           "heat_score",
           "pct_chg",
           "member_total",
-          "members"
+          "members",
+          "heat_window_rows"
         ],
         "title": "ConceptTreeNodeDTO",
         "description": "treemap 概念节点：heat_score = 矩形大小、pct_chg = 矩形颜色（as_of 当日\n板块涨跌幅，无行情行 → null）；members = 按 |pct_chg| 降序截断 top 100，\nmember_total 标该概念成分全量数。"
@@ -4006,6 +5357,34 @@
         ],
         "title": "ConfirmImpactsRequest"
       },
+      "CoverageCountDTO": {
+        "properties": {
+          "expected_count": {
+            "type": "integer",
+            "title": "Expected Count"
+          },
+          "available_count": {
+            "type": "integer",
+            "title": "Available Count"
+          },
+          "exempt_count": {
+            "type": "integer",
+            "title": "Exempt Count"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_count",
+          "available_count",
+          "exempt_count",
+          "missing_count"
+        ],
+        "title": "CoverageCountDTO"
+      },
       "DailyChangeDTO": {
         "properties": {
           "date": {
@@ -4024,6 +5403,335 @@
           "change_pct"
         ],
         "title": "DailyChangeDTO"
+      },
+      "DailyResearchManualData": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "news",
+              "quant"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED",
+              "CANCEL_REQUESTED"
+            ],
+            "title": "Status"
+          },
+          "trigger": {
+            "type": "string",
+            "const": "manual",
+            "title": "Trigger",
+            "default": "manual"
+          },
+          "idempotent_replay": {
+            "type": "boolean",
+            "title": "Idempotent Replay",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "kind",
+          "status"
+        ],
+        "title": "DailyResearchManualData"
+      },
+      "DailyResearchManualRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "news",
+              "quant"
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "DailyResearchManualRequest"
+      },
+      "DailyResearchRunDetail": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/DailyResearchRunSummary"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report"
+          },
+          "report_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Version"
+          },
+          "report_generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Generated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run"
+        ],
+        "title": "DailyResearchRunDetail"
+      },
+      "DailyResearchRunDetailData": {
+        "properties": {
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DailyResearchRunDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DailyResearchRunDetailData"
+      },
+      "DailyResearchRunListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DailyResearchRunSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DailyResearchRunListData"
+      },
+      "DailyResearchRunSummary": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "news",
+              "quant"
+            ],
+            "title": "Kind"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "manual"
+            ],
+            "title": "Trigger"
+          },
+          "slot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "QUEUED",
+              "RUNNING",
+              "RETRYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED",
+              "CANCEL_REQUESTED"
+            ],
+            "title": "Status"
+          },
+          "report_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Status"
+          },
+          "target_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Trade Date"
+          },
+          "scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled At"
+          },
+          "news_cutoff_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "News Cutoff At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "title": "Attempt No"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Summary"
+          },
+          "conclusion_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion Summary"
+          },
+          "has_report": {
+            "type": "boolean",
+            "title": "Has Report",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "kind",
+          "trigger",
+          "status",
+          "created_at",
+          "updated_at",
+          "attempt_no"
+        ],
+        "title": "DailyResearchRunSummary"
       },
       "DataSourceDTO": {
         "properties": {
@@ -4072,6 +5780,130 @@
           "resource_id"
         ],
         "title": "DeleteResultData"
+      },
+      "DisputedAssessment": {
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Id"
+          },
+          "news_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "News Id"
+          },
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "fact_key": {
+            "type": "string",
+            "title": "Fact Key"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "novelty": {
+            "type": "string",
+            "enum": [
+              "new",
+              "update"
+            ],
+            "title": "Novelty"
+          },
+          "review_status": {
+            "type": "string",
+            "const": "disputed",
+            "title": "Review Status"
+          },
+          "labels": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Labels"
+          },
+          "evidence": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "available_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Available At"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "raw_content": {
+            "type": "string",
+            "title": "Raw Content"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Label"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assessment_id",
+          "news_id",
+          "event_id",
+          "fact_key",
+          "revision",
+          "novelty",
+          "review_status",
+          "labels",
+          "evidence",
+          "available_at",
+          "title",
+          "raw_content",
+          "source"
+        ],
+        "title": "DisputedAssessment"
+      },
+      "DisputedAssessmentListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DisputedAssessment"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DisputedAssessmentListData"
       },
       "EnvelopeMeta": {
         "properties": {
@@ -4168,6 +6000,22 @@
         ],
         "title": "Envelope[AnalysisDashboardDTO]"
       },
+      "Envelope_AssessmentReviewResponseData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AssessmentReviewResponseData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AssessmentReviewResponseData]"
+      },
       "Envelope_AssetListData_": {
         "properties": {
           "data": {
@@ -4248,6 +6096,54 @@
         ],
         "title": "Envelope[ConfirmImpactsData]"
       },
+      "Envelope_DailyResearchManualData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DailyResearchManualData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[DailyResearchManualData]"
+      },
+      "Envelope_DailyResearchRunDetailData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DailyResearchRunDetailData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[DailyResearchRunDetailData]"
+      },
+      "Envelope_DailyResearchRunListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DailyResearchRunListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[DailyResearchRunListData]"
+      },
       "Envelope_DeleteResultData_": {
         "properties": {
           "data": {
@@ -4263,6 +6159,22 @@
           "meta"
         ],
         "title": "Envelope[DeleteResultData]"
+      },
+      "Envelope_DisputedAssessmentListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DisputedAssessmentListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[DisputedAssessmentListData]"
       },
       "Envelope_ExecutionFileDTO_": {
         "properties": {
@@ -4295,6 +6207,22 @@
           "meta"
         ],
         "title": "Envelope[ExecutionLogsDTO]"
+      },
+      "Envelope_FillMutationData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/FillMutationData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[FillMutationData]"
       },
       "Envelope_GraphTopologyDTO_": {
         "properties": {
@@ -4344,6 +6272,38 @@
         ],
         "title": "Envelope[ImpactDraftListData]"
       },
+      "Envelope_LifecyclePolicyListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LifecyclePolicyListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[LifecyclePolicyListData]"
+      },
+      "Envelope_LifecyclePolicyVersionDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LifecyclePolicyVersionDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[LifecyclePolicyVersionDTO]"
+      },
       "Envelope_MacroInformationData_": {
         "properties": {
           "data": {
@@ -4359,6 +6319,22 @@
           "meta"
         ],
         "title": "Envelope[MacroInformationData]"
+      },
+      "Envelope_OrderFillListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OrderFillListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[OrderFillListData]"
       },
       "Envelope_PendingEventListData_": {
         "properties": {
@@ -4439,6 +6415,54 @@
           "meta"
         ],
         "title": "Envelope[PortfolioPositionsData]"
+      },
+      "Envelope_PositionDailyFactPageData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PositionDailyFactPageData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PositionDailyFactPageData]"
+      },
+      "Envelope_PositionIntentPageData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PositionIntentPageData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PositionIntentPageData]"
+      },
+      "Envelope_PositionLifecyclePageData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PositionLifecyclePageData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PositionLifecyclePageData]"
       },
       "Envelope_PredictionData_": {
         "properties": {
@@ -4616,6 +6640,54 @@
         ],
         "title": "Envelope[RefreshData]"
       },
+      "Envelope_RefreshDecisionsData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RefreshDecisionsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RefreshDecisionsData]"
+      },
+      "Envelope_RefreshJob_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RefreshJob"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RefreshJob]"
+      },
+      "Envelope_RefreshStatusData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RefreshStatusData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RefreshStatusData]"
+      },
       "Envelope_ReportDTO_": {
         "properties": {
           "data": {
@@ -4647,6 +6719,38 @@
           "meta"
         ],
         "title": "Envelope[ReviewBatchData]"
+      },
+      "Envelope_SuggestedOrderDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SuggestedOrderDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[SuggestedOrderDTO]"
+      },
+      "Envelope_SuggestedOrderListData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SuggestedOrderListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[SuggestedOrderListData]"
       },
       "Envelope_TaskCreatedData_": {
         "properties": {
@@ -5280,6 +7384,204 @@
         "title": "ExecutionTushareDTO",
         "description": "tushare 端点子调用（DP 调用目录 tushare/ 内）。"
       },
+      "FillConfirmRequest": {
+        "properties": {
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "fill_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Fill Price"
+          },
+          "fill_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Fill Trade Date"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Idempotency Key"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "BROKER"
+            ],
+            "title": "Source",
+            "default": "MANUAL"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quantity",
+          "fill_price",
+          "fill_trade_date",
+          "idempotency_key",
+          "expected_revision"
+        ],
+        "title": "FillConfirmRequest"
+      },
+      "FillCorrectRequest": {
+        "properties": {
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "fill_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Fill Price"
+          },
+          "fill_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Fill Trade Date"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Idempotency Key"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quantity",
+          "fill_price",
+          "fill_trade_date",
+          "idempotency_key",
+          "expected_revision"
+        ],
+        "title": "FillCorrectRequest"
+      },
+      "FillMutationData": {
+        "properties": {
+          "fill": {
+            "$ref": "#/components/schemas/OrderFillEventDTO"
+          },
+          "order": {
+            "$ref": "#/components/schemas/SuggestedOrderDTO"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fill",
+          "order"
+        ],
+        "title": "FillMutationData"
+      },
+      "FillVoidRequest": {
+        "properties": {
+          "fill_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Fill Trade Date"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Idempotency Key"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fill_trade_date",
+          "idempotency_key",
+          "expected_revision"
+        ],
+        "title": "FillVoidRequest"
+      },
       "GraphTopologyDTO": {
         "properties": {
           "task_id": {
@@ -5483,6 +7785,10 @@
             },
             "type": "array",
             "title": "Bars"
+          },
+          "heat_window_rows": {
+            "type": "integer",
+            "title": "Heat Window Rows"
           }
         },
         "type": "object",
@@ -5494,7 +7800,8 @@
           "period_return",
           "daily_changes",
           "updated_at",
-          "bars"
+          "bars",
+          "heat_window_rows"
         ],
         "title": "HotConceptDTO",
         "description": "字段随 sector 体系改名（决策 12 连带）：concept_code/concept_name →\nsector_code/sector_name；hotness_reason 现场计算版恒 NULL（LLM 未实现）。"
@@ -5512,6 +7819,29 @@
               }
             ],
             "title": "As Of"
+          },
+          "requested_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested As Of"
+          },
+          "date_mode": {
+            "type": "string",
+            "enum": [
+              "LATEST",
+              "HISTORICAL"
+            ],
+            "title": "Date Mode"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/ConceptCoverageDTO"
           },
           "algorithm_version": {
             "type": "string",
@@ -5559,7 +7889,8 @@
             "type": "string",
             "enum": [
               "FRESH",
-              "STALE"
+              "STALE",
+              "UNAVAILABLE"
             ],
             "title": "Freshness Status"
           }
@@ -5567,6 +7898,9 @@
         "type": "object",
         "required": [
           "as_of",
+          "requested_as_of",
+          "date_mode",
+          "coverage",
           "algorithm_version",
           "result_status",
           "items",
@@ -5670,6 +8004,144 @@
         ],
         "title": "IndicatorsDTO",
         "description": "MA/BOLL/MACD 技术指标（值取自 idx_factor_pro 入库数据，不自算）。\n\nbars 为空时整个字段为 null；macd 可选——旧后端响应无此字段不破坏解析。"
+      },
+      "LifecyclePolicyBindingRequest": {
+        "properties": {
+          "lifecycle_policy_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Policy Version Id"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lifecycle_policy_version_id",
+          "expected_version"
+        ],
+        "title": "LifecyclePolicyBindingRequest"
+      },
+      "LifecyclePolicyCreateRequest": {
+        "properties": {
+          "policy_key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Policy Key"
+          },
+          "required_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Fields"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy_key"
+        ],
+        "title": "LifecyclePolicyCreateRequest"
+      },
+      "LifecyclePolicyListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LifecyclePolicyVersionDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "LifecyclePolicyListData"
+      },
+      "LifecyclePolicyVersionDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "policy_key": {
+            "type": "string",
+            "title": "Policy Key"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "required_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Fields"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          },
+          "content_hash": {
+            "type": "string",
+            "title": "Content Hash"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "policy_key",
+          "version_no",
+          "status",
+          "required_fields",
+          "config",
+          "content_hash",
+          "published_at",
+          "created_at"
+        ],
+        "title": "LifecyclePolicyVersionDTO"
       },
       "MaLineDTO": {
         "properties": {
@@ -6070,6 +8542,167 @@
         ],
         "title": "MatchingBuyPreviewDTO"
       },
+      "OrderFillEventDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "portfolio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Portfolio Id"
+          },
+          "position_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Id"
+          },
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "CONFIRM",
+              "CORRECT",
+              "VOID"
+            ],
+            "title": "Event Type"
+          },
+          "reverses_fill_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reverses Fill Id"
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity"
+          },
+          "fill_price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fill Price"
+          },
+          "fill_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Fill Trade Date"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "title": "Idempotency Key"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "order_id",
+          "portfolio_id",
+          "position_id",
+          "event_type",
+          "reverses_fill_id",
+          "quantity",
+          "fill_price",
+          "fill_trade_date",
+          "source",
+          "idempotency_key",
+          "note",
+          "created_at"
+        ],
+        "title": "OrderFillEventDTO"
+      },
+      "OrderFillListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderFillEventDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OrderFillListData"
+      },
+      "OrderStatusRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "EXECUTING",
+              "REJECTED",
+              "CANCELLED",
+              "RECONCILIATION_REQUIRED",
+              "SUPERSEDED"
+            ],
+            "title": "Status"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "expected_revision"
+        ],
+        "title": "OrderStatusRequest"
+      },
       "PendingActionDTO": {
         "properties": {
           "kind": {
@@ -6089,7 +8722,8 @@
             "type": "string",
             "enum": [
               "SINGLE_STOCK",
-              "MARKET_WIDE"
+              "MARKET_WIDE",
+              "DAILY_RESEARCH"
             ],
             "title": "Task Type"
           },
@@ -6115,6 +8749,13 @@
               }
             ],
             "title": "Effective Trade Date"
+          },
+          "selected_layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Layers"
           },
           "updated_at": {
             "type": "string",
@@ -6169,6 +8810,7 @@
           "task_type",
           "ticker",
           "effective_trade_date",
+          "selected_layers",
           "updated_at",
           "error_code",
           "error_summary",
@@ -6373,6 +9015,119 @@
               }
             ],
             "title": "Max Sector Pct"
+          },
+          "max_portfolio_open_risk_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Portfolio Open Risk Pct"
+          },
+          "max_sector_open_risk_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Sector Open Risk Pct"
+          },
+          "max_daily_new_risk_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Daily New Risk Pct"
+          },
+          "max_drawdown_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown Pct"
+          },
+          "max_daily_loss_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Daily Loss Pct"
+          },
+          "net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Asset Value"
+          },
+          "peak_net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Net Asset Value"
+          },
+          "day_start_net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Start Net Asset Value"
+          },
+          "risk_facts_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Facts As Of"
           }
         },
         "type": "object",
@@ -6428,6 +9183,71 @@
             "type": "number",
             "title": "Max Sector Pct"
           },
+          "max_portfolio_open_risk_pct": {
+            "type": "number",
+            "title": "Max Portfolio Open Risk Pct"
+          },
+          "max_sector_open_risk_pct": {
+            "type": "number",
+            "title": "Max Sector Open Risk Pct"
+          },
+          "max_daily_new_risk_pct": {
+            "type": "number",
+            "title": "Max Daily New Risk Pct"
+          },
+          "max_drawdown_pct": {
+            "type": "number",
+            "title": "Max Drawdown Pct"
+          },
+          "max_daily_loss_pct": {
+            "type": "number",
+            "title": "Max Daily Loss Pct"
+          },
+          "net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Asset Value"
+          },
+          "peak_net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Net Asset Value"
+          },
+          "day_start_net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Start Net Asset Value"
+          },
+          "risk_facts_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Facts As Of"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -6452,6 +9272,15 @@
           "max_total_position_pct",
           "max_single_stock_pct",
           "max_sector_pct",
+          "max_portfolio_open_risk_pct",
+          "max_sector_open_risk_pct",
+          "max_daily_new_risk_pct",
+          "max_drawdown_pct",
+          "max_daily_loss_pct",
+          "net_asset_value",
+          "peak_net_asset_value",
+          "day_start_net_asset_value",
+          "risk_facts_as_of",
           "created_at",
           "updated_at"
         ],
@@ -6501,6 +9330,17 @@
             "type": "number",
             "title": "Average Cost"
           },
+          "active_stop_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Stop Price"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -6514,6 +9354,7 @@
           "symbol",
           "quantity",
           "average_cost",
+          "active_stop_price",
           "updated_at"
         ],
         "title": "PortfolioPositionDTO"
@@ -6564,6 +9405,18 @@
       },
       "PortfolioSnapshotDTO": {
         "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -6655,6 +9508,84 @@
             "exclusiveMinimum": 0.0,
             "title": "Max Sector Pct"
           },
+          "max_portfolio_open_risk_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Portfolio Open Risk Pct"
+          },
+          "max_sector_open_risk_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Sector Open Risk Pct"
+          },
+          "max_daily_new_risk_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Daily New Risk Pct"
+          },
+          "max_drawdown_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Drawdown Pct"
+          },
+          "max_daily_loss_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Daily Loss Pct"
+          },
+          "net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Asset Value"
+          },
+          "peak_net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Net Asset Value"
+          },
+          "day_start_net_asset_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Start Net Asset Value"
+          },
+          "risk_facts_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Facts As Of"
+          },
           "expected_version": {
             "type": "integer",
             "minimum": 1.0,
@@ -6671,10 +9602,522 @@
           "max_total_position_pct",
           "max_single_stock_pct",
           "max_sector_pct",
+          "max_portfolio_open_risk_pct",
+          "max_sector_open_risk_pct",
+          "max_daily_new_risk_pct",
+          "max_drawdown_pct",
+          "max_daily_loss_pct",
           "expected_version"
         ],
         "title": "PortfolioUpdateRequest",
         "description": "原子更新名称与全部账户字段（plan 4.2.1：一次条件更新、成功仅 version+1）。"
+      },
+      "PositionDailyFactDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lifecycle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lifecycle Id"
+          },
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "price_basis": {
+            "type": "string",
+            "title": "Price Basis"
+          },
+          "data_as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data As Of"
+          },
+          "input_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Payload"
+          },
+          "input_hash": {
+            "type": "string",
+            "title": "Input Hash"
+          },
+          "rule_version": {
+            "type": "string",
+            "title": "Rule Version"
+          },
+          "state_version_before": {
+            "type": "integer",
+            "title": "State Version Before"
+          },
+          "state_version_after": {
+            "type": "integer",
+            "title": "State Version After"
+          },
+          "final_target_shares": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Final Target Shares"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "lifecycle_id",
+          "trade_date",
+          "price_basis",
+          "data_as_of",
+          "input_payload",
+          "input_hash",
+          "rule_version",
+          "state_version_before",
+          "state_version_after",
+          "final_target_shares",
+          "created_at"
+        ],
+        "title": "PositionDailyFactDTO"
+      },
+      "PositionDailyFactPageData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PositionDailyFactDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PositionDailyFactPageData"
+      },
+      "PositionIntentDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lifecycle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lifecycle Id"
+          },
+          "source_signal_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Signal Id"
+          },
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "target_shares": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Target Shares"
+          },
+          "reason_code": {
+            "type": "string",
+            "title": "Reason Code"
+          },
+          "state_version": {
+            "type": "integer",
+            "title": "State Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "lifecycle_id",
+          "source_signal_id",
+          "trade_date",
+          "target_shares",
+          "reason_code",
+          "state_version",
+          "status",
+          "revision",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PositionIntentDTO"
+      },
+      "PositionIntentPageData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PositionIntentDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PositionIntentPageData"
+      },
+      "PositionLifecycleDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "portfolio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Portfolio Id"
+          },
+          "position_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Id"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "strategy_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Strategy Version Id"
+          },
+          "lifecycle_policy_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lifecycle Policy Version Id"
+          },
+          "actual_shares": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Actual Shares"
+          },
+          "initial_fill_price": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Fill Price"
+          },
+          "initial_stop_price": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Stop Price"
+          },
+          "risk_capacity_shares": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Capacity Shares"
+          },
+          "target_exposure_pct": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Target Exposure Pct"
+          },
+          "target_shares": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Target Shares"
+          },
+          "phase": {
+            "type": "string",
+            "title": "Phase"
+          },
+          "profit_take_price": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Take Price"
+          },
+          "profit_target_reached": {
+            "type": "boolean",
+            "title": "Profit Target Reached"
+          },
+          "confirmation_completed": {
+            "type": "boolean",
+            "title": "Confirmation Completed"
+          },
+          "profit_trim_completed": {
+            "type": "boolean",
+            "title": "Profit Trim Completed"
+          },
+          "arc_neckline_price": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arc Neckline Price"
+          },
+          "active_stop_price": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Stop Price"
+          },
+          "high_water_mark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Water Mark"
+          },
+          "trailing_phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trailing Phase"
+          },
+          "expectation_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectation Status"
+          },
+          "expectation_observed_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectation Observed Days"
+          },
+          "expectation_window_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectation Window Days"
+          },
+          "last_processed_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Processed Trade Date"
+          },
+          "state_version": {
+            "type": "integer",
+            "title": "State Version"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "portfolio_id",
+          "position_id",
+          "market",
+          "symbol",
+          "strategy_version_id",
+          "lifecycle_policy_version_id",
+          "actual_shares",
+          "initial_fill_price",
+          "initial_stop_price",
+          "risk_capacity_shares",
+          "target_exposure_pct",
+          "target_shares",
+          "phase",
+          "profit_take_price",
+          "profit_target_reached",
+          "confirmation_completed",
+          "profit_trim_completed",
+          "arc_neckline_price",
+          "active_stop_price",
+          "high_water_mark",
+          "trailing_phase",
+          "expectation_status",
+          "expectation_observed_days",
+          "expectation_window_days",
+          "last_processed_trade_date",
+          "state_version",
+          "closed_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PositionLifecycleDTO"
+      },
+      "PositionLifecyclePageData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PositionLifecycleDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PositionLifecyclePageData"
       },
       "PositionUpsertRequest": {
         "properties": {
@@ -6685,6 +10128,18 @@
           "average_cost": {
             "type": "number",
             "title": "Average Cost"
+          },
+          "active_stop_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Stop Price"
           },
           "expected_portfolio_revision": {
             "type": "integer",
@@ -6983,6 +10438,28 @@
           "failed_count": {
             "type": "integer",
             "title": "Failed Count"
+          },
+          "portfolio_open_risk": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Open Risk"
+          },
+          "daily_new_risk": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily New Risk"
           }
         },
         "type": "object",
@@ -7196,6 +10673,152 @@
             ],
             "title": "Risk Bucket"
           },
+          "signal_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Trade Date"
+          },
+          "signal_price_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Price Basis"
+          },
+          "execution_price_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Price Basis"
+          },
+          "adj_factor_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adj Factor Version"
+          },
+          "execution_market": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Market"
+          },
+          "order_entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Entry Price"
+          },
+          "order_stop_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Stop Price"
+          },
+          "order_take_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Take Price"
+          },
+          "earliest_execution_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earliest Execution Trade Date"
+          },
+          "available_sell_quantity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Sell Quantity"
+          },
+          "estimated_fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Fees"
+          },
+          "estimated_slippage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Slippage"
+          },
+          "execution_policy_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Policy Version"
+          },
           "error_code": {
             "anyOf": [
               {
@@ -7392,6 +11015,18 @@
               }
             ],
             "title": "Template Renderer Version"
+          },
+          "lifecycle_policy_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Policy Version Id"
           },
           "version": {
             "type": "integer",
@@ -7666,6 +11301,18 @@
             ],
             "title": "Template Renderer Version"
           },
+          "lifecycle_policy_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Policy Version Id"
+          },
           "published_at": {
             "anyOf": [
               {
@@ -7722,6 +11369,13 @@
       },
       "RecentConclusionDTO": {
         "properties": {
+          "unavailable_blocks": {
+            "items": {
+              "$ref": "#/components/schemas/UnavailableBlockDTO"
+            },
+            "type": "array",
+            "title": "Unavailable Blocks"
+          },
           "task_id": {
             "type": "string",
             "format": "uuid",
@@ -7731,7 +11385,8 @@
             "type": "string",
             "enum": [
               "SINGLE_STOCK",
-              "MARKET_WIDE"
+              "MARKET_WIDE",
+              "DAILY_RESEARCH"
             ],
             "title": "Task Type"
           },
@@ -7757,6 +11412,13 @@
               }
             ],
             "title": "Effective Trade Date"
+          },
+          "selected_layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Layers"
           },
           "completed_at": {
             "type": "string",
@@ -7806,6 +11468,7 @@
           "task_type",
           "ticker",
           "effective_trade_date",
+          "selected_layers",
           "completed_at",
           "risk_flag",
           "risk_hint",
@@ -7846,6 +11509,481 @@
           "new_drafts"
         ],
         "title": "RefreshData"
+      },
+      "RefreshDecision": {
+        "properties": {
+          "resource": {
+            "$ref": "#/components/schemas/Resource"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "IN_PROGRESS",
+              "UP_TO_DATE",
+              "BLOCKED",
+              "COOLDOWN"
+            ],
+            "title": "Decision"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource",
+          "decision",
+          "job_id",
+          "reason",
+          "next_retry_at"
+        ],
+        "title": "RefreshDecision"
+      },
+      "RefreshDecisionsData": {
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/RefreshDecision"
+            },
+            "type": "array",
+            "title": "Decisions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decisions"
+        ],
+        "title": "RefreshDecisionsData"
+      },
+      "RefreshEligibility": {
+        "properties": {
+          "allowed": {
+            "type": "boolean",
+            "title": "Allowed"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "allowed",
+          "reason",
+          "next_retry_at"
+        ],
+        "title": "RefreshEligibility"
+      },
+      "RefreshGroup": {
+        "properties": {
+          "expected_count": {
+            "type": "integer",
+            "title": "Expected Count"
+          },
+          "available_count": {
+            "type": "integer",
+            "title": "Available Count"
+          },
+          "exempt_count": {
+            "type": "integer",
+            "title": "Exempt Count"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/Resource"
+          },
+          "market": {
+            "type": "string",
+            "enum": [
+              "CN",
+              "US",
+              "KR"
+            ],
+            "title": "Market"
+          },
+          "market_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Market Date"
+          },
+          "calendar_status": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "EXPIRING",
+              "UNAVAILABLE"
+            ],
+            "title": "Calendar Status"
+          },
+          "supported_through": {
+            "type": "string",
+            "format": "date",
+            "title": "Supported Through"
+          },
+          "expected_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Trade Date"
+          },
+          "next_ready_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Ready At"
+          },
+          "latest_observed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Observed Date"
+          },
+          "complete_through_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complete Through Date"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "PARTIAL",
+              "UNAVAILABLE",
+              "UNKNOWN"
+            ],
+            "title": "Freshness"
+          },
+          "window_coverage": {
+            "$ref": "#/components/schemas/WindowCoverage"
+          },
+          "data_version": {
+            "type": "string",
+            "title": "Data Version"
+          },
+          "auto_eligibility": {
+            "$ref": "#/components/schemas/RefreshEligibility"
+          },
+          "manual_eligibility": {
+            "$ref": "#/components/schemas/RefreshEligibility"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RefreshJob"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_count",
+          "available_count",
+          "exempt_count",
+          "missing_count",
+          "resource",
+          "market",
+          "market_date",
+          "calendar_status",
+          "supported_through",
+          "expected_trade_date",
+          "next_ready_at",
+          "latest_observed_date",
+          "complete_through_date",
+          "freshness",
+          "window_coverage",
+          "data_version",
+          "auto_eligibility",
+          "manual_eligibility",
+          "job"
+        ],
+        "title": "RefreshGroup"
+      },
+      "RefreshJob": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/Resource"
+          },
+          "target_trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Trade Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "RUNNING",
+              "RETRY_WAIT",
+              "SUCCEEDED",
+              "PARTIAL",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "title": "Status"
+          },
+          "attempt": {
+            "type": "integer",
+            "title": "Attempt"
+          },
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "heartbeat_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heartbeat At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Summary"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "resource",
+          "target_trade_date",
+          "status",
+          "attempt",
+          "processed",
+          "total",
+          "started_at",
+          "heartbeat_at",
+          "error_code",
+          "error_summary"
+        ],
+        "title": "RefreshJob"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "resources": {
+            "items": {
+              "$ref": "#/components/schemas/Resource"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Resources"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "retry"
+            ],
+            "title": "Mode",
+            "default": "auto"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "resources"
+        ],
+        "title": "RefreshRequest"
+      },
+      "RefreshStatusData": {
+        "properties": {
+          "server_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Server Time"
+          },
+          "refresh_available": {
+            "type": "boolean",
+            "title": "Refresh Available"
+          },
+          "worker_online": {
+            "type": "boolean",
+            "title": "Worker Online"
+          },
+          "concept_display_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Display Date"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/RefreshGroup"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "server_time",
+          "refresh_available",
+          "worker_online",
+          "concept_display_date",
+          "groups"
+        ],
+        "title": "RefreshStatusData"
       },
       "ReportDTO": {
         "properties": {
@@ -8028,7 +12166,8 @@
             "type": "string",
             "enum": [
               "SINGLE_STOCK",
-              "MARKET_WIDE"
+              "MARKET_WIDE",
+              "DAILY_RESEARCH"
             ],
             "title": "Task Type"
           },
@@ -8120,6 +12259,18 @@
         ],
         "title": "ResetEventData",
         "description": "reset 控制帧 data（固定且仅此四字段，无 id）。"
+      },
+      "Resource": {
+        "type": "string",
+        "enum": [
+          "CN_INDEX_BARS",
+          "CN_INDEX_FACTORS",
+          "US_INDEX_BARS",
+          "KR_INDEX_BARS",
+          "CN_STOCK_DAILY",
+          "CN_SECTOR_DAILY"
+        ],
+        "title": "Resource"
       },
       "ReviewBatchData": {
         "properties": {
@@ -8474,6 +12625,218 @@
         ],
         "title": "StrategyAuditDTO"
       },
+      "SuggestedOrderDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "portfolio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Portfolio Id"
+          },
+          "position_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Id"
+          },
+          "lifecycle_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Id"
+          },
+          "intent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent Id"
+          },
+          "source_signal_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Signal Id"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "industry_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry Code"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "title": "Side"
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity"
+          },
+          "filled_quantity": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Filled Quantity"
+          },
+          "limit_price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Limit Price"
+          },
+          "stop_price": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Price"
+          },
+          "reserved_cash": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Reserved Cash"
+          },
+          "reserved_risk": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Reserved Risk"
+          },
+          "reason_code": {
+            "type": "string",
+            "title": "Reason Code"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "earliest_execution_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earliest Execution Trade Date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "portfolio_id",
+          "position_id",
+          "lifecycle_id",
+          "intent_id",
+          "source_signal_id",
+          "market",
+          "symbol",
+          "industry_code",
+          "side",
+          "quantity",
+          "filled_quantity",
+          "limit_price",
+          "stop_price",
+          "reserved_cash",
+          "reserved_risk",
+          "reason_code",
+          "status",
+          "revision",
+          "earliest_execution_trade_date",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SuggestedOrderDTO"
+      },
+      "SuggestedOrderListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestedOrderDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "SuggestedOrderListData"
+      },
       "SuggestedOrderPreviewDTO": {
         "properties": {
           "symbol": {
@@ -8568,6 +12931,84 @@
               }
             ],
             "title": "Risk Bucket"
+          },
+          "order_entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Entry Price"
+          },
+          "order_stop_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Stop Price"
+          },
+          "order_take_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Take Price"
+          },
+          "earliest_execution_trade_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earliest Execution Trade Date"
+          },
+          "estimated_fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Fees"
+          },
+          "estimated_slippage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Slippage"
+          },
+          "execution_policy_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Policy Version"
           }
         },
         "type": "object",
@@ -8686,7 +13127,8 @@
             "type": "string",
             "enum": [
               "SINGLE_STOCK",
-              "MARKET_WIDE"
+              "MARKET_WIDE",
+              "DAILY_RESEARCH"
             ],
             "title": "Task Type"
           },
@@ -8880,6 +13322,13 @@
       },
       "TaskListItemDTO": {
         "properties": {
+          "selected_layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Layers"
+          },
           "id": {
             "type": "string",
             "format": "uuid",
@@ -8889,7 +13338,8 @@
             "type": "string",
             "enum": [
               "SINGLE_STOCK",
-              "MARKET_WIDE"
+              "MARKET_WIDE",
+              "DAILY_RESEARCH"
             ],
             "title": "Task Type"
           },
@@ -9583,6 +14033,60 @@
           "expected_version"
         ],
         "title": "WatchlistUpdateRequest"
+      },
+      "WindowCoverage": {
+        "properties": {
+          "expected_count": {
+            "type": "integer",
+            "title": "Expected Count"
+          },
+          "available_count": {
+            "type": "integer",
+            "title": "Available Count"
+          },
+          "exempt_count": {
+            "type": "integer",
+            "title": "Exempt Count"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_count",
+          "available_count",
+          "exempt_count",
+          "missing_count",
+          "from",
+          "to"
+        ],
+        "title": "WindowCoverage"
       }
     }
   }

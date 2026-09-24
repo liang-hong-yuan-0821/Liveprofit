@@ -20,3 +20,8 @@
 3. 交互类 echarts 行为（wheel 缩放、事件时序）可写 jsdom 探针验证：真实 `echarts.init(container)` + 桩 canvas 2d context（measureText 返回宽度）+ `canvas.dispatchEvent(new WheelEvent('wheel', {...}))`，wheel 事件间隔需 >100ms 越过 roam 节流。
 
 （2026-09-15 用户验收发现，探针定位；修复见 CandlestickChart.tsx dataZoom 构造。）
+
+
+## 主题更新不要重放窗口（2026-09-22）
+
+颜色进入完整 option 的 memo 依赖，会令 notMerge 更新重新初始化未受控缩放。完整 option 保持初始主题引用，当前主题用独立 merge setOption 更新轴线、网格、DIF 与图例；补丁不得包含 dataZoom。测试同时断言主题切换完整 option 引用未变、颜色补丁无 dataZoom。

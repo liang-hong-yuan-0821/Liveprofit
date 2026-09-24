@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from sqlalchemy import text
@@ -27,7 +28,9 @@ from backend.modules.quant_strategy.application.errors import (
     StrategyVersionNotPublishedError,
 )
 from backend.modules.quant_strategy.application.service import QuantStrategyService
+from backend.modules.quant_strategy.application.lifecycle_service import LifecyclePolicyService
 from backend.modules.quant_strategy.infrastructure.repositories import SqlAlchemyQuantStrategyUnitOfWork
+from backend.modules.quant_strategy.infrastructure.lifecycle_models import SuggestedOrder
 
 LEGAL = '''
 def strategy(context):
@@ -56,13 +59,21 @@ def _command(**overrides) -> CreateAnalysisTaskCommand:
     return CreateAnalysisTaskCommand(**base)
 
 
-def _published_strategy(env, name=None) -> tuple[uuid.UUID, uuid.UUID]:
+def _published_strategy(env, name=None, template_id=None) -> tuple[uuid.UUID, uuid.UUID]:
     """返回 (strategy_id, published_version_id)。"""
     if name is None:
         name = f"策略-{uuid.uuid4().hex[:8]}"
     with SqlAlchemyQuantStrategyUnitOfWork(env["session_factory"]) as uow:
         service = QuantStrategyService(uow)
-        created = service.create(name, source_code=LEGAL)
+        if template_id:
+            from backend.modules.quant_strategy.domain.templates import TEMPLATES
+
+            source, params = TEMPLATES[template_id].render()
+            created = service.create(
+                name, source_code=source, template_id=template_id, template_params=params,
+            )
+        else:
+            created = service.create(name, source_code=LEGAL)
         published = service.publish(created.id, created.versions[0].id, expected_version=1).published
         return created.id, published.id
 
@@ -89,7 +100,7 @@ def _count_outbox(env) -> int:
 
 
 def test_happy_path_freezes_snapshot_with_source(env):
-    sid, vid = _published_strategy(env)
+    sid, vid = _published_strategy(env, template_id="ma_trend_cross_v1")
     portfolio = _portfolio(env, positions=[("CN", "600519.SH", 100, 1500.0)])
     service = QuantTaskSubmissionService(env["session_factory"])
     result = service.submit(
@@ -107,13 +118,22 @@ def test_happy_path_freezes_snapshot_with_source(env):
             {"id": result.task_id},
         ).one()
         snapshot = row.request_params["execution_snapshot"]
-        assert snapshot["schema_version"] == "quant_execution_snapshot_v1"
+        assert snapshot["schema_version"] == "quant_execution_snapshot_v2"
+        assert snapshot["execution_policy"]["version"] == "cn_execution_v1"
+        assert snapshot["strategy"]["template_contract"]["template_id"] == "ma_trend_cross_v1"
+        assert snapshot["strategy"]["template_contract"]["required_fields"]
         assert snapshot["strategy"]["version_id"] == str(vid)
         assert "def strategy(context)" in snapshot["strategy"]["source_code"]
         assert snapshot["portfolio"]["name"] == portfolio.name
         assert snapshot["portfolio"]["total_assets"] == "100000.0000"
+        assert snapshot["portfolio"]["risk"]["max_portfolio_open_risk_pct"] == "0.060000"
+        assert snapshot["portfolio"]["risk"]["net_asset_value"] is None
+        assert snapshot["pending_orders"] == []
         assert snapshot["positions"] == [
-            {"market": "CN", "symbol": "600519.SH", "quantity": "100.0000", "average_cost": "1500.0000"}
+            {
+                "market": "CN", "symbol": "600519.SH", "quantity": "100.0000",
+                "average_cost": "1500.0000", "active_stop_price": None,
+            }
         ]
         assert row.selected_layers == ["position"]
         assert len(row.input_hash) == 64
@@ -121,6 +141,80 @@ def test_happy_path_freezes_snapshot_with_source(env):
             text("SELECT status FROM task_outbox WHERE task_id = :id"), {"id": result.task_id}
         ).scalar_one()
         assert outbox == "PENDING"
+
+
+def test_active_suggested_order_is_frozen_into_next_task_snapshot(env):
+    _sid, version_id = _published_strategy(env)
+    portfolio = _portfolio(env)
+    order_id = uuid.uuid4()
+    with env["session_factory"]() as session:
+        session.add(SuggestedOrder(
+            id=order_id, portfolio_id=portfolio.id,
+            market="CN", symbol="000001.SZ", industry_code="801080", side="BUY",
+            quantity=Decimal("100"), filled_quantity=Decimal("20"),
+            limit_price=Decimal("10"), stop_price=Decimal("9"),
+            reserved_cash=Decimal("1000"), reserved_risk=Decimal("100"),
+            reason_code="TEST_PENDING", status="PARTIALLY_FILLED", revision=2,
+        ))
+        session.commit()
+
+    result = QuantTaskSubmissionService(env["session_factory"]).submit(
+        strategy_version_id=version_id, portfolio_id=portfolio.id,
+        expected_portfolio_version=portfolio.version, command=_command(),
+        idempotency_key=f"pending-{uuid.uuid4().hex[:12]}", trace_id="t",
+    )
+    with env["session_factory"]() as session:
+        params = session.execute(
+            text("SELECT request_params FROM analysis_tasks WHERE id = :id"),
+            {"id": result.task_id},
+        ).scalar_one()
+    assert params["execution_snapshot"]["pending_orders"] == [{
+        "id": str(order_id), "side": "BUY", "symbol": "000001.SZ",
+        "industry_code": "801080", "remaining_quantity": "80.0000",
+        "order_entry_price": "10.0000", "order_stop_price": "9.0000",
+        "reserved_cash": "800.0000", "status": "PARTIALLY_FILLED", "revision": 2,
+    }]
+
+
+def test_bound_lifecycle_policy_is_frozen_into_execution_snapshot(env):
+    with env["session_factory"]() as session:
+        policy = LifecyclePolicyService(session).publish(
+            policy_key=f"snapshot-{uuid.uuid4().hex[:8]}", required_fields=["ma5", "ma20"],
+            config={
+                "template_id": "ma_trend_cross_v1", "reward_multiple": "2.5",
+                "initial_exposure_pct": "0.50",
+            },
+        )
+    with SqlAlchemyQuantStrategyUnitOfWork(env["session_factory"]) as uow:
+        service = QuantStrategyService(uow)
+        from backend.modules.quant_strategy.domain.templates import TEMPLATES
+        source, template_params = TEMPLATES["ma_trend_cross_v1"].render()
+        created = service.create(
+            f"绑定-{uuid.uuid4().hex[:8]}", source_code=source,
+            template_id="ma_trend_cross_v1", template_params=template_params,
+        )
+        draft = created.versions[0]
+        bound = service.bind_lifecycle_policy(
+            created.id, draft.id, policy.id, expected_version=draft.version,
+        )
+        published = service.publish(
+            created.id, draft.id, expected_version=bound.version,
+        ).published
+    portfolio = _portfolio(env)
+    result = QuantTaskSubmissionService(env["session_factory"]).submit(
+        strategy_version_id=published.id, portfolio_id=portfolio.id,
+        expected_portfolio_version=portfolio.version, command=_command(),
+        idempotency_key=f"life-snapshot-{uuid.uuid4().hex[:8]}", trace_id="t",
+    )
+    with env["session_factory"]() as session:
+        params = session.execute(
+            text("SELECT request_params FROM analysis_tasks WHERE id = :id"),
+            {"id": result.task_id},
+        ).scalar_one()
+    frozen = params["execution_snapshot"]["strategy"]["lifecycle_policy"]
+    assert frozen["id"] == str(policy.id)
+    assert frozen["content_hash"] == policy.content_hash
+    assert frozen["config"]["template_id"] == "ma_trend_cross_v1"
 
 
 def test_draft_strategy_rejected_no_residue(env):

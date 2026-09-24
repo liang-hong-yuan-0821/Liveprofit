@@ -17,11 +17,11 @@ import pytest
 from db.instrument.ingest import sector_daily as sdc
 
 
-def _dc_frame(trade_dates):
+def _dc_frame(trade_dates, code="BK1753.DC"):
     """dc_daily 实测列集帧（降序输入，含全部 13 列）。"""
     n = len(trade_dates)
     return pd.DataFrame({
-        "ts_code": ["BK1753.DC"] * n,
+        "ts_code": [code] * n,
         "trade_date": trade_dates,
         "close": [100.0 + i for i in range(n)],
         "open": [99.0 + i for i in range(n)],
@@ -70,7 +70,7 @@ def test_column_mapping_and_source_updated_at_fill(_fake_conn):
     conn, recorded = _fake_conn
     prov = MagicMock()
     prov.get_sector_daily_df.side_effect = (
-        lambda source, code, start, end: _dc_frame(["20260911", "20260910"]))
+        lambda source, code, start, end: _dc_frame(["20260911", "20260910"], code))
     result = sdc.collect_sector_daily_incremental(conn, prov)
 
     assert result["boards"] == 3 and result["rows"] == 6 and result["failed"] == []
@@ -95,7 +95,7 @@ def test_column_mapping_and_source_updated_at_fill(_fake_conn):
 def test_window_dates_converted_to_yyyymmdd(_fake_conn):
     conn, _ = _fake_conn
     prov = MagicMock()
-    prov.get_sector_daily_df.return_value = _dc_frame(["20260911"])
+    prov.get_sector_daily_df.side_effect = lambda source, code, start, end: _dc_frame(["20260911"], code)
     sdc.collect_sector_daily_incremental(conn, prov)
 
     calls = prov.get_sector_daily_df.call_args_list
@@ -110,14 +110,62 @@ def test_single_failure_skips_and_continues(_fake_conn):
     prov = MagicMock()
     prov.get_sector_daily_df.side_effect = [
         None,                                              # BK1753 失败
-        _dc_frame(["20260911"]),                           # BK1754 成功
-        _dc_frame(["20260911"]),
+        _dc_frame(["20260911"], "BK1754.DC"),                # BK1754 成功
+        _dc_frame(["20260911"], "BK1755.DC"),
     ]
     result = sdc.collect_sector_daily_incremental(conn, prov)
 
     assert result["failed"] == ["BK1753.DC"]
     assert result["boards"] == 2 and result["rows"] == 2
     assert prov.get_sector_daily_df.call_count == 3        # 失败后继续下一板块
+
+
+def test_required_day_uses_verified_fallback_before_commit(_fake_conn):
+    conn, recorded = _fake_conn
+    prov = MagicMock()
+    prov.get_sector_daily_df.return_value = _dc_frame(["20260922"], "BK1753.DC")
+    fallback = MagicMock(return_value=_dc_frame(["20260923"], "BK1753.DC"))
+
+    result = sdc.collect_sector_daily_incremental(
+        conn, prov, codes=["BK1753.DC"], end_date="2026-09-23",
+        required_dates=("2026-09-23",), fallback_fetch=fallback,
+    )
+
+    assert result["failed"] == []
+    assert set(recorded["frames"][0]["trade_date"]) == {"2026-09-22", "2026-09-23"}
+    fallback.assert_called_once_with("dc", "BK1753.DC", "20260923", "20260923")
+
+
+def test_invalid_target_values_trigger_fallback_and_replace_source_row(_fake_conn):
+    conn, recorded = _fake_conn
+    prov = MagicMock()
+    invalid = _dc_frame(["20260923", "20260922"], "BK1753.DC")
+    invalid.loc[0, "close"] = float("nan")
+    prov.get_sector_daily_df.return_value = invalid
+    fallback = MagicMock(return_value=_dc_frame(["20260923"], "BK1753.DC"))
+
+    result = sdc.collect_sector_daily_incremental(
+        conn, prov, codes=["BK1753.DC"], end_date="2026-09-23",
+        required_dates=("2026-09-23",), fallback_fetch=fallback,
+    )
+
+    assert result["failed"] == []
+    assert len(recorded["frames"][0]) == 2
+    assert set(recorded["frames"][0]["trade_date"]) == {"2026-09-22", "2026-09-23"}
+
+
+def test_required_day_remains_failed_without_fallback(_fake_conn):
+    conn, recorded = _fake_conn
+    prov = MagicMock()
+    prov.get_sector_daily_df.return_value = _dc_frame(["20260922"], "BK1753.DC")
+
+    result = sdc.collect_sector_daily_incremental(
+        conn, prov, codes=["BK1753.DC"], end_date="2026-09-23",
+        required_dates=("2026-09-23",),
+    )
+
+    assert result["failed"] == ["BK1753.DC"]
+    assert recorded.get("frames") is None
 
 
 def test_no_breaker_below_threshold(_fake_conn):
@@ -152,7 +200,7 @@ def test_circuit_breaker_halts_requests_for_remaining(_fake_conn, monkeypatch):
 def test_write_failure_rolls_back_and_continues(_fake_conn, monkeypatch):
     conn, recorded = _fake_conn
     prov = MagicMock()
-    prov.get_sector_daily_df.return_value = _dc_frame(["20260911"])
+    prov.get_sector_daily_df.side_effect = lambda source, code, start, end: _dc_frame(["20260911"], code)
 
     calls = {"n": 0}
     real_upsert = lambda c, df, update: len(df)
@@ -166,13 +214,13 @@ def test_write_failure_rolls_back_and_continues(_fake_conn, monkeypatch):
     monkeypatch.setattr(sdc, "bulk_upsert_sector_daily", flaky_upsert)
     result = sdc.collect_sector_daily_incremental(conn, prov)
 
-    assert conn.rollback.call_count == 1                  # 失败分支 rollback 恢复
+    assert conn.rollback.call_count == 3                  # 失败分支 rollback 恢复
     assert result["failed"] == ["BK1753.DC"]
     assert result["boards"] == 2 and result["rows"] == 2  # 后续板块继续写入
     assert conn.commit.call_count == 2
 
 
-def test_duplicate_pk_rows_dropped_before_upsert(_fake_conn):
+def test_duplicate_source_keys_rejected_before_upsert(_fake_conn):
     conn, recorded = _fake_conn
     prov = MagicMock()
     frame = pd.concat([_dc_frame(["20260911", "20260910"]),
@@ -180,7 +228,7 @@ def test_duplicate_pk_rows_dropped_before_upsert(_fake_conn):
     prov.get_sector_daily_df.return_value = frame
     sdc.collect_sector_daily_incremental(conn, prov)
 
-    assert len(recorded["frames"][0]) == 2                # 去重后每板块 2 行
+    assert not recorded.get("frames")  # conflicting source keys are unknown, not complete
 
 
 def test_empty_board_list_skips_without_request(_fake_conn, monkeypatch):
@@ -211,7 +259,7 @@ def test_real_pg_write_and_rerun_idempotent(pg_env, clean_market_state, monkeypa
     def flaky_side(source, code, start, end):
         if code == "BK1753.DC":
             raise RuntimeError("端点超时")   # 抛异常分支（非返回 None）
-        return _dc_frame(["20260911", "20260910"])
+        return _dc_frame(["20260911", "20260910"], code)
     prov.get_sector_daily_df.side_effect = flaky_side
 
     with get_connection() as conn:
@@ -229,7 +277,7 @@ def test_real_pg_write_and_rerun_idempotent(pg_env, clean_market_state, monkeypa
 
     # 重跑幂等：DO UPDATE 覆盖同窗口，行数不变（无重复插入）
     prov.get_sector_daily_df.side_effect = (
-        lambda source, code, start, end: _dc_frame(["20260911", "20260910"]))
+        lambda source, code, start, end: _dc_frame(["20260911", "20260910"], code))
     with get_connection() as conn:
         result2 = sdc.collect_sector_daily_incremental(conn, prov)
     assert result2["boards"] == 2 and result2["rows"] == 4

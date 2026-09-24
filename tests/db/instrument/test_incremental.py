@@ -19,6 +19,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
+from AI.dataflows.providers.base_provider import ProviderNetworkAccessDenied
 from db.instrument.ingest import incremental as inc
 from db.instrument.ingest.frames import StoreFetchError
 
@@ -54,6 +55,26 @@ def _mock_provider(days=None):
     prov.get_index_data_df = MagicMock(return_value=None)
     prov.get_index_factor_df = MagicMock(return_value=None)
     return prov
+
+
+def test_calendar_network_access_denial_is_not_reported_as_unavailable():
+    provider = _mock_provider()
+    provider.get_trade_cal.return_value = None
+    provider._network_access_error = ProviderNetworkAccessDenied("blocked by local policy")
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        inc._last_trade_days(provider)
+
+
+def test_directory_network_access_denial_stops_incremental_refresh():
+    provider = _mock_provider()
+    provider.get_stock_basic_df.return_value = None
+    provider._network_access_error = ProviderNetworkAccessDenied("blocked by local policy")
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        inc._refresh_basics(MagicMock(), provider)
+
+    provider.get_fund_basic_df.assert_not_called()
 
 
 _FRAMES = {"daily": pd.DataFrame({"ts_code": ["000001.SZ"]}),
@@ -101,8 +122,8 @@ def test_collects_last_3_days_with_do_update(env):
         assert call.kwargs == {"update": True}
     for call in inc.bulk_upsert_factor.call_args_list:
         assert call.kwargs == {"update": True}
-    # 提交 = 基本信息 1 + 指数自举 1 + 指数步骤结束 1 + 3 日单日提交
-    assert conn.commit.call_count == 6
+    # 提交 = 股票/基金基础各 1 + 基础步骤结束 1 + 指数 2 + 日线 3
+    assert conn.commit.call_count == 8
 
 
 def test_basics_refreshed_split_two_ways(env):
@@ -119,6 +140,25 @@ def test_basics_refreshed_split_two_ways(env):
     # fund 行 list_status 恒 NULL（fund_basic 无此列）
     fund_df = [c.args[1] for c in inc.instrument_dao.upsert_instrument.call_args_list][1]
     assert fund_df["list_status"].iloc[0] is None
+
+
+def test_stock_basic_lifecycle_status_normalization_fits_existing_char_column():
+    source = pd.DataFrame({
+        "ts_code": ["920201.BJ", "301716.SZ", "600000.SH"],
+        "name": ["未上市", "过会未交易", "上市"],
+        "list_status": ["UN", "G", "L"],
+        "list_date": [None, "20260930", "20000101"],
+    })
+    normalized = inc._basic_to_instrument(source, "stock")
+    assert normalized["list_status"].tolist() == ["U", "G", "L"]
+
+
+def test_stock_basic_unknown_multichar_status_fails_closed():
+    source = pd.DataFrame({
+        "ts_code": ["000001.SZ"], "name": ["股票"], "list_status": ["NEW"],
+    })
+    with pytest.raises(ValueError, match="unsupported multi-character stock list_status"):
+        inc._basic_to_instrument(source, "stock")
 
 
 def test_index_rows_do_not_cover_daily_window(env, monkeypatch):
@@ -184,7 +224,7 @@ def test_single_day_failure_does_not_block_others(env, monkeypatch):
     monkeypatch.setattr(inc, "fetch_day_frames", flaky)
     result = _run(conn, prov, refresh_sectors=False)
     assert set(result["daily"]) == {"20260827", "20260831"}
-    assert conn.commit.call_count == 5   # 2 日单日提交 + 基本信息 + 指数 2 次
+    assert conn.commit.call_count == 7   # 2 日单日提交 + 基础 3 次 + 指数 2 次
 
 
 def test_trade_cal_unavailable_skips(env):

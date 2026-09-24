@@ -30,7 +30,7 @@ export function WatchlistItemList({ watchlistId }: { watchlistId: string | null 
   const [formError, setFormError] = useState<string | null>(null);
 
   if (watchlistId === null) {
-    return <EmptyState title="选择左侧分组查看标的" />;
+    return <EmptyState title="选择上方分组查看标的" />;
   }
 
   if (itemsQuery.isPending) return <LoadingState label="标的列表加载中…" />;

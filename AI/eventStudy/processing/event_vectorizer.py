@@ -1,20 +1,23 @@
 """
 事件向量化模块（方案 3.3）
 
-使用 BAAI/bge-m3（sentence-transformers 加载）对审核通过的事件文本
-（标题 + 内容）生成 1024 维向量，写入 events.embedding（唯一向量存储）。
+使用 BAAI/bge-m3（sentence-transformers 加载）生成 1024 维向量。
+兼容事件检索写入 `events.embedding`；不可变判断版本的候选召回向量写入
+`event_assessment.embedding`，只允许补填一次并记录实际可用时间。
 
 - 模型约 2.2GB，进程内懒加载单例，一次加载常驻
 - 国内网络可设 HF_ENDPOINT=https://hf-mirror.com 镜像下载
 - CPU 推理每条约 2-5 秒
 """
 
+import hashlib
 import logging
 import os
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-from AI.eventStudy.collectors.config import VECTOR_MODEL, VECTOR_DIM, HF_ENDPOINT
+from AI.eventStudy.collectors.config import HF_ENDPOINT, VECTOR_DIM, VECTOR_MODEL
 
 _model = None
 _model_available = None  # None=未尝试, True/False=尝试结果
@@ -59,6 +62,72 @@ def encode_text(text: str) -> list:
     except Exception as e:
         logger.error(f"向量化失败: {e}")
         return []
+
+
+def encode_texts(texts: list[str]) -> list[list[float]]:
+    """Batch text encoding for assessment candidate backfill."""
+    values = [str(text or "").strip() for text in texts]
+    if not values:
+        return []
+    model = get_model()
+    if model is None:
+        return []
+    try:
+        matrix = model.encode(values, normalize_embeddings=True)
+        rows = matrix.tolist()
+        if len(rows) != len(values) or any(len(row) != VECTOR_DIM for row in rows):
+            return []
+        return [[float(value) for value in row] for row in rows]
+    except Exception as exc:  # noqa: BLE001 - optional vector search must degrade safely
+        logger.error("批量事件向量化失败: %s", exc)
+        return []
+
+
+def vectorize_unembedded_assessments(conn, *, limit: int = 1000,
+                                     lookback_days: int = 90) -> int:
+    """Fill optional vectors for recent auditable assessments without rewriting labels."""
+    if limit <= 0 or lookback_days <= 0:
+        raise ValueError("limit 和 lookback_days 必须为正")
+    if get_model() is None:
+        return 0
+    rows = conn.execute(
+        "SELECT assessment_id, labels FROM event_assessment "
+        "WHERE embedding IS NULL AND review_status IN ('accepted', 'disputed') "
+        "AND available_at >= now() - (%s * INTERVAL '1 day') "
+        "ORDER BY available_at DESC, assessment_id LIMIT %s",
+        (int(lookback_days), int(limit)),
+    ).fetchall()
+    texts: list[str] = []
+    kept = []
+    for assessment_id, raw_labels in rows:
+        labels = raw_labels if isinstance(raw_labels, dict) else {}
+        fact = labels.get("fact") if isinstance(labels.get("fact"), dict) else {}
+        identity = fact.get("identity") if isinstance(fact.get("identity"), dict) else {}
+        text = " ".join((
+            str(identity.get("entity") or ""), str(identity.get("action") or ""),
+            str(identity.get("reference_period") or ""), str(fact.get("title") or ""),
+            str(fact.get("fact_summary") or ""),
+        )).strip()
+        if text:
+            kept.append((assessment_id, text))
+            texts.append(text)
+    vectors = encode_texts(texts)
+    if len(vectors) != len(kept):
+        return 0
+    now = datetime.now(timezone.utc)
+    updated = 0
+    for (assessment_id, text), vector in zip(kept, vectors):
+        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        vector_literal = "[" + ",".join(f"{value:.8f}" for value in vector) + "]"
+        result = conn.execute(
+            "UPDATE event_assessment SET text_hash = %s, embedding = %s::vector, "
+            "embedding_model = %s, embedding_available_at = %s "
+            "WHERE assessment_id = %s AND embedding IS NULL",
+            (digest, vector_literal, VECTOR_MODEL, now, assessment_id),
+        )
+        updated += int(bool(result.rowcount))
+    conn.commit()
+    return updated
 
 
 def check_dimension() -> bool:

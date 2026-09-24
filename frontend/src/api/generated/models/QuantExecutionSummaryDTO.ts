@@ -10,5 +10,7 @@ export type QuantExecutionSummaryDTO = {
     suggested_buy_orders: number;
     suggested_sell_orders: number;
     failed_count: number;
+    portfolio_open_risk?: (number | null);
+    daily_new_risk?: (number | null);
 };
 

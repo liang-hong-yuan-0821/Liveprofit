@@ -18,6 +18,7 @@ function canCancel(task: TaskDTO): boolean {
 }
 
 export function TaskStatusCard({ task, cancelPending, onCancel }: TaskStatusCardProps) {
+  const terminal = ['SUCCEEDED', 'FAILED', 'CANCELLED'].includes(task.status);
   return (
     <Card>
       <CardHeader>
@@ -25,7 +26,9 @@ export function TaskStatusCard({ task, cancelPending, onCancel }: TaskStatusCard
         <Badge variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Badge>
       </CardHeader>
       <CardContent>
-        <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-1 text-sm">
+        {task.status === 'FAILED' && <p role="alert" className="text-sm text-red-400">{task.error_summary ?? task.error_code ?? '任务失败'}</p>}
+        <details open={!terminal || undefined}><summary className="mb-3 text-xs text-[var(--color-fg-muted)]">任务信息 · #{task.id.slice(0, 8)} · {task.effective_trade_date ?? '交易日待定'}</summary>
+        <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs [&_dd]:min-w-0 [&_dd]:break-all sm:grid-cols-[8rem_minmax(0,1fr)]">
           <dt style={{ color: 'var(--color-fg-muted)' }}>任务 ID</dt>
           <dd>{task.id}</dd>
           <dt style={{ color: 'var(--color-fg-muted)' }}>类型</dt>
@@ -58,15 +61,8 @@ export function TaskStatusCard({ task, cancelPending, onCancel }: TaskStatusCard
               <dd>{formatDateTime(task.next_retry_at)}</dd>
             </>
           )}
-          {task.status === 'FAILED' && (
-            <>
-              <dt style={{ color: 'var(--color-fg-muted)' }}>错误</dt>
-              <dd>
-                {task.error_summary ?? task.error_code ?? '任务失败'}
-              </dd>
-            </>
-          )}
-        </dl>
+
+        </dl></details>
 
         {canCancel(task) && (
           <div className="mt-4">

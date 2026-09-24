@@ -20,11 +20,11 @@ def test_backfill_mode_with_explicit_start(monkeypatch):
                                            "days_done": 0, "failed_days": []})
     with patch("db.instrument.ingest.backfill.run_backfill", run_backfill), \
          patch("backend.workers.market_ingest.get_connection") as gc:
-        gc.return_value.__enter__.return_value = "conn"
+        gc.return_value.__enter__.return_value = MagicMock()
         rc = market_ingest.main(["--start", "2026-01-01", "--end", "2026-01-31"])
     assert rc == 0
     args, kwargs = run_backfill.call_args
-    assert args[0] == "conn"
+    assert args[0] is gc.return_value.__enter__.return_value
     assert args[1] == "2026-01-01" and args[2] == "2026-01-31"
     assert kwargs["skip_daily"] is False
     assert callable(kwargs["provider_factory"])
@@ -35,7 +35,7 @@ def test_skip_bars_maps_to_skip_daily(monkeypatch):
                                            "days_done": 0, "failed_days": []})
     with patch("db.instrument.ingest.backfill.run_backfill", run_backfill), \
          patch("backend.workers.market_ingest.get_connection") as gc:
-        gc.return_value.__enter__.return_value = "conn"
+        gc.return_value.__enter__.return_value = MagicMock()
         rc = market_ingest.main(["--skip-bars"])
     assert rc == 0
     # --skip-bars → backfill 模式 + skip_daily=True（仅指数日线+因子）
@@ -46,10 +46,10 @@ def test_default_mode_is_incremental(monkeypatch):
     collect = MagicMock(return_value={"daily": {}})
     with patch("db.instrument.ingest.incremental.collect_incremental", collect), \
          patch("backend.workers.market_ingest.get_connection") as gc:
-        gc.return_value.__enter__.return_value = "conn"
+        gc.return_value.__enter__.return_value = MagicMock()
         rc = market_ingest.main([])
     assert rc == 0
-    assert collect.call_args.args[0] == "conn"
+    assert collect.call_args.args[0] is gc.return_value.__enter__.return_value
     # provider_factory 为可调用工厂
     assert callable(collect.call_args.args[1])
 
@@ -59,10 +59,10 @@ def test_market_flag_ignored_no_gate(monkeypatch):
     collect = MagicMock(return_value={"daily": {}})
     with patch("db.instrument.ingest.incremental.collect_incremental", collect), \
          patch("backend.workers.market_ingest.get_connection") as gc:
-        gc.return_value.__enter__.return_value = "conn"
+        gc.return_value.__enter__.return_value = MagicMock()
         rc = market_ingest.main(["--market", "US"])
     assert rc == 0
-    assert collect.call_args.args[0] == "conn"
+    assert collect.call_args.args[0] is gc.return_value.__enter__.return_value
 
 
 def test_start_after_end_rejected(capsys):
@@ -75,8 +75,27 @@ def test_days_computes_start_when_no_explicit_start(monkeypatch):
                                            "days_done": 0, "failed_days": []})
     with patch("db.instrument.ingest.backfill.run_backfill", run_backfill), \
          patch("backend.workers.market_ingest.get_connection") as gc:
-        gc.return_value.__enter__.return_value = "conn"
+        gc.return_value.__enter__.return_value = MagicMock()
         rc = market_ingest.main(["--skip-bars", "--days", "30"])
     assert rc == 0
     start = date.fromisoformat(run_backfill.call_args.args[1])
     assert start == date.today() - timedelta(days=30)
+
+
+def test_stock_directory_only_uses_guarded_narrow_catalog_refresh():
+    initializer = MagicMock(return_value={"stocks": 5568, "sectors": {}})
+    with patch("db.instrument.ingest.refresh.initialize_catalog", initializer), \
+         patch("backend.workers.market_ingest.get_connection") as get_conn, \
+         patch("db.instrument.ingest.guard.IngestGuard") as guard_type:
+        connection = get_conn.return_value.__enter__.return_value
+        guard = guard_type.return_value.__enter__.return_value
+        rc = market_ingest.main(["--initialize-catalog", "--stock-directory-only"])
+
+    assert rc == 0
+    initializer.assert_called_once_with(connection, guard=guard, refresh_sectors=False)
+
+
+def test_stock_directory_only_requires_catalog_mode():
+    with pytest.raises(SystemExit) as error:
+        market_ingest.main(["--stock-directory-only"])
+    assert error.value.code == 2

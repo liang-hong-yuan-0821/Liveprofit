@@ -6,7 +6,6 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import Any
 
 from backend.modules.analysis.application.contracts import ClaimedTask
 from backend.modules.analysis.domain.enums import TaskStatus, TaskType
@@ -116,9 +115,9 @@ def test_on_progress_cancel_requested_raises_and_marks_cancelled():
     executor = _executor(bundle)
     executor._claimed = _claimed()  # noqa: SLF001
 
-    from backend.modules.analysis.application.errors import CooperativeCancelledError
-
     import pytest
+
+    from backend.modules.analysis.application.errors import CooperativeCancelledError
 
     with pytest.raises(CooperativeCancelledError):
         executor._on_progress("scan", 1, 1)  # noqa: SLF001
@@ -127,14 +126,14 @@ def test_on_progress_cancel_requested_raises_and_marks_cancelled():
 
 def test_quant_branch_enters_market_connection_context_manager(monkeypatch):
     """真实 get_connection 返回 @contextmanager；Worker 必须 enter 后再传给执行服务。"""
-    from db.instrument import db as instrument_db
     from backend.modules.quant_strategy.application import execution as quant_execution
+    from db.instrument import db as instrument_db
 
     marker = {"entered": False, "exited": False, "received": None}
     raw_connection = object()
 
     @contextmanager
-    def fake_get_connection():
+    def fake_get_connection(_dsn=None):
         marker["entered"] = True
         try:
             yield raw_connection
@@ -159,3 +158,25 @@ def test_quant_branch_enters_market_connection_context_manager(monkeypatch):
 
     assert marker == {"entered": True, "exited": True, "received": raw_connection}
     assert len(bundle.completed) == 1
+
+
+def test_daily_quant_branch_receives_market_refresh_preflight(monkeypatch):
+    from backend.modules.daily_research.application import quant_pipeline
+
+    preflight = lambda **_kwargs: {"state": "ready"}
+    captured = {}
+    monkeypatch.setattr(quant_pipeline, "run_daily_quant",
+                        lambda _bundle, **kwargs: captured.update(kwargs))
+    bundle = _FakeBundle(_FakeTaskRow())
+    executor = AnalysisExecutor(
+        graph_adapter=None, bundle_factory=_FakeBundleFactory(bundle), worker_id="w1",
+        heartbeat_interval_seconds=3600, quant_preflight=preflight,
+    )
+    claimed = _claimed(request_params={"daily_research": {
+        "kind": "quant", "trigger": "manual", "scheduled_at": "2026-09-23T21:00:00+08:00",
+    }})
+    heartbeat = SimpleNamespace(fencing_lost=SimpleNamespace(is_set=lambda: False))
+
+    executor._run_daily_research(claimed, heartbeat)  # noqa: SLF001
+
+    assert captured["quant_preflight"] is preflight

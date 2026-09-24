@@ -26,6 +26,7 @@ class PendingActionDTO(BaseModel):
     task_type: TaskTypeValue
     ticker: str | None
     effective_trade_date: date | None
+    selected_layers: list[str]
     updated_at: datetime
     error_code: str | None
     error_summary: str | None
@@ -38,6 +39,7 @@ class ActiveTaskDTO(BaseModel):
     task_type: TaskTypeValue
     ticker: str | None
     effective_trade_date: date | None
+    selected_layers: list[str]
     status: Literal["PENDING", "QUEUED", "RUNNING", "RETRYING"]
     attempt_no: int
     updated_at: datetime
@@ -45,10 +47,12 @@ class ActiveTaskDTO(BaseModel):
 
 
 class RecentConclusionDTO(BaseModel):
+    unavailable_blocks: list[UnavailableBlockDTO] = Field(default_factory=list)
     task_id: UUID
     task_type: TaskTypeValue
     ticker: str | None
     effective_trade_date: date | None
+    selected_layers: list[str]
     completed_at: datetime
     conclusion_summary: str | None = Field(default=None, max_length=512)
     risk_flag: bool

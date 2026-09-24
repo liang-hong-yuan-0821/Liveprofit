@@ -2,11 +2,18 @@
 
 > 一句话结论：日线消费必须先 `_sort_asc_by_trade_date` 升序归一（端点返回降序）；全市场拉取禁区间查询（静默截断）；因子取自 idx_factor_pro/stk_factor_pro（禁自算）；代理端点能力必须实测。
 
+## 每日停牌和 DC 单板块漏行（2026-09-24）
+
+- **表象**：`CN_STOCK_DAILY` 目标日 5556/5568 后余 12 个无日线代码；旧 `suspend_d(suspend_date=目标日)` 返回 5000 条且 `suspend_date` 全空，不能作为停牌依据。
+- **根因与正确姿势**：[Tushare 官方 `suspend_d` 文档](https://tushare.pro/document/2?doc_id=214)使用 `trade_date`，输出 `trade_date/suspend_type`。本项目代理按 `trade_date` 返回该日 13 条（含 S 与 R），但忽略请求中的 `suspend_type=S` 筛选；必须校验响应日期与类型，并只将 S 当停牌，R 为复牌。修复后 12 个无行情代码均有可信 S 事实，目标日完整。
+- **板块源缺行**：2026-09-23 的 `dc_daily` 全板块仅 1030/1031，BK0165.DC 按代码、类别、无类别均无当日 OHLC；`dc_index` 虽有该板块涨跌快照但无完整日线，不可合成 OHLC。东财原始 `push2his` K 线有目标日完整行情，前日值与已有 `sector_daily` 一致；定向补采在 Tushare 缺**有效**目标行时校验代码、日期、必需数值后兜底。不能以日期存在而数值无效为由跳过兜底。
+- **历史边界**：BK1675.DC 的 2026-08-03 至 08-06 在东财原始 K 线亦无记录；`HISTORY_GAP` 保留，不能从 `dc_index` 涨跌幅伪造日线。验证：目标日真实 PG/API 覆盖 1031/1031；Provider/采集隔离回归与增量 Code Review 通过。
+
 ## 板块日线端点能力实测（2026-09-13，板块概念Treemap方案）
 
 - **dc_daily 是窗口型数据源：仅返回最近 33 交易日，更早区间直接 0 行**（实测 start=20260101 请求仅回 33 行、最早 20260729；start=20260601+end=20260715 旧区间回 0 行）——**不可用于历史回填**，只能每日增量积累（历史自采集启动日起增长）。返回列实测：ts_code/trade_date/close/open/high/low/change/pct_change/vol/amount/swing/turnover_rate/category（**无 pre_close**；pct_change → 统一列名 pct_chg；swing/category 丢弃）。
 - **ths_daily 全历史单请求可用**：实测 883300.TI 一次请求 3988 行（2010-04-13 起）、最老板块 885311.TI（2007-08-08 上市）4,642 行、首行 = 上市日精确吻合（无截断）；随机 20/20 板块有数据；列 open/high/low/close/pre_close/change/pct_change/vol/turnover_rate（**无 amount**）；行序降序需升序归一。当前项目"先存 dc"（用户 2026-09-14 拍板），ths 暂缓——启用时走 `get_sector_daily_df` 的 source 分支即可。
-- **akshare 东财板块历史主机 push2his.eastmoney.com 不可达**：直连与本地代理（127.0.0.1:7890）均连接重置（curl 3 次 000）；同域 push2.eastmoney.com 直连正常（kline 主机单独不可达）——板块历史行情不要走东财直连（`stock_board_concept_hist_em` 用该主机）。
+- **akshare 东财板块历史主机 push2his.eastmoney.com 在 2026-09-13 的环境不可达**：当时直连与本地代理连接重置；2026-09-24 允许出站的进程已从该主机取得 BK0165.DC 完整日线并修复目标日。因此连通性是运行环境事实，不能把旧观测写成永久能力否定；失败时仍保留缺口、有限重试。
 - 官方端点（api.tushare.pro）本项目 token 无效（"您的token不对"）——代理端点（ts.gyzcloud.top）能力即事实标准。
 
 ## 代理端点（自定义 URL）
@@ -36,6 +43,13 @@
 - 端点调用超时（`_api_call` 返回 None）后 worker 仍会补写日志（上下文已复制），「DP res 显示超时、tushare 展开却有成功记录」并存属预期诊断行为。
 - `_connect` 的连通性探测调用（stock_basic limit=1）在 DP 上下文内会被记录，meta 带 `probe=true`（viewer 显示「🔌 连通性探测」角标）。
 - 单次结果 records 超 500 行截断（`truncated=true` + `row_count` 元数据）。
+
+## Future 超时后迟到的本机网络拒绝（2026-09-24）
+
+- **表象**：`_api_call()` 已因 `FutureTimeout` 返回 `None`，但请求线程仍在运行；线程稍后才抛 Windows `WinError 10013`。只在调用线程的 `Future.result()` 异常分支识别，会永远漏掉迟到异常，后续采集可能把本机策略拒绝当作普通上游空结果。
+- **根因**：`ThreadPoolExecutor.shutdown(wait=False)` 不取消运行中的 I/O；Future 超时只代表等待方停止等待，不代表底层请求已经结束。
+- **正确姿势**：在传给 worker 的调用包装层中捕获并保留特殊网络拒绝，再重新抛出给 Future；调用线程超时后返回仍遵守 Provider 契约，但迟到异常会锁存供采集边界与后续请求识别。保留状态需线程安全、幂等，不能把所有异常都升级成本机网络错误。
+- **代码与验证**：`AI/dataflows/providers/cn/tushare.py::_run_with_timeout`、`TushareProvider._remember_network_access_error`；`tests/dataflows/providers/test_tushare_store_methods.py::test_network_permission_error_is_retained_if_worker_fails_after_timeout` 用 Event 控制真实后台线程先超时、再抛 WinError 10013，验证 typed error 留存且后续调用不再碰源。
 
 ## 全市场拉取禁止区间查询（2026-08-30）
 

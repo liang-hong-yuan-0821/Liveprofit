@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.exc import IntegrityError
 
@@ -40,6 +41,7 @@ from backend.modules.quant_strategy.domain.templates import (
     get_template,
 )
 from backend.modules.quant_strategy.infrastructure.models import QuantStrategy, QuantStrategyVersion
+from backend.modules.quant_strategy.infrastructure.lifecycle_models import LifecyclePolicyVersion
 from backend.modules.quant_strategy.infrastructure.repositories import (
     QuantStrategyRepository,
     QuantStrategyVersionRepository,
@@ -170,6 +172,7 @@ class QuantStrategyService:
                 "template_id": None,
                 "template_params": None,
                 "template_renderer_version": None,
+                "lifecycle_policy_version_id": None,
                 "version": expected_draft_version + 1,
                 "updated_at": now,
             },
@@ -217,6 +220,7 @@ class QuantStrategyService:
             source_code=version.source_code, source_hash=version.source_hash,
             template_id=version.template_id, template_params=version.template_params,
             template_renderer_version=version.template_renderer_version,
+            lifecycle_policy_version_id=version.lifecycle_policy_version_id,
             version=1, created_at=now, updated_at=now,
         )
         self._versions.add(next_draft)
@@ -269,6 +273,52 @@ class QuantStrategyService:
             raise StrategyVersionNotPublishedError(f"策略版本未发布：{version_id}")
         return self._to_version_dto(version)
 
+    def bind_lifecycle_policy(
+        self, strategy_id: uuid.UUID, version_id: uuid.UUID,
+        lifecycle_policy_version_id: uuid.UUID | None, expected_version: int,
+    ) -> QuantStrategyDraftDTO:
+        version = self._versions.get(version_id)
+        if version is None or version.strategy_id != strategy_id:
+            raise StrategyNotFoundError(f"策略版本不存在：{version_id}")
+        if version.status != StrategyStatus.DRAFT.value:
+            raise StrategyVersionInvalidStateError("只有 DRAFT 可以绑定生命周期策略")
+        if lifecycle_policy_version_id is not None:
+            policy = self._uow.session.get(LifecyclePolicyVersion, lifecycle_policy_version_id)
+            if policy is None:
+                raise StrategyNotFoundError(f"生命周期策略版本不存在：{lifecycle_policy_version_id}")
+            if policy.status != "PUBLISHED":
+                raise StrategyVersionInvalidStateError("只能绑定已发布的生命周期策略版本")
+            policy_template_id = (policy.config or {}).get("template_id")
+            if not isinstance(policy_template_id, str):
+                raise StrategyVersionInvalidStateError("生命周期策略必须显式声明 template_id")
+            try:
+                get_template(policy_template_id)
+            except TemplateValidationError:
+                raise StrategyVersionInvalidStateError("生命周期策略 template_id 不在七模板合同内") from None
+            if version.template_id is not None and version.template_id != policy_template_id:
+                raise StrategyVersionInvalidStateError("生命周期策略与参考模板不兼容")
+            try:
+                reward = Decimal(str((policy.config or {}).get("reward_multiple")))
+            except (InvalidOperation, TypeError):
+                raise StrategyVersionInvalidStateError("生命周期策略缺少有效 reward_multiple") from None
+            if not reward.is_finite() or reward <= 0:
+                raise StrategyVersionInvalidStateError("生命周期策略 reward_multiple 必须大于 0")
+            if str((policy.config or {}).get("initial_exposure_pct", "0.50")) != "0.50":
+                raise StrategyVersionInvalidStateError("生命周期首仓比例固定为 0.50")
+        if not self._versions.conditional_update_version(
+            version.id, expected_version,
+            {
+                "lifecycle_policy_version_id": lifecycle_policy_version_id,
+                "version": expected_version + 1,
+                "updated_at": self._clock.now(),
+            },
+        ):
+            raise StrategyRevisionConflictError("草稿已变更，请重新拉取")
+        self._uow.commit()
+        updated = self._versions.get(version.id)
+        assert updated is not None
+        return self._to_draft_dto(updated)
+
     # ---- 内部 ----
 
     def _get_draft_or_raise(self, strategy_id: uuid.UUID) -> QuantStrategyVersion:
@@ -291,6 +341,7 @@ class QuantStrategyService:
             source_hash=v.source_hash, published_at=v.published_at, archived_at=v.archived_at,
             template_id=v.template_id, template_params=v.template_params,
             template_renderer_version=v.template_renderer_version,
+            lifecycle_policy_version_id=v.lifecycle_policy_version_id,
             version=v.version, created_at=v.created_at, updated_at=v.updated_at,
         )
 
@@ -300,5 +351,6 @@ class QuantStrategyService:
             source_code=v.source_code, source_hash=v.source_hash, version=v.version,
             template_id=v.template_id, template_params=v.template_params,
             template_renderer_version=v.template_renderer_version,
+            lifecycle_policy_version_id=v.lifecycle_policy_version_id,
             created_at=v.created_at, updated_at=v.updated_at,
         )

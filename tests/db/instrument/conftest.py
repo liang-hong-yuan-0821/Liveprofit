@@ -92,6 +92,6 @@ def clean_market_state(pg_env):
             "TRUNCATE market.instrument, market.instrument_daily, market.factor_daily, "
             "market.adj_factor, market.sector, market.sector_member, market.sector_daily, "
             "market.industry, market.industry_member, market.ingest_state, "
-            "market.fund_info, market.stock_info CASCADE"
+            "market.fund_info, market.stock_info, market.trade_status_daily CASCADE"
         ))
     yield

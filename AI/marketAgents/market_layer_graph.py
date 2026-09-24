@@ -141,6 +141,35 @@ class MarketLayerGraph:
         )
         return workflow.compile()
 
+    def build_daily_research(self):
+        """Compile the bounded daily CN news → tech → deterministic gate path.
+
+        Daily runs must not call live news tools after their frozen cutoff. The CN
+        news analyst receives the run's accepted-event snapshot through AgentState.
+        """
+        workflow = StateGraph(AgentState)
+        sequence = (
+            ("cn_news", "CN News Analyst"),
+            ("cn_tech", "CN Tech Analyst"),
+        )
+        for key, label in sequence:
+            node = self.FACTORY_MAP[key](self.llm, self.toolkit)
+            workflow.add_node(
+                label,
+                guard_checkpoint(label)(track_node(label)(node)),
+            )
+            workflow.add_node(f"Msg Clear {label}", create_msg_delete())
+            workflow.add_edge(label, f"Msg Clear {label}")
+        workflow.add_node(
+            self.GATE_LABEL,
+            guard_checkpoint(self.GATE_LABEL)(self._derive_risk_gate),
+        )
+        workflow.add_edge(START, sequence[0][1])
+        workflow.add_edge(f"Msg Clear {sequence[0][1]}", sequence[1][1])
+        workflow.add_edge(f"Msg Clear {sequence[1][1]}", self.GATE_LABEL)
+        workflow.add_edge(self.GATE_LABEL, END)
+        return workflow.compile()
+
     @staticmethod
     def _derive_risk_gate(state: AgentState) -> dict:
         """纯代码风险门控：消费结构化状态派生 `risk_gate`（无 LLM、无工具）。

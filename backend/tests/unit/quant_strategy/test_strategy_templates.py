@@ -7,6 +7,8 @@ from AI.strategy_sandbox.validator import validate_strategy_source
 from backend.modules.quant_strategy.domain.templates import (
     TEMPLATES,
     TemplateValidationError,
+    freeze_template_contract,
+    validate_frozen_template_context,
     validate_template_context,
 )
 
@@ -95,3 +97,12 @@ def test_validator_rejects_out_of_contract_index():
             "stop_loss": None, "take_profit": None, "sell_ratio": None, "reason": "NO_SIGNAL"}
 '''
     assert "BAD_INDEX" in {issue.code for issue in validate_strategy_source(source)}
+
+
+def test_frozen_template_contract_is_independent_from_registry_object():
+    contract = freeze_template_contract(TEMPLATES["ma_trend_cross_v1"])
+    assert validate_frozen_template_context(contract, _context(2)) is None
+    broken = {**contract, "required_bars": 3}
+    assert validate_frozen_template_context(broken, _context(2)) == "WARMUP_INCOMPLETE"
+    malformed = {**contract, "required_fields": [{"section": "indicators", "field": "removed", "indices": [-1]}]}
+    assert validate_frozen_template_context(malformed, _context(2)) == "INDICATOR_UNAVAILABLE"

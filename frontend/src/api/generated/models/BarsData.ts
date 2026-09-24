@@ -28,6 +28,8 @@ export namespace BarsData {
     export enum market_session_status {
         OPEN = 'OPEN',
         CLOSED = 'CLOSED',
+        BREAK = 'BREAK',
+        UNKNOWN = 'UNKNOWN',
     }
 }
 

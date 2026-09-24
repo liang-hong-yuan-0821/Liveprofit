@@ -11,6 +11,7 @@ function makeConcept(overrides: Partial<ConceptTreeNodeDTO> = {}): ConceptTreeNo
     sector_name: '光刻胶',
     rank: 1,
     heat_score: 5.77,
+    heat_window_rows: 10,
     pct_chg: 1.23,
     member_total: 2,
     members: [
@@ -102,7 +103,7 @@ describe('buildConceptTreeOption', () => {
       formatter: (params: { data?: { name?: string; pct_chg?: number | null } }) => string;
     };
     expect(upper.show).toBe(true);
-    expect(upper.height).toBe(18);
+    expect(upper.height).toBe(24);
     // 概念名称条同样带当日涨跌幅
     expect(upper.formatter({ data: { name: '光刻胶', pct_chg: 1.23 } })).toBe('光刻胶 +1.23%');
     expect(upper.formatter({ data: { name: '停更板块', pct_chg: null } })).toBe('停更板块 —');

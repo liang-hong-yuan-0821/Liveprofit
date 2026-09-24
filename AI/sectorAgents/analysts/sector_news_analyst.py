@@ -9,6 +9,7 @@ T4 改造（方案第三章）：消费板块事件预取（作用域 sector + �
 `sector_events`。系统提示词文本规则属 T6（`AI/utils/prompts.py`）。
 """
 import logging
+import json
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from AI.dataflows import interface as dataflow
 from AI.dataflows import market_features as mf
@@ -40,7 +41,19 @@ def create_sector_news_analyst(llm, toolkit, enable_structured_list=False):
         industry_perf = dataflow.get_industry_sector_performance(days=10)
         fund_flow = dataflow.get_sector_fund_flow(days=5)
         concept_heat = dataflow.get_concept_board_heat(days=10)
-        policy_news = dataflow.get_industry_policy_news(current_date)
+        daily_context = state.get("daily_research_context") or {}
+        if isinstance(daily_context, dict) and daily_context.get("cutoff_at"):
+            frozen_events = [
+                event for event in daily_context.get("events", [])
+                if isinstance(event, dict) and event.get("sector_targets")
+            ]
+            policy_news = (
+                "已审核事件快照（截至 " + str(daily_context.get("cutoff_at")) + "）：\n"
+                + json.dumps(frozen_events[:100], ensure_ascii=False, default=str)
+                if frozen_events else "截止时点没有已审核且指向板块的事件。"
+            )
+        else:
+            policy_news = dataflow.get_industry_policy_news(current_date)
 
         # 板块事件预取：命中既有扫描范围（短名单 + 已获取的行业/概念扫描数据），
         # 不新增打名单或全市场扫描接口；无命中目标时返回空列表

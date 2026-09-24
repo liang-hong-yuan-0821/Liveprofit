@@ -35,16 +35,8 @@ def _test_db_url(base_url: str) -> str:
 
 def _psycopg_dsn(sqlalchemy_url: str) -> str:
     """SQLAlchemy URL → psycopg conninfo（db.instrument 直连注入用）。"""
-    from sqlalchemy.engine.url import make_url
-
-    u = make_url(sqlalchemy_url)
-    parts = [f"host={u.host}", f"port={u.port or 5432}",
-             f"dbname={u.database}", f"user={u.username}",
-             f"password={u.password or ''}"]
-    sslmode = u.query.get("sslmode")
-    if sslmode:
-        parts.append(f"sslmode={sslmode}")
-    return " ".join(parts)
+    from backend.bootstrap.settings import database_url_to_dsn
+    return database_url_to_dsn(sqlalchemy_url)
 
 
 def _redis_test_url() -> str | None:
@@ -53,14 +45,23 @@ def _redis_test_url() -> str | None:
     url = CoreSettings().resolved_redis_url()
     if not url:
         return None
-    main, _, query = url.partition("?")
-    head, _, _db = main.rpartition("/")
-    test_url = f"{head}/{REDIS_TEST_DB}"
-    return f"{test_url}?{query}" if query else test_url
+    from backend.tests.market_refresh_support import redis_database_url
+    return redis_database_url(url, REDIS_TEST_DB)
 
 
 @pytest.fixture(scope="module")
-def client():
+def _exclusive_test_database():
+    # A second pytest process must not DROP the fixed test DB while another uses it.
+    from backend.tests.market_refresh_support import exclusive_test_database
+    base_url = _base_db_url()
+    if not base_url:
+        pytest.skip("缺少 DATABASE_URL")
+    with exclusive_test_database(base_url, TEST_DB_NAME):
+        yield
+
+
+@pytest.fixture(scope="module")
+def client(_exclusive_test_database):
     from fastapi.testclient import TestClient
 
     from backend.bootstrap.settings import ApiSettings, CoreSettings, Settings
@@ -70,6 +71,8 @@ def client():
     redis_url = _redis_test_url()
     if not base_url or not redis_url:
         pytest.skip("缺少 DATABASE_URL / REDIS_URL")
+    from backend.tests.market_refresh_support import assert_test_connections
+    assert_test_connections(_psycopg_dsn(_test_db_url(base_url)), redis_url, contract=True)
     engine = create_engine(base_url)
     try:
         with engine.connect():
@@ -112,7 +115,9 @@ def client():
         api=ApiSettings(),
     )
     with TestClient(create_app(settings)) as test_client:
-        yield ContractEnv(http=test_client, redis=redis_client)
+        publisher = FakeRefreshPublisher()
+        test_client.app.state.market_refresh_publisher = publisher
+        yield ContractEnv(http=test_client, redis=redis_client, publisher=publisher)
 
     redis_client.flushdb()
     redis_client.close()
@@ -126,9 +131,22 @@ def client():
 
 
 class ContractEnv:
-    def __init__(self, http, redis) -> None:
+    def __init__(self, http, redis, publisher=None) -> None:
         self.http = http
         self.redis = redis
+        self.publisher = publisher
+
+
+class FakeRefreshPublisher:
+    """契约 fixture 禁止接入真实 Broker。"""
+    def __init__(self):
+        self.job_ids = []
+
+    def send(self, job_id: str):
+        self.job_ids.append(job_id)
+
+    def __call__(self, job_id: str):
+        self.send(job_id)
 
 
 @pytest.fixture(autouse=True)
@@ -148,11 +166,14 @@ def _clean_platform_state(client):
             with test_engine.begin() as conn:
                 conn.execute(
                     sql_text(
-                        "TRUNCATE quant_execution_signals, quant_strategy_versions, quant_strategies, "
+                        "TRUNCATE order_fill_events, position_intents, position_daily_facts, "
+                        "position_expectations, position_trailing_stops, suggested_orders, "
+                        "position_lifecycle_states, lifecycle_policy_versions, "
+                        "quant_execution_signals, quant_strategy_versions, quant_strategies, "
                         "portfolio_positions, portfolios, watchlist_items, watchlists, "
                         "macro_information, analysis_reports, task_outbox, analysis_tasks, "
                         "market.instrument, market.instrument_daily, market.factor_daily, "
-                        "market.adj_factor, market.sector, market.sector_member, "
+                        "market.adj_factor, market.trade_status_daily, market.sector, market.sector_member, "
                         "market.sector_daily, market.industry, market.industry_member, market.ingest_state, "
                         "market.fund_info, market.stock_info CASCADE"
                     )
@@ -162,4 +183,5 @@ def _clean_platform_state(client):
             time.sleep(0.2 * (attempt + 1))
     test_engine.dispose()
     client.redis.flushdb()
+    client.publisher.job_ids.clear()
     yield

@@ -9,6 +9,12 @@ import time
 
 import pandas as pd
 
+from AI.dataflows.providers.base_provider import (
+    ProviderNetworkAccessDenied,
+    raise_if_network_access_denied,
+)
+from db.instrument.ingest.guard import FATAL_INGEST_ERRORS
+
 logger = logging.getLogger(__name__)
 
 TRUNCATION_ROWS = 6000    # 单日行数 ≥ 6000 视为截断（实测单日 5547 距上限仅 ~8% 余量）
@@ -41,6 +47,11 @@ def _batched_pull(provider, market: str, kind: str, codes: list,
         try:
             df = provider._api_call(fn, ts_code=",".join(batch),
                                     trade_date=trade_date)
+            raise_if_network_access_denied(provider)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("分批补拉 %s/%s 第 %d 批异常: %s",
                            market, kind, i // BATCH_SIZE, e)
@@ -49,6 +60,13 @@ def _batched_pull(provider, market: str, kind: str, codes: list,
             logger.warning("分批补拉 %s/%s 第 %d 批超时/失败",
                            market, kind, i // BATCH_SIZE)
             return None
+        if len(df) >= TRUNCATION_ROWS:
+            logger.warning("分批补拉仍疑似截断: %s/%s", market, kind)
+            return None
+        if market == "stock" and not df.empty:
+            if "ts_code" not in df.columns or not set(df["ts_code"].astype(str)) <= set(batch):
+                logger.warning("分批补拉返回了请求批次以外的代码: %s/%s", market, kind)
+                return None
         if not df.empty:
             frames.append(df)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -62,6 +80,7 @@ def _pull_market_frame(provider, trade_date: str, market: str, kind: str,
         df = provider.get_full_market_daily_df(trade_date, market)
     else:
         df = provider.get_full_market_factor_df(trade_date, market)
+    raise_if_network_access_denied(provider)
     if df is None:
         return None
     if len(df) >= TRUNCATION_ROWS:
@@ -74,6 +93,63 @@ def _pull_market_frame(provider, trade_date: str, market: str, kind: str,
             return None
         return _batched_pull(provider, market, kind, codes, trade_date)
     return df
+
+
+def fetch_stock_daily_frame(provider, trade_date: str, codes: list[str]) -> pd.DataFrame:
+    """Stock-only single-day pull, with bounded 100-code truncation fallback."""
+    df = _pull_market_frame(provider, trade_date, "stock", "daily", codes)
+    if df is None or df.empty:
+        raise StoreFetchError("UPSTREAM_NOT_READY")
+    required = ["ts_code", "trade_date", "open", "high", "low", "close", "pct_chg"]
+    if any(c not in df.columns for c in required):
+        raise StoreFetchError("UPSTREAM_COLUMNS_MISSING")
+    frame = df.copy()
+    days = pd.to_datetime(frame["trade_date"].astype(str), errors="coerce")
+    if days.isna().any() or not days.dt.date.eq(pd.Timestamp(trade_date).date()).all():
+        raise StoreFetchError("UPSTREAM_DATE_MISMATCH")
+    if frame.duplicated(["ts_code", "trade_date"]).any():
+        raise StoreFetchError("UPSTREAM_DUPLICATE_KEYS")
+    frame = frame[frame["ts_code"].isin(codes)].copy()
+    values = ["open", "high", "low", "close", "pct_chg"]
+    frame[values] = frame[values].apply(pd.to_numeric, errors="coerce")
+    frame[values] = frame[values].replace(
+        [float("inf"), -float("inf")], None)
+    frame = frame.dropna(subset=values)
+    if frame.empty:
+        raise StoreFetchError("UPSTREAM_NOT_READY")
+    frame["trade_date"] = pd.to_datetime(frame["trade_date"].astype(str)).dt.strftime("%Y-%m-%d")
+    return frame
+
+
+def fetch_stock_technical_factor_frame(provider, trade_date: str,
+                                      codes: list[str]) -> pd.DataFrame:
+    """Fetch one day's qfq factors, retrying a truncated full-market result by code.
+
+    The technical-factor endpoint is ``stk_factor_pro``; it must not share the
+    generic factor fallback, which calls the separate ``adj_factor`` endpoint.
+    """
+    time.sleep(REQUEST_INTERVAL)
+    frame = provider.get_full_market_technical_factor_df(trade_date)
+    raise_if_network_access_denied(provider)
+    if frame is None:
+        raise StoreFetchError("UPSTREAM_NOT_READY")
+    if len(frame) >= TRUNCATION_ROWS:
+        batches = []
+        for i in range(0, len(codes), BATCH_SIZE):
+            batch = codes[i:i + BATCH_SIZE]
+            time.sleep(REQUEST_INTERVAL)
+            part = provider.get_full_market_technical_factor_df(trade_date, ts_codes=batch)
+            raise_if_network_access_denied(provider)
+            if part is None or len(part) >= TRUNCATION_ROWS:
+                raise StoreFetchError("UPSTREAM_INCOMPLETE")
+            if not part.empty:
+                if "ts_code" not in part.columns or not set(part["ts_code"].astype(str)) <= set(batch):
+                    raise StoreFetchError("UPSTREAM_CODE_MISMATCH")
+                batches.append(part)
+        frame = pd.concat(batches, ignore_index=True) if batches else pd.DataFrame()
+    if frame.empty:
+        raise StoreFetchError("UPSTREAM_NOT_READY")
+    return frame
 
 
 def fetch_day_frames(provider, trade_date: str, stock_codes: list = None,

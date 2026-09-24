@@ -90,16 +90,16 @@ describe('useCapTierTrendsQuery / useBoardTrendsQuery', () => {
 });
 
 describe('useConceptTreeQuery', () => {
-  it('请求参数与 queryKey（from→as_of 透传、limit 恒 30）', async () => {
+  it('请求参数与 queryKey（显式 asOf 透传、limit 恒 30）', async () => {
     const queryClient = createTestQueryClient();
-    const filters = { market: 'CN', interval: '1d', from: '2026-09-11', to: '2026-09-11' };
+    const filters = { market: 'CN', interval: '1d', asOf: '2026-09-11' };
     const { result } = renderHook(() => useConceptTreeQuery(filters), {
       wrapper: withQueryClient(queryClient),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(treeMock).toHaveBeenCalledWith(
-      'CN', '1d', '2026-09-11', '2026-09-11', CONCEPT_TREE_LIMIT, '2026-09-11',
+      'CN', '1d', CONCEPT_TREE_LIMIT, '2026-09-11',
     );
     expect(queryClient.getQueryCache().findAll()[0]?.queryKey).toEqual(
       queryKeys.conceptTree.list({ ...filters, limit: CONCEPT_TREE_LIMIT }),
@@ -142,7 +142,7 @@ describe('useStockBarsQuery', () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(stockBarsMock).toHaveBeenCalledWith('600050.SH', 'CN', '1d', '2026-03-18', '2026-09-11');
+    expect(stockBarsMock).toHaveBeenCalledWith('600050.SH', 'CN', '1d', '2026-03-18', '2026-09-11', 'cache_only');
     expect(queryClient.getQueryCache().findAll()[0]?.queryKey).toEqual(
       queryKeys.stockBars.list({ symbol: '600050.SH', ...filters }),
     );

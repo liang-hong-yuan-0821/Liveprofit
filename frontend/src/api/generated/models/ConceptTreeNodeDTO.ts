@@ -16,5 +16,6 @@ export type ConceptTreeNodeDTO = {
     pct_chg: (number | null);
     member_total: number;
     members: Array<ConceptMemberDTO>;
+    heat_window_rows: number;
 };
 

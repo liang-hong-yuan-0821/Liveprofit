@@ -126,3 +126,18 @@ def dispatcher_main(argv: list[str] | None = None) -> int:
     from backend.workers.dispatcher import main as dispatcher_run
 
     return dispatcher_run()
+
+
+def market_worker_main(argv: list[str] | None = None) -> int:
+    """专用日线采集 Worker；参数与连接由集中 Settings 装配。"""
+    parser = _build_parser("liveprofit-market-worker", "Liveprofit 市场日线补齐 Worker")
+    parser.parse_args(argv)
+    try:
+        settings = Settings()
+        settings.validate_for_process("market_worker")
+    except SettingsValidationError as exc:
+        print(f"liveprofit-market-worker 配置校验失败：{exc}", file=sys.stderr)
+        return 2
+    from backend.workers.market_refresh import run_market_worker
+
+    return run_market_worker(settings)

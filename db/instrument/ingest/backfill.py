@@ -30,6 +30,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from AI.dataflows.providers.base_provider import (
+    ProviderNetworkAccessDenied,
+    raise_if_network_access_denied,
+)
+from db.instrument.ingest.guard import ALL_RESOURCES, FATAL_INGEST_ERRORS, locked_ingestion, guarded_provider
+
 from db.instrument.dao.adj_factor import bulk_upsert_factor
 from db.instrument.dao.factor_daily import bulk_upsert_factor_daily
 from db.instrument.dao.instrument_daily import bulk_upsert_daily
@@ -41,7 +47,7 @@ from db.instrument.ingest.incremental import (
     _assert_index_targets_valid, _is_cn_index_code, _provider_source,
 )
 from db.instrument.ingest.sectors import collect_sectors
-from db.instrument.ingest.stock_factors import collect_stock_quant_day
+from db.instrument.ingest.stock_factors import REQUIRED_QFQ, collect_stock_quant_day
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +101,7 @@ def _iter_date_chunks(start: str, end: str):
 
 
 def backfill_index_history(conn, provider, start: str, end: str,
-                           fallback_provider=None) -> dict:
+                           fallback_provider=None, *, codes=None) -> dict:
     """指数全历史回填内置分项（自举前置 + DO UPDATE + 5 年分段 + 断点续跑）。
 
     断点续跑按库内已入库交易日集合跳过（同个股基金回填口径：存在即完整）；
@@ -103,10 +109,11 @@ def backfill_index_history(conn, provider, start: str, end: str,
     """
     result = {"bars": 0, "factors": 0}
     _assert_index_targets_valid()
-    _bootstrap_instruments(conn)
+    selected = list(INDEX_TARGETS if codes is None else codes)
+    _bootstrap_instruments(conn, selected)
     conn.commit()
 
-    for code in INDEX_TARGETS:
+    for code in selected:
         # 断点集合按指数单独计算（CR M3：跨代码并集会漏掉"零行目标"——
         # 库内无该指数任何行时 existing_set 命中其他指数日期、缺列探测返回
         # None → 误跳过，该指数永不回填）
@@ -121,6 +128,11 @@ def backfill_index_history(conn, provider, start: str, end: str,
             bars_source = provider
             try:
                 bars = provider.get_index_data_df(code, chunk_start, chunk_end)
+                raise_if_network_access_denied(provider)
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception as e:
                 logger.warning("指数回填: %s [%s ~ %s] 拉取异常（换兜底源重试）: %s",
                                code, chunk_start, chunk_end, e)
@@ -131,7 +143,12 @@ def backfill_index_history(conn, provider, start: str, end: str,
                     try:
                         bars = fallback_provider.get_index_data_df(
                             code, chunk_start, chunk_end)
+                        raise_if_network_access_denied(fallback_provider)
                         bars_source = fallback_provider
+                    except FATAL_INGEST_ERRORS:
+                        raise
+                    except ProviderNetworkAccessDenied:
+                        raise
                     except Exception as e:
                         logger.warning("指数回填: %s [%s ~ %s] 兜底源也失败（跳过该段）: %s",
                                        code, chunk_start, chunk_end, e)
@@ -174,6 +191,11 @@ def backfill_index_history(conn, provider, start: str, end: str,
             if _is_cn_index_code(code):
                 try:
                     factor_df = provider.get_index_factor_df(code, chunk_start, chunk_end)
+                    raise_if_network_access_denied(provider)
+                except FATAL_INGEST_ERRORS:
+                    raise
+                except ProviderNetworkAccessDenied:
+                    raise
                 except Exception as e:
                     logger.warning("指数回填: %s [%s ~ %s] 因子拉取异常（跳过）: %s",
                                    code, chunk_start, chunk_end, e)
@@ -211,10 +233,18 @@ def _run_day(conn, provider, trade_date: str, stock_codes: list,
     try:
         quant = collect_stock_quant_day(conn, provider, trade_date, stock_codes)
         logger.info("回填: %s 量化数据=%s", trade_date, quant.get("status"))
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as exc:
         logger.warning("回填: %s 量化因子/交易状态失败（保留日线成果）: %s", trade_date, exc)
         try:
             conn.rollback()
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception:
             pass
 
@@ -225,11 +255,19 @@ def _run_day_with_retry(conn, provider, trade_date: str, stock_codes: list,
         try:
             _run_day(conn, provider, trade_date, stock_codes, fund_codes)
             return True
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("回填: %s 第 %d/%d 次失败: %s",
                            trade_date, attempt, RETRY_COUNT, e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
             if attempt < RETRY_COUNT:
@@ -271,7 +309,9 @@ def run_backfill(conn, start: str, end: str, retry_missing: bool = False,
                "retry_ok": 0, "retry_failed": 0}
     if provider_factory is None:
         provider_factory, fallback_provider_factory = _providers_from_env()
-    provider = provider_factory()
+    provider = guarded_provider(conn, provider_factory())
+    _ = provider.connected
+    raise_if_network_access_denied(provider)
 
     # ---- 板块体系（失败域分层：整体失败不阻断回填；--skip-concepts 跳过） ----
     if not skip_concepts:
@@ -281,10 +321,18 @@ def run_backfill(conn, start: str, end: str, retry_missing: bool = False,
             logger.info("板块体系采集完成: ths=%s dc=%s",
                         sectors_result.get("ths", {}).get("error", "ok"),
                         sectors_result.get("dc", {}).get("error", "ok"))
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("板块体系采集失败（不阻断回填）: %s", e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
 
@@ -295,17 +343,27 @@ def run_backfill(conn, start: str, end: str, retry_missing: bool = False,
                 conn, provider, start, end,
                 fallback_provider=fallback_provider_factory()
                 if fallback_provider_factory else None)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("指数回填失败（不阻断个股基金回填）: %s", e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
 
     if skip_daily:
         return summary
 
-    if not provider.connected:
+    connected = provider.connected
+    raise_if_network_access_denied(provider)
+    if not connected:
         logger.error("Tushare 未连接（检查 TUSHARE_TOKEN），回填无法继续")
         return summary
 
@@ -318,15 +376,25 @@ def run_backfill(conn, start: str, end: str, retry_missing: bool = False,
                             ("fund", provider.get_fund_basic_df)):
         try:
             df = fetch_fn()
+            raise_if_network_access_denied(provider)
             if df is not None and not df.empty:
                 (stock_codes if label == "stock" else fund_codes).extend(
                     df["ts_code"].astype(str).tolist())
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("基本信息: %s 刷新失败（截断降级将不可用）: %s", label, e)
 
     # ---- 交易日历 ----
     try:
         cal = provider.get_trade_cal(start, end)
+        raise_if_network_access_denied(provider)
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         logger.error("交易日历获取失败 [%s ~ %s]，终止: %s", start, end, e)
         return summary
@@ -379,6 +447,214 @@ def _run_retry_missing(conn, provider, summary) -> dict:
     return summary
 
 
+# ==================== 个股因子历史回填（2026-09-22 用户拍板） ====================
+# 默认窗口与本文件的指数回填完全共用同一起点、全量上市股票、pacing 0.5s/只。
+# 断点判定以 instrument_daily 为真值，逐交易日
+# 检查 factor_daily 是否存在同键行；不能只看 min/max，否则区间内部缺洞也会误判完成。
+
+BACKFILL_START_DEFAULT = "2016-01-01"
+STOCK_FACTOR_START_DEFAULT = BACKFILL_START_DEFAULT
+STOCK_FACTOR_FAILURE_LIST_PATH = Path("logs/stock_factor_backfill_failures.json")
+STOCK_FACTOR_PROGRESS_EVERY = 100
+STOCK_FACTOR_MAX_CONSECUTIVE_FAILURES = 5
+REQUIRED_BFQ = [
+    "ma_bfq_5", "ma_bfq_10", "ma_bfq_20", "ma_bfq_60",
+    "boll_mid_bfq", "boll_upper_bfq", "boll_lower_bfq",
+    "macd_dif_bfq", "macd_dea_bfq", "macd_bfq",
+]
+
+
+def _stock_factor_codes(conn) -> list[tuple[str, str | None]]:
+    """全量上市股票（代码, list_date）清单（策略扫描同口径：stock + list_status='L'）。"""
+    rows = conn.execute(
+        "SELECT ts_code, list_date FROM market.instrument "
+        "WHERE instrument_type = 'stock' AND list_status = 'L' ORDER BY ts_code"
+    ).fetchall()
+    return [(r[0], str(r[1]) if r[1] else None) for r in rows]
+
+
+def _factor_cover_snapshot(conn, start: str, end: str) -> dict[str, int | None]:
+    """返回每只上市股票在本地日线窗口内缺失的因子日期数。
+
+    instrument_daily 是策略执行实际消费的交易日序列；按 (ts_code, trade_date)
+    精确反连接 factor_daily，既支持新股（从 max(start, list_date) 起算），也能识别
+    min/max 看不出的区间内部缺洞。无本地日线时返回 None，不能误判成 0（完整）；
+    主循环仍会尝试上游，满足“全量上市股票”口径。
+    """
+    rows = conn.execute(
+        "WITH target AS ("
+        " SELECT ts_code, greatest(%s::date, coalesce(list_date, %s::date)) AS lower_bound "
+        " FROM market.instrument WHERE instrument_type = 'stock' AND list_status = 'L'"
+        ") "
+        "SELECT t.ts_code, CASE WHEN count(d.trade_date) = 0 THEN NULL ELSE count(*) FILTER ("
+        " WHERE d.trade_date IS NOT NULL AND f.ts_code IS NULL"
+        ") END AS missing_rows "
+        "FROM target t "
+        "LEFT JOIN market.instrument_daily d ON d.ts_code = t.ts_code "
+        " AND d.trade_date BETWEEN t.lower_bound AND %s::date "
+        "LEFT JOIN market.factor_daily f ON f.ts_code = d.ts_code "
+        " AND f.trade_date = d.trade_date "
+        "GROUP BY t.ts_code",
+        (start, start, end),
+    ).fetchall()
+    return {r[0]: (int(r[1]) if r[1] is not None else None) for r in rows}
+
+
+def _snapshot_covers(missing_rows: int | None) -> bool:
+    """精确缺口快照中 0 行缺失才算已覆盖；快照无该代码按未覆盖处理。"""
+    return missing_rows == 0
+
+
+def _backfill_one_stock(conn, provider, ts_code: str, start: str, end: str) -> bool:
+    """单票拉取入库（带重试）：bfq+qfq 同帧落库；失败返回 False（记失败清单）。"""
+    for attempt in range(RETRY_COUNT):
+        try:
+            df = provider.get_stock_factor_df(ts_code, start, end)
+            raise_if_network_access_denied(provider)
+            if df is not None and df.empty:
+                return False  # 上游明确无数据：重试无意义
+            if df is None:
+                # provider 内部吞异常返回 None（未连接/调用失败）——按瞬态失败重试
+                raise RuntimeError("上游返回 None")
+            missing = [c for c in (*REQUIRED_QFQ, *REQUIRED_BFQ) if c not in df.columns]
+            if missing:
+                logger.warning("个股 %s 因子列缺失 %s（跳过）", ts_code, missing)
+                return False
+            df = df.copy()
+            df["ts_code"] = ts_code
+            df["updated_at"] = pd.Timestamp.now(tz="UTC")
+            bulk_upsert_factor_daily(conn, df, update=True)
+            conn.commit()  # get_connection 不自管 commit，缓存必须落盘
+            return True
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
+        except Exception as e:  # 网络/入库瞬态异常：重试耗尽才记清单
+            try:
+                conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
+            except Exception:
+                pass
+            logger.warning("个股 %s 因子回填失败（第 %d 次）: %s", ts_code, attempt + 1, e)
+            if attempt < RETRY_COUNT - 1:
+                time.sleep(RETRY_INTERVAL)
+    return False
+
+
+def _read_failed_stock_codes() -> list[str]:
+    """失败清单读取（JSON 数组，坏文件按空清单处理）。"""
+    if not STOCK_FACTOR_FAILURE_LIST_PATH.exists():
+        return []
+    try:
+        data = json.loads(STOCK_FACTOR_FAILURE_LIST_PATH.read_text(encoding="utf-8"))
+        return [str(c) for c in data] if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("个股因子失败清单读取失败（按空清单处理）: %s", e)
+        return []
+
+
+def _write_failed_stock_codes(codes: list[str]) -> None:
+    """失败清单原子写（temp+rename，与指数失败清单同模式）。"""
+    STOCK_FACTOR_FAILURE_LIST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STOCK_FACTOR_FAILURE_LIST_PATH.with_name(
+        f"{STOCK_FACTOR_FAILURE_LIST_PATH.stem}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(sorted(codes), ensure_ascii=False, indent=2),
+                   encoding="utf-8")
+    tmp.replace(STOCK_FACTOR_FAILURE_LIST_PATH)
+
+
+def run_stock_factor_backfill(
+    conn, start: str, end: str, sleep_seconds: float = 0.5,
+    retry_failed: bool = False, provider_factory=None, limit: int | None = None,
+) -> dict:
+    """个股因子历史回填主流程（conn 由调用方托管生命周期，与 run_backfill 同规则）。
+
+    retry_failed=True 时只处理失败清单中的代码（忽略断点覆盖判定）；其余模式
+    按本地日线逐日检查因子键，完整覆盖区间才跳过。返回汇总 dict。
+    """
+    if provider_factory is None:
+        # 个股技术因子只有 Tushare stk_factor_pro 提供；不能跟随
+        # LIVEPROFIT_DATA_SOURCE=akshare，否则会用基类“不支持”实现空跑全市场。
+        from AI.dataflows.providers.cn.tushare import TushareProvider
+        provider_factory = TushareProvider
+    provider = guarded_provider(conn, provider_factory())
+    connected = getattr(provider, "connected", True)
+    raise_if_network_access_denied(provider)
+    if connected is False:
+        raise RuntimeError("Tushare 个股因子数据源未连接，已中止回填（不会逐票空跑）")
+    previous_failed = set(_read_failed_stock_codes())
+    if retry_failed:
+        codes = sorted(previous_failed)
+        snapshot: dict[str, int | None] = {}
+        logger.info("个股因子回填 --retry-failed：失败清单 %d 只", len(codes))
+    else:
+        codes = _stock_factor_codes(conn)
+        snapshot = _factor_cover_snapshot(conn, start, end)
+        conn.commit()  # 释放覆盖扫描的读事务，避免首个长网络请求期间持有旧快照
+        logger.info(
+            "个股因子回填：全市场 %d 只，区间 [%s, %s]，本地日线缺因子 %d 行，pacing %.1fs",
+            len(codes), start, end, sum(v or 0 for v in snapshot.values()), sleep_seconds,
+        )
+    if limit is not None:
+        codes = codes[:limit]
+
+    failed: list[str] = []
+    done = 0
+    skipped = 0
+    consecutive_failures = 0
+    for i, entry in enumerate(codes, 1):
+        # 常规模式 = (code, list_date) 元组；retry_failed 模式 = 裸 code 字符串
+        code, _list_date = entry if isinstance(entry, tuple) else (entry, None)
+        if not retry_failed and _snapshot_covers(snapshot.get(code)):
+            skipped += 1
+            continue
+        if sleep_seconds > 0:
+            time.sleep(sleep_seconds)
+        if _backfill_one_stock(conn, provider, code, start, end):
+            done += 1
+            consecutive_failures = 0
+        else:
+            failed.append(code)
+            consecutive_failures += 1
+            if consecutive_failures >= STOCK_FACTOR_MAX_CONSECUTIVE_FAILURES:
+                processed_codes = {
+                    item[0] if isinstance(item, tuple) else item
+                    for item in codes[:i]
+                }
+                outstanding = sorted((previous_failed - processed_codes) | set(failed))
+                _write_failed_stock_codes(outstanding)
+                raise RuntimeError(
+                    f"个股因子连续 {consecutive_failures} 只失败，疑似上游故障或限流；"
+                    "已保存失败清单并中止，请检查数据源后重跑"
+                )
+        if i % STOCK_FACTOR_PROGRESS_EVERY == 0:
+            logger.info("个股因子回填进度 %d/%d（完成 %d 跳过 %d 失败 %d）",
+                        i, len(codes), done, skipped, len(failed))
+
+    processed_codes = {
+        entry[0] if isinstance(entry, tuple) else entry
+        for entry in codes
+    }
+    outstanding_failed = sorted((previous_failed - processed_codes) | set(failed))
+    _write_failed_stock_codes(outstanding_failed)
+    return {"total": len(codes), "done": done, "skipped": skipped,
+            "failed": len(outstanding_failed), "failed_codes": outstanding_failed}
+
+
+
+# Public entrypoints acquire once; nested collectors reuse the guarded connection.
+_backfill_index_history_unlocked = backfill_index_history
+backfill_index_history = locked_ingestion("CN_INDEX_BARS", "CN_INDEX_FACTORS", "US_INDEX_BARS", "KR_INDEX_BARS")(_backfill_index_history_unlocked)
+_run_backfill_unlocked = run_backfill
+run_backfill = locked_ingestion(*ALL_RESOURCES)(_run_backfill_unlocked)
+_run_stock_factor_backfill_unlocked = run_stock_factor_backfill
+run_stock_factor_backfill = locked_ingestion("CN_STOCK_DAILY")(_run_stock_factor_backfill_unlocked)
+
+
 def _providers_from_env():
     """CLI 直跑：按 LIVEPROFIT_DATA_SOURCE 延迟 import 装配（主源, 兜底源）工厂对。"""
     from AI.dataflows.providers.cn.akshare import AKShareProvider
@@ -390,15 +666,25 @@ def _providers_from_env():
 
 
 def main():
+    from db.instrument.ingest.guard import IngestGuard
+    from db.instrument.ingest.notifications import market_changed_notifier_from_env
     parser = argparse.ArgumentParser(description="market schema 全历史回填")
-    parser.add_argument("--start", default="2016-01-01",
-                        help="起始日期 YYYY-MM-DD，默认 2016-01-01")
+    parser.add_argument("--start", default=None,
+                        help="起始日期 YYYY-MM-DD（指数和个股因子模式默认均为 2016-01-01）")
     parser.add_argument("--end", default=datetime.now().strftime("%Y-%m-%d"),
                         help="截止日期 YYYY-MM-DD，默认今天")
     parser.add_argument("--retry-missing", action="store_true",
                         help="忽略断点，仅补拉失败清单中的交易日")
     parser.add_argument("--skip-concepts", action="store_true",
                         help="跳过板块体系采集（板块数据已新鲜时用，省 ~35 分钟）")
+    parser.add_argument("--stock-factors", action="store_true",
+                        help="个股因子历史回填（与 --retry-missing/--skip-concepts 互斥）")
+    parser.add_argument("--sleep", type=float, default=0.5,
+                        help="个股因子回填每票 pacing 秒数，默认 0.5")
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="个股因子回填：忽略断点，仅补拉失败清单中的代码")
+    parser.add_argument("--limit", type=int,
+                        help="个股因子回填最多处理前 N 只（小样本验收用；默认全量）")
     args = parser.parse_args()
 
     Path("logs").mkdir(exist_ok=True)
@@ -410,11 +696,50 @@ def main():
             logging.FileHandler(PROGRESS_LOG_PATH, encoding="utf-8"),
         ],
     )
+
+    if args.stock_factors:
+        if args.retry_missing or args.skip_concepts:
+            parser.error("--stock-factors 与 --retry-missing/--skip-concepts 互斥")
+        if args.sleep < 0:
+            parser.error("--sleep 不能为负数")
+        if args.limit is not None and args.limit <= 0:
+            parser.error("--limit 必须为正整数")
+        from db.instrument.db import get_connection
+        start = args.start or STOCK_FACTOR_START_DEFAULT
+        try:
+            start_date = datetime.strptime(start, "%Y-%m-%d").date()
+            end_date = datetime.strptime(args.end, "%Y-%m-%d").date()
+        except ValueError:
+            parser.error("--start/--end 必须为 YYYY-MM-DD")
+        if start_date > end_date:
+            parser.error("--start 不能晚于 --end")
+        with get_connection() as conn, IngestGuard(conn, changed=market_changed_notifier_from_env()) as guard:
+            summary = run_stock_factor_backfill(
+                conn, start, args.end,
+                sleep_seconds=args.sleep,
+                retry_failed=args.retry_failed,
+                limit=args.limit,
+                guard=guard,
+            )
+        logger.info("个股因子回填结束: 总数 %d / 完成 %d / 跳过 %d / 失败 %d",
+                    summary["total"], summary["done"], summary["skipped"], summary["failed"])
+        if summary["failed_codes"]:
+            logger.warning(
+                "存在失败代码，可稍后用相同窗口执行 "
+                "`python -m db.instrument.ingest.backfill --stock-factors --retry-failed "
+                "--start %s --end %s` 补拉", start, args.end,
+            )
+        return
+
+    if args.retry_failed or args.limit is not None or args.sleep != 0.5:
+        parser.error("--retry-failed/--limit/--sleep 仅可与 --stock-factors 一起使用")
+
+    start = args.start or BACKFILL_START_DEFAULT
     from db.instrument.db import get_connection
-    with get_connection() as conn:
-        summary = run_backfill(conn, args.start, args.end,
+    with get_connection() as conn, IngestGuard(conn, changed=market_changed_notifier_from_env()) as guard:
+        summary = run_backfill(conn, start, args.end,
                                retry_missing=args.retry_missing,
-                               skip_concepts=args.skip_concepts)
+                               skip_concepts=args.skip_concepts, guard=guard)
     logger.info("回填结束: 指数=%s / 新入库 %d 日 / 失败 %d 日 %s",
                 summary["index"], summary["days_done"],
                 len(summary["failed_days"]), summary["failed_days"])

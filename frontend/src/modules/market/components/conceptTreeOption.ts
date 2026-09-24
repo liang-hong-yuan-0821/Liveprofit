@@ -135,6 +135,8 @@ export function buildConceptTreeOption(items: ConceptTreeNodeDTO[]) {
         // 则内部节点无任何文字，levels 挂 upperLabel 无效，必须系列级）
         label: {
           show: true,
+          fontSize: 12,
+          overflow: 'truncate',
           formatter: (params: TreemapClickParams) => {
             const d = params.data as TreemapNodeData | undefined;
             if (!d) return '';
@@ -147,14 +149,15 @@ export function buildConceptTreeOption(items: ConceptTreeNodeDTO[]) {
         // 概念名称条（默认 position [0,'50%'] 左侧竖排居中）：名称 + 当日涨跌幅
         upperLabel: {
           show: true,
-          height: 18,
+          height: 24,
+          fontSize: 12,
           formatter: (params: TreemapClickParams) => {
             const d = params.data as TreemapNodeData | undefined;
             if (!d) return '';
             return `${d.name ?? ''} ${pctText(d.pct_chg ?? null)}`;
           },
         },
-        itemStyle: { borderColor: '#fff' },
+        itemStyle: { borderColor: '#34455b' },
         levels: [
           { itemStyle: { borderWidth: 0, gapWidth: 5 } },                // 概念层
           { itemStyle: { gapWidth: 1, borderColorSaturation: 0.6 } },    // 个股层

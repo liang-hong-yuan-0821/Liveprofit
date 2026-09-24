@@ -21,7 +21,7 @@ cd "$SCRIPT_DIR"
 #   ./run.sh frontend-check # 前端质量检查：typecheck + 单测 + 构建
 #   ./run.sh frontend-e2e   # 前端 E2E（需后端已运行；自动拉起 dev server）
 #   ./run.sh stack          # 全栈容器：构建前端产物后 compose --profile app up
-#   ./run.sh ingest-market  # 采集 CN 市场数据（指数日线+因子、个股基金日线、板块日线增量~15-25分钟/日、板块周刷；一键启动时后台自动执行，幂等）
+#   ./run.sh ingest-market  # 显式运行完整市场维护；日常缺口由 market-worker 自动补齐
 # ============================================================
 
 # --------------- 颜色输出 ---------------
@@ -165,7 +165,7 @@ start_platform() {
         log_error "未找到 .venv/Scripts/activate，请先创建虚拟环境"
         exit 1
     fi
-    if ! python -c "import backend, sqlalchemy, dramatiq" 2>/dev/null; then
+    if ! python -c "import backend, sqlalchemy, dramatiq, exchange_calendars; assert exchange_calendars.__version__ == '4.13.2'" 2>/dev/null; then
         log_warn "平台依赖未安装，正在安装..."
         pip install -e ".[platform]"
     fi
@@ -197,10 +197,10 @@ start_platform() {
 
     # market schema 建表入口（幂等；0007 落地后 alembic 不再建 market 表，全新部署靠此入口自举）
     log_info "初始化 market schema ..."
-    python -m db.instrument.db --init-schema
+    python -c "from backend.bootstrap.settings import CoreSettings; import db.instrument.db as m; m.PG_CONNECTION_STRING = CoreSettings().resolved_market_dsn() or m.PG_CONNECTION_STRING; raise SystemExit(0 if m.init_schema() else 1)"
 
     mkdir -p logs
-    : > "$PLATFORM_PID_FILE"
+    touch "$PLATFORM_PID_FILE"
     start_daemon() {  # $1=名称 $2=可执行文件
         local name="$1" cmd="$2"
         if pgrep_name "$name"; then
@@ -209,20 +209,33 @@ start_platform() {
         fi
         log_info "启动 $name（日志：logs/$name.log）..."
         nohup "$cmd" > "logs/$name.log" 2>&1 &
-        echo "$name $!" >> "$PLATFORM_PID_FILE"
+        local pid=$!
+        sleep 2
+        if ! kill -0 "$pid" 2>/dev/null; then
+            log_error "$name 启动失败，请查看 logs/$name.log"
+            return 1
+        fi
+        echo "$name $pid" >> "$PLATFORM_PID_FILE"
     }
-    start_daemon "api" ".venv/Scripts/liveprofit-api.exe"
-    start_daemon "worker" ".venv/Scripts/liveprofit-worker.exe"
-    start_daemon "dispatcher" ".venv/Scripts/liveprofit-dispatcher.exe"
+    start_daemon "api" ".venv/Scripts/liveprofit-api.exe" || return 1
+    start_daemon "worker" ".venv/Scripts/liveprofit-worker.exe" || return 1
+    start_daemon "market-worker" ".venv/Scripts/liveprofit-market-worker.exe" || return 1
+    start_daemon "dispatcher" ".venv/Scripts/liveprofit-dispatcher.exe" || return 1
 
     # 等待 API 就绪
+    local api_ready=0
     for i in $(seq 1 30); do
         if curl -sf -o /dev/null http://127.0.0.1:${LIVEPROFIT_API_PORT:-8000}/health/live; then
             log_info "API 已就绪：http://127.0.0.1:${LIVEPROFIT_API_PORT:-8000}（经 30 秒内等待 $i 次）"
+            api_ready=1
             break
         fi
         sleep 1
     done
+    if [ "$api_ready" -ne 1 ]; then
+        log_error "API 在 30 秒内未就绪，请查看 logs/api.log"
+        return 1
+    fi
 
     echo ""
     log_info "平台后端已启动（本机 loopback）"
@@ -234,11 +247,13 @@ start_platform() {
 }
 
 pgrep_name() {  # 按命令行关键字查平台进程（Windows 无 pgrep -f 语义）
-    powershell.exe -NoProfile -Command         "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" |          Where-Object { \$_.CommandLine -match 'liveprofit-$1' } | Select-Object -First 1" </dev/null 2>/dev/null | grep -q "liveprofit-$1"
+    powershell.exe -NoProfile -Command         "Get-CimInstance Win32_Process |          Where-Object { \$_.Name -eq 'liveprofit-$1.exe' -and \$_.ExecutablePath -like '*Liveprofit*' } | Select-Object -First 1" </dev/null 2>/dev/null | grep -q "liveprofit-$1"
 }
 
 stop_platform() {
     log_info "停止平台后端进程..."
+    # Windows console-script launcher 可能拥有采集子进程；先按本仓路径定位并停止整棵树。
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_DIR/backend/scripts/stop_platform.ps1" -Workspace "$SCRIPT_DIR" </dev/null 2>/dev/null || true
     if [ -f "$PLATFORM_PID_FILE" ]; then
         while read -r name pid; do
             if kill -0 "$pid" 2>/dev/null; then
@@ -248,10 +263,6 @@ stop_platform() {
         done < "$PLATFORM_PID_FILE"
         rm -f "$PLATFORM_PID_FILE"
     fi
-    # 兜底：按命令行关键字清理
-    for name in api worker dispatcher; do
-        powershell.exe -NoProfile -Command             "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" |              Where-Object { \$_.CommandLine -match 'liveprofit-$name' } |              ForEach-Object { Stop-Process -Id \$_.ProcessId -Force }" </dev/null 2>/dev/null || true
-    done
     log_info "平台后端已停止（Docker 基础设施未停止；如需停止：docker compose down）"
 }
 
@@ -287,19 +298,7 @@ start_all() {
     # 后端平台（幂等：进程已在运行则跳过）
     start_platform
 
-    # 大盘数据采集（后台执行，不阻塞前端启动——2026-09-14 板块日线增量落地后
-    # 采集体量约 15-50 分钟/日（板块日线增量 + 周一板块周刷），前台等待不再可行；
-    # 数据新鲜度另有每日 08:30 APScheduler 批处理兜底，此处仅首启补跑/自愈。
-    # 幂等 + 防重入：采集进程已在跑则跳过；手动前台执行仍用 ./run.sh ingest-market）
-    INGEST_PIDFILE="$SCRIPT_DIR/var/market-ingest.pid"
-    if [ -f "$INGEST_PIDFILE" ] && kill -0 "$(cat "$INGEST_PIDFILE")" 2>/dev/null; then
-        log_info "市场数据采集已在后台运行（pid $(cat "$INGEST_PIDFILE")），跳过"
-    else
-        log_info "市场数据采集转后台执行（日志：logs/market-ingest.log），前端照常启动…"
-        mkdir -p "$SCRIPT_DIR/var" "$SCRIPT_DIR/logs"
-        ( nohup "$SCRIPT_DIR/run.sh" ingest-market > "$SCRIPT_DIR/logs/market-ingest.log" 2>&1 &
-          echo $! > "$INGEST_PIDFILE" )
-    fi
+    # Dispatcher + 专用 Worker 只补到期缺口，完整维护由 ingest-market 显式触发。
 
     # 前端 dev server（后台拉起，幂等）
     ensure_pnpm
@@ -330,13 +329,13 @@ start_all() {
     log_info "    Web 工作台：${front_url}（前端 Vite /api 代理 → 127.0.0.1:${LIVEPROFIT_API_PORT:-8000}）"
     log_info "    API 文档：  http://127.0.0.1:${LIVEPROFIT_API_PORT:-8000}/docs"
     log_info "  停止全部：./run.sh stop"
-    log_info "  日志实时输出：logs/api.log / worker.log / dispatcher.log（Ctrl+C 退出查看，服务保持运行）"
+    log_info "  日志实时输出：logs/api.log / worker.log / market-worker.log / dispatcher.log（Ctrl+C 退出查看，服务保持运行）"
     log_info "  前端日志：logs/vite-dev.log；任务内核明细：logs/{ts}/（平台执行日志页）"
     log_info "============================================"
     echo ""
 
     # 前台持续展示日志（多文件带文件名头）；退出查看不影响已启动的服务
-    tail -n 30 -f "$SCRIPT_DIR/logs/api.log" "$SCRIPT_DIR/logs/worker.log" "$SCRIPT_DIR/logs/dispatcher.log"
+    tail -n 30 -f "$SCRIPT_DIR/logs/api.log" "$SCRIPT_DIR/logs/worker.log" "$SCRIPT_DIR/logs/market-worker.log" "$SCRIPT_DIR/logs/dispatcher.log"
 }
 
 stop_all() {

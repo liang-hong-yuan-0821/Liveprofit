@@ -189,7 +189,7 @@ describe('WatchlistPage 组合与持仓', () => {
     await user.type(screen.getAllByLabelText('标的代码').at(-1)!, '000001.SZ');
     await user.type(screen.getByLabelText('数量'), '0');
     await user.type(screen.getByLabelText('平均成本'), '10');
-    await user.click(screen.getByRole('button', { name: '新增/修改' }));
+    await user.click(screen.getByRole('button', { name: '添加持仓' }));
 
     expect(await screen.findByText('数量必须大于 0')).toBeInTheDocument();
     expect(upsertPositionMock).not.toHaveBeenCalled();
@@ -204,7 +204,7 @@ describe('WatchlistPage 组合与持仓', () => {
     await user.type(screen.getAllByLabelText('标的代码').at(-1)!, '000001.SZ');
     await user.type(screen.getByLabelText('数量'), '100');
     await user.type(screen.getByLabelText('平均成本'), '10');
-    await user.click(screen.getByRole('button', { name: '新增/修改' }));
+    await user.click(screen.getByRole('button', { name: '添加持仓' }));
 
     expect(await screen.findByText('持仓数据非法：请检查数量与平均成本')).toBeInTheDocument();
     expect(screen.getAllByLabelText('标的代码').at(-1)!).toHaveValue('000001.SZ');
@@ -241,6 +241,6 @@ describe('WatchlistPage 组合与持仓', () => {
   it('AI 建议说明：明确首期不自动同步报告建议仓位', async () => {
     await renderPage();
 
-    expect(screen.getByText(/首期不会将分析报告中的建议仓位/)).toBeInTheDocument();
+    expect(screen.getByText(/分析建议不会自动覆盖/)).toBeInTheDocument();
   });
 });

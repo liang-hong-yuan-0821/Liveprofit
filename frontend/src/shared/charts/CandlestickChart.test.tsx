@@ -1,3 +1,4 @@
+import { useUiPreferenceStore } from '../../stores/uiPreferenceStore';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
@@ -605,6 +606,84 @@ describe('CandlestickChart', () => {
     expect(document.querySelector('svg[data-testid="drawing-overlay"]')).toBeNull();
   });
 
+  // ---- 参考价横线（止损/止盈，数据驱动非画线工具）----
+
+  it('参考价横线：无画线工具也渲染覆盖层——虚线贯穿窗口全宽 + 左端标签与配色', () => {
+    setupFakeInstance();
+    render(
+      <CandlestickChart
+        model={drawModel}
+        referenceLines={[
+          { price: 2950, label: '止损 2950.00', color: '#22c55e' },
+          { price: 3150, label: '止盈 3150.00', color: '#ef4444' },
+        ]}
+      />,
+    );
+    fireChartReady();
+    const svg = document.querySelector('svg[data-testid="drawing-overlay"]');
+    expect(svg).not.toBeNull();
+    const dashed = Array.from(svg!.querySelectorAll('line[stroke-dasharray]'));
+    expect(dashed).toHaveLength(2);
+    // 2950 → y = 3200−2950 = 250；全窗宽 0–600（半开带 −0.5/9.5）
+    expect(dashed[0]).toHaveAttribute('x1', '0');
+    expect(dashed[0]).toHaveAttribute('y1', '250');
+    expect(dashed[0]).toHaveAttribute('x2', '600');
+    expect(dashed[0]).toHaveAttribute('y2', '250');
+    expect(dashed[0]).toHaveAttribute('stroke', '#22c55e');
+    expect(dashed[0]).toHaveAttribute('stroke-dasharray', '4 4');
+    // 3150 → y = 3200−3150 = 50
+    expect(dashed[1]).toHaveAttribute('y1', '50');
+    expect(dashed[1]).toHaveAttribute('stroke', '#ef4444');
+    const texts = Array.from(svg!.querySelectorAll('text'));
+    expect(texts.map((t) => t.textContent)).toEqual(['止损 2950.00', '止盈 3150.00']);
+    expect(texts[0]).toHaveAttribute('x', '0');
+    expect(texts[0]).toHaveAttribute('y', '246');
+  });
+
+  it('参考价越出真实 extent 不渲染；y 轴注入函数形式 min/max（扩展自动 extent）', () => {
+    setupFakeInstance();
+    render(
+      <CandlestickChart model={drawModel} referenceLines={[{ price: 3300, label: '止盈' }]} />,
+    );
+    fireChartReady();
+    // 3300 > 假实例真实 extent 3200 → 覆盖层越界不渲染（假实例 extent 不受 option 影响）
+    const svg = document.querySelector('svg[data-testid="drawing-overlay"]')!;
+    expect(svg.querySelectorAll('line[stroke-dasharray]')).toHaveLength(0);
+    // option 主图 y 轴注入 min/max 回调
+    const yAxis = renderOption().yAxis as { min?: unknown; max?: unknown } | Array<{ min?: unknown; max?: unknown }>;
+    const main = Array.isArray(yAxis) ? yAxis[0] : yAxis;
+    const min = main.min as (v: { min: number }) => number;
+    const max = main.max as (v: { max: number }) => number;
+    expect(min({ min: 2950 })).toBe(2950); // 数据域更小 → 保留
+    expect(max({ max: 3150 })).toBe(3300); // 参考价更大 → 扩展
+  });
+
+  it('真 echarts SSR：参考价扩展主图 y 轴 extent（scale:true + 函数形式 min/max 生效）', () => {
+    // jsdom 无 canvas：zrender 布局 measureText 走 getContext——桩一个极简 2d 上下文
+    const dummyCtx = new Proxy({}, {
+      get: (_target, prop) => {
+        if (prop === 'measureText') return (text: string) => ({ width: String(text).length * 7 });
+        if (typeof prop !== 'string') return undefined;
+        return () => {};
+      },
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => dummyCtx) as never;
+
+    render(<CandlestickChart model={drawModel} referenceLines={[{ price: 4000, label: '止盈' }]} />);
+    const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 600, height: 460 });
+    chart.setOption(renderOption() as unknown as echarts.EChartsOption);
+    const model = (
+      chart as unknown as { getModel: () => { getComponent: (k: string, i: number) => unknown } }
+    ).getModel();
+    const axis = model.getComponent('yAxis', 0) as {
+      axis?: { scale?: { getExtent?: () => number[] } };
+    } | null;
+    const [lo, hi] = axis?.axis?.scale?.getExtent?.() ?? [NaN, NaN];
+    expect(hi).toBeGreaterThanOrEqual(4000); // 参考价扩展轴域
+    expect(lo).toBeLessThanOrEqual(2950); // 数据域保留（drawModel 低点 2950）
+  });
+
   // ---- 画线交互（§3.6.3 验证 5/6）----
 
   it('绘制 trend：mousedown→mousemove→mouseup 提交新画线；起点精确落点；mouseup 出 grid 取消', () => {
@@ -947,7 +1026,7 @@ describe('CandlestickChart', () => {
       开: '#ef4444', 高: '#ef4444', 低: '#ef4444', 收: '#ef4444', // drawModel 收≥开 → 红
       MA5: '#91cc75', MA10: '#fac858', MA20: '#ee6666', MA60: '#73c0de', // 参考调色板色（2026-09-16）
       'BOLL上轨': '#94a3b8', 'BOLL中轨': '#94a3b8', 'BOLL下轨': '#94a3b8',
-      DIF: '#e2e8f0', DEA: '#fbbf24',
+      DIF: '#eaf0f8', DEA: '#fbbf24',
     });
   });
 
@@ -1185,4 +1264,21 @@ describe('CandlestickChart', () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toHaveAttribute('stroke-width', '3');
   });
+});
+
+it('theme toggling merges colors without replaying dataZoom or removing drawings', () => {
+  act(() => useUiPreferenceStore.setState({ themeMode: 'dark' }));
+  render(<CandlestickChart model={baseModel} drawings={[]} onDrawingsChange={() => {}} />);
+  setupFakeInstance();
+  fireChartReady();
+  const option = renderOption();
+  const setOption = mockState.fakeInstance.setOption as Mock;
+  setOption.mockClear();
+  act(() => useUiPreferenceStore.setState({ themeMode: 'light' }));
+  expect(renderOption()).toBe(option); // Full notMerge option is unchanged.
+  expect(setOption).toHaveBeenCalled();
+  for (const [patch, options] of setOption.mock.calls) { expect(patch.dataZoom).toBeUndefined(); expect(options.notMerge).toBe(false); }
+  const colorPatch = setOption.mock.calls.find(([patch]) => patch.xAxis)?.[0];
+  expect(colorPatch.xAxis[0].axisLabel.color).toBe('#636978');
+  act(() => useUiPreferenceStore.setState({ themeMode: 'dark' }));
 });

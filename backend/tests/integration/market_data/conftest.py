@@ -29,20 +29,23 @@ def _test_db_url(base_url: str) -> str:
 
 def _psycopg_dsn(sqlalchemy_url: str) -> str:
     """SQLAlchemy URL → psycopg conninfo（db.instrument 直连注入用）。"""
-    from sqlalchemy.engine.url import make_url
-
-    u = make_url(sqlalchemy_url)
-    parts = [f"host={u.host}", f"port={u.port or 5432}",
-             f"dbname={u.database}", f"user={u.username}",
-             f"password={u.password or ''}"]
-    sslmode = u.query.get("sslmode")
-    if sslmode:
-        parts.append(f"sslmode={sslmode}")
-    return " ".join(parts)
+    from backend.bootstrap.settings import database_url_to_dsn
+    return database_url_to_dsn(sqlalchemy_url)
 
 
 @pytest.fixture(scope="module")
-def env():
+def _exclusive_test_database():
+    # A second pytest process must not DROP the fixed test DB while another uses it.
+    from backend.tests.market_refresh_support import exclusive_test_database
+    base_url = _base_db_url()
+    if not base_url:
+        pytest.skip("缺少 DATABASE_URL")
+    with exclusive_test_database(base_url, TEST_DB_NAME):
+        yield
+
+
+@pytest.fixture(scope="module")
+def env(_exclusive_test_database):
     base_url = _base_db_url()
     if not base_url:
         pytest.skip("缺少 DATABASE_URL")
@@ -91,8 +94,51 @@ def _clean_market_state(env):
     with env["session_factory"]() as session:
         session.execute(text(
             "TRUNCATE market.instrument, market.instrument_daily, market.factor_daily, "
-            "market.adj_factor, market.sector, market.sector_member, market.sector_daily, "
+            "market.adj_factor, market.trade_status_daily, market.sector, market.sector_member, market.sector_daily, "
             "market.industry, market.industry_member, market.ingest_state, market.fund_info, market.stock_info CASCADE"
         ))
         session.commit()
     yield
+
+
+@pytest.fixture
+def refresh_env_factory(env):
+    """每次调用一套随机双 namespace；PG 与既有 env 共用隔离测试库。"""
+    import uuid
+    import redis
+    from backend.bootstrap.settings import CoreSettings
+    from backend.tests.market_refresh_support import (
+        RefreshTestEnvironment, assert_test_connections, redis_database_url,
+    )
+    url = CoreSettings().resolved_redis_url()
+    if not url:
+        pytest.skip("缺少 Redis URL")
+    url = redis_database_url(url, 12)
+    assert_test_connections(env["psycopg_dsn"], url)
+    created = []
+
+    def factory():
+        client = redis.Redis.from_url(url, decode_responses=True, socket_connect_timeout=3, socket_timeout=5)
+        try:
+            client.ping()
+        except redis.RedisError:
+            client.close()
+            pytest.skip("测试 Redis 不可达")
+        run_id = uuid.uuid4().hex
+        result = RefreshTestEnvironment(
+            pg_dsn=env["psycopg_dsn"], redis_url=url,
+            key_prefix=f"test:{run_id}:market-refresh:",
+            broker_namespace=f"test:{run_id}:broker", redis=client,
+        )
+        assert not result.keys()
+        created.append(result)
+        return result
+
+    yield factory
+    for result in created:
+        result.close()
+
+
+@pytest.fixture
+def refresh_env(refresh_env_factory):
+    return refresh_env_factory()

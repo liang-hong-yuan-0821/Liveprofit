@@ -88,6 +88,7 @@ def test_dashboard_failed_task_becomes_failed_kind_item():
     item = dashboard.pending_actions[0]
     assert item.kind == "FAILED_TASK"
     assert item.task_id == task_id
+    assert item.selected_layers == ["market", "sector", "stock"]
     assert item.error_code == "PROVIDER_UNAVAILABLE"
     assert item.error_summary == "上游不可用"
     assert item.unavailable_blocks is None
@@ -153,6 +154,7 @@ def test_dashboard_active_tasks_excludes_terminal_and_cancel_requested():
     assert [t.task_id for t in dashboard.active_tasks] == [task_id]
     assert dashboard.active_tasks[0].status is TaskStatus.RUNNING
     assert dashboard.active_tasks[0].attempt_no == 1
+    assert dashboard.active_tasks[0].selected_layers == ["market", "sector", "stock"]
 
     service.request_cancel(task_id)  # RUNNING → CANCEL_REQUESTED：不再属于 active_tasks
     dashboard = service.get_dashboard()
@@ -174,6 +176,7 @@ def test_dashboard_recent_conclusions_projection():
     dashboard = service.get_dashboard()
     assert len(dashboard.recent_conclusions) == 1
     item = dashboard.recent_conclusions[0]
+    assert item.selected_layers == ["market", "sector", "stock"]
     assert item.conclusion_summary == "买入评级，目标价上调"
     assert item.risk_flag is True
     assert item.risk_hint == "注意流动性风险"
@@ -213,3 +216,41 @@ def test_dashboard_recent_conclusions_capped_at_five():
         _run_to_success(service, uow, task_id, sections=[{"block": "decision", "status": "AVAILABLE"}])
     dashboard = service.get_dashboard()
     assert len(dashboard.recent_conclusions) == 5
+
+
+def test_recent_conclusion_carries_unavailable_blocks_without_pending_lookup():
+    service, uow = _service()
+    task_id = _make_task(service)
+    _run_to_success(service, uow, task_id, sections=[
+        {"block": "market", "status": "UNAVAILABLE", "unavailable_reason": "missing", "retryable": True},
+        {"block": "stock", "status": "NOT_REQUESTED"},
+    ])
+    # Dashboard conclusions must not depend on the limited pending list.
+    uow.tasks.list_succeeded_with_unavailable_sections = lambda **kwargs: []
+    dashboard = service.get_dashboard()
+    assert dashboard.pending_actions == []
+    item = dashboard.recent_conclusions[0]
+    assert item.unavailable_blocks == [{"block": "market", "reason": "missing", "retryable": True}]
+
+
+def test_unavailable_blocks_tolerate_malformed_historical_reports():
+    from types import SimpleNamespace
+    from backend.modules.analysis.application.task_lifecycle import _unavailable_blocks
+    for payload in (None, [], "bad", {"sections": {}}, {"sections": None}):
+        assert _unavailable_blocks(SimpleNamespace(report_json=payload)) == []
+    assert _unavailable_blocks(SimpleNamespace(report_json={"sections": [
+        None, "bad", {"block": "invalid", "status": "UNAVAILABLE"},
+        {"block": [], "status": "UNAVAILABLE"},
+        {"block": "market", "status": "UNAVAILABLE", "unavailable_reason": {"bad": 1}, "retryable": "true"},
+    ]})) == [{"block": "market", "reason": None, "retryable": False}]
+
+
+def test_task_list_selected_layers_and_api_defaults():
+    from backend.modules.analysis.application.contracts import TaskListQuery
+    from backend.api.routers.analysis_tasks import _to_list_item
+    from backend.api.schemas.dashboard import RecentConclusionDTO
+    service, _ = _service()
+    _make_task(service)
+    rows, _ = service.list_tasks(TaskListQuery(cursor=None, limit=20, status="all"))
+    assert _to_list_item(rows[0]).selected_layers == ["market", "sector", "stock"]
+    assert RecentConclusionDTO.model_fields["unavailable_blocks"].default_factory() == []

@@ -166,6 +166,36 @@ services:
         max-size: "50m"
         max-file: "2"
 
+  # 市场日线专用消费者，不占用 AI Worker；同平台 PG/Redis、无独立状态表。
+  market-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: liveprofit-market-worker
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 45s
+    command: liveprofit-market-worker
+    environment:
+      LIVEPROFIT_ENV: container
+      LIVEPROFIT_DATABASE_URL: postgresql+psycopg://liveprofit:liveprofit123@postgres:5432/liveprofit
+      LIVEPROFIT_REDIS_URL: redis://:liveprofit123@redis:6379/0
+    env_file:
+      - .env
+    networks:
+      - liveprofit-network
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
   # Frontend：Nginx 静态资源 + /api 反代 + SSE 禁缓冲（唯一发布宿主端口）
   frontend:
     image: nginx:1.27-alpine

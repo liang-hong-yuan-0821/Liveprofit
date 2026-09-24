@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 
 @dataclass(frozen=True)
@@ -48,6 +48,15 @@ class PortfolioDTO:
     max_total_position_pct: float
     max_single_stock_pct: float
     max_sector_pct: float
+    max_portfolio_open_risk_pct: float
+    max_sector_open_risk_pct: float
+    max_daily_new_risk_pct: float
+    max_drawdown_pct: float
+    max_daily_loss_pct: float
+    net_asset_value: float | None
+    peak_net_asset_value: float | None
+    day_start_net_asset_value: float | None
+    risk_facts_as_of: date | None
     created_at: datetime
     updated_at: datetime
 
@@ -59,6 +68,7 @@ class PortfolioPositionDTO:
     symbol: str
     quantity: float
     average_cost: float
+    active_stop_price: float | None
     updated_at: datetime
 
 

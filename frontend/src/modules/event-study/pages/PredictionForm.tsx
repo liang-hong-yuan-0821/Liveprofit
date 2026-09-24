@@ -1,3 +1,4 @@
+import { AssetCombobox } from '../../../shared/ui/AssetCombobox';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -85,6 +86,7 @@ export function PredictionForm({ assets, prefill, mutation }: PredictionFormProp
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-fg)' }}
           {...form.register('event_text')}
         />
+<p className="text-right text-xs tabular-nums text-[var(--color-fg-muted)]">{form.watch('event_text').length.toLocaleString()} / 20,000 字符</p>
         {form.formState.errors.event_text && (
           <p className="text-xs text-red-400">{form.formState.errors.event_text.message}</p>
         )}
@@ -92,19 +94,7 @@ export function PredictionForm({ assets, prefill, mutation }: PredictionFormProp
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="asset-ticker">目标资产</Label>
-        <Input
-          id="asset-ticker"
-          list="event-study-assets"
-          placeholder="如 000001.SH"
-          {...form.register('asset_ticker')}
-        />
-        <datalist id="event-study-assets">
-          {assets.map((asset) => (
-            <option key={asset.ticker} value={asset.ticker}>
-              {asset.name}（{asset.market}）
-            </option>
-          ))}
-        </datalist>
+        <AssetCombobox id="asset-ticker" assets={assets} value={form.watch('asset_ticker')} onChange={value => form.setValue('asset_ticker', value, { shouldDirty: true })} />
         {form.formState.errors.asset_ticker && (
           <p className="text-xs text-red-400">{form.formState.errors.asset_ticker.message}</p>
         )}
@@ -124,7 +114,7 @@ export function PredictionForm({ assets, prefill, mutation }: PredictionFormProp
         </select>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <details className="rounded-xl border border-[var(--color-border)] p-4" open={!!prefill.eventType || undefined}><summary className="text-sm font-medium">补充事件信息（可选）</summary><p className="my-3 text-xs text-[var(--color-fg-muted)]">可补充事件分类、子类型和关键条件，帮助描述预测背景。</p><div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="event-type">事件类型（可选）</Label>
           <Input id="event-type" {...form.register('event_type')} />
@@ -139,9 +129,10 @@ export function PredictionForm({ assets, prefill, mutation }: PredictionFormProp
         </div>
       </div>
 
+      </details>
       <label className="flex items-center gap-2 text-sm">
         <Checkbox {...form.register('save')} />
-        保存本次预测（落库供追踪，不改变返回）
+        保存本次预测，便于后续追踪
       </label>
 
       {error && (

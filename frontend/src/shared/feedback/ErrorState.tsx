@@ -1,3 +1,4 @@
+import { userMessage } from './userMessage';
 import { Link } from 'react-router';
 import { toApiError } from '../../api/client';
 
@@ -21,8 +22,9 @@ export function ErrorState({
     <div role="alert" className="py-8 text-center">
       <p className="text-sm font-medium">{retryable ? '暂时无法加载' : '无法加载'}</p>
       <p className="mt-1 text-sm" style={{ color: 'var(--color-fg-muted)' }}>
-        {apiError.message}
+        {userMessage(apiError)}
       </p>
+      <details className="mx-auto mt-2 max-w-xl text-xs text-[var(--color-fg-muted)]"><summary>错误详情</summary><p className="mt-2 break-words"><code>{apiError.code}</code></p><p>{apiError.message}</p></details>
       {apiError.requestId && (
         <p className="mt-1 text-xs" style={{ color: 'var(--color-fg-muted)' }}>
           请求标识：{apiError.requestId}
@@ -34,7 +36,7 @@ export function ErrorState({
             type="button"
             onClick={onRetry}
             className="rounded px-4 py-2 text-sm"
-            style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-foreground)' }}
           >
             重试
           </button>

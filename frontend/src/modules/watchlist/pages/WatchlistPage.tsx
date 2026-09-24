@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card';
 import { WatchlistGroupList } from '../watchlists/WatchlistGroupList';
@@ -11,6 +12,10 @@ import { PositionList } from '../portfolios/PositionList';
 export default function WatchlistPage() {
   const [selectedWatchlist, setSelectedWatchlist] = useState<string | null>(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState<string | null>(null);
+
+  const [positionDirty, setPositionDirty] = useState(false);
+  const [pendingPortfolio, setPendingPortfolio] = useState<{ id: string | null } | null>(null);
+  function selectPortfolio(id: string | null) { if (id === selectedPortfolio) return; if (positionDirty) setPendingPortfolio({ id }); else setSelectedPortfolio(id); }
 
   return (
     <main className="flex flex-col gap-4">
@@ -39,16 +44,17 @@ export default function WatchlistPage() {
             <CardTitle>手工组合与持仓</CardTitle>
           </CardHeader>
           <CardContent>
-            <PortfolioList selectedId={selectedPortfolio} onSelect={setSelectedPortfolio} />
+            <PortfolioList selectedId={selectedPortfolio} onSelect={selectPortfolio} />
             <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--color-border)' }}>
-              <PositionList portfolioId={selectedPortfolio} />
+              <PositionList key={selectedPortfolio} portfolioId={selectedPortfolio} onDirtyChange={setPositionDirty} />
             </div>
             <p className="mt-3 rounded-md border p-2 text-xs" style={{ borderColor: 'var(--color-border)', color: 'var(--color-fg-muted)' }}>
-              AI 建议说明：首期不会将分析报告中的建议仓位（final_position_plan）自动写入、合并或覆盖手工持仓。
+              AI 建议说明：分析建议不会自动覆盖这里的手工持仓，请核对后自行维护。
             </p>
           </CardContent>
         </Card>
       </div>
+      <ConfirmDialog open={pendingPortfolio !== null} title="放弃未保存的持仓修改？" description="切换组合会清除当前草稿。" confirmLabel="放弃并切换" onConfirm={() => { setSelectedPortfolio(pendingPortfolio!.id); setPositionDirty(false); setPendingPortfolio(null); }} onCancel={() => setPendingPortfolio(null)} />
     </main>
   );
 }

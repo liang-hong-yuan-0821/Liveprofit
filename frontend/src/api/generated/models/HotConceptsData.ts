@@ -2,9 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ConceptCoverageDTO } from './ConceptCoverageDTO';
 import type { HotConceptDTO } from './HotConceptDTO';
 export type HotConceptsData = {
     as_of: (string | null);
+    requested_as_of: (string | null);
+    date_mode: HotConceptsData.date_mode;
+    coverage: ConceptCoverageDTO;
     algorithm_version: string;
     result_status: HotConceptsData.result_status;
     items: Array<HotConceptDTO>;
@@ -13,6 +17,10 @@ export type HotConceptsData = {
     freshness_status: HotConceptsData.freshness_status;
 };
 export namespace HotConceptsData {
+    export enum date_mode {
+        LATEST = 'LATEST',
+        HISTORICAL = 'HISTORICAL',
+    }
     export enum result_status {
         OK = 'OK',
         NO_HOT_CONCEPTS = 'NO_HOT_CONCEPTS',
@@ -20,6 +28,7 @@ export namespace HotConceptsData {
     export enum freshness_status {
         FRESH = 'FRESH',
         STALE = 'STALE',
+        UNAVAILABLE = 'UNAVAILABLE',
     }
 }
 

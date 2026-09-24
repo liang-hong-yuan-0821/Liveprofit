@@ -25,6 +25,7 @@ class QuantStrategyVersionDTO:
     template_id: str | None
     template_params: dict | None
     template_renderer_version: str | None
+    lifecycle_policy_version_id: uuid.UUID | None
     published_at: datetime | None
     archived_at: datetime | None
     version: int
@@ -58,6 +59,7 @@ class QuantStrategyDraftDTO:
     template_id: str | None
     template_params: dict | None
     template_renderer_version: str | None
+    lifecycle_policy_version_id: uuid.UUID | None
     version: int
     created_at: datetime
     updated_at: datetime

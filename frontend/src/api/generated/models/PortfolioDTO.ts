@@ -14,6 +14,15 @@ export type PortfolioDTO = {
     max_total_position_pct: number;
     max_single_stock_pct: number;
     max_sector_pct: number;
+    max_portfolio_open_risk_pct: number;
+    max_sector_open_risk_pct: number;
+    max_daily_new_risk_pct: number;
+    max_drawdown_pct: number;
+    max_daily_loss_pct: number;
+    net_asset_value: (number | null);
+    peak_net_asset_value: (number | null);
+    day_start_net_asset_value: (number | null);
+    risk_facts_as_of: (string | null);
     created_at: string;
     updated_at: string;
 };

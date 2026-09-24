@@ -1,7 +1,8 @@
+import { PercentField, percentDraft, percentValue } from '../../../shared/ui/PercentField';
 // 组合账户设置（plan 4.2.1）：原子编辑名称与全部资金/风控字段，
 // 409 冲突时重新拉取组合与持仓；任务仅读取提交时快照。
 
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
 import type { PortfolioDTO } from '../../../api/generated';
 import { toApiError } from '../../../api/client';
@@ -25,54 +26,110 @@ interface PortfolioSettingsDialogProps {
 
 export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSettingsDialogProps) {
   const [open, setOpen] = useState(false);
+  const [original, setOriginal] = useState(portfolio);
+  const [groups, setGroups] = useState<Set<string>>(new Set(['basic']));
+  const [conflict, setConflict] = useState(false);
+  const stale = conflict || portfolio.version !== original.version;
   const [name, setName] = useState(portfolio.name);
   const [totalAssets, setTotalAssets] = useState(String(portfolio.total_assets));
   const [availableCash, setAvailableCash] = useState(String(portfolio.available_cash));
-  const [riskPct, setRiskPct] = useState(String(portfolio.risk_per_trade_pct));
+  const [riskPct, setRiskPct] = useState(percentDraft(portfolio.risk_per_trade_pct));
   const [rr, setRr] = useState(String(portfolio.min_risk_reward_ratio));
-  const [totalPct, setTotalPct] = useState(String(portfolio.max_total_position_pct));
-  const [singlePct, setSinglePct] = useState(String(portfolio.max_single_stock_pct));
-  const [sectorPct, setSectorPct] = useState(String(portfolio.max_sector_pct));
+  const [totalPct, setTotalPct] = useState(percentDraft(portfolio.max_total_position_pct));
+  const [singlePct, setSinglePct] = useState(percentDraft(portfolio.max_single_stock_pct));
+  const [sectorPct, setSectorPct] = useState(percentDraft(portfolio.max_sector_pct));
+  const [portfolioRiskPct, setPortfolioRiskPct] = useState(percentDraft(portfolio.max_portfolio_open_risk_pct));
+  const [sectorRiskPct, setSectorRiskPct] = useState(percentDraft(portfolio.max_sector_open_risk_pct));
+  const [dailyRiskPct, setDailyRiskPct] = useState(percentDraft(portfolio.max_daily_new_risk_pct));
+  const [drawdownPct, setDrawdownPct] = useState(percentDraft(portfolio.max_drawdown_pct));
+  const [dailyLossPct, setDailyLossPct] = useState(percentDraft(portfolio.max_daily_loss_pct));
+  const [netAssetValue, setNetAssetValue] = useState(portfolio.net_asset_value?.toString() ?? '');
+  const [peakNetAssetValue, setPeakNetAssetValue] = useState(portfolio.peak_net_asset_value?.toString() ?? '');
+  const [dayStartNetAssetValue, setDayStartNetAssetValue] = useState(portfolio.day_start_net_asset_value?.toString() ?? '');
+  const [riskFactsAsOf, setRiskFactsAsOf] = useState(portfolio.risk_facts_as_of ?? '');
   const mutation = useUpdatePortfolioMutation();
   const [formError, setFormError] = useState<string | null>(null);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [focusRequest, setFocusRequest] = useState<{ label: string } | null>(null);
+  useEffect(() => {
+    if (!focusRequest) return;
+    const input = Array.from(contentRef.current?.querySelectorAll('input') ?? []).find(node =>
+      Array.from(node.labels ?? []).some(label => label.textContent?.startsWith(focusRequest.label)));
+    input?.focus();
+  }, [focusRequest]);
+  function showError(message: string, label?: string) {
+    setFormError(message); setGroups(new Set(['basic', 'position', 'risk', 'facts']));
+    if (label) setFocusRequest({ label });
+  }
   function submit() {
     setFormError(null);
+    if (stale) { showError('账户已更新，请重新加载；草稿已保留。'); return; }
+    if (!totalAssets.trim() || !availableCash.trim() || !rr.trim() || Number(totalAssets) <= 0 || Number(rr) <= 0) { showError('请填写总资产、可用现金与最低盈亏比；总资产与盈亏比必须大于 0', !totalAssets.trim() || Number(totalAssets) <= 0 ? '总资产' : !availableCash.trim() ? '可用现金' : '最低盈亏比'); return; }
     const fields: Array<[string, number]> = [
       ['总资产', Number(totalAssets)],
       ['可用现金', Number(availableCash)],
-      ['单笔风险比例', Number(riskPct)],
+      ['单笔风险比例', percentValue(riskPct, original.risk_per_trade_pct)],
       ['最低盈亏比', Number(rr)],
-      ['总仓位上限', Number(totalPct)],
-      ['单票市值上限', Number(singlePct)],
-      ['行业上限', Number(sectorPct)],
+      ['总仓位上限', percentValue(totalPct, original.max_total_position_pct)],
+      ['单票市值上限', percentValue(singlePct, original.max_single_stock_pct)],
+      ['行业上限', percentValue(sectorPct, original.max_sector_pct)],
+      ['组合开放风险上限', percentValue(portfolioRiskPct, original.max_portfolio_open_risk_pct)],
+      ['行业开放风险上限', percentValue(sectorRiskPct, original.max_sector_open_risk_pct)],
+      ['单日新增风险上限', percentValue(dailyRiskPct, original.max_daily_new_risk_pct)],
+      ['最大回撤熔断', percentValue(drawdownPct, original.max_drawdown_pct)],
+      ['单日损失熔断', percentValue(dailyLossPct, original.max_daily_loss_pct)],
     ];
     for (const [label, value] of fields) {
       if (!Number.isFinite(value)) {
-        setFormError(`${label}必须是有效数字`);
+        showError(`${label}必须是有效数字`, label);
         return;
       }
     }
     const assets = Number(totalAssets);
     const cash = Number(availableCash);
-    const total = Number(totalPct);
+    const total = percentValue(totalPct, original.max_total_position_pct);
     if (cash < 0 || cash > assets) {
-      setFormError('可用现金必须在 [0, 总资产] 区间');
+      showError('可用现金必须在 [0, 总资产] 区间', '可用现金');
       return;
     }
     for (const [label, value] of [
-      ['单笔风险比例', Number(riskPct)],
+      ['单笔风险比例', percentValue(riskPct, original.risk_per_trade_pct)],
       ['总仓位上限', total],
-      ['单票市值上限', Number(singlePct)],
-      ['行业上限', Number(sectorPct)],
+      ['单票市值上限', percentValue(singlePct, original.max_single_stock_pct)],
+      ['行业上限', percentValue(sectorPct, original.max_sector_pct)],
+      ['组合开放风险上限', percentValue(portfolioRiskPct, original.max_portfolio_open_risk_pct)],
+      ['行业开放风险上限', percentValue(sectorRiskPct, original.max_sector_open_risk_pct)],
+      ['单日新增风险上限', percentValue(dailyRiskPct, original.max_daily_new_risk_pct)],
+      ['最大回撤熔断', percentValue(drawdownPct, original.max_drawdown_pct)],
+      ['单日损失熔断', percentValue(dailyLossPct, original.max_daily_loss_pct)],
     ] as Array<[string, number]>) {
       if (value <= 0 || value > 1) {
-        setFormError(`${label}必须在 (0,1] 区间`);
+        showError(`${label}必须大于 0% 且不超过 100%`, label);
         return;
       }
     }
-    if (Number(singlePct) > total || Number(sectorPct) > total) {
-      setFormError('单票/行业上限必须 ≤ 总仓位上限');
+    if (percentValue(singlePct, original.max_single_stock_pct) > total || percentValue(sectorPct, original.max_sector_pct) > total) {
+      showError('单票/行业上限必须 ≤ 总仓位上限', percentValue(singlePct, original.max_single_stock_pct) > total ? '单票市值上限' : '行业上限');
+      return;
+    }
+    if (percentValue(sectorRiskPct, original.max_sector_open_risk_pct) > percentValue(portfolioRiskPct, original.max_portfolio_open_risk_pct)) {
+      showError('行业开放风险上限必须 ≤ 组合开放风险上限', '行业开放风险上限');
+      return;
+    }
+    const facts = [netAssetValue, peakNetAssetValue, dayStartNetAssetValue, riskFactsAsOf];
+    const anyFact = facts.some((value) => value.trim() !== '');
+    const allFacts = facts.every((value) => value.trim() !== '');
+    if (anyFact && !allFacts) {
+      showError('净值、峰值净值、日初净值和事实日期必须同时填写', ['当前净值', '历史峰值净值', '日初净值', '风险事实日期'][facts.findIndex(value => !value.trim())]);
+      return;
+    }
+    if (allFacts && [netAssetValue, peakNetAssetValue, dayStartNetAssetValue].some((value) => !Number.isFinite(Number(value)) || Number(value) <= 0)) {
+      showError('三项净值必须为大于 0 的有效数字', ['当前净值', '历史峰值净值', '日初净值'][facts.slice(0, 3).findIndex(value => !Number.isFinite(Number(value)) || Number(value) <= 0)]);
+      return;
+    }
+    if (allFacts && Number(peakNetAssetValue) < Number(netAssetValue)) {
+      showError('峰值净值必须 ≥ 当前净值', '历史峰值净值');
       return;
     }
     mutation.mutate(
@@ -81,54 +138,92 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
         name: name.trim(),
         totalAssets: Number(totalAssets),
         availableCash: Number(availableCash),
-        riskPerTradePct: Number(riskPct),
+        riskPerTradePct: percentValue(riskPct, original.risk_per_trade_pct),
         minRiskRewardRatio: Number(rr),
-        maxTotalPositionPct: Number(totalPct),
-        maxSingleStockPct: Number(singlePct),
-        maxSectorPct: Number(sectorPct),
-        expectedVersion: portfolio.version,
+        maxTotalPositionPct: percentValue(totalPct, original.max_total_position_pct),
+        maxSingleStockPct: percentValue(singlePct, original.max_single_stock_pct),
+        maxSectorPct: percentValue(sectorPct, original.max_sector_pct),
+        maxPortfolioOpenRiskPct: percentValue(portfolioRiskPct, original.max_portfolio_open_risk_pct),
+        maxSectorOpenRiskPct: percentValue(sectorRiskPct, original.max_sector_open_risk_pct),
+        maxDailyNewRiskPct: percentValue(dailyRiskPct, original.max_daily_new_risk_pct),
+        maxDrawdownPct: percentValue(drawdownPct, original.max_drawdown_pct),
+        maxDailyLossPct: percentValue(dailyLossPct, original.max_daily_loss_pct),
+        netAssetValue: allFacts ? Number(netAssetValue) : null,
+        peakNetAssetValue: allFacts ? Number(peakNetAssetValue) : null,
+        dayStartNetAssetValue: allFacts ? Number(dayStartNetAssetValue) : null,
+        riskFactsAsOf: allFacts ? riskFactsAsOf : null,
+        expectedVersion: original.version,
       },
-      { onSuccess: () => setOpen(false) },
+      { onSuccess: () => setOpen(false), onError: error => { if (toApiError(error).status === 409) setConflict(true); } },
     );
   }
 
   function reseed() {
+    setGroups(new Set(['basic']));
+    setOriginal(portfolio); setConflict(false); setFormError(null); mutation.reset();
     setName(portfolio.name);
     setTotalAssets(String(portfolio.total_assets));
     setAvailableCash(String(portfolio.available_cash));
-    setRiskPct(String(portfolio.risk_per_trade_pct));
+    setRiskPct(percentDraft(portfolio.risk_per_trade_pct));
     setRr(String(portfolio.min_risk_reward_ratio));
-    setTotalPct(String(portfolio.max_total_position_pct));
-    setSinglePct(String(portfolio.max_single_stock_pct));
-    setSectorPct(String(portfolio.max_sector_pct));
+    setTotalPct(percentDraft(portfolio.max_total_position_pct));
+    setSinglePct(percentDraft(portfolio.max_single_stock_pct));
+    setSectorPct(percentDraft(portfolio.max_sector_pct));
+    setPortfolioRiskPct(percentDraft(portfolio.max_portfolio_open_risk_pct));
+    setSectorRiskPct(percentDraft(portfolio.max_sector_open_risk_pct));
+    setDailyRiskPct(percentDraft(portfolio.max_daily_new_risk_pct));
+    setDrawdownPct(percentDraft(portfolio.max_drawdown_pct));
+    setDailyLossPct(percentDraft(portfolio.max_daily_loss_pct));
+    setNetAssetValue(portfolio.net_asset_value?.toString() ?? '');
+    setPeakNetAssetValue(portfolio.peak_net_asset_value?.toString() ?? '');
+    setDayStartNetAssetValue(portfolio.day_start_net_asset_value?.toString() ?? '');
+    setRiskFactsAsOf(portfolio.risk_facts_as_of ?? '');
   }
 
   return (
     <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) reseed(); }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent ref={contentRef} className="max-w-lg">
+        <DialogHeader className="sticky -top-6 z-10 -mx-6 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-4">
           <DialogTitle>组合账户设置（{portfolio.name}）</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
+          <SettingsGroup title="账户基础" open={groups.has('basic')} onToggle={() => setGroups(current => { const next = new Set(current); next.has('basic') ? next.delete('basic') : next.add('basic'); return next; })}>
           <Field label="名称" value={name} onChange={setName} />
           <Field label="总资产（元）" value={totalAssets} onChange={setTotalAssets} />
           <Field label="可用现金（元）" value={availableCash} onChange={setAvailableCash} />
-          <Field label="单笔风险比例（0-1）" value={riskPct} onChange={setRiskPct} />
+          </SettingsGroup>
+          <SettingsGroup title="仓位上限" open={groups.has('position')} onToggle={() => setGroups(current => { const next = new Set(current); next.has('position') ? next.delete('position') : next.add('position'); return next; })}>
+          <PercentField label="总仓位上限" value={totalPct} onChange={setTotalPct} />
+          <PercentField label="单票市值上限" value={singlePct} onChange={setSinglePct} />
+          <PercentField label="行业上限" value={sectorPct} onChange={setSectorPct} />
+          </SettingsGroup>
+          <SettingsGroup title="风险限制" open={groups.has('risk')} onToggle={() => setGroups(current => { const next = new Set(current); next.has('risk') ? next.delete('risk') : next.add('risk'); return next; })}>
+          <PercentField label="单笔风险比例" value={riskPct} onChange={setRiskPct} />
           <Field label="最低盈亏比" value={rr} onChange={setRr} />
-          <Field label="总仓位上限（0-1）" value={totalPct} onChange={setTotalPct} />
-          <Field label="单票市值上限（0-1）" value={singlePct} onChange={setSinglePct} />
-          <Field label="行业上限（0-1）" value={sectorPct} onChange={setSectorPct} />
+          <PercentField label="组合开放风险上限" value={portfolioRiskPct} onChange={setPortfolioRiskPct} />
+          <PercentField label="行业开放风险上限" value={sectorRiskPct} onChange={setSectorRiskPct} />
+          <PercentField label="单日新增风险上限" value={dailyRiskPct} onChange={setDailyRiskPct} />
+          <PercentField label="最大回撤熔断" value={drawdownPct} onChange={setDrawdownPct} />
+          <PercentField label="单日损失熔断" value={dailyLossPct} onChange={setDailyLossPct} />
+          </SettingsGroup>
+          <SettingsGroup title="净值事实（整组可选）" open={groups.has('facts')} onToggle={() => setGroups(current => { const next = new Set(current); next.has('facts') ? next.delete('facts') : next.add('facts'); return next; })}>
+          <Field label="当前净值（可空）" value={netAssetValue} onChange={setNetAssetValue} />
+          <Field label="历史峰值净值（可空）" value={peakNetAssetValue} onChange={setPeakNetAssetValue} />
+          <Field label="日初净值（可空）" value={dayStartNetAssetValue} onChange={setDayStartNetAssetValue} />
+            <label className="flex flex-col gap-1 text-sm">风险事实日期（可空）<Input type="date" value={riskFactsAsOf} onChange={event => setRiskFactsAsOf(event.target.value)} /></label>
+          </SettingsGroup>
         </div>
         <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
           任务仅读取提交时的组合快照；修改账户参数不影响已提交任务。校验：现金 ∈ [0, 总资产]、
-          各比例 ∈ (0,1]、单票 ≤ 总仓位、行业 ≤ 总仓位。
+          各比例大于 0% 且不超过 100%、单票 ≤ 总仓位、行业 ≤ 总仓位。
         </p>
+        {stale && <p role="alert" className="text-xs text-amber-500">账户已有更新，草稿已保留。<button type="button" onClick={reseed} className="ml-2 underline">放弃草稿并加载最新设置</button></p>}
         {formError && <p className="text-xs text-red-400" role="alert">{formError}</p>}
         {mutation.isError && <ErrorState error={toApiError(mutation.error)} />}
-        <div className="flex justify-end gap-2">
+        <div className="sticky -bottom-6 -mx-6 flex justify-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-4">
           <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
-          <Button disabled={mutation.isPending || !name.trim()} onClick={submit}>保存</Button>
+          <Button disabled={mutation.isPending || !name.trim() || stale} onClick={submit}>保存</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -136,10 +231,16 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
 }
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1">
-      <Label>{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
+}
+
+function SettingsGroup({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+  const id = useId();
+  return <section className="rounded-xl border border-[var(--color-border)] p-3"><button type="button" aria-expanded={open} aria-controls={id} onClick={onToggle} className="flex w-full items-center justify-between text-sm font-semibold text-[var(--color-accent-bright)]">{title}<span aria-hidden="true">{open ? '−' : '+'}</span></button><div id={id} hidden={!open} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div></section>;
 }

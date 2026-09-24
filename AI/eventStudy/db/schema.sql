@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS assets (
     UNIQUE (ticker)
 );
 
--- ---------- 事件表（仅存人工处理过的事件：approved / ignored） ----------
+-- ---------- 事件表（稳定事实身份与当前兼容投影） ----------
 CREATE TABLE IF NOT EXISTS events (
     event_id        BIGSERIAL PRIMARY KEY,
     title           TEXT NOT NULL,
@@ -40,9 +40,43 @@ CREATE TABLE IF NOT EXISTS events (
     status          VARCHAR(16) NOT NULL,        -- approved / ignored
     embedding       VECTOR(1024),                -- bge-m3 文本向量
     source_url      TEXT,                        -- 来源链接（爬虫）
+    canonical_key   TEXT,                        -- 稳定事实身份；旧行初始化为 legacy:<event_id>
+    review_origin   VARCHAR(16) NOT NULL DEFAULT 'human', -- human / ai
+    first_seen_at   TIMESTAMPTZ,                 -- 系统首次获知时点；旧数据未知时保留 NULL
+    merged_into_event_id BIGINT,                 -- 人工归并别名，旧日报仍引用原 ID
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 兼容已有 events 表的幂等演进。旧事件没有可复原的事实身份时各自保持独立，
+-- 不通过标题相似度批量误合并。
+ALTER TABLE events ADD COLUMN IF NOT EXISTS canonical_key TEXT;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS review_origin VARCHAR(16) NOT NULL DEFAULT 'human';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS merged_into_event_id BIGINT;
+UPDATE events SET canonical_key = 'legacy:' || event_id::text WHERE canonical_key IS NULL;
+ALTER TABLE events ALTER COLUMN canonical_key SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_events_canonical_key ON events (canonical_key);
+CREATE INDEX IF NOT EXISTS ix_events_merged_into ON events (merged_into_event_id)
+    WHERE merged_into_event_id IS NOT NULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'events'::regclass AND conname = 'fk_events_merged_into'
+    ) THEN
+        ALTER TABLE events ADD CONSTRAINT fk_events_merged_into
+            FOREIGN KEY (merged_into_event_id) REFERENCES events(event_id) ON DELETE RESTRICT;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'events'::regclass AND conname = 'ck_events_review_origin'
+    ) THEN
+        ALTER TABLE events ADD CONSTRAINT ck_events_review_origin
+            CHECK (review_origin IN ('human', 'ai'));
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_events_status ON events (status);
 CREATE INDEX IF NOT EXISTS idx_events_announced_at ON events (announced_at);
@@ -71,6 +105,67 @@ UPDATE events SET affected_scope_refs = '[]'::jsonb WHERE affected_scope_refs IS
 -- 命中任一目标引用即属该路由；单目标时与 @> 包含查询等价）
 CREATE INDEX IF NOT EXISTS idx_events_scope_announced ON events (event_scope, announced_at);
 CREATE INDEX IF NOT EXISTS idx_events_scope_refs ON events USING GIN (affected_scope_refs);
+
+-- ---------- 来源新闻与正式事实判断版本 ----------
+-- news 一行是一来源的一份原文版本；相同来源 ID 改文会追加 source_revision，
+-- 不同来源转载保留各自原文，由 Agent A 把它们关联到同一 canonical event/fact。
+CREATE TABLE IF NOT EXISTS news (
+    news_id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source          VARCHAR(64) NOT NULL,
+    source_item_id  TEXT NOT NULL,
+    source_revision INTEGER NOT NULL DEFAULT 1,
+    content_hash    CHAR(64) NOT NULL,
+    published_at    TIMESTAMPTZ,
+    first_seen_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    title           TEXT NOT NULL,
+    raw_content     TEXT NOT NULL DEFAULT '',
+    source_url      TEXT,
+    source_payload  JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT ck_news_source_revision CHECK (source_revision > 0),
+    CONSTRAINT ck_news_content_hash CHECK (content_hash ~ '^[0-9a-f]{64}$'),
+    CONSTRAINT uq_news_source_item_content UNIQUE (source, source_item_id, content_hash),
+    CONSTRAINT uq_news_source_item_revision UNIQUE (source, source_item_id, source_revision)
+);
+CREATE INDEX IF NOT EXISTS ix_news_first_seen ON news (first_seen_at DESC, news_id);
+CREATE INDEX IF NOT EXISTS ix_news_published ON news (published_at DESC, news_id);
+
+-- event_assessment 仅存可审计的正式判断版本（包括仍有争议的结构化结论）；
+-- A/B 的逐轮对话和运行状态仍留在 analysis task/artifact，不混进业务行。
+CREATE TABLE IF NOT EXISTS event_assessment (
+    assessment_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    news_id        UUID NOT NULL REFERENCES news(news_id) ON DELETE RESTRICT,
+    event_id       BIGINT NOT NULL REFERENCES events(event_id) ON DELETE RESTRICT,
+    fact_key       VARCHAR(256) NOT NULL,
+    revision       INTEGER NOT NULL,
+    supersedes_id  UUID REFERENCES event_assessment(assessment_id) ON DELETE RESTRICT,
+    novelty        VARCHAR(16) NOT NULL,
+    review_status  VARCHAR(16) NOT NULL,
+    labels         JSONB NOT NULL,
+    evidence       JSONB NOT NULL,
+    available_at   TIMESTAMPTZ NOT NULL,
+    model_version  VARCHAR(128) NOT NULL,
+    prompt_version VARCHAR(128) NOT NULL,
+    operation_id   VARCHAR(128) NOT NULL,
+    task_id        UUID, -- provenance only: task cleanup must not cascade to business history
+    text_hash      CHAR(64),
+    embedding      VECTOR(1024),
+    embedding_model VARCHAR(64),
+    embedding_available_at TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT ck_event_assessment_revision CHECK (revision > 0),
+    CONSTRAINT ck_event_assessment_novelty CHECK (novelty IN ('new', 'update')),
+    CONSTRAINT ck_event_assessment_review_status CHECK (
+        review_status IN ('accepted', 'disputed', 'rejected', 'retracted')
+    ),
+    CONSTRAINT uq_event_assessment_fact_revision UNIQUE (event_id, fact_key, revision),
+    CONSTRAINT uq_event_assessment_operation UNIQUE (operation_id, event_id, fact_key)
+);
+CREATE INDEX IF NOT EXISTS ix_event_assessment_as_of
+    ON event_assessment (event_id, fact_key, available_at DESC, revision DESC);
+CREATE INDEX IF NOT EXISTS ix_event_assessment_news ON event_assessment (news_id);
+CREATE INDEX IF NOT EXISTS ix_event_assessment_embedding_time
+    ON event_assessment (embedding_available_at) WHERE embedding IS NOT NULL;
 
 -- ---------- 事件影响表（仅存人工确认的正式记录） ----------
 CREATE TABLE IF NOT EXISTS event_impacts (

@@ -10,12 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 COPY main.py ./
 COPY AI ./AI
 COPY backend ./backend
+COPY db ./db
 
-RUN pip install --no-cache-dir ".[platform]"
+RUN pip install --no-cache-dir uv==0.12.17 && uv sync --frozen --extra platform --no-dev
+ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 8000
 

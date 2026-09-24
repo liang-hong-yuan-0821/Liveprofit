@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from backend.modules.investment_workspace.application.contracts import (
     PortfolioDTO,
@@ -51,6 +51,15 @@ class PortfolioService:
         max_total_position_pct: float | None = None,
         max_single_stock_pct: float | None = None,
         max_sector_pct: float | None = None,
+        max_portfolio_open_risk_pct: float | None = None,
+        max_sector_open_risk_pct: float | None = None,
+        max_daily_new_risk_pct: float | None = None,
+        max_drawdown_pct: float | None = None,
+        max_daily_loss_pct: float | None = None,
+        net_asset_value: float | None = None,
+        peak_net_asset_value: float | None = None,
+        day_start_net_asset_value: float | None = None,
+        risk_facts_as_of: date | None = None,
     ) -> PortfolioDTO:
         if self._repo.get_by_name(name) is not None:
             raise PortfolioNameConflictError(f"组合名已存在：{name}")
@@ -63,6 +72,15 @@ class PortfolioService:
             max_total_position_pct=max_total_position_pct,
             max_single_stock_pct=max_single_stock_pct,
             max_sector_pct=max_sector_pct,
+            max_portfolio_open_risk_pct=max_portfolio_open_risk_pct,
+            max_sector_open_risk_pct=max_sector_open_risk_pct,
+            max_daily_new_risk_pct=max_daily_new_risk_pct,
+            max_drawdown_pct=max_drawdown_pct,
+            max_daily_loss_pct=max_daily_loss_pct,
+            net_asset_value=net_asset_value,
+            peak_net_asset_value=peak_net_asset_value,
+            day_start_net_asset_value=day_start_net_asset_value,
+            risk_facts_as_of=risk_facts_as_of,
         )
         now = self._clock.now()
         portfolio = Portfolio(id=new_uuid(), name=name, version=1, created_at=now, updated_at=now, **account)
@@ -86,6 +104,15 @@ class PortfolioService:
         max_total_position_pct: float,
         max_single_stock_pct: float,
         max_sector_pct: float,
+        max_portfolio_open_risk_pct: float,
+        max_sector_open_risk_pct: float,
+        max_daily_new_risk_pct: float,
+        max_drawdown_pct: float,
+        max_daily_loss_pct: float,
+        net_asset_value: float | None,
+        peak_net_asset_value: float | None,
+        day_start_net_asset_value: float | None,
+        risk_facts_as_of: date | None,
         expected_version: int,
     ) -> PortfolioDTO:
         """PATCH 原子更新名称与全部账户字段（plan 4.2.1：一次条件更新、成功仅 version+1）。"""
@@ -102,6 +129,15 @@ class PortfolioService:
             max_total_position_pct=max_total_position_pct,
             max_single_stock_pct=max_single_stock_pct,
             max_sector_pct=max_sector_pct,
+            max_portfolio_open_risk_pct=max_portfolio_open_risk_pct,
+            max_sector_open_risk_pct=max_sector_open_risk_pct,
+            max_daily_new_risk_pct=max_daily_new_risk_pct,
+            max_drawdown_pct=max_drawdown_pct,
+            max_daily_loss_pct=max_daily_loss_pct,
+            net_asset_value=net_asset_value,
+            peak_net_asset_value=peak_net_asset_value,
+            day_start_net_asset_value=day_start_net_asset_value,
+            risk_facts_as_of=risk_facts_as_of,
         )
         now = self._clock.now()
         if not self._repo.conditional_update_version(
@@ -127,6 +163,15 @@ class PortfolioService:
         max_total_position_pct: float | None,
         max_single_stock_pct: float | None,
         max_sector_pct: float | None,
+        max_portfolio_open_risk_pct: float | None,
+        max_sector_open_risk_pct: float | None,
+        max_daily_new_risk_pct: float | None,
+        max_drawdown_pct: float | None,
+        max_daily_loss_pct: float | None,
+        net_asset_value: float | None,
+        peak_net_asset_value: float | None,
+        day_start_net_asset_value: float | None,
+        risk_facts_as_of: date | None,
     ) -> dict:
         """账户字段校验（Decimal 精度）：0<=cash<=assets、各比例 (0,1]、single<=total、sector<=total、rr>0。
 
@@ -149,6 +194,14 @@ class PortfolioService:
         total_pct = to_decimal(max_total_position_pct)
         single_pct = to_decimal(max_single_stock_pct)
         sector_pct = to_decimal(max_sector_pct)
+        portfolio_risk_pct = to_decimal(max_portfolio_open_risk_pct)
+        sector_risk_pct = to_decimal(max_sector_open_risk_pct)
+        daily_risk_pct = to_decimal(max_daily_new_risk_pct)
+        drawdown_pct = to_decimal(max_drawdown_pct)
+        daily_loss_pct = to_decimal(max_daily_loss_pct)
+        nav = to_decimal(net_asset_value)
+        peak_nav = to_decimal(peak_net_asset_value)
+        day_start_nav = to_decimal(day_start_net_asset_value)
 
         def check(condition: bool, message: str) -> None:
             if not condition:
@@ -166,6 +219,11 @@ class PortfolioService:
             ("max_total_position_pct", total_pct),
             ("max_single_stock_pct", single_pct),
             ("max_sector_pct", sector_pct),
+            ("max_portfolio_open_risk_pct", portfolio_risk_pct),
+            ("max_sector_open_risk_pct", sector_risk_pct),
+            ("max_daily_new_risk_pct", daily_risk_pct),
+            ("max_drawdown_pct", drawdown_pct),
+            ("max_daily_loss_pct", daily_loss_pct),
         ):
             if v is not None:
                 check(0 < v <= 1, f"{label} 必须在 (0,1] 区间")
@@ -175,6 +233,15 @@ class PortfolioService:
             check(single_pct <= total_pct, "max_single_stock_pct 必须 <= max_total_position_pct")
         if sector_pct is not None and total_pct is not None:
             check(sector_pct <= total_pct, "max_sector_pct 必须 <= max_total_position_pct")
+        if sector_risk_pct is not None and portfolio_risk_pct is not None:
+            check(sector_risk_pct <= portfolio_risk_pct, "max_sector_open_risk_pct 必须 <= max_portfolio_open_risk_pct")
+        for label, value in (("net_asset_value", nav), ("peak_net_asset_value", peak_nav), ("day_start_net_asset_value", day_start_nav)):
+            if value is not None:
+                check(value > 0, f"{label} 必须 > 0")
+        facts = (nav, peak_nav, day_start_nav, risk_facts_as_of)
+        check(all(value is None for value in facts) or all(value is not None for value in facts), "净值风险事实必须四项同时填写或同时留空")
+        if nav is not None:
+            check(peak_nav >= nav, "peak_net_asset_value 必须 >= net_asset_value")
         return {
             "total_assets": assets,
             "available_cash": cash,
@@ -183,6 +250,15 @@ class PortfolioService:
             "max_total_position_pct": total_pct,
             "max_single_stock_pct": single_pct,
             "max_sector_pct": sector_pct,
+            "max_portfolio_open_risk_pct": portfolio_risk_pct,
+            "max_sector_open_risk_pct": sector_risk_pct,
+            "max_daily_new_risk_pct": daily_risk_pct,
+            "max_drawdown_pct": drawdown_pct,
+            "max_daily_loss_pct": daily_loss_pct,
+            "net_asset_value": nav,
+            "peak_net_asset_value": peak_nav,
+            "day_start_net_asset_value": day_start_nav,
+            "risk_facts_as_of": risk_facts_as_of,
         }
 
     def list(self, *, limit: int, before: tuple[datetime, uuid.UUID] | None = None) -> tuple[list[PortfolioDTO], tuple[datetime, uuid.UUID] | None]:
@@ -243,8 +319,9 @@ class PortfolioService:
         quantity: float,
         average_cost: float,
         expected_revision: int,
+        active_stop_price: float | None = None,
     ) -> PortfolioPositionMutationResult:
-        self._validate_position(quantity, average_cost)
+        self._validate_position(quantity, average_cost, active_stop_price)
         self._validate_instrument(instrument)
         portfolio = self._repo.get(portfolio_id)
         if portfolio is None:
@@ -263,6 +340,7 @@ class PortfolioService:
                 symbol=instrument.symbol,
                 quantity=quantity,
                 average_cost=average_cost,
+                active_stop_price=active_stop_price,
                 created_at=now,
                 updated_at=now,
             )
@@ -270,6 +348,7 @@ class PortfolioService:
         else:
             position.quantity = quantity
             position.average_cost = average_cost
+            position.active_stop_price = active_stop_price
             position.updated_at = now
         try:
             self._uow.commit()
@@ -296,11 +375,13 @@ class PortfolioService:
         self._uow.commit()
 
     @staticmethod
-    def _validate_position(quantity: float, average_cost: float) -> None:
+    def _validate_position(quantity: float, average_cost: float, active_stop_price: float | None = None) -> None:
         if quantity <= 0:
             raise InvalidPositionError("quantity 必须大于 0")
         if average_cost < 0:
             raise InvalidPositionError("average_cost 不得小于 0")
+        if active_stop_price is not None and active_stop_price <= 0:
+            raise InvalidPositionError("active_stop_price 必须大于 0")
 
     @staticmethod
     def _validate_instrument(instrument: InstrumentRef) -> None:
@@ -324,6 +405,15 @@ class PortfolioService:
             max_total_position_pct=float(portfolio.max_total_position_pct),
             max_single_stock_pct=float(portfolio.max_single_stock_pct),
             max_sector_pct=float(portfolio.max_sector_pct),
+            max_portfolio_open_risk_pct=float(portfolio.max_portfolio_open_risk_pct),
+            max_sector_open_risk_pct=float(portfolio.max_sector_open_risk_pct),
+            max_daily_new_risk_pct=float(portfolio.max_daily_new_risk_pct),
+            max_drawdown_pct=float(portfolio.max_drawdown_pct),
+            max_daily_loss_pct=float(portfolio.max_daily_loss_pct),
+            net_asset_value=float(portfolio.net_asset_value) if portfolio.net_asset_value is not None else None,
+            peak_net_asset_value=float(portfolio.peak_net_asset_value) if portfolio.peak_net_asset_value is not None else None,
+            day_start_net_asset_value=float(portfolio.day_start_net_asset_value) if portfolio.day_start_net_asset_value is not None else None,
+            risk_facts_as_of=portfolio.risk_facts_as_of,
             created_at=portfolio.created_at,
             updated_at=portfolio.updated_at,
         )
@@ -336,5 +426,6 @@ class PortfolioService:
             symbol=position.symbol,
             quantity=float(position.quantity),
             average_cost=float(position.average_cost),
+            active_stop_price=float(position.active_stop_price) if position.active_stop_price is not None else None,
             updated_at=position.updated_at,
         )

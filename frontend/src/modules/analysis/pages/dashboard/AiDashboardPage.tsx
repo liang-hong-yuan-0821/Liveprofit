@@ -1,3 +1,4 @@
+import { SectionTabs } from '../../../../shared/ui/SectionTabs';
 import { Link, useSearchParams } from 'react-router';
 import { Button } from '../../../../shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../shared/ui/dialog';
@@ -57,30 +58,16 @@ export default function AiDashboardPage() {
   }
 
   const header = (
-    <header className="flex items-center justify-between gap-4">
+    <header className="flex flex-wrap items-center justify-between gap-4">
       <div>
         <h1 className="text-lg font-semibold">AI 工作台</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--color-fg-muted)' }}>
           {tab === 'agents'
             ? '管理 Agent 提示词与发起分析任务'
-            : '此刻该做什么：处理待办、跟踪进行中任务、阅读最近结论或发起新分析'}
+            : '聚焦关键结论，追踪研究进展，发现下一步行动。'}
         </p>
       </div>
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          variant={tab === 'tasks' ? 'default' : 'outline'}
-          onClick={() => switchTab('tasks')}
-        >
-          任务
-        </Button>
-        <Button
-          size="sm"
-          variant={tab === 'agents' ? 'default' : 'outline'}
-          onClick={() => switchTab('agents')}
-        >
-          Agent
-        </Button>
+      <div className="flex flex-wrap items-center gap-2">
         {tab === 'tasks' && (
           <>
             <Button size="sm" onClick={() => openCreatePanel()}>
@@ -101,6 +88,7 @@ export default function AiDashboardPage() {
   return (
     <main className="flex flex-col gap-6">
       {header}
+      <SectionTabs label="AI 工作区" value={tab} onChange={switchTab} items={[{ value: 'tasks', label: '研究看板' }, { value: 'agents', label: 'Agent 架构' }]} />
 
       {tab === 'agents' ? (
         <AgentTopologyPage />
@@ -110,7 +98,7 @@ export default function AiDashboardPage() {
             <div className="rounded-lg border p-6 text-center" style={{ borderColor: 'var(--color-border)' }}>
               <p className="text-sm font-medium">当前没有待处理事项、进行中任务和结论</p>
               <p className="mt-1 text-sm" style={{ color: 'var(--color-fg-muted)' }}>
-                发起一次单股分析或全市场扫描，跟踪进度并阅读结构化报告
+                发起一次全市场研究或量化扫描，跟踪进度并阅读结构化报告
               </p>
               <div className="mt-3 flex justify-center gap-3">
                 <Button size="sm" onClick={() => openCreatePanel()}>

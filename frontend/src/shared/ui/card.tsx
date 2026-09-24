@@ -4,7 +4,7 @@ import { cn } from './utils';
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('rounded-lg border bg-[var(--color-surface)] p-4', className)}
+      className={cn('glass-card rounded-2xl border bg-[var(--color-surface)] p-5', className)}
       style={{ borderColor: 'var(--color-border)' }}
       {...props}
     />

@@ -33,6 +33,7 @@ function makeConcept(
     sector_name: name,
     rank: 1,
     heat_score: 5.77,
+    heat_window_rows: 10,
     pct_chg: pct,
     member_total: members.length,
     members,
@@ -91,6 +92,6 @@ describe('ConceptTreemap', () => {
     render(<ConceptTreemap data={both} onNodeClick={() => {}} />);
     expect(mockState.options).toHaveLength(2);
     expect(screen.getByLabelText('上涨概念')).toBeInTheDocument();
-    expect(screen.getByLabelText('下跌概念')).toBeInTheDocument();
+    expect(screen.getByLabelText('下跌 / 持平 / 无行情概念')).toBeInTheDocument();
   });
 });

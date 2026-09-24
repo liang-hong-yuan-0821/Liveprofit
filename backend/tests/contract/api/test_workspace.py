@@ -137,11 +137,12 @@ def test_portfolio_positions_validation_and_conflicts(client):
 
     upserted = client.http.put(
         f"/api/v1/portfolios/{portfolio['id']}/positions/CN/000001.SH",
-        json={"quantity": 100, "average_cost": 12.5, "expected_portfolio_revision": 1},
+        json={"quantity": 100, "average_cost": 12.5, "active_stop_price": 11.5, "expected_portfolio_revision": 1},
     )
     assert upserted.status_code == 200
     data = upserted.json()["data"]
     assert data["position"]["quantity"] == 100
+    assert data["position"]["active_stop_price"] == 11.5
     assert data["portfolio_revision"] == 2
 
     # revision 冲突

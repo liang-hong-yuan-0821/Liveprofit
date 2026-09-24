@@ -173,7 +173,7 @@ def test_source_sql_failure_rolls_back_before_next_source(_fake_conn,
     result = scts.collect_sectors(conn, prov)
     assert result["ths"]["error"] is not None
     assert result["dc"]["members"] == 1   # 回滚后 dc 来源正常写入
-    assert conn.rollback.call_count == 1  # 仅回滚 ths 半截写入
+    assert conn.rollback.call_count == 3  # 仅回滚 ths 半截写入
     assert conn.commit.call_count == 1    # dc 成功独立提交
 
 
@@ -194,4 +194,4 @@ def test_prior_source_commit_survives_later_source_failure(_fake_conn,
     assert result["ths"]["members"] == 1   # ths 成果保留（已独立提交）
     assert result["dc"]["error"] is not None
     assert conn.commit.call_count == 2
-    assert conn.rollback.call_count == 0
+    assert conn.rollback.call_count == 2

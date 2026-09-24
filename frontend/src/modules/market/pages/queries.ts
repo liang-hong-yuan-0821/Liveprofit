@@ -24,6 +24,7 @@ export function useMarketBarsQuery(symbol: string, params: BarsParams, enabled: 
   return useQuery({
     queryKey: queryKeys.marketBars.list({ symbol, ...params }),
     enabled,
+    refetchOnMount: false, // 摘要与展开图复用缓存；失败仍可显式重试。
     // 扩展请求（loadedFrom 前移 → 新 key）期间旧数据继续渲染，不闪 LoadingState（§3.4）
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<BarsData> =>
@@ -44,27 +45,25 @@ export function useMarketBarsQuery(symbol: string, params: BarsParams, enabled: 
 export interface ConceptTreeFilters {
   market: string;
   interval: string;
-  from: string;
-  to: string;
+  asOf?: string;
 }
 
 export const CONCEPT_TREE_LIMIT = 30;
 
 // 概念树（板块概念Treemap方案 3.4）：热度 top 30 + 成分股截断 top 100。
-// from→as_of 透传（m6 定稿同款口径）、to 忽略（后端只认 as_of）。
+// 不传 asOf 表示最近可展示日；显式日期只读历史快照。
 export function useConceptTreeQuery(filters: ConceptTreeFilters) {
   return useQuery({
     queryKey: queryKeys.conceptTree.list({ ...filters, limit: CONCEPT_TREE_LIMIT }),
+    placeholderData: (previous) => previous,
     queryFn: async (): Promise<ConceptTreeData> =>
       (
         await requestEnvelope<ConceptTreeData>(
           MarketDataService.conceptTreeApiV1MarketDataConceptsTreeGet(
             filters.market,
             filters.interval,
-            filters.from,
-            filters.to,
             CONCEPT_TREE_LIMIT,
-            filters.from,
+            filters.asOf,
           ),
         )
       ).data,
@@ -83,6 +82,7 @@ export function useConceptBarsQuery(sectorCode: string, filters: ConceptBarsFilt
   return useQuery({
     queryKey: queryKeys.conceptBars.list({ sectorCode, ...filters }),
     enabled,
+    placeholderData: (previous) => previous,
     queryFn: async (): Promise<BarsData> =>
       (
         await requestEnvelope<BarsData>(
@@ -110,6 +110,7 @@ export function useStockBarsQuery(symbol: string, filters: StockBarsFilters, ena
   return useQuery({
     queryKey: queryKeys.stockBars.list({ symbol, ...filters }),
     enabled,
+    placeholderData: (previous) => previous,
     queryFn: async (): Promise<BarsData> =>
       (
         await requestEnvelope<BarsData>(
@@ -119,6 +120,7 @@ export function useStockBarsQuery(symbol: string, filters: StockBarsFilters, ena
             filters.interval,
             filters.from,
             filters.to,
+            'cache_only',
           ),
         )
       ).data,

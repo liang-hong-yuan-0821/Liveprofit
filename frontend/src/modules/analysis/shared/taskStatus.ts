@@ -10,7 +10,7 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   QUEUED: '排队中',
   RUNNING: '运行中',
   RETRYING: '重试中',
-  SUCCEEDED: '成功',
+  SUCCEEDED: '执行完成',
   FAILED: '失败',
   CANCELLED: '已取消',
   CANCEL_REQUESTED: '取消请求中',

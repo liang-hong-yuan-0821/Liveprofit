@@ -113,7 +113,7 @@ function ReportSectionCard({
           </p>
           <div className="mt-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/ai?create=1">新建包含该层级的分析</Link>
+              <Link to={`/ai?create=1&layers=${section.block === 'decision' ? 'position' : section.block}`}>新建包含该层级的分析</Link>
             </Button>
           </div>
         </CardContent>

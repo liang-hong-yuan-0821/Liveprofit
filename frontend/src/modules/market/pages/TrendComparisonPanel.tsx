@@ -5,7 +5,7 @@ import { LineChart } from '../../../shared/charts/LineChart';
 import { ErrorState } from '../../../shared/feedback/ErrorState';
 import { EmptyState } from '../../../shared/feedback/EmptyState';
 import { LoadingState } from '../../../shared/feedback/LoadingState';
-import { todayLocalDate } from '../../../shared/format/dateTime';
+import { useMarketDate } from './refreshQueries';
 import { Badge } from '../../../shared/ui/badge';
 import { toTrendChartSeries } from './mappers/toTrendViewModels';
 import { useBoardTrendsQuery, useCapTierTrendsQuery, type TrendsFilters } from './queries';
@@ -70,7 +70,7 @@ export function trendRangeFrom(key: RangeKey, today: string): string {
 export function TrendComparisonPanel() {
   const [tab, setTab] = useState<TabKey>('cap-tiers');
   const [range, setRange] = useState<RangeKey>('1y');
-  const today = todayLocalDate();
+  const today = useMarketDate('CN');
   const filters: TrendsFilters = { from: trendRangeFrom(range, today), to: today };
 
   const capQuery = useCapTierTrendsQuery(filters);

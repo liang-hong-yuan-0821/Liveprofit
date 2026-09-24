@@ -1,9 +1,8 @@
 """量化执行期行情读取（plan 4.3.1，行情不冻结、执行时实时读取）。
 
-- AllMarketUniverseBuilder.list_active_cn_stocks(conn)：每次执行开始时以单次流式只读查询
-  从 market.instrument 枚举活跃 CN 股票（instrument_type='stock' AND list_status='L'
-  AND ts_code ~ '^[0-9]{6}\\.(SH|SZ|BJ)$'），按 ts_code 升序；不使用板块短名单、
-  相对强度或成交额预过滤。
+- AllMarketUniverseBuilder.list_active_cn_stocks(conn)：每次执行开始时通过
+  db.instrument.dao.instrument 的共用查询，从 market.instrument 枚举活跃 CN 股票；
+  不使用板块短名单、相对强度或成交额预过滤。量化补齐覆盖分母复用同一查询。
 - MarketContextBatchLoader.load_batch(conn, ts_codes, effective_trade_date, lookback)：
   每批参数化 = ANY(:codes) 查询 instrument_daily / factor_daily，每票固定取 250 根 bars；
   少于 250 根该票记 DATA_UNAVAILABLE（执行时判定，不落快照）；因子行缺失记
@@ -18,11 +17,9 @@ import json
 import math
 
 from AI.strategy_sandbox.protocol import build_context
+from db.instrument.dao.instrument import list_active_cn_stocks
 
 DEFAULT_LOOKBACK = 250
-
-CN_TS_FILTER = r"^[0-9]{6}\.(SH|SZ|BJ)$"
-ACTIVE_STOCK_FILTER = f"instrument_type = 'stock' AND list_status = 'L' AND ts_code ~ '{CN_TS_FILTER}'"
 
 
 def _trade_date_key(value) -> str:
@@ -48,10 +45,7 @@ class AllMarketUniverseBuilder:
 
     @staticmethod
     def list_active_cn_stocks(conn) -> list[str]:
-        rows = conn.execute(
-            f"SELECT ts_code FROM market.instrument WHERE {ACTIVE_STOCK_FILTER} ORDER BY ts_code"
-        ).fetchall()
-        return [r[0] for r in rows]
+        return list_active_cn_stocks(conn)
 
 
 class MarketContextBatchLoader:
@@ -106,7 +100,7 @@ class MarketContextBatchLoader:
             (ts_codes, upper, self._lookback),
         ).fetchall()
         status_rows = conn.execute(
-            "SELECT ts_code, trade_date, is_suspended, is_st, up_limit, down_limit "
+            "SELECT ts_code, trade_date, is_suspended, is_st, up_limit, down_limit, market_board "
             "FROM market.trade_status_daily WHERE ts_code = ANY(%s) AND trade_date = %s",
             (ts_codes, upper),
         ).fetchall()
@@ -227,11 +221,15 @@ class MarketContextBatchLoader:
                 "execution_market": {
                     "trade_date": upper,
                     "raw_close": float(bars[-1][5]),
+                    "qfq_close": float(qfq[-1][3]),
+                    "raw_amount": float(bars[-1][7]) if bars[-1][7] is not None else None,
                     "adj_factor": float(base_adj),
+                    "adj_factor_version": upper,
                     "is_suspended": bool(status_row[2]),
                     "is_st": bool(status_row[3]),
                     "up_limit": float(status_row[4]) if status_row[4] is not None else None,
                     "down_limit": float(status_row[5]) if status_row[5] is not None else None,
+                    "market_board": status_row[6] if len(status_row) > 6 else None,
                 },
             })
         return results

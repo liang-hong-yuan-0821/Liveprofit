@@ -59,14 +59,14 @@ def dsn() -> str:
 
 
 @contextmanager
-def get_connection():
+def get_connection(connection_string: str | None = None):
     """创建新连接并托管生命周期：退出 with 块即 close（不进连接池），异常时 rollback。
 
     调用方在 with 块内显式 commit（与 eventStudy/store 同规则）；
     会话时区显式 Asia/Shanghai——'YYYY-MM-DD'::timestamptz 解析依赖会话时区，
     不能依赖部署环境隐式时区。
     """
-    conn = psycopg.connect(dsn(), connect_timeout=5)
+    conn = psycopg.connect(connection_string if connection_string is not None else dsn(), connect_timeout=5)
     try:
         try:
             conn.execute("SET TIME ZONE 'Asia/Shanghai'")

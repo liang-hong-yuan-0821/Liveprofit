@@ -11,5 +11,14 @@ export type PortfolioCreateRequest = {
     max_total_position_pct?: (number | null);
     max_single_stock_pct?: (number | null);
     max_sector_pct?: (number | null);
+    max_portfolio_open_risk_pct?: (number | null);
+    max_sector_open_risk_pct?: (number | null);
+    max_daily_new_risk_pct?: (number | null);
+    max_drawdown_pct?: (number | null);
+    max_daily_loss_pct?: (number | null);
+    net_asset_value?: (number | null);
+    peak_net_asset_value?: (number | null);
+    day_start_net_asset_value?: (number | null);
+    risk_facts_as_of?: (string | null);
 };
 

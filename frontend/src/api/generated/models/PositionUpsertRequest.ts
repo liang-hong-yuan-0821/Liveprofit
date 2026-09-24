@@ -5,6 +5,7 @@
 export type PositionUpsertRequest = {
     quantity: number;
     average_cost: number;
+    active_stop_price?: (number | null);
     expected_portfolio_revision: number;
 };
 

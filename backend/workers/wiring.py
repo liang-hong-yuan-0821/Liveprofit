@@ -8,16 +8,20 @@ from __future__ import annotations
 
 import socket
 from contextlib import AbstractContextManager
+from functools import partial
 from pathlib import Path
-from typing import Any
 
 from backend.bootstrap.container import SyncContainer, build_sync_container
 from backend.bootstrap.settings import Settings
 from backend.modules.analysis.application.reporting import ReportService
 from backend.modules.analysis.application.task_events import TaskEventService
 from backend.modules.analysis.application.task_lifecycle import TaskService
-from backend.modules.analysis.infrastructure.redis_task_event_stream import RedisTaskEventStream
-from backend.modules.analysis.infrastructure.repositories import SqlAlchemyAnalysisUnitOfWork
+from backend.modules.analysis.infrastructure.redis_task_event_stream import (
+    RedisTaskEventStream,
+)
+from backend.modules.analysis.infrastructure.repositories import (
+    SqlAlchemyAnalysisUnitOfWork,
+)
 from backend.shared.clock import SystemClock
 
 _worker_settings: Settings | None = None
@@ -66,11 +70,15 @@ def configure_worker(settings: Settings, *, artifact_builder=None, graph_factory
     _worker_settings = settings
     _worker_container = build_sync_container(settings, "worker")
     if artifact_builder is None:
-        from backend.modules.analysis.infrastructure.artifact_builder import build_artifact_from_state
+        from backend.modules.analysis.infrastructure.artifact_builder import (
+            build_artifact_from_state,
+        )
 
         artifact_builder = build_artifact_from_state
     if graph_factory is None:
-        from backend.modules.analysis.infrastructure.real_graph_factory import make_real_graph_factory
+        from backend.modules.analysis.infrastructure.real_graph_factory import (
+            make_real_graph_factory,
+        )
 
         graph_factory = make_real_graph_factory(settings)
     _artifact_builder = artifact_builder
@@ -86,8 +94,12 @@ def get_worker_executor():
     """默认执行器：真实 AI 图工厂 + 平台 ArtifactStore（每次执行新建图）。"""
     if _worker_container is None or _worker_settings is None:
         raise RuntimeError("Worker wiring 未初始化：请先 configure_worker()")
-    from backend.modules.analysis.infrastructure.artifact_store import PlatformArtifactStore
-    from backend.modules.analysis.infrastructure.trading_graph_adapter import TradingGraphAdapter
+    from backend.modules.analysis.infrastructure.artifact_store import (
+        PlatformArtifactStore,
+    )
+    from backend.modules.analysis.infrastructure.trading_graph_adapter import (
+        TradingGraphAdapter,
+    )
     from backend.workers.analysis_executor import AnalysisExecutor
 
     settings = _worker_settings
@@ -101,7 +113,9 @@ def get_worker_executor():
         retention_days=settings.core.artifact_retention_days,
     )
     from backend.bootstrap.settings import resolve_execution_logs_root
-    from backend.modules.analysis.infrastructure.real_graph_factory import build_real_initial_state
+    from backend.modules.analysis.infrastructure.real_graph_factory import (
+        build_real_initial_state,
+    )
     from backend.modules.analysis.infrastructure.repositories import (
         SqlAlchemyPromptOverrideRepository,
     )
@@ -113,7 +127,9 @@ def get_worker_executor():
         rerun_from kwarg 同源（均取自消息），此处仅透传该值，不读任务行列
         作第二判定源。
         """
-        with _worker_container.sync_session_factory() as session:
+        # Worker 使用 SyncContainer；其同步 sessionmaker 字段名是
+        # ``session_factory``（``sync_session_factory`` 仅属于 ApiContainer）。
+        with _worker_container.session_factory() as session:
             overrides = SqlAlchemyPromptOverrideRepository(session).list_as_map()
         return build_real_initial_state(
             task,
@@ -126,14 +142,29 @@ def get_worker_executor():
         _graph_factory,
         initial_state_factory=_initial_state_factory,
     )
+    from backend.modules.market_data.application.refresh_service import (
+        build_refresh_service,
+    )
+    from backend.workers.market_refresh import publish_refresh
+    from db.instrument.db import get_connection
+
+    quant_refresh = build_refresh_service(
+        settings,
+        _worker_container.redis,
+        partial(get_connection, settings.core.resolved_market_dsn()),
+        publisher=partial(publish_refresh, settings),
+    )
     return AnalysisExecutor(
         graph_adapter=adapter,
-        bundle_factory=worker_bundle_factory(),
-        worker_id=worker_id(),
-        heartbeat_interval_seconds=settings.worker.heartbeat_interval_seconds,
-        max_attempt_runtime_seconds=settings.worker.max_attempt_runtime_seconds,
+      bundle_factory=worker_bundle_factory(),
+      worker_id=worker_id(),
+      heartbeat_interval_seconds=settings.worker.heartbeat_interval_seconds,
+      max_attempt_runtime_seconds=settings.worker.max_attempt_runtime_seconds,
         artifact_store=artifact_store,
         core_version="0.1.0",
+        market_dsn=settings.core.resolved_market_dsn(),
+        max_news_per_run=settings.daily_research.max_news_per_run,
+        quant_preflight=quant_refresh.ensure_quant_inputs,
     )
 
 

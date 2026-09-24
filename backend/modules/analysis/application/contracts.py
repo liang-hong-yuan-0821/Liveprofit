@@ -98,6 +98,7 @@ class DashboardAttentionItemDTO:
     task_type: TaskType
     ticker: str | None
     effective_trade_date: date | None
+    selected_layers: list[str]
     updated_at: datetime
     error_code: str | None
     error_summary: str | None
@@ -111,6 +112,7 @@ class DashboardActiveTaskDTO:
     task_type: TaskType
     ticker: str | None
     effective_trade_date: date | None
+    selected_layers: list[str]
     status: TaskStatus
     attempt_no: int
     updated_at: datetime
@@ -119,10 +121,12 @@ class DashboardActiveTaskDTO:
 
 @dataclass(frozen=True)
 class DashboardConclusionDTO:
+    unavailable_blocks: list[dict]
     task_id: uuid.UUID
     task_type: TaskType
     ticker: str | None
     effective_trade_date: date | None
+    selected_layers: list[str]
     completed_at: datetime
     conclusion_summary: str | None
     risk_flag: bool
@@ -141,6 +145,7 @@ class AnalysisDashboardDTO:
 
 @dataclass(frozen=True)
 class TaskListItemDTO:
+    selected_layers: list[str]
     id: uuid.UUID
     task_type: TaskType
     ticker: str | None

@@ -15,6 +15,28 @@ from abc import ABC, abstractmethod
 logger = logging.getLogger(__name__)
 
 
+class ProviderNetworkAccessDenied(RuntimeError):
+    """A source connection was blocked by local OS/network policy.
+
+    Unlike a transient upstream timeout, retrying this condition cannot help until
+    the worker's outbound network permissions are corrected.
+    """
+
+    refresh_error_code = "SOURCE_NETWORK_ACCESS_DENIED"
+
+
+def raise_if_network_access_denied(provider) -> None:
+    """Raise a retained local-egress failure inside ingestion code.
+
+    Provider-facing structured APIs keep their contract of returning ``None``
+    for unavailable data. Tushare retains this specific failure so ingestion
+    can distinguish an OS/network-policy block from an ordinary empty result.
+    """
+    error = getattr(provider, "_network_access_error", None)
+    if isinstance(error, ProviderNetworkAccessDenied):
+        raise error
+
+
 class BaseStockDataProvider(ABC):
     """股票数据提供器抽象基类 — 定义完整数据接口"""
 
@@ -352,6 +374,11 @@ class BaseStockDataProvider(ABC):
         日期参数格式 YYYYMMDD（tushare 端点硬要求；YYYY-MM-DD 的转换由采集函数入口
         完成）。返回 DataFrame（升序）或 None 表示不支持/失败。
         """
+        return None
+
+    def get_sector_daily_fallback_df(self, source: str, ts_code: str,
+                                     start_date: str, end_date: str):
+        """Independent daily K-line fallback for a confirmed source gap; None if unavailable."""
         return None
 
     # ==================== 市场特征层 — 结构化接口（T5） ====================

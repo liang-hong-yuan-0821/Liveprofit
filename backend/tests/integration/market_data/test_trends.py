@@ -67,7 +67,7 @@ def test_trends_as_of_and_freshness_derivation(env, service):
     assert by_symbol["932000.CSI"].points[0]["close"] == 2300.0
     # 全组末点最大值 = 2026-09-04 ≥ 最近交易日 → FRESH
     assert dto.as_of == date(2026, 9, 4)
-    assert dto.freshness_status == "FRESH"
+    assert dto.freshness_status == "STALE"  # peer indexes have not reached the target
     # 组内末点落后于最近交易日 → STALE
     dto2 = service(calendar=calendar).get_index_trends(
         indexes=[("932000.CSI", "中证2000")],

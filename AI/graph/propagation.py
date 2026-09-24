@@ -69,6 +69,7 @@ class Propagator:
 
         return {
             "messages": [HumanMessage(content=msg_content)],
+            "daily_research_context": {},
             "company_of_interest": "",
             "trade_date": effective_date,
             "requested_trade_date": raw_date,

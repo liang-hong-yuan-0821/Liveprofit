@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -15,6 +16,7 @@ class StrategyAuditDTO(BaseModel):
 
 
 class PortfolioSnapshotDTO(BaseModel):
+    id: UUID | None = None
     name: str
     version: int
     total_assets: str
@@ -50,6 +52,13 @@ class SuggestedOrderPreviewDTO(BaseModel):
     stop_loss: float | None
     take_profit: float | None
     risk_bucket: dict | None
+    order_entry_price: float | None = None
+    order_stop_price: float | None = None
+    order_take_price: float | None = None
+    earliest_execution_trade_date: date | None = None
+    estimated_fees: float | None = None
+    estimated_slippage: float | None = None
+    execution_policy_version: str | None = None
 
 
 class QuantExecutionSummaryDTO(BaseModel):
@@ -60,6 +69,8 @@ class QuantExecutionSummaryDTO(BaseModel):
     suggested_buy_orders: int
     suggested_sell_orders: int
     failed_count: int
+    portfolio_open_risk: float | None = None
+    daily_new_risk: float | None = None
 
 
 class QuantExecutionDTO(BaseModel):
@@ -95,6 +106,19 @@ class QuantSignalRowDTO(BaseModel):
     order_cost_price: float | None = None
     valuation_price: float | None = None
     risk_bucket: dict | None = None
+    signal_trade_date: date | None = None
+    signal_price_basis: str | None = None
+    execution_price_basis: str | None = None
+    adj_factor_version: str | None = None
+    execution_market: dict | None = None
+    order_entry_price: float | None = None
+    order_stop_price: float | None = None
+    order_take_price: float | None = None
+    earliest_execution_trade_date: date | None = None
+    available_sell_quantity: float | None = None
+    estimated_fees: float | None = None
+    estimated_slippage: float | None = None
+    execution_policy_version: str | None = None
     error_code: str | None = None
 
 

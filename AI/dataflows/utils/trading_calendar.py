@@ -171,8 +171,9 @@ def _fetch_tushare_calendar(year: int) -> Optional[set[str]]:
         return None
 
     try:
-        ts.set_token(token)
-        api = ts.pro_api()
+        # token 直传 pro_api（不落盘 ~/tk.csv）：set_token 无条件写家目录文件，
+        # 写入被拒会连累查询整体失败（2026-09-21 实况：Permission denied）
+        api = ts.pro_api(token)
         api._DataApi__http_url = _TUSHARE_ENDPOINT
         # 端点调用子日志：缓存 miss 且发生在 DP 调用内时归入当前 DP 调用的 tushare/ 下
         wrap_tushare_api(api)

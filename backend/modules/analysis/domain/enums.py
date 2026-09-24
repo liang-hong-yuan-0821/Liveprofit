@@ -8,6 +8,8 @@ import enum
 class TaskType(str, enum.Enum):
     SINGLE_STOCK = "SINGLE_STOCK"
     MARKET_WIDE = "MARKET_WIDE"
+    # 内部每日研究批次；公共分析任务创建接口仍只接收前两类。
+    DAILY_RESEARCH = "DAILY_RESEARCH"
 
 
 class TaskStatus(str, enum.Enum):

@@ -45,6 +45,7 @@ export function ConceptTreemap({ data, height = 560, onNodeClick }: ConceptTreem
   ) =>
     option && (
       <section aria-label={`${label}概念`}>
+        <h3 className="mb-2 text-xs text-[var(--color-fg-muted)]">{label}概念</h3>
         <ReactECharts
           option={option}
           style={{ height: chartHeight, width: '100%' }}
@@ -57,7 +58,7 @@ export function ConceptTreemap({ data, height = 560, onNodeClick }: ConceptTreem
   return (
     <div data-testid="concept-treemap" className="flex flex-col" style={{ gap: CHART_GAP }}>
       {renderChart('上涨', upOption)}
-      {renderChart('下跌', downOption)}
+      {renderChart('下跌 / 持平 / 无行情', downOption)}
     </div>
   );
 }

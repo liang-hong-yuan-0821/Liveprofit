@@ -5,6 +5,7 @@ import { Badge } from '../../../../shared/ui/badge';
 import { Button } from '../../../../shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card';
 import { formatDateTime } from '../../../../shared/format/dateTime';
+import { layersName } from '../../shared/analysisLayers';
 import { taskStatusLabel, taskStatusVariant } from '../../shared/taskStatus';
 import { useDashboardSectionQuery } from './queries';
 
@@ -52,7 +53,12 @@ export function ActiveTasksPanel() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Badge variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Badge>
-                <span className="text-sm font-medium">{task.ticker ?? '全市场'}</span>
+                <span className="text-sm font-medium">{layersName(task.selected_layers)}</span>
+                {task.ticker && (
+                  <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
+                    {task.ticker}
+                  </span>
+                )}
                 <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
                   第 {task.attempt_no} 次尝试
                 </span>

@@ -9,6 +9,7 @@ import type { Envelope_QuantStrategyListData_ } from '../models/Envelope_QuantSt
 import type { Envelope_QuantStrategyPublishData_ } from '../models/Envelope_QuantStrategyPublishData_';
 import type { Envelope_QuantStrategyTemplateListData_ } from '../models/Envelope_QuantStrategyTemplateListData_';
 import type { Envelope_QuantStrategyVersionDTO_ } from '../models/Envelope_QuantStrategyVersionDTO_';
+import type { LifecyclePolicyBindingRequest } from '../models/LifecyclePolicyBindingRequest';
 import type { QuantStrategyCreateRequest } from '../models/QuantStrategyCreateRequest';
 import type { QuantStrategyDraftUpdateRequest } from '../models/QuantStrategyDraftUpdateRequest';
 import type { QuantStrategyFormatRequest } from '../models/QuantStrategyFormatRequest';
@@ -158,6 +159,33 @@ export class QuantStrategiesService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/quant-strategies/{strategy_id}/versions/{version_id}/publish',
+            path: {
+                'strategy_id': strategyId,
+                'version_id': versionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Bind Lifecycle Policy
+     * @param strategyId
+     * @param versionId
+     * @param requestBody
+     * @returns Envelope_QuantStrategyDraftDTO_ Successful Response
+     * @throws ApiError
+     */
+    public static bindLifecyclePolicyApiV1QuantStrategiesStrategyIdVersionsVersionIdLifecyclePolicyPut(
+        strategyId: string,
+        versionId: string,
+        requestBody: LifecyclePolicyBindingRequest,
+    ): CancelablePromise<Envelope_QuantStrategyDraftDTO_> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/quant-strategies/{strategy_id}/versions/{version_id}/lifecycle-policy',
             path: {
                 'strategy_id': strategyId,
                 'version_id': versionId,

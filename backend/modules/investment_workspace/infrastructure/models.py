@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from sqlalchemy import (
     ForeignKey,
@@ -71,6 +72,15 @@ class Portfolio(Base, TimestampMixin):
     max_total_position_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.8"))
     max_single_stock_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.1"))
     max_sector_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.3"))
+    max_portfolio_open_risk_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.06"))
+    max_sector_open_risk_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.03"))
+    max_daily_new_risk_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.02"))
+    max_drawdown_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.10"))
+    max_daily_loss_pct: Mapped[float] = mapped_column(Numeric(8, 6), nullable=False, server_default=sa_text("0.03"))
+    net_asset_value: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
+    peak_net_asset_value: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
+    day_start_net_asset_value: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
+    risk_facts_as_of: Mapped[date | None] = mapped_column(nullable=True)
 
     positions: Mapped[list["PortfolioPosition"]] = relationship(
         back_populates="portfolio", cascade="all, delete-orphan"
@@ -88,6 +98,7 @@ class PortfolioPosition(Base, TimestampMixin):
     symbol: Mapped[str] = mapped_column(String(32), nullable=False)
     quantity: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False)
     average_cost: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False)
+    active_stop_price: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
 
     portfolio: Mapped[Portfolio] = relationship(back_populates="positions")
 

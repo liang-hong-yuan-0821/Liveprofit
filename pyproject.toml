@@ -22,7 +22,9 @@ dependencies = [
 
     # 数据处理
     "pandas>=2.2.0",
+    "pyarrow>=18.0.0",
     "python-dateutil>=2.9.0",
+    "exchange-calendars==4.13.2",
 
     # 数据库和缓存
     "redis>=6.2.0",
@@ -61,6 +63,7 @@ liveprofit = "main:main"
 liveprofit-api = "backend.cli:api_main"
 liveprofit-worker = "backend.cli:worker_main"
 liveprofit-dispatcher = "backend.cli:dispatcher_main"
+liveprofit-market-worker = "backend.cli:market_worker_main"
 
 # 依赖分组：core = 既有 AI 内核依赖（[project.dependencies]）；
 # platform = 平台新增（FastAPI 等已因事件研究在 core 中，此处只列平台独有）；
@@ -86,6 +89,7 @@ exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*", "var*"
 
 [tool.setuptools.package-data]
 "AI.templates" = ["*.md", "market/*.md", "sector/*.md", "stock/*.md"]
+"db.instrument" = ["schema.sql"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "backend/tests"]

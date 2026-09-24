@@ -17,5 +17,6 @@ export type HotConceptDTO = {
     daily_changes: (Array<DailyChangeDTO> | null);
     updated_at: (string | null);
     bars: Array<BarDTO>;
+    heat_window_rows: number;
 };
 

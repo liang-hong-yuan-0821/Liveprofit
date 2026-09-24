@@ -116,8 +116,8 @@ describe('AiTasksPage 列表与分页', () => {
     expect(await screen.findByText('第 1 次尝试')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '加载更多' }));
 
-    const successRow = await screen.findByRole('link', { name: /成功/ });
-    expect(within(successRow).getByText('成功')).toBeInTheDocument();
+    const successRow = await screen.findByRole('link', { name: /执行完成/ });
+    expect(within(successRow).getByText('执行完成')).toBeInTheDocument();
     // 两页均在，且第一页在前（updated_at DESC 顺序由服务端保证，前端只追加）
     const rows = screen.getAllByRole('link').filter((el) => el.textContent?.includes('000001.SZ'));
     expect(rows).toHaveLength(2);
@@ -149,8 +149,8 @@ describe('AiTasksPage 列表与分页', () => {
     fetchMock.mockImplementation(async () => envelope([makeTask('task-2', 'SUCCEEDED', '2026-09-05T09:00:00Z')], null));
     await user.click(screen.getByRole('button', { name: '重试' }));
 
-    const successRow = await screen.findByRole('link', { name: /成功/ });
-    expect(within(successRow).getByText('成功')).toBeInTheDocument();
+    const successRow = await screen.findByRole('link', { name: /执行完成/ });
+    expect(within(successRow).getByText('执行完成')).toBeInTheDocument();
     expect(screen.queryByText(/下一页加载失败/)).not.toBeInTheDocument();
   });
 });

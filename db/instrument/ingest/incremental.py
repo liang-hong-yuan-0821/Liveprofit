@@ -29,6 +29,8 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
+from db.instrument.ingest.guard import ALL_RESOURCES, FATAL_INGEST_ERRORS, locked_ingestion
+
 from db.instrument.dao import fund_info, stock_info
 from db.instrument.dao import instrument as instrument_dao
 from db.instrument.dao.instrument_daily import bulk_upsert_daily, latest_trade_date
@@ -38,7 +40,11 @@ from db.instrument.ingest.frames import fetch_day_frames
 from db.instrument.ingest.sector_daily import collect_sector_daily_incremental
 from db.instrument.ingest.sectors import collect_sectors
 from db.instrument.ingest.stock_factors import collect_stock_quant_day
-from AI.dataflows.providers.base_provider import BaseStockDataProvider
+from AI.dataflows.providers.base_provider import (
+    BaseStockDataProvider,
+    ProviderNetworkAccessDenied,
+    raise_if_network_access_denied,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +116,11 @@ def _last_trade_days(provider, n: int = _WINDOW_DAYS) -> list:
     start = (datetime.now() - timedelta(days=_CAL_BACK_DAYS)).strftime("%Y-%m-%d")
     try:
         cal = provider.get_trade_cal(start, end)
+        raise_if_network_access_denied(provider)
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         logger.warning("增量: 交易日历拉取异常: %s", e)
         return []
@@ -130,6 +141,7 @@ def _refresh_basics(conn, provider) -> tuple:
                             ("fund", provider.get_fund_basic_df)):
         try:
             df = fetch_fn()
+            raise_if_network_access_denied(provider)
             if df is None or df.empty:
                 logger.warning("增量: %s 基本信息不可用（None/空）", label)
                 continue
@@ -143,8 +155,14 @@ def _refresh_basics(conn, provider) -> tuple:
                     conn, _basic_to_instrument(df, "fund"))
                 fund_info.upsert_fund_info(conn, df)
             codes[label] = df["ts_code"].astype(str).tolist()
+            conn.commit()
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: %s 基本信息刷新失败（不阻断）: %s", label, e)
+            conn.rollback()
     return codes.get("stock", []), codes.get("fund", [])
 
 
@@ -159,19 +177,35 @@ def _basic_to_instrument(df: pd.DataFrame, itype: str) -> pd.DataFrame:
         "data_source": "tushare",
     })
     if itype == "stock":
-        out["list_status"] = df["list_status"]
+        if "list_status" not in df.columns:
+            out["list_status"] = None
+        else:
+            def normalize_status(value):
+                if pd.isna(value):
+                    return None
+                status = str(value).strip().upper()
+                if status == "UN":
+                    return "U"  # market.instrument.list_status is CHAR(1).
+                if len(status) > 1:
+                    raise ValueError(f"unsupported multi-character stock list_status: {status}")
+                return status or None
+
+            out["list_status"] = df["list_status"].map(normalize_status)
     else:
         out["list_status"] = None
     return out
 
 
-def _bootstrap_instruments(conn) -> None:
+def _bootstrap_instruments(conn, codes=None) -> None:
     """指数 instrument 行自举：按 INDEX_TARGETS 写/刷新（非迁移库无步骤 7 行来源，
     不自举则回填完成后 get_bars 存在性校验仍 404）。名称口径 = INDEX_TARGETS
     常量（CN 7 平台口径优先，DO UPDATE 按 EXCLUDED.name 覆盖）。"""
+    selected = list(INDEX_TARGETS if codes is None else codes)
+    if any(code not in INDEX_TARGETS for code in selected):
+        raise ValueError("unknown index bootstrap target")
     df = pd.DataFrame({
-        "ts_code": list(INDEX_TARGETS.keys()),
-        "name": list(INDEX_TARGETS.values()),
+        "ts_code": selected,
+        "name": [INDEX_TARGETS[code] for code in selected],
         "instrument_type": "index",
         "list_status": None,
         "list_date": None,
@@ -188,6 +222,7 @@ def _fetch_index_daily(provider, code: str, start: str, end: str):
     AKShare 兜底行 pre_close/change/pct_chg 恒 NULL 属事实）。
     """
     df = provider.get_index_data_df(code, start, end)
+    raise_if_network_access_denied(provider)
     if df is None or df.empty:
         return None
     out = pd.DataFrame({
@@ -209,6 +244,10 @@ def _ingest_index_bars_and_factors(conn, provider, fallback_provider,
         source_used = None
         try:
             bars = _fetch_index_daily(provider, code, start, end)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: 指数 %s 主源拉取异常（换兜底源重试）: %s", code, e)
             bars = None
@@ -216,6 +255,10 @@ def _ingest_index_bars_and_factors(conn, provider, fallback_provider,
             logger.warning("增量: 指数 %s 主源无数据，换兜底源重试", code)
             try:
                 bars = _fetch_index_daily(fallback_provider, code, start, end)
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception as e:
                 # 与 backfill 对称：兜底源网络异常只跳过 bars，不吞掉整个步骤 3
                 logger.warning("增量: 指数 %s 兜底源拉取异常（跳过 bars）: %s", code, e)
@@ -233,12 +276,21 @@ def _ingest_index_bars_and_factors(conn, provider, fallback_provider,
             bars["updated_at"] = pd.Timestamp.now()
             try:
                 n = bulk_upsert_daily(conn, bars, update=True)  # 指数行 DO UPDATE（决策 5 例外）
+                conn.commit()
                 result["bars"] += n
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception as e:
                 logger.warning("增量: 指数 %s 日线写入失败（bars 跳过、因子继续）: %s",
                                code, e)
                 try:
                     conn.rollback()
+                except FATAL_INGEST_ERRORS:
+                    raise
+                except ProviderNetworkAccessDenied:
+                    raise
                 except Exception:
                     pass
         # 因子（仅主源 CN——idx_factor_pro 为 tushare 端点；US/KR 无因子源跳过）
@@ -246,6 +298,11 @@ def _ingest_index_bars_and_factors(conn, provider, fallback_provider,
             continue
         try:
             factor_df = provider.get_index_factor_df(code, start, end)
+            raise_if_network_access_denied(provider)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: 指数 %s 因子拉取异常（跳过）: %s", code, e)
             factor_df = None
@@ -262,11 +319,20 @@ def _ingest_index_bars_and_factors(conn, provider, fallback_provider,
         factor_df["updated_at"] = pd.Timestamp.now()
         try:
             n = bulk_upsert_factor_daily(conn, factor_df, update=True)
+            conn.commit()
             result["factors"] += n
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: 指数 %s 因子写入失败（跳过）: %s", code, e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
     conn.commit()
@@ -279,6 +345,10 @@ def _ingest_stock_fund_daily(conn, provider, days, stock_codes, fund_codes) -> d
     for d in days:
         try:
             frames = fetch_day_frames(provider, d, stock_codes, fund_codes)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: %s 拉取失败（跳过该日，不阻断其他日）: %s", d, e)
             continue
@@ -291,10 +361,18 @@ def _ingest_stock_fund_daily(conn, provider, days, stock_codes, fund_codes) -> d
             conn.commit()
             result[d] = {"daily": n_daily, "factor": n_factor}
             logger.info("增量: %s 完成 daily=%d factor=%d", d, n_daily, n_factor)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: %s 写入失败（跳过该日）: %s", d, e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
     return result
@@ -316,10 +394,18 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
     stock_codes, fund_codes = _refresh_basics(conn, provider)
     try:
         conn.commit()
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         logger.warning("增量: 基本信息提交失败（回滚后继续）: %s", e)
         try:
             conn.rollback()
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception:
             pass
 
@@ -327,10 +413,18 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
     try:
         summary["index"] = _ingest_index_bars_and_factors(
             conn, provider, fallback, days)
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         logger.warning("增量: 指数采集失败（不阻断）: %s", e)
         try:
             conn.rollback()
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception:
             pass
 
@@ -358,10 +452,18 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
                 summary["quant_data"][d] = collect_stock_quant_day(
                     conn, provider, d, stock_codes,
                 )
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception as e:
                 logger.warning("增量: %s 量化因子/交易状态失败（不阻断其他数据）: %s", d, e)
                 try:
                     conn.rollback()
+                except FATAL_INGEST_ERRORS:
+                    raise
+                except ProviderNetworkAccessDenied:
+                    raise
                 except Exception:
                     pass
 
@@ -370,10 +472,18 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
     # 耗时约 15–25 分钟/日：1031 板块 × (0.6s 请求 + 0.2s 间隔)，与周刷同量级） ----
     try:
         summary["sector_daily"] = collect_sector_daily_incremental(conn, provider)
+    except FATAL_INGEST_ERRORS:
+        raise
+    except ProviderNetworkAccessDenied:
+        raise
     except Exception as e:
         logger.warning("增量: 板块日线采集失败（不阻断）: %s", e)
         try:
             conn.rollback()
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception:
             pass
 
@@ -388,10 +498,18 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
                         sectors_result.get("ths", {}).get("error", "ok"),
                         sectors_result.get("dc", {}).get("error", "ok"))
             summary["sectors"] = sectors_result
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: 板块体系周刷失败（不阻断）: %s", e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
 
@@ -408,14 +526,28 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
             logger.info("增量: 行业成员周刷完成: %s",
                         industries_result.get("status", "?"))
             summary["industries"] = industries_result
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("增量: 行业成员周刷失败（不阻断）: %s", e)
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
             except Exception:
                 pass
     return summary
 
+
+
+
+# Public entrypoints acquire once; nested collectors reuse the guarded connection.
+_collect_incremental_unlocked = collect_incremental
+collect_incremental = locked_ingestion(*ALL_RESOURCES)(_collect_incremental_unlocked)
 
 # ==================== CLI ====================
 
@@ -433,9 +565,11 @@ def _providers_from_env():
 
 def main():
     from db.instrument.db import get_connection
+    from db.instrument.ingest.guard import IngestGuard
+    from db.instrument.ingest.notifications import market_changed_notifier_from_env
     provider_factory, fallback_factory = _providers_from_env()
-    with get_connection() as conn:
-        summary = collect_incremental(conn, provider_factory, fallback_factory)
+    with get_connection() as conn, IngestGuard(conn, changed=market_changed_notifier_from_env()) as guard:
+        summary = collect_incremental(conn, provider_factory, fallback_factory, guard=guard)
     logger.info("增量完成: %s", summary)
     return 0
 

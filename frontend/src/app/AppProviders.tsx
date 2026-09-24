@@ -29,6 +29,9 @@ function ThemeSync() {
   const themeMode = useUiPreferenceStore((state) => state.themeMode);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', themeMode === 'dark');
+    document.documentElement.classList.toggle('light', themeMode === 'light');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content',
+      getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim());
   }, [themeMode]);
   return null;
 }

@@ -10,12 +10,12 @@
 | 文件 | 内容 |
 |------|------|
 | [windows-pg-async.md](pitfalls/backend/windows-pg-async.md) | Windows psycopg async 循环、PG_HOST 归一化、stdout 全缓冲排查 |
-| [ingest-targeted-backfill.md](best-practices/backend/ingest-targeted-backfill.md) | 指数定向回填：INDEX_TARGETS clear+update 子集后跑 backfill_index_history（共享 dict 对象） |
 | [alembic-jsonb-settings.md](pitfalls/backend/alembic-jsonb-settings.md) | alembic.ini ASCII、JSONB 归一回写、pydantic alias、Alembic raw SQL、SQLAlchemy UPDATE |
-| [dramatiq-windows.md](pitfalls/backend/dramatiq-windows.md) | Dramatiq 进程内模型、CLI 传参 |
+| [dramatiq-windows.md](pitfalls/backend/dramatiq-windows.md) | Dramatiq 进程内模型、CLI 传参、同进程多 Broker namespace 发布 |
 | [threading-futures.md](pitfalls/backend/threading-futures.md) | Thread._stop 禁用、Future 桥接 asyncio |
 | [fastapi-openapi-prometheus.md](pitfalls/backend/fastapi-openapi-prometheus.md) | SSE OpenAPI 注册、prometheus_client 导入路径 |
 | [db-test-redis-safety.md](pitfalls/backend/db-test-redis-safety.md) | DB 测试隔离、契约测试注入、Redis 数据安全与恢复、PG 参数上限分批 |
+| [analysis-readiness-retry.md](pitfalls/backend/analysis-readiness-retry.md) | deadline readiness 错误需同步进入 task lifecycle 白名单，否则默认 max retry 会让任务提前失败 |
 
 ### frontend/
 
@@ -32,10 +32,11 @@
 
 | 文件 | 内容 |
 |------|------|
-| [tushare-endpoints.md](pitfalls/ai/tushare-endpoints.md) | 代理端点、日线降序归一、禁区间查询、概念成分参数、因子端点、技术指标不自算、板块日线端点能力实测（dc_daily 33 日窗口/ths_daily 全历史/push2his 不可达） |
+| [tushare-endpoints.md](pitfalls/ai/tushare-endpoints.md) | 代理端点、停牌 trade_date/S-R 语义、DC 单板块漏行与东财原始 K 线定向兜底、日线降序归一、禁区间查询、概念成分与因子端点；push2his 连通性随环境变化 |
 | [store-daily.md](pitfalls/ai/store-daily.md) | 全市场日线本地库（store 包）写入/事务/回填约定 |
 | [prompts-checkpoint-rerun.md](pitfalls/ai/prompts-checkpoint-rerun.md) | 提示词注册表、checkpoint 存档、AgentState 白名单、环入口上移、重跑触发源 |
 | [testing-llm-exclusion.md](pitfalls/ai/testing-llm-exclusion.md) | 自测排除真实 LLM 测试的漏洞与正确姿势 |
+| [strict-event-vector-as-of.md](pitfalls/ai/strict-event-vector-as-of.md) | 历史事件召回必须按 embedding_available_at 门控，避免事后向量穿越 as_of |
 
 ### workspace/
 
@@ -46,6 +47,12 @@
 | [评审循环踩坑.md](pitfalls/workspace/评审循环踩坑.md) | 评审收敛的 5 段踩坑史（评审维度清单的来源） |
 
 ## best-practices/（good：最佳实践）
+
+### backend/
+
+| 文件 | 内容 |
+|------|------|
+| [ingest-targeted-backfill.md](best-practices/backend/ingest-targeted-backfill.md) | 定向回填显式 codes、统一 PG session 锁、断连停止、提交后通知及共享资源 coverage 缓存失效 |
 
 ### frontend/
 
@@ -59,4 +66,4 @@
 |------|------|
 | [langgraph-topology.md](best-practices/ai/langgraph-topology.md) | 图结构确定性拓扑提取的正确姿势（compiled.builder） |
 | [market-t6.md](best-practices/ai/market-t6.md) | 市场层 T6：花括号注入、纯代码节点登记、结构化 State 消费约定 |
-| [eventstudy-scheduler.md](best-practices/ai/eventstudy-scheduler.md) | 每日批处理机制与睡眠补跑三层触发设计 |
+| [eventstudy-scheduler.md](best-practices/ai/eventstudy-scheduler.md) | 每日批处理与睡眠补跑、迟到新闻驱动的量化候选幂等刷新 |

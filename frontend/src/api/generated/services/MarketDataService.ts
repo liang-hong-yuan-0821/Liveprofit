@@ -5,7 +5,11 @@
 import type { Envelope_BarsData_ } from '../models/Envelope_BarsData_';
 import type { Envelope_ConceptTreeData_ } from '../models/Envelope_ConceptTreeData_';
 import type { Envelope_HotConceptsData_ } from '../models/Envelope_HotConceptsData_';
+import type { Envelope_RefreshDecisionsData_ } from '../models/Envelope_RefreshDecisionsData_';
+import type { Envelope_RefreshJob_ } from '../models/Envelope_RefreshJob_';
+import type { Envelope_RefreshStatusData_ } from '../models/Envelope_RefreshStatusData_';
 import type { Envelope_TrendsData_ } from '../models/Envelope_TrendsData_';
+import type { RefreshRequest } from '../models/RefreshRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -52,6 +56,7 @@ export class MarketDataService {
      * @param interval
      * @param from
      * @param to
+     * @param factorPolicy
      * @returns Envelope_BarsData_ Successful Response
      * @throws ApiError
      */
@@ -61,6 +66,7 @@ export class MarketDataService {
         interval: string,
         from: string,
         to: string,
+        factorPolicy: 'ensure' | 'cache_only' = 'ensure',
     ): CancelablePromise<Envelope_BarsData_> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -73,6 +79,7 @@ export class MarketDataService {
                 'interval': interval,
                 'from': from,
                 'to': to,
+                'factor_policy': factorPolicy,
             },
             errors: {
                 422: `Validation Error`,
@@ -119,13 +126,9 @@ export class MarketDataService {
     }
     /**
      * Concept Tree
-     * 概念树（板块概念Treemap方案 3.2）：热度 top N + 当日涨跌幅 + 成分股。
-     *
-     * from_ 作为 as_of 透传、to 忽略（m6 定稿同款口径）；limit 必填（同 hot 端点）。
+     * Latest actual sector date by default; explicit as_of reads exactly that day.
      * @param market
      * @param interval
-     * @param from
-     * @param to
      * @param limit
      * @param asOf
      * @returns Envelope_ConceptTreeData_ Successful Response
@@ -134,8 +137,6 @@ export class MarketDataService {
     public static conceptTreeApiV1MarketDataConceptsTreeGet(
         market: string,
         interval: string,
-        from: string,
-        to: string,
         limit: number,
         asOf?: (string | null),
     ): CancelablePromise<Envelope_ConceptTreeData_> {
@@ -145,8 +146,6 @@ export class MarketDataService {
             query: {
                 'market': market,
                 'interval': interval,
-                'from': from,
-                'to': to,
                 'limit': limit,
                 'as_of': asOf,
             },
@@ -159,8 +158,6 @@ export class MarketDataService {
      * Hot Concepts
      * @param market
      * @param interval
-     * @param from
-     * @param to
      * @param limit
      * @param asOf
      * @returns Envelope_HotConceptsData_ Successful Response
@@ -169,8 +166,6 @@ export class MarketDataService {
     public static hotConceptsApiV1MarketDataConceptsHotGet(
         market: string,
         interval: string,
-        from: string,
-        to: string,
         limit: number,
         asOf?: (string | null),
     ): CancelablePromise<Envelope_HotConceptsData_> {
@@ -180,8 +175,6 @@ export class MarketDataService {
             query: {
                 'market': market,
                 'interval': interval,
-                'from': from,
-                'to': to,
                 'limit': limit,
                 'as_of': asOf,
             },
@@ -234,6 +227,56 @@ export class MarketDataService {
             query: {
                 'from': from,
                 'to': to,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Refresh Status
+     * @returns Envelope_RefreshStatusData_ Successful Response
+     * @throws ApiError
+     */
+    public static refreshStatusApiV1MarketDataRefreshStatusGet(): CancelablePromise<Envelope_RefreshStatusData_> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/market-data/refresh-status',
+        });
+    }
+    /**
+     * Refresh
+     * @param requestBody
+     * @returns Envelope_RefreshDecisionsData_ Successful Response
+     * @throws ApiError
+     */
+    public static refreshApiV1MarketDataRefreshPost(
+        requestBody: RefreshRequest,
+    ): CancelablePromise<Envelope_RefreshDecisionsData_> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/market-data/refresh',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Refresh Job
+     * @param jobId
+     * @returns Envelope_RefreshJob_ Successful Response
+     * @throws ApiError
+     */
+    public static refreshJobApiV1MarketDataRefreshJobsJobIdGet(
+        jobId: string,
+    ): CancelablePromise<Envelope_RefreshJob_> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/market-data/refresh-jobs/{job_id}',
+            path: {
+                'job_id': jobId,
             },
             errors: {
                 422: `Validation Error`,

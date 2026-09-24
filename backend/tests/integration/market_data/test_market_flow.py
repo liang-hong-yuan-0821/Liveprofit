@@ -96,10 +96,10 @@ def test_hot_concepts_empty_and_non_cn(env, service):
     """NO_HOT_CONCEPTS 重建（现场计算语义）：空表 → 空态；market≠CN → 空态
     （原 HotConceptsUpstreamUnavailableError 503 语义删除）。"""
     svc = service(calendar=FakeCalendar(trading_day=False, last_day=date(2026, 9, 4)))
-    as_of, items, status, freshness, source_updated = svc.get_hot_concepts(market="CN", as_of=None, limit=30)
-    assert status == "NO_HOT_CONCEPTS"
-    assert items == []
-    assert as_of is None
+    result = svc.get_hot_concepts(market="CN", as_of=None, limit=30)
+    assert result.result_status == "NO_HOT_CONCEPTS"
+    assert result.items == []
+    assert result.as_of is None
     # 非 CN 返回空态而非异常
-    _, items_us, status_us, _, _ = svc.get_hot_concepts(market="US", as_of=None, limit=30)
-    assert status_us == "NO_HOT_CONCEPTS" and items_us == []
+    result_us = svc.get_hot_concepts(market="US", as_of=None, limit=30)
+    assert result_us.result_status == "NO_HOT_CONCEPTS" and result_us.items == []

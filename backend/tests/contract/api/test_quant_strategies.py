@@ -129,6 +129,19 @@ def test_not_found_codes(client):
     assert client.http.get(f"/api/v1/quant-strategies/{missing_id}/draft").status_code == 404
 
 
+RISK_CONTROLS = {
+    "max_portfolio_open_risk_pct": 0.06,
+    "max_sector_open_risk_pct": 0.03,
+    "max_daily_new_risk_pct": 0.02,
+    "max_drawdown_pct": 0.10,
+    "max_daily_loss_pct": 0.03,
+    "net_asset_value": 100000,
+    "peak_net_asset_value": 110000,
+    "day_start_net_asset_value": 101000,
+    "risk_facts_as_of": "2026-09-18",
+}
+
+
 def test_portfolio_account_fields_roundtrip(client):
     created = client.http.post(
         "/api/v1/portfolios",
@@ -141,6 +154,7 @@ def test_portfolio_account_fields_roundtrip(client):
             "max_total_position_pct": 0.8,
             "max_single_stock_pct": 0.1,
             "max_sector_pct": 0.3,
+            **RISK_CONTROLS,
         },
     )
     assert created.status_code == 201, created.text
@@ -163,6 +177,7 @@ def test_portfolio_account_fields_roundtrip(client):
             "max_total_position_pct": 0.7,
             "max_single_stock_pct": 0.15,
             "max_sector_pct": 0.25,
+            **{**RISK_CONTROLS, "net_asset_value": 200000, "peak_net_asset_value": 210000, "day_start_net_asset_value": 202000},
             "expected_version": 1,
         },
     )
@@ -170,6 +185,8 @@ def test_portfolio_account_fields_roundtrip(client):
     d2 = patched.json()["data"]
     assert d2["name"] == "账户组合-改"
     assert d2["total_assets"] == 200000
+    assert d2["max_portfolio_open_risk_pct"] == 0.06
+    assert d2["risk_facts_as_of"] == "2026-09-18"
     assert d2["version"] == 2
 
     # 跨字段校验：现金 > 总资产 → 422
@@ -184,6 +201,7 @@ def test_portfolio_account_fields_roundtrip(client):
             "max_total_position_pct": 0.7,
             "max_single_stock_pct": 0.15,
             "max_sector_pct": 0.25,
+            **RISK_CONTROLS,
             "expected_version": 2,
         },
     )
@@ -202,6 +220,7 @@ def test_portfolio_account_fields_roundtrip(client):
             "max_total_position_pct": 0.2,
             "max_single_stock_pct": 0.5,
             "max_sector_pct": 0.25,
+            **RISK_CONTROLS,
             "expected_version": 2,
         },
     )
@@ -220,6 +239,7 @@ def test_portfolio_account_fields_roundtrip(client):
             "max_total_position_pct": 0.7,
             "max_single_stock_pct": 0.15,
             "max_sector_pct": 0.25,
+            **{**RISK_CONTROLS, "net_asset_value": 200000, "peak_net_asset_value": 210000, "day_start_net_asset_value": 202000},
             "expected_version": 1,
         },
     )
@@ -237,6 +257,8 @@ def test_portfolio_account_fields_roundtrip(client):
     assert d3["max_total_position_pct"] == 0.8
     assert d3["max_single_stock_pct"] == 0.1
     assert d3["max_sector_pct"] == 0.3
+    assert d3["max_portfolio_open_risk_pct"] == 0.06
+    assert d3["net_asset_value"] is None
 
 
 def test_format_endpoint(client):

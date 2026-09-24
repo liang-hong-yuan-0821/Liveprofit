@@ -40,6 +40,9 @@ from apscheduler.triggers.interval import IntervalTrigger
 logger = logging.getLogger(__name__)
 
 DAILY_TIME = os.getenv("EVENT_STUDY_DAILY_TIME", "08:30")   # HH:MM，本地时区
+LEGACY_DAILY_ENABLED = os.getenv("EVENT_STUDY_LEGACY_DAILY_ENABLED", "false").strip().lower() in {
+    "1", "true", "yes", "on",
+}
 MISFIRE_GRACE = 30 * 60                                      # cron 错过补跑窗口（秒）
 LOCK_PATH = Path("logs/daily_job.running")                   # 运行中标记（内容=子进程 pid）
 ATTEMPTS_PATH = Path("logs/daily_job_attempts.json")         # 当日自动尝试计数
@@ -206,6 +209,12 @@ def _maybe_catch_up() -> None:
 def start_daily_scheduler() -> None:
     """启动常驻调度器（幂等）：cron 触发 + 周期自检 + 启动立即自检。"""
     global _scheduler
+    if not LEGACY_DAILY_ENABLED:
+        logger.info(
+            "旧版事件研究 daily_job 自动调度已停用；每日新闻/事件批次由平台 Dispatcher 准入。"
+            "需临时启用旧维护批处理时设置 EVENT_STUDY_LEGACY_DAILY_ENABLED=true"
+        )
+        return
     if _scheduler is not None:
         return
     _cleanup_stale_lock()

@@ -8,6 +8,7 @@ export type PortfolioPositionDTO = {
     symbol: string;
     quantity: number;
     average_cost: number;
+    active_stop_price: (number | null);
     updated_at: string;
 };
 export namespace PortfolioPositionDTO {

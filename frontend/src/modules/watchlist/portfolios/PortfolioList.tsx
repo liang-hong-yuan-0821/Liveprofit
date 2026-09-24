@@ -68,7 +68,7 @@ export function PortfolioList({ selectedId, onSelect }: PortfolioListProps) {
   }
 
   if (query.isPending) return <LoadingState label="组合列表加载中…" />;
-  if (query.isError) {
+  if (query.isError && !query.data) {
     const error = toApiError(query.error);
     return <ErrorState error={error} onRetry={error.retryable ? () => void query.refetch() : undefined} />;
   }
@@ -77,6 +77,7 @@ export function PortfolioList({ selectedId, onSelect }: PortfolioListProps) {
 
   return (
     <div className="flex flex-col gap-2">
+      {query.isError && <div role="status" className="flex items-center gap-2 text-xs text-amber-500">组合更新失败，仍显示上次数据，编辑草稿已保留。<Button size="sm" variant="ghost" onClick={() => void query.refetch()}>重新加载</Button></div>}
       <div className="flex gap-2">
         <Input
           placeholder="新建组合名称"
@@ -107,20 +108,20 @@ export function PortfolioList({ selectedId, onSelect }: PortfolioListProps) {
             >
               <button
                 type="button"
-                className="flex flex-1 flex-col gap-0.5 text-left"
+                className="flex min-w-0 flex-1 flex-col gap-0.5 text-left"
+                aria-pressed={selectedId === portfolio.id}
                 onClick={() => onSelect(portfolio.id === selectedId ? null : portfolio.id)}
               >
                 <span className="text-sm font-medium">
                   {portfolio.name} <Badge variant="secondary">{portfolio.position_count} 个持仓</Badge>
                 </span>
                 <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-                  资产 {portfolio.total_assets} · 现金 {portfolio.available_cash} · 风险 {portfolio.risk_per_trade_pct}
+                  资产 {portfolio.total_assets?.toLocaleString()} · 现金 {portfolio.available_cash?.toLocaleString()} · 单笔风险 {Number((portfolio.risk_per_trade_pct * 100).toPrecision(6))}%
                   （任务仅读取提交时快照）
                 </span>
               </button>
               <div className="flex items-center gap-2">
                 <PortfolioSettingsDialog
-                  key={portfolio.version}
                   portfolio={portfolio}
                   trigger={
                     <Button size="sm" variant="outline" aria-label="组合设置">

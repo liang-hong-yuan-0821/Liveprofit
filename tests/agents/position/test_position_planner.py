@@ -24,6 +24,15 @@ PORTFOLIO = {
         "max_total_position_pct": "0.800000",
         "max_single_stock_pct": "0.100000",
         "max_sector_pct": "0.300000",
+        "max_portfolio_open_risk_pct": "0.500000",
+        "max_sector_open_risk_pct": "0.500000",
+        "max_daily_new_risk_pct": "0.500000",
+        "max_drawdown_pct": "0.200000",
+        "max_daily_loss_pct": "0.100000",
+        "net_asset_value": "100000.0000",
+        "peak_net_asset_value": "100000.0000",
+        "day_start_net_asset_value": "100000.0000",
+        "risk_facts_as_of": "2026-09-18",
     },
 }
 
@@ -42,12 +51,13 @@ class FakeSignalsRepo:
         self.updates[signal_id] = values
 
 
-def _buy(signal_id, score, entry=10.0, stop=9.0, take=13.0, ts="000001.SZ", valuation=None, code=801080):
+def _buy(signal_id, score, entry=10.0, stop=9.0, take=13.0, ts="000001.SZ", valuation=None, code=801080, market=None):
     return SimpleNamespace(
         id=signal_id, signal_kind="BUY", ts_code=ts, action="BUY",
         score=score, entry_price=Decimal(str(entry)), stop_loss=Decimal(str(stop)),
         take_profit=Decimal(str(take)), sell_ratio=None,
         valuation_price=Decimal(str(valuation)) if valuation is not None else Decimal(str(entry)),
+        execution_market=market,
         order_status=None, notional=None,
     )
 
@@ -69,14 +79,19 @@ def _industry_map(ts_codes: list[str]):
 def _run(planner, signals, **kw):
     repo = FakeSignalsRepo(signals)
     p = PositionPlanner(repo)
+    positions = [
+        {**position, "active_stop_price": position.get("active_stop_price", position["average_cost"])}
+        for position in kw.get("positions", [])
+    ]
     summary = p.plan(
         task_id=TASK, attempt_no=ATTEMPT,
         portfolio_snapshot=kw.get("portfolio", PORTFOLIO),
-        positions=kw.get("positions", []),
+        positions=positions,
         closes=kw.get("closes", {}),
         industry_map=kw.get("industry_map", _industry_map([s.ts_code for s in signals if s.signal_kind == "BUY"])),
         industry_bucket_available=kw.get("industry_bucket_available", True),
         risk_gate=kw.get("risk_gate"),
+        pending_orders=kw.get("pending_orders"),
     )
     return repo, summary
 
@@ -89,8 +104,10 @@ def test_risk_shares_and_cash_cap():
         [_buy(1, 90, ts="000001.SZ"), _buy(2, 80, ts="000002.SZ")],
     )
     assert repo.updates[1]["order_status"] == pp.ELIGIBLE
-    assert repo.updates[1]["shares"] == Decimal("1000")
-    assert repo.updates[1]["order_cost_price"] == Decimal("10.0")
+    assert repo.updates[1]["shares"] == Decimal("900")
+    assert repo.updates[1]["order_cost_price"] == Decimal("10.01")
+    assert repo.updates[1]["order_stop_price"] == Decimal("9.0")
+    assert repo.updates[1]["estimated_fees"] == Decimal("5.10")
     assert repo.updates[2]["order_status"] == pp.ELIGIBLE
     assert summary.suggested_buy_orders == 2
     # 卖出所得不计作现金；unallocated 不参与
@@ -104,9 +121,9 @@ def test_cash_runs_out_after_multiple_buys():
     repo, summary = _run(None, signals)
     for i in (1, 2, 3):
         assert repo.updates[i]["order_status"] == pp.ELIGIBLE
-        assert repo.updates[i]["shares"] == Decimal("1000")
+        assert repo.updates[i]["shares"] == Decimal("900")
     assert repo.updates[4]["order_status"] == pp.ELIGIBLE
-    assert repo.updates[4]["shares"] == Decimal("500")
+    assert repo.updates[4]["shares"] == Decimal("700")
     assert repo.updates[5]["order_status"] == pp.BUY_REJECTED_CASH
 
 
@@ -161,13 +178,37 @@ def test_sector_limit_and_unknown_industry():
     )
     assert repo.updates[1]["order_status"] == pp.ELIGIBLE  # 1000 股×10 = 1 万 → 行业余量 3万-2.5万-1万<0？
     # 行业余量 = 3 万 - 2.5 万 = 5000 → 第一笔也只能买 500 股
-    assert repo.updates[1]["shares"] == Decimal("500")
+    assert repo.updates[1]["shares"] == Decimal("400")
     assert repo.updates[2]["order_status"] == pp.BUY_REJECTED_SECTOR_LIMIT
 
 
 def test_industry_unavailable_rejects_buy():
     repo, summary = _run(None, [_buy(1, 90)], industry_bucket_available=False)
     assert repo.updates[1]["order_status"] == pp.BUY_REJECTED_INDUSTRY_BUCKET
+    assert repo.updates[1]["order_entry_price"] == Decimal("10.01")
+    assert repo.updates[1]["execution_policy_version"] == "cn_execution_v1"
+
+
+def test_trade_status_rejection_precedes_portfolio_constraints():
+    market = {
+        "trade_date": "2026-09-18", "qfq_close": 10, "raw_close": 10,
+        "raw_amount": 100000, "is_suspended": True, "is_st": False,
+        "up_limit": 11, "down_limit": 9, "market_board": "MAIN",
+    }
+    repo, _ = _run(None, [_buy(1, 90, market=market)], industry_bucket_available=False)
+    assert repo.updates[1]["order_status"] == "BUY_REJECTED_SUSPENDED"
+    assert repo.updates[1]["earliest_execution_trade_date"].isoformat() == "2026-09-21"
+
+
+def test_liquidity_participation_caps_final_lot_size():
+    market = {
+        "trade_date": "2026-09-18", "qfq_close": 10, "raw_close": 10,
+        "raw_amount": 50, "is_suspended": False, "is_st": False,
+        "up_limit": 11, "down_limit": 9, "market_board": "CHINEXT",
+    }
+    repo, _ = _run(None, [_buy(1, 90, market=market)])
+    # 5 万元成交额 × 5% / 10.01，最终只能建议 200 股。
+    assert repo.updates[1]["shares"] == Decimal("200")
 
 
 def test_unknown_holding_industry_blocks_new_buy_but_keeps_partial_sell():
@@ -204,7 +245,8 @@ def test_sell_all_includes_odd_lots():
     repo, summary = _run(None, [_hold(10, "SELL_ALL")], positions=positions, closes=closes)
     assert repo.updates[10]["order_status"] == pp.ELIGIBLE
     assert repo.updates[10]["shares"] == Decimal("150")  # 含零股
-    assert repo.updates[10]["notional"] == Decimal("210000")
+    assert repo.updates[10]["notional"] == Decimal("209790.000000")
+    assert repo.updates[10]["estimated_slippage"] == Decimal("210.000000")
     assert summary.suggested_sell_orders == 1
 
 
@@ -227,5 +269,95 @@ def test_sell_without_position_rejected():
 def test_global_order_by_score():
     # 高分先拿钱：票1(90) 1000 股；票2(80) 同样能买
     repo, summary = _run(None, [_buy(2, 80, ts="000002.SZ"), _buy(1, 90, ts="000001.SZ")])
-    assert repo.updates[1]["shares"] == Decimal("1000")
-    assert repo.updates[2]["shares"] == Decimal("1000")
+    assert repo.updates[1]["shares"] == Decimal("900")
+    assert repo.updates[2]["shares"] == Decimal("900")
+
+
+def test_open_risk_is_recomputed_after_each_accepted_buy():
+    portfolio = {
+        **PORTFOLIO,
+        "risk": {
+            **PORTFOLIO["risk"],
+            "max_portfolio_open_risk_pct": "0.015",
+            "max_sector_open_risk_pct": "0.50",
+            "max_daily_new_risk_pct": "0.50",
+        },
+    }
+    repo, summary = _run(
+        None,
+        [_buy(1, 90, ts="000001.SZ"), _buy(2, 80, ts="000002.SZ")],
+        portfolio=portfolio,
+    )
+    assert repo.updates[1]["shares"] == Decimal("900")
+    assert repo.updates[2]["shares"] == Decimal("500")
+    assert summary.portfolio_open_risk == Decimal("1414.00")
+
+
+def test_equity_circuit_breaker_blocks_buy_but_not_risk_reducing_sell():
+    portfolio = {
+        **PORTFOLIO,
+        "risk": {**PORTFOLIO["risk"], "net_asset_value": "79000"},
+    }
+    positions = [{
+        "symbol": "600519.SH", "quantity": "500", "average_cost": "10",
+        "active_stop_price": "9", "available_quantity": "500",
+    }]
+    industry_map = {
+        "600519.SH": {"industry_code": "I0", "name": "消费"},
+        "000001.SZ": {"industry_code": "I1", "name": "银行"},
+    }
+    repo, summary = _run(
+        None,
+        [_buy(1, 90), _hold(2, "SELL_ALL")],
+        portfolio=portfolio,
+        positions=positions,
+        closes={"600519.SH": Decimal("10")},
+        industry_map=industry_map,
+    )
+    assert repo.updates[1]["order_status"] == "BUY_REJECTED_RISK_CIRCUIT"
+    assert repo.updates[2]["order_status"] == pp.ELIGIBLE
+
+
+def test_same_sector_open_risk_pressure_caps_second_buy():
+    portfolio = {
+        **PORTFOLIO,
+        "risk": {
+            **PORTFOLIO["risk"],
+            "max_portfolio_open_risk_pct": "0.50",
+            "max_sector_open_risk_pct": "0.015",
+            "max_daily_new_risk_pct": "0.50",
+        },
+    }
+    industry_map = {
+        "000001.SZ": {"industry_code": "I1", "name": "同一行业"},
+        "000002.SZ": {"industry_code": "I1", "name": "同一行业"},
+    }
+    repo, _ = _run(
+        None, [_buy(1, 90, ts="000001.SZ"), _buy(2, 80, ts="000002.SZ")],
+        portfolio=portfolio, industry_map=industry_map,
+    )
+    assert repo.updates[1]["shares"] == Decimal("900")
+    assert repo.updates[2]["shares"] == Decimal("500")
+
+
+def test_pending_orders_reserve_buy_cash_and_sell_quantity():
+    buy_pending = [{
+        "side": "BUY", "symbol": "000003.SZ", "remaining_quantity": "1000",
+        "order_entry_price": "10", "order_stop_price": "9", "industry_code": "I9",
+        "reserved_cash": "30000",
+    }]
+    repo, _ = _run(None, [_buy(1, 90)], pending_orders=buy_pending)
+    assert repo.updates[1]["shares"] == Decimal("400")
+
+    positions = [{
+        "symbol": "600519.SH", "quantity": "500", "average_cost": "10",
+        "active_stop_price": "9", "available_quantity": "500",
+    }]
+    sell_pending = [{"side": "SELL", "symbol": "600519.SH", "remaining_quantity": "300"}]
+    repo2, _ = _run(
+        None, [_hold(2, "SELL_ALL")], positions=positions,
+        closes={"600519.SH": Decimal("10")},
+        industry_map={"600519.SH": {"industry_code": "I0", "name": "消费"}},
+        pending_orders=sell_pending,
+    )
+    assert repo2.updates[2]["shares"] == Decimal("200")

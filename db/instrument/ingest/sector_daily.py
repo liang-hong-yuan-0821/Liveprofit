@@ -21,6 +21,12 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+from AI.dataflows.providers.base_provider import (
+    ProviderNetworkAccessDenied,
+    raise_if_network_access_denied,
+)
+from db.instrument.ingest.guard import FATAL_INGEST_ERRORS, locked_ingestion
+
 from db.instrument.dao.sector import get_sectors
 from db.instrument.dao.sector_daily import bulk_upsert_sector_daily
 
@@ -35,7 +41,9 @@ def _ymd_to_tushare(day: str) -> str:
     return day.replace("-", "")
 
 
-def collect_sector_daily_incremental(conn, provider, window_days: int = 70) -> dict:
+def collect_sector_daily_incremental(conn, provider, window_days: int = 70, *,
+                                     codes=None, end_date=None, progress=None,
+                                     required_dates=(), fallback_fetch=None) -> dict:
     """板块日线每日增量（dc 源，DO UPDATE 覆盖最近窗口）。
 
     conn 由调用方托管生命周期（与 collect_incremental 同规则）。
@@ -43,13 +51,15 @@ def collect_sector_daily_incremental(conn, provider, window_days: int = 70) -> d
     """
     result = {"boards": 0, "rows": 0, "failed": []}
 
-    boards = get_sectors(conn, "dc")
-    if boards is None or boards.empty:
-        logger.warning("板块日线增量: 库内无 dc 板块（sector 表），跳过")
-        return result
-    codes = boards["sector_code"].astype(str).tolist()
+    if codes is None:
+        boards = get_sectors(conn, "dc")
+        if boards is None or boards.empty:
+            logger.warning("板块日线增量: 库内无 dc 板块（sector 表），跳过")
+            return result
+        codes = boards["sector_code"].astype(str).tolist()
+    codes = list(dict.fromkeys(codes))
 
-    today = date.today()
+    today = pd.Timestamp(end_date).date() if end_date is not None else date.today()
     start_ymd = (today - timedelta(days=window_days)).isoformat()
     end_ymd = today.isoformat()
     start, end = _ymd_to_tushare(start_ymd), _ymd_to_tushare(end_ymd)
@@ -63,6 +73,32 @@ def collect_sector_daily_incremental(conn, provider, window_days: int = 70) -> d
         time.sleep(REQUEST_INTERVAL)
         try:
             df = provider.get_sector_daily_df("dc", code, start, end)
+            raise_if_network_access_denied(provider)
+            required = {str(day).replace("-", "") for day in required_dates}
+            observed = set()
+            source_columns = {"trade_date", "open", "high", "low", "close", "pct_change"}
+            if df is not None and not df.empty:
+                if source_columns <= set(df.columns):
+                    days = pd.to_datetime(df["trade_date"].astype(str), errors="coerce")
+                    values = df[["open", "high", "low", "close", "pct_change"]].apply(
+                        pd.to_numeric, errors="coerce").replace([float("inf"), -float("inf")], None)
+                    valid = days.notna() & values.notna().all(axis=1)
+                    observed = set(days.loc[valid].dt.strftime("%Y%m%d"))
+                    df = df.loc[valid].copy()
+                else:
+                    df = pd.DataFrame()
+            missing_dates = required - observed
+            if missing_dates and fallback_fetch is not None:
+                fallback = fallback_fetch("dc", code, min(missing_dates), max(missing_dates))
+                raise_if_network_access_denied(provider)
+                if fallback is not None and not fallback.empty:
+                    fallback = fallback[fallback["trade_date"].astype(str).str.replace(
+                        "-", "", regex=False).isin(missing_dates)]
+                    df = pd.concat([df, fallback], ignore_index=True) if df is not None else fallback
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
         except Exception as e:
             logger.warning("板块日线增量: %s 拉取异常（跳过）: %s", code, e)
             df = None
@@ -75,13 +111,41 @@ def collect_sector_daily_incremental(conn, provider, window_days: int = 70) -> d
                     MAX_CONSECUTIVE_FAILURES)
                 aborted = True
             continue
-        consecutive_failures = 0
         try:
+            required = ["trade_date", "open", "high", "low", "close", "pct_change"]
+            if any(c not in df.columns for c in required):
+                raise ValueError("sector source missing required columns")
+            days = pd.to_datetime(df["trade_date"].astype(str), errors="coerce")
+            if days.isna().any() or days.duplicated().any():
+                raise ValueError("sector source has invalid dates or duplicate keys")
+            if "ts_code" in df.columns and not df["ts_code"].eq(code).all():
+                raise ValueError("sector source returned another code")
+            df = df.copy()
+            df["trade_date"] = days.dt.strftime("%Y-%m-%d")
+            df = df[(days.dt.date >= pd.Timestamp(start).date()) &
+                    (days.dt.date <= today)].copy()
+            for col in required[1:]:
+                df[col] = pd.to_numeric(df[col], errors="coerce").replace(
+                    [float("inf"), -float("inf")], None)
+            df = df.dropna(subset=required[1:])
+            if df.empty:
+                raise ValueError("UPSTREAM_NOT_READY")
+            if required_dates and not {str(day).replace("-", "") for day in required_dates} <= set(
+                df["trade_date"].astype(str).str.replace("-", "", regex=False)):
+                raise ValueError("UPSTREAM_TARGET_DATE_MISSING")
             out = _to_sector_daily_frame(df, code)
             n = bulk_upsert_sector_daily(conn, out, update=True)
             conn.commit()
             result["boards"] += 1
             result["rows"] += n
+            consecutive_failures = 0
+            if progress is not None:
+                try:
+                    progress({"code": code, "rows": n, "error_code": None})
+                except Exception:
+                    logger.warning("板块进度上报失败（已提交数据保留）", exc_info=True)
+        except FATAL_INGEST_ERRORS:
+            raise
         except Exception as e:
             logger.warning("板块日线增量: %s 写入失败（回滚后继续）: %s", code, e)
             result["failed"].append(code)
@@ -93,6 +157,8 @@ def collect_sector_daily_incremental(conn, provider, window_days: int = 70) -> d
                 aborted = True
             try:
                 conn.rollback()
+            except FATAL_INGEST_ERRORS:
+                raise
             except Exception:
                 pass
     logger.info("板块日线增量完成: 板块 %d / 行 %d / 失败 %d%s",
@@ -115,10 +181,10 @@ def _to_sector_daily_frame(df: pd.DataFrame, sector_code: str) -> pd.DataFrame:
         "low": df["low"],
         "close": df["close"],
         "pre_close": None,
-        "change": df["change"],
+        "change": df["change"] if "change" in df.columns else None,
         "pct_chg": df["pct_change"],
-        "vol": df["vol"],
-        "amount": df["amount"],
+        "vol": df["vol"] if "vol" in df.columns else None,
+        "amount": df["amount"] if "amount" in df.columns else None,
         "turnover_rate": df["turnover_rate"] if "turnover_rate" in df.columns else None,
     }, dtype=object)
     out["source"] = "dc"
@@ -128,3 +194,8 @@ def _to_sector_daily_frame(df: pd.DataFrame, sector_code: str) -> pd.DataFrame:
     # cannot affect row a second time（store-daily 实测踩坑 4）
     return out.drop_duplicates(
         subset=["source", "sector_code", "trade_date"]).reset_index(drop=True)
+
+
+# Public entrypoints acquire once; nested collectors reuse the guarded connection.
+_collect_sector_daily_incremental_unlocked = collect_sector_daily_incremental
+collect_sector_daily_incremental = locked_ingestion("CN_SECTOR_DAILY")(_collect_sector_daily_incremental_unlocked)

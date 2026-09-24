@@ -73,6 +73,15 @@ async def create_portfolio(
                 max_total_position_pct=payload.max_total_position_pct,
                 max_single_stock_pct=payload.max_single_stock_pct,
                 max_sector_pct=payload.max_sector_pct,
+                max_portfolio_open_risk_pct=payload.max_portfolio_open_risk_pct,
+                max_sector_open_risk_pct=payload.max_sector_open_risk_pct,
+                max_daily_new_risk_pct=payload.max_daily_new_risk_pct,
+                max_drawdown_pct=payload.max_drawdown_pct,
+                max_daily_loss_pct=payload.max_daily_loss_pct,
+                net_asset_value=payload.net_asset_value,
+                peak_net_asset_value=payload.peak_net_asset_value,
+                day_start_net_asset_value=payload.day_start_net_asset_value,
+                risk_facts_as_of=payload.risk_facts_as_of,
             )
 
     dto = await services.run(_do)
@@ -101,6 +110,15 @@ async def update_portfolio(
                 max_total_position_pct=payload.max_total_position_pct,
                 max_single_stock_pct=payload.max_single_stock_pct,
                 max_sector_pct=payload.max_sector_pct,
+                max_portfolio_open_risk_pct=payload.max_portfolio_open_risk_pct,
+                max_sector_open_risk_pct=payload.max_sector_open_risk_pct,
+                max_daily_new_risk_pct=payload.max_daily_new_risk_pct,
+                max_drawdown_pct=payload.max_drawdown_pct,
+                max_daily_loss_pct=payload.max_daily_loss_pct,
+                net_asset_value=payload.net_asset_value,
+                peak_net_asset_value=payload.peak_net_asset_value,
+                day_start_net_asset_value=payload.day_start_net_asset_value,
+                risk_facts_as_of=payload.risk_facts_as_of,
                 expected_version=payload.expected_version,
             )
 
@@ -164,7 +182,7 @@ async def upsert_position(
         with _open_uow(services) as uow:
             return PortfolioService(uow).upsert_position(
                 portfolio_id, instrument, payload.quantity, payload.average_cost,
-                payload.expected_portfolio_revision,
+                payload.expected_portfolio_revision, active_stop_price=payload.active_stop_price,
             )
 
     result = await services.run(_do)

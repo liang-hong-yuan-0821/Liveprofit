@@ -69,6 +69,7 @@ async def get_report(task_id: uuid.UUID, request: Request, trace_id: str = Depen
                     published_at=strategy.get("published_at"),
                 ),
                 portfolio_snapshot=PortfolioSnapshotDTO(
+                    id=portfolio.get("id"),
                     name=str(portfolio.get("name") or ""),
                     version=int(portfolio.get("version") or 0),
                     total_assets=str(portfolio.get("total_assets") or "0"),
@@ -101,6 +102,13 @@ async def get_report(task_id: uuid.UUID, request: Request, trace_id: str = Depen
                         stop_loss=float(r.stop_loss) if r.stop_loss is not None else None,
                         take_profit=float(r.take_profit) if r.take_profit is not None else None,
                         risk_bucket=r.risk_bucket,
+                        order_entry_price=float(r.order_entry_price) if r.order_entry_price is not None else None,
+                        order_stop_price=float(r.order_stop_price) if r.order_stop_price is not None else None,
+                        order_take_price=float(r.order_take_price) if r.order_take_price is not None else None,
+                        earliest_execution_trade_date=r.earliest_execution_trade_date,
+                        estimated_fees=float(r.estimated_fees) if r.estimated_fees is not None else None,
+                        estimated_slippage=float(r.estimated_slippage) if r.estimated_slippage is not None else None,
+                        execution_policy_version=r.execution_policy_version,
                     )
                     for r in previews["orders"]
                 ],
@@ -112,6 +120,14 @@ async def get_report(task_id: uuid.UUID, request: Request, trace_id: str = Depen
                     suggested_buy_orders=int(summary.get("suggested_buy_orders") or 0),
                     suggested_sell_orders=int(summary.get("suggested_sell_orders") or 0),
                     failed_count=int(summary.get("failed_count") or 0),
+                    portfolio_open_risk=(
+                        float(summary["portfolio_open_risk"])
+                        if summary.get("portfolio_open_risk") is not None else None
+                    ),
+                    daily_new_risk=(
+                        float(summary["daily_new_risk"])
+                        if summary.get("daily_new_risk") is not None else None
+                    ),
                 ),
                 warnings=[str(w) for w in (payload.get("warnings") or [])],
                 valued_at=payload.get("valued_at"),

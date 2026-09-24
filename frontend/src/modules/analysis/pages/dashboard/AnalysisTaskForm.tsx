@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { CircleHelp } from 'lucide-react';
 import { ApiError, toApiError } from '../../../../api/client';
 import { ErrorState } from '../../../../shared/feedback/ErrorState';
 import { todayLocalDate } from '../../../../shared/format/dateTime';
@@ -10,12 +11,13 @@ import { Button } from '../../../../shared/ui/button';
 import { Checkbox } from '../../../../shared/ui/checkbox';
 import { Input } from '../../../../shared/ui/input';
 import { Label } from '../../../../shared/ui/label';
+import { LAYER_LABELS } from '../../shared/analysisLayers';
 import { isStaleInputError, useCreateAnalysisTaskMutation, type CreateTaskVariables } from './queries';
 import { QuantParamsPicker } from './QuantParamsPicker';
 
 // 创建分析任务面板（产品决策 2026-09-06 v3）：新建分析恒为全市场调研——
-// 无目标标的代码输入；市场/板块/筛选三个层级自由勾选（任意非空组合），
-// 仓位可选（随筛选联动）。请求体恒为 MARKET_WIDE；后端契约已同步放开组合限制。
+// 无目标标的代码输入；分析层级默认全部不选、自由勾选（任意非空组合），
+// 仓位独立可选。请求体恒为 MARKET_WIDE；后端契约已同步放开组合限制。
 export type AnalysisLayer = 'market' | 'sector' | 'stock' | 'screening' | 'position';
 
 const analysisLayerValues = ['market', 'sector', 'stock', 'screening', 'position'] as const;
@@ -51,22 +53,14 @@ export const analysisTaskFormSchema = z
 
 export type AnalysisTaskFormValues = z.infer<typeof analysisTaskFormSchema>;
 
-export const LAYER_LABELS: Record<AnalysisLayer, string> = {
-  market: '市场',
-  sector: '板块',
-  stock: '个股',
-  screening: '筛选',
-  position: '仓位',
-};
-
-export const DEFAULT_LAYERS: AnalysisLayer[] = ['market', 'sector', 'screening'];
-
 interface AnalysisTaskFormProps {
   onCancel: () => void;
 }
 
 export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialLayers = [...new Set((searchParams.get('layers') ?? '').split(','))].filter((layer): layer is AnalysisLayer => analysisLayerValues.includes(layer as AnalysisLayer));
   const mutation = useCreateAnalysisTaskMutation();
   // 同一意图复用 Idempotency-Key；任一输入改变后生成新 key（API 契约 §1.4）
   const idempotencyRef = useRef<{ key: string; snapshot: string } | null>(null);
@@ -76,10 +70,13 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
     resolver: zodResolver(analysisTaskFormSchema),
     defaultValues: {
       requested_trade_date: todayLocalDate(),
-      selected_layers: [...DEFAULT_LAYERS],
+      selected_layers: initialLayers,  // 默认什么都不选，由用户勾选（至少一个）
     },
   });
 
+  const values = form.watch();
+  const validity = analysisTaskFormSchema.safeParse(values);
+  const disabledReason = validity.success ? null : validity.error.issues[0]?.message;
   const selectedLayers = form.watch('selected_layers');
 
   function toggleLayer(layer: AnalysisLayer, checked: boolean) {
@@ -153,7 +150,7 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
 
       <fieldset className="flex flex-col gap-1.5">
         <legend className="text-sm font-medium">分析层级（全市场调研，层级自由组合）</legend>
-        {(['market', 'sector', 'screening'] as AnalysisLayer[]).map((layer) => (
+        {(['market', 'sector', 'stock', 'screening'] as AnalysisLayer[]).map((layer) => (
           <label key={layer} className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={selectedLayers.includes(layer)}
@@ -162,16 +159,29 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
             {LAYER_LABELS[layer]}
           </label>
         ))}
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={selectedLayers.includes('position')}
-            onChange={(event) => toggleLayer('position', event.target.checked)}
-          />
-          仓位
-          <span className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-            （量化全市场扫描：选择已发布策略与组合，建议订单需人工确认、不自动下单）
+        <div className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2">
+            <Checkbox
+              checked={selectedLayers.includes('position')}
+              onChange={(event) => toggleLayer('position', event.target.checked)}
+            />
+            仓位
+          </label>
+          <span className="group relative inline-flex" aria-label="仓位说明">
+            <CircleHelp className="size-3.5" style={{ color: 'var(--color-fg-muted)' }} aria-hidden />
+            <span
+              role="tooltip"
+              className="pointer-events-none invisible absolute left-1/2 top-full z-10 mt-1.5 w-64 -translate-x-1/2 rounded-md border p-2 text-xs opacity-0 transition-opacity group-hover:visible group-hover:opacity-100"
+              style={{
+                borderColor: 'var(--color-border)',
+                background: 'var(--color-surface)',
+                color: 'var(--color-fg-muted)',
+              }}
+            >
+              量化全市场扫描：选择已发布策略与组合，建议订单需人工确认、不自动下单
+            </span>
           </span>
-        </label>
+        </div>
         {selectedLayers.includes('position') && <QuantParamsPicker form={form} />}
         {form.formState.errors.selected_layers && (
           <p className="text-xs text-red-400">{form.formState.errors.selected_layers.message}</p>
@@ -189,11 +199,16 @@ export function AnalysisTaskForm({ onCancel }: AnalysisTaskFormProps) {
         />
       )}
 
+      <div className="rounded-xl bg-[var(--color-accent-soft)] p-3 text-xs text-[var(--color-fg)]">
+        {selectedLayers.length ? `已选：${selectedLayers.map(layer => LAYER_LABELS[layer]).join('、')}。` : '请先选择需要的分析层级。'}
+        {selectedLayers.includes('position') && '仓位分析需要已发布策略与组合，建议订单需人工确认。'}
+        {disabledReason && <p className="mt-1 text-[var(--color-fg-muted)]" id="analysis-submit-reason">{disabledReason}</p>}
+      </div>
       <div className="flex justify-end gap-3">
         <Button type="button" variant="outline" onClick={onCancel}>
           取消
         </Button>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button type="submit" aria-describedby={disabledReason ? "analysis-submit-reason" : undefined} disabled={mutation.isPending || !validity.success}>
           {mutation.isPending ? '提交中…' : '提交分析'}
         </Button>
       </div>

@@ -7,6 +7,7 @@ market_conn 经 request.app.state 注入（main.py lifespan 赋值）；构造�
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request
 
@@ -60,7 +61,7 @@ def _bars_data(bars_dto, market: str) -> BarsData:
 
 
 async def _run_get_bars(request: Request, symbol: str, market: str, interval: str,
-                       from_: date, to: date):
+                       from_: date, to: date, factor_policy: str = "ensure"):
     """indices/stocks bars 端点共用执行体（get_bars 已放宽 stock，板块概念Treemap方案 3.3）。
 
     stock_factor_fetcher 经 app.state 注入（测试覆盖点；生产不赋值 → 服务层
@@ -70,14 +71,22 @@ async def _run_get_bars(request: Request, symbol: str, market: str, interval: st
     calendar = request.app.state.market_calendar
     market_conn = request.app.state.market_conn
     stock_factor_fetcher = getattr(request.app.state, "stock_factor_fetcher", None)
+    from backend.api.routers.market_refresh import service_for
+    refresh = service_for(request)
+    factor_gate = getattr(request.app.state, "market_factor_gate", refresh.store.factor_gate)
 
     def _do():
         return MarketDataService(
             calendar=calendar,
+            clock=getattr(request.app.state, "market_clock", None),
             market_conn=market_conn,
             stock_factor_fetcher=stock_factor_fetcher,
+            factor_gate=factor_gate,
+            factor_changed=refresh.store.changed,
+            publish_lag_seconds=refresh.policy.publish_lag_seconds,
         ).get_bars(
-            market=market, symbol=symbol, interval=interval, from_date=from_, to_date=to
+            market=market, symbol=symbol, interval=interval, from_date=from_, to_date=to,
+            factor_policy=factor_policy,
         )
 
     return await services.run(_do)
@@ -106,10 +115,11 @@ async def stock_bars(
     interval: str = Query(),
     from_: date = Query(alias="from"),
     to: date = Query(),
+    factor_policy: Literal["ensure", "cache_only"] = Query(default="ensure"),
     trace_id: str = Depends(ensure_trace_context),
 ):
     """个股 K 线（板块概念Treemap方案 3.3）：复用 get_bars（instrument_type 放宽 stock）。"""
-    bars_dto = await _run_get_bars(request, symbol, market, interval, from_, to)
+    bars_dto = await _run_get_bars(request, symbol, market, interval, from_, to, factor_policy)
     meta = EnvelopeMeta(request_id=request.state.trace_id)
     return Envelope(data=_bars_data(bars_dto, market), meta=meta).model_dump(by_alias=True)
 
@@ -135,7 +145,9 @@ async def sector_bars(
         raise ProblemError(422, "INTERVAL_NOT_SUPPORTED", f"概念 K 线首期仅支持 interval=1d：{interval}")
 
     def _do():
-        return MarketDataService(calendar=calendar, market_conn=market_conn).get_sector_bars(
+        return MarketDataService(calendar=calendar, market_conn=market_conn,
+                                 clock=getattr(request.app.state, "market_clock", None),
+                                 publish_lag_seconds=request.app.state.settings.market_refresh.publish_lag_seconds).get_sector_bars(
             market=market, source=source, sector_code=sector_code,
             from_date=from_, to_date=to,
         )
@@ -150,16 +162,11 @@ async def concept_tree(
     request: Request,
     market: str = Query(),
     interval: str = Query(),
-    from_: date = Query(alias="from"),
-    to: date = Query(),
     limit: int = Query(ge=1, le=30),
     as_of: date | None = Query(default=None),
     trace_id: str = Depends(ensure_trace_context),
 ):
-    """概念树（板块概念Treemap方案 3.2）：热度 top N + 当日涨跌幅 + 成分股。
-
-    from_ 作为 as_of 透传、to 忽略（m6 定稿同款口径）；limit 必填（同 hot 端点）。
-    """
+    """Latest actual sector date by default; explicit as_of reads exactly that day."""
     services = request.app.state.analysis_services
     calendar = request.app.state.market_calendar
     market_conn = request.app.state.market_conn
@@ -169,19 +176,21 @@ async def concept_tree(
         raise ProblemError(422, "INTERVAL_NOT_SUPPORTED", f"概念树首期仅支持 interval=1d：{interval}")
 
     def _do():
-        effective_as_of = as_of or from_
-        return MarketDataService(calendar=calendar, market_conn=market_conn).get_concept_tree(
-            market=market, as_of=effective_as_of, limit=limit)
+        return MarketDataService(calendar=calendar, market_conn=market_conn,
+                                 clock=getattr(request.app.state, "market_clock", None),
+                                 publish_lag_seconds=request.app.state.settings.market_refresh.publish_lag_seconds).get_concept_tree(
+            market=market, as_of=as_of, limit=limit)
 
-    snapshot_date, items, result_status, freshness, source_updated = await services.run(_do)
+    result = await services.run(_do)
     data = ConceptTreeData(
-        as_of=snapshot_date,
+        as_of=result.as_of, requested_as_of=result.requested_as_of,
+        date_mode=result.date_mode, coverage=result.coverage,
         algorithm_version=HEAT_ALGORITHM_VERSION,
-        result_status=result_status,
-        items=[ConceptTreeNodeDTO(**item) for item in items],
+        result_status=result.result_status,
+        items=[ConceptTreeNodeDTO(**item) for item in result.items],
         source="dc",  # 与热度口径一致（m5 定稿同 hot 端点）
-        source_updated_at=source_updated,
-        freshness_status=freshness,
+        source_updated_at=result.source_updated_at,
+        freshness_status=result.freshness_status,
     )
     meta = EnvelopeMeta(request_id=request.state.trace_id)
     return Envelope(data=data, meta=meta).model_dump()
@@ -192,8 +201,6 @@ async def hot_concepts(
     request: Request,
     market: str = Query(),
     interval: str = Query(),
-    from_: date = Query(alias="from"),
-    to: date = Query(),
     limit: int = Query(ge=1, le=30),
     as_of: date | None = Query(default=None),
     trace_id: str = Depends(ensure_trace_context),
@@ -207,17 +214,17 @@ async def hot_concepts(
         raise ProblemError(422, "INTERVAL_NOT_SUPPORTED", f"热门概念首期仅支持 interval=1d：{interval}")
 
     def _do():
-        # from_ 作为 as_of 透传（m6 定稿）、to 忽略——现场算支持任意历史日期；
-        # from_/to 形参保留（契约兼容）
-        effective_as_of = as_of or from_
-        return MarketDataService(calendar=calendar, market_conn=market_conn).get_hot_concepts(
-            market=market, as_of=effective_as_of, limit=limit)
+        return MarketDataService(calendar=calendar, market_conn=market_conn,
+                                 clock=getattr(request.app.state, "market_clock", None),
+                                 publish_lag_seconds=request.app.state.settings.market_refresh.publish_lag_seconds).get_hot_concepts(
+            market=market, as_of=as_of, limit=limit)
 
-    snapshot_date, items, result_status, freshness, source_updated = await services.run(_do)
+    result = await services.run(_do)
     data = HotConceptsData(
-        as_of=snapshot_date,
+        as_of=result.as_of, requested_as_of=result.requested_as_of,
+        date_mode=result.date_mode, coverage=result.coverage,
         algorithm_version=HEAT_ALGORITHM_VERSION,
-        result_status=result_status,
+        result_status=result.result_status,
         items=[
             HotConceptDTO(
                 sector_code=item["sector_code"],
@@ -232,12 +239,13 @@ async def hot_concepts(
                 ),
                 updated_at=item["updated_at"],
                 bars=[],
+                heat_window_rows=item["heat_window_rows"],
             )
-            for item in items
+            for item in result.items
         ],
         source="dc",  # 与热度口径一致（m5 定稿：原硬编码 "akshare" 随改）
-        source_updated_at=source_updated,  # 聚合 max(sector_daily.updated_at)（m5 定稿）
-        freshness_status=freshness,
+        source_updated_at=result.source_updated_at,
+        freshness_status=result.freshness_status,
     )
     meta = EnvelopeMeta(request_id=request.state.trace_id)
     return Envelope(data=data, meta=meta).model_dump()
@@ -264,7 +272,9 @@ async def _run_trends(request: Request, indexes: list[tuple[str, str]],
     market_conn = request.app.state.market_conn
 
     def _do():
-        return MarketDataService(calendar=calendar, market_conn=market_conn).get_index_trends(
+        return MarketDataService(calendar=calendar, market_conn=market_conn,
+                                 clock=getattr(request.app.state, "market_clock", None),
+                                 publish_lag_seconds=request.app.state.settings.market_refresh.publish_lag_seconds).get_index_trends(
             indexes=indexes, from_date=from_, to_date=to)
 
     return await services.run(_do)

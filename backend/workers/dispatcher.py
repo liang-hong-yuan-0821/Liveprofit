@@ -14,6 +14,7 @@ import random
 import signal
 import threading
 import time
+from datetime import datetime, timezone
 
 from backend.bootstrap.observability import init_logging
 from backend.bootstrap.settings import Settings
@@ -34,6 +35,74 @@ class DispatcherRuntime:
         self._container = container
         self._publisher = DramatiqTaskMessagePublisher()
         self._artifact_store = self._build_artifact_store()
+        from functools import partial
+        from db.instrument.db import get_connection
+        from backend.modules.market_data.application.refresh_service import build_refresh_service
+        from backend.workers.market_refresh import publish_refresh
+        self._market_refresh = build_refresh_service(
+            settings, container.redis, partial(get_connection, settings.core.resolved_market_dsn()),
+            publisher=partial(publish_refresh, settings),
+        )
+        self._news_capture_lock = threading.Lock()
+
+    def refresh_market(self):
+        self._market_refresh.tick()
+
+    def ensure_daily_research_runs(self) -> int:
+        from backend.modules.daily_research.application.scheduler import ensure_due_runs
+
+        return ensure_due_runs(
+            self._container.session_factory,
+            datetime.now(timezone.utc),
+            enabled=self._settings.daily_research.enabled,
+        )
+
+    def ensure_incremental_news_run(self) -> bool:
+        from backend.modules.daily_research.application.scheduler import ensure_incremental_news_run
+
+        return ensure_incremental_news_run(
+            self._container.session_factory,
+            datetime.now(timezone.utc),
+            interval_seconds=self._settings.daily_research.news_analysis_interval_seconds,
+            enabled=self._settings.daily_research.enabled,
+        )
+
+    def ensure_quant_news_refresh_run(self) -> int:
+        from backend.modules.daily_research.application.scheduler import ensure_quant_news_refresh_run
+
+        return ensure_quant_news_refresh_run(
+            self._container.session_factory,
+            datetime.now(timezone.utc),
+            enabled=self._settings.daily_research.enabled,
+        )
+
+    def capture_news_in_background(self) -> bool:
+        """Continuously retain source news without blocking Outbox dispatch."""
+        if not self._settings.daily_research.enabled:
+            return False
+        if not self._news_capture_lock.acquire(blocking=False):
+            return False
+
+        def _capture() -> None:
+            try:
+                from backend.modules.daily_research.application.news_pipeline import capture_news
+
+                with self._container.session_factory() as session:
+                    batch = capture_news(session)
+                logger.info(
+                    "新闻原文采集完成：status=%s items=%s coverage=%s",
+                    batch.get("status"), batch.get("item_count", "n/a"),
+                    batch.get("coverage"),
+                )
+            except Exception:
+                logger.warning("新闻原文采集失败，后续周期会重试", exc_info=True)
+            finally:
+                self._news_capture_lock.release()
+
+        threading.Thread(
+            target=_capture, daemon=True, name="daily-research-news-capture"
+        ).start()
+        return True
 
     def _build_artifact_store(self):
         from pathlib import Path
@@ -113,9 +182,44 @@ def dispatcher_loop(runtime: DispatcherRuntime, *, stop_event: threading.Event) 
     recovered = runtime.recover_expired_leases()
     logger.info("启动恢复过期租约：%s 条", recovered)
     last_recovery = time.monotonic()
+    last_market_check = -float("inf")
+    last_research_schedule = -float("inf")
+    last_news_capture = -float("inf")
+    last_news_analysis = -float("inf")
 
     while not stop_event.is_set():
         try:
+            now = time.monotonic()
+            if now - last_research_schedule >= settings.daily_research.schedule_check_seconds:
+                try:
+                    created = runtime.ensure_daily_research_runs()
+                    if created:
+                        logger.info("每日投研到期批次已创建：%s", created)
+                except Exception:
+                    logger.exception("每日投研定时准入失败，下一周期重试")
+                try:
+                    refreshed = runtime.ensure_quant_news_refresh_run()
+                    if refreshed:
+                        logger.info("新闻补齐后量化候选刷新批次已创建：%s", refreshed)
+                except Exception:
+                    logger.exception("新闻补齐后量化刷新准入失败，下一周期重试")
+                last_research_schedule = now
+            if now - last_news_capture >= settings.daily_research.news_capture_interval_seconds:
+                runtime.capture_news_in_background()
+                last_news_capture = now
+            if now - last_news_analysis >= settings.daily_research.news_analysis_interval_seconds:
+                try:
+                    if runtime.ensure_incremental_news_run():
+                        logger.info("新增新闻间隔研判任务已准入")
+                except Exception:
+                    logger.exception("新增新闻间隔研判准入失败，下一周期重试")
+                last_news_analysis = now
+            if time.monotonic() - last_market_check >= settings.market_refresh.check_interval_seconds:
+                try:
+                    runtime.refresh_market()
+                except Exception:
+                    logger.warning("市场补齐检查失败，原分析调度继续", exc_info=True)
+                last_market_check = time.monotonic()
             if time.monotonic() - last_recovery >= recovery_interval:
                 recovered = runtime.recover_expired_leases()
                 if recovered:

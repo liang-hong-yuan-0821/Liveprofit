@@ -21,6 +21,7 @@ class QuantStrategyVersionDTO(BaseModel):
     template_id: str | None = None
     template_params: dict | None = None
     template_renderer_version: str | None = None
+    lifecycle_policy_version_id: UUID | None = None
     published_at: datetime | None
     archived_at: datetime | None
     version: int
@@ -71,6 +72,7 @@ class QuantStrategyDraftDTO(BaseModel):
     template_id: str | None = None
     template_params: dict | None = None
     template_renderer_version: str | None = None
+    lifecycle_policy_version_id: UUID | None = None
     version: int
     created_at: datetime
     updated_at: datetime
@@ -97,6 +99,11 @@ class QuantStrategyFormatData(BaseModel):
 
 
 class QuantStrategyPublishRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+
+
+class LifecyclePolicyBindingRequest(BaseModel):
+    lifecycle_policy_version_id: UUID | None
     expected_version: int = Field(ge=1)
 
 

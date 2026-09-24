@@ -44,7 +44,7 @@ export function PredictionTab() {
           {assetsQuery.isPending && <LoadingState label="资产清单加载中…" />}
           {assetsQuery.isError && (
             <p className="mb-2 text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-              资产清单暂不可用，可自由输入目标资产代码
+              资产清单暂不可用，可自由输入目标资产代码 <button type="button" className="ml-2 underline" onClick={() => void assetsQuery.refetch()}>重新加载清单</button>
             </p>
           )}
           <PredictionForm

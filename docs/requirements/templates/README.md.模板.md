@@ -3,7 +3,7 @@
 > **状态**：<方案设计 | 评审中 | 待确认 | 任务分解 | 实现中 | Code Review | 已完成>（<最后更新时间>）
 > **进度**：<x>/<y> 步骤（<已完成步骤简述>）
 > **下一步**：<接下来要做什么>
-> **关联文档**：<指向本任务 plan.md / tasks.md 与相关 knowledge/、memory/ 文档>
+> **关联文档**：<指向本任务 plan.md / tasks.md 与相关 knowledge/、experience/ 文档>
 
 ## 任务总览
 

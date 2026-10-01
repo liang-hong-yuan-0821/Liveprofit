@@ -1,0 +1,752 @@
+[
+  {
+    "file": "docs/experience/pitfalls/frontend/zrender-shared-eventful.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\experience\\pitfalls\\frontend\\liveprofit\\frontend\\node_modules\\zrender\\lib\\core\\eventful.js",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\.env",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\.env.example",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\config\\__init__.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\config\\database_config.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\config\\mongodb_storage.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\__init__.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\cache\\__init__.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\cache\\adaptive.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\cache\\db_cache.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\cache\\integrated.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\interface.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\default_config.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\docker-compose.yml",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\pyproject.toml",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\readme.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/MongoDB全面替换为PostgreSQL方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\run.sh",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\ai\\dataflows\\providers\\cn\\akshare.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\ai\\dataflows\\providers\\cn\\tushare.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\backend\\modules\\market_data\\application\\service.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\backend\\workers\\market_ingest.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\db\\instrument\\ingest\\backfill.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\db\\instrument\\ingest\\incremental.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\db\\instrument\\schema.sql",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\docs\\requirements\\archive\\后端方案.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\frontend\\src\\modules\\market\\pages\\marketindicespanel.test.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\frontend\\src\\modules\\market\\pages\\marketindicespanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\tests\\dataflows\\providers\\test_tushare_index_global.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\tests\\dataflows\\test_akshare_index_data_df.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\tests\\db\\instrument\\test_backfill.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\tests\\db\\instrument\\test_incremental.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\tests\\db\\instrument\\test_index_ingestion.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/USKR指数上线/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\uskr指数上线\\liveprofit\\tests\\db\\instrument\\test_market_ingest_wrapper.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究审核界面平台集成方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\eventstudy\\db\\schema.sql",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究审核界面平台集成方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\eventstudy\\review\\ai_prelabel.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究审核界面平台集成方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\eventstudy\\review\\review_app.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究审核界面平台集成方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\eventstudy\\review\\review_dao.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\eventstudy\\collectors\\config.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\eventstudy\\scheduler\\daily_job.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\backend\\api\\routers\\event_study_review.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\backend\\api\\schemas\\event_study_review.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\backend\\modules\\event_study\\application\\review_contracts.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\backend\\modules\\event_study\\application\\review_service.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\backend\\modules\\event_study\\infrastructure\\review_adapter.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\app\\components\\sidebarnav.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\analysis\\pages\\dashboard\\aidashboardpage.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\event-study\\pages\\aieventstudypage.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\event-study\\pages\\eventstudypage.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\event-study\\pages\\review\\eventstudyreviewpage.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\event-study\\pages\\review\\pendingeventstab.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\event-study\\pages\\review\\queries.ts",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\market\\pages\\macroinformationpanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/事件研究独立Tab与审核自动拉取方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\routes\\index.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/任务拓扑图方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\frontend\\src\\modules\\analysis\\pages\\task-detail\\executionlogspanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/任务详情页markdown渲染方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\analysis\\pages\\task-detail\\executionlogspanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/任务详情页markdown渲染方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\modules\\analysis\\pages\\task-detail\\reportcontent.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/任务详情页markdown渲染方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\frontend\\src\\styles.css",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/前端体验优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\agent.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/指数K线图交互优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\指数k线图交互优化\\liveprofit\\backend\\modules\\market_data\\application\\service.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/指数K线图交互优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\指数k线图交互优化\\liveprofit\\backend\\tests\\contract\\api\\test_market_data.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/指数K线图交互优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\指数k线图交互优化\\liveprofit\\backend\\tests\\integration\\market_data\\test_market_flow.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/指数K线图交互优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\指数k线图交互优化\\liveprofit\\frontend\\src\\modules\\market\\pages\\marketindicespanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/指数K线图交互优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\指数k线图交互优化\\liveprofit\\frontend\\src\\shared\\charts\\candlestickchart.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/指数K线图交互优化/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\指数k线图交互优化\\liveprofit\\frontend\\src\\styles.css",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\ai\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\db\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\ai\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\archive\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\db\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\tasks\\前端平台技术方案.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\templates\\plan.md.模板.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\templates\\tasks.md.模板.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\api契约.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\done\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\experience",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\experience\\index.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\index.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\ai",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\ai\\个股层.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\ai\\市场层.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\ai\\板块层.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\backend",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\backend\\api契约.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\backend\\数据库表结构.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\frontend",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\frontend\\前端平台.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\knowledge\\产品需求分析.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\plans\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\plans\\产品需求分析.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\requirements\\archive",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\requirements\\archive\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\requirements\\templates",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\tasks",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\市场层.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\相对路径",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\backend\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\experience\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\index.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\knowledge\\ai\\市场层.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\knowledge\\backend\\api契约.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\knowledge\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\knowledge\\产品需求分析.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\requirements\\archive\\…",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\x",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\指数k线图交互优化\\plan.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\x",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/文档目录重构/tasks.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\文档目录重构\\相对路径",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块层轮动战术与政策事件流方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\dataflows\\interface.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块层轮动战术与政策事件流方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\logviewer\\app.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块层轮动战术与政策事件流方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\sectoragents\\analysts\\sector_news_analyst.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块层轮动战术与政策事件流方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\ai\\sectoragents\\analysts\\sector_rotation_analyst.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\backend\\api\\routers\\market_data.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\backend\\api\\schemas\\market.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\backend\\modules\\market_data\\application\\service.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\backend\\tests\\contract\\api\\test_market_data.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\backend\\tests\\contract\\test_openapi_gate.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\claude.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\db\\instrument\\dao\\sector_daily.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\db\\instrument\\ingest\\incremental.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\db\\instrument\\schema.sql",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\docs\\experience\\pitfalls\\ai\\store-daily.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\docs\\experience\\pitfalls\\ai\\tushare-endpoints.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\docs\\experience\\pitfalls\\frontend\\pnpm-openapi-codegen.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\docs\\knowledge\\backend\\api契约.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\frontend\\src\\modules\\analysis\\pages\\agents\\agenttopologypage.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\frontend\\src\\modules\\analysis\\pages\\task-detail\\graphtopologypanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\frontend\\src\\modules\\market\\pages\\hotconceptspanel.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\板块概念treemap\\liveprofit\\tests\\db\\instrument",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/板块概念Treemap/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\指数k线图交互优化\\plan.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\ai\\dataflows\\providers\\cn\\tushare.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\ai\\dataflows\\store\\backfill.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\ai\\eventstudy\\db\\market_data_dao.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\ai\\eventstudy\\db\\schema.sql",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\ai\\eventstudy\\processing\\market_context.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\backend\\modules\\market_data\\application\\service.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\backend\\modules\\market_data\\infrastructure\\ingestion.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\backend\\modules\\market_data\\infrastructure\\models.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\archive\\liveprofit\\backend\\workers\\market_ingest.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/证券市场数据库统一方案.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\docs\\requirements\\指数k线图交互优化\\plan.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/issues.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\backend\\tests\\integration\\market_data\\test_market_flow.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\backend\\tests\\contract\\api\\test_market_data.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\backend\\tests\\integration\\market_data\\test_market_flow.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\claude.md",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\frontend\\src\\modules\\market\\pages\\marketindicespanel.test.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\frontend\\src\\modules\\market\\pages\\marketoverviewpage.test.tsx",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\tests\\db\\instrument\\test_backfill.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\tests\\db\\instrument\\test_incremental.py",
+    "status": "pre-existing"
+  },
+  {
+    "file": "docs/requirements/archive/趋势对比面板/plan.md",
+    "target": "d:\\code\\workspace\\python\\liveprofit\\tests\\db\\instrument\\test_index_ingestion.py",
+    "status": "pre-existing"
+  }
+]

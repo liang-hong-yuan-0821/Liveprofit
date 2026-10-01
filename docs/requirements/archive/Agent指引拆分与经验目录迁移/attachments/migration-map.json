@@ -1,0 +1,3469 @@
+{
+  "source_bytes": 63397,
+  "source_sha256": "cd45f270763e0618a6051de60f347fa89bf5d51bfdf04e676317c6d0273329c6",
+  "rule_mapping": [
+    {
+      "source_line": 1,
+      "source_section": "Python 工作区约定",
+      "source_sha256": "4510b70d3b53009eaee5fca40ae9637ac7fb6acd3909d33d17457a13e7331bf3",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 3,
+      "source_section": "工作流程规则",
+      "source_sha256": "3c81683e0bc7e89738ed2fadf05299c4321716a09efa20c167a6c4eac1c2431a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 5,
+      "source_section": "工作流程规则",
+      "source_sha256": "4234d1e97a078b7c804aece7bb87250e20a8d5f0ee6ad5ad2ff9145f42897114",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 7,
+      "source_section": "工作流程规则",
+      "source_sha256": "8cc504b540ab82f894e020739d55a019a638987bae4aa2b37ac08639b27ed23a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 9,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "5b03baecbe3166fe7439dab06332ccf870bab22bccb77555c4dfe1061acae8d1",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 11,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "2e8451e827460d673f67b2358f5cad4d884cd1516e7b9c544233b2049adf40fd",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 12,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "8bf1b5001ab206783f37207cd00c5f29853f94589dc6865fb2eb77d9a9f8315c",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 13,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "ad53a3811cbc9eda04b1e941afb9210bd78ee2ecf3fceb947369d12c5dd23129",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 14,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "3f4d7e8b172e10a9c42135e154dfa16c80a9dec38d09c96bf34648fb4423be52",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 15,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "0dfe9b0f0b5aa531d2d3d6827179a71512fcd0ac877df401d78937073fbf6dd2",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 16,
+      "source_section": "验收执行约定（2026-10-01）",
+      "source_sha256": "e6d49f989e7f2410910776e654c2447247b7c706b63f3eed327d04e28114239e",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 18,
+      "source_section": "架构与存储设计原则（2026-09-23 用户明确）",
+      "source_sha256": "d1bfcd383f0f390d65dc2646b2275e9b29b32bb7e5f93355efadfaefe002b17c",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 20,
+      "source_section": "架构与存储设计原则（2026-09-23 用户明确）",
+      "source_sha256": "077ea43a99109775b6b8148f189822d453d02bd44b0cef6b5829b5b9845808bf",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 21,
+      "source_section": "架构与存储设计原则（2026-09-23 用户明确）",
+      "source_sha256": "3b5b9d0e2bcc38f159e18056e17f6d27de61ff72f1d840366ebdcd1646add5bc",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 22,
+      "source_section": "架构与存储设计原则（2026-09-23 用户明确）",
+      "source_sha256": "72f24533f91526e350574eee3e12d179cd3dbacc074f0d483bcc4c20353785ce",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 23,
+      "source_section": "架构与存储设计原则（2026-09-23 用户明确）",
+      "source_sha256": "962bcdee1f28dc85a3849ec98f3f22654cd41836a33bcca00f5094897e53263b",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 25,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "621369ebb8bc4b2775410c87e4e38a700364692c14d70253fa7f614527a43fac",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 27,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 28,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "756dcfcddff993c7fd6cf14a402d97e7cbd9faafa6339aa722d19eeceb6d1391",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 29,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "b6864bfe007ba8a652ca8696d46e2a9153ad9a09c0d6eaedb6032912bb144ac4",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 30,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "cf42e26eeb3a08ec08e2418e7bc348eeddf4b47be7561957060e1cad12db3202",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 31,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "781d6009255c36200af8386caed2647c61e48c72e3dc4baa1d0331301e731847",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 32,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "06e9c32b359777a24478080ce66163c40396f31760a0b4fe856718c60fd79ab5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 33,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "0b0be23537b1466d057c9a9d3c144b90614174fe3e63e297747f788249075f59",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 34,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "c9e1c73c5acb301df504aa9a9a230df3ddac5822e3ad255733fd63a60f43fd8a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 35,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "7b09cf1fbceaa839fd9af5480b23510694890e58f707d43097731061130ca2ab",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 36,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "2463f473aaef03e11154703d5dcbee7cd31ae0cfd72a6345b083155256d3fc1b",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 37,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "c6f97647de5fd99e2e06564f3174aa032d7e7b96560de384d34b8fda4098365a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 38,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "4d095cccb7ffe9ab47eee74238f05d8f33296a99cf105957267dea9e0987448e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 39,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "73b7147e3d7bb7941e6c6b36ea2d918c307ba66c47a8c7290019bf72c29e59c3",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 40,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "bb226013b65d6f357f65630e4c0e4a748802a2046bc190f97ae415a97e64a1d4",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 41,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "e2a76f96e81f0a56b02a70f45e9ec66601af89dc879d180ec7db607749ae816c",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 42,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "7fa8f731014d4460627bca4d07aaeb4b0d51a46bdaa17550c1b7e8ac8ab5359a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 43,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "a2959e1fd736c666f0e8cc207c2000969172b3cb40c9af4b54f3ecc29bbb63b2",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 44,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "a5dd8d9f26d27e07f6eb76475e7ad48c776a1f616bc22454a65a9440e24c5d61",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 45,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "3d462fb1a6c69fd0b6d1e525ef3e6d12e2dda2996ad3bb8a55d4a020c9c09199",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 46,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "e2934b8093de79e08bf73d2917d92793b23ecdb393e18b6d44adba4a04de2e81",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 47,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "b3a90c6f196c01c0c0f009c016d27efe5fd32f5cf7ee0eca32b234d93140153d",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 48,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "79bca41e45f84c99c5f7676130b3d58df9802bfb1f15be2cdbd7c6724c5d75bc",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 49,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "39505bf892db0900f2e1c7df879d67dda17b70f935b90abf962c80c4a09d85f0",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 50,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "feb729ff5b7542b65026b44f541f8c273f18293607d073efb2e46641c2b847bf",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 51,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "baae97e6e0e6e387e712a4e210779577abd4cfe98d1e56944f78c0f0ffc9ed76",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 52,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 54,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "1d7f40adcf84ad958b971682be8e66927ca5086023da94159aea258665ab1d75",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 56,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "db325ea75d3c9e84ac27cbb91cf70a359838a471cf015ed9893e71321287d08c",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 57,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "47d9381d248229ee0d01158715cea1c1b0a31db5e92f8953cdd5c7eac6d90638",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 58,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "6f4ca8554c71fbb2edf60870fa187b47aa71fe984dbb6a147357d882b260c8af",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 59,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "d1998bd7547911a03fd3a38daf03c0e9931885756ddc79a4e67c091d2b27218e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 60,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "220a82af35c51be3f01780bf8dcf4ff4fe286ab73605ccec4f3b06c9e14bb990",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 61,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "aec6f4e4d8eae73165654fc3b290fcf69133d254f56ae788b9238892373d10c3",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 62,
+      "source_section": "docs/ 目录结构",
+      "source_sha256": "faf672d195fd1ca0237addd772fe3daa290d67483fa9e011d1179df70c20c28b",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 64,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "bbb3b9474d739b4214dc567e2b41a9c872bfa2e347a126b5f5fd959851cc4b83",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 66,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "954f1dd01596ae7c95671d972f03bf7c7ab9c50b0146abd78aa331eaf28910ae",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 68,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "8738dd2b88a4845fe544bd0884a76782ca4d437201be822b7b2866394a1f34cd",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 69,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "f214b5f119cd0e57bfd35a71ed4d39b39290daf6351c6f8a2cccdbbe804503a8",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 70,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "a2cec25e4ec3d6bb9aa6ee5ab79cc589453416df790c130ae26cec84179346ad",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 71,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "eb8bf1e1572b84c752585b5d4c045002d4263434a9fbc6d21de11b8a9ed09a51",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 72,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "8a1c6e551999e0bcf0fc73836b59920f63e5fa2c13bd2da95e4dde17f30e4965",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 73,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "e6105f9289c57c92eec67b3c20523368cd36d2530ad867c1a3ae62a2c55cd521",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 74,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "829438653f1104bb8e56393c36a4d9a3f8bf569a560482932ca8d0b4864c16e0",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 75,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "f360205b2057e2e8d45ea573b94c8c1f3f883b81013bd27380ff8b4bb541f7fd",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 76,
+      "source_section": "knowledge/ 刻意使用（2026-09-14 用户拍板）",
+      "source_sha256": "f7dbc34b29c62a687bdce8467853b011d7bd3a9a7c9a81bbdce9fd9c2f0e8ed3",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 78,
+      "source_section": "工作流程",
+      "source_sha256": "4235ef59ae3edc2e2288110595768bee9730c75b1cef1d04bbfd1022e891ffca",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 80,
+      "source_section": "工作流程",
+      "source_sha256": "a34707cfef4a02e981effc088022c9074281444f29ff654e8bdfc6dd29e12c6c",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 81,
+      "source_section": "工作流程",
+      "source_sha256": "c795262b646cfa4bd1a44a67d8ff5dc7bcd2c7106e21594db42885fb496c05f8",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 82,
+      "source_section": "工作流程",
+      "source_sha256": "1784394fe1b830d91fadebb9e791562b3cb49522e2ff810ee592a4763e7d7f05",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 83,
+      "source_section": "工作流程",
+      "source_sha256": "457caffd73209434ac55e9cf477e4307d732bde45da757e34e38c9f48966c8b8",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 84,
+      "source_section": "工作流程",
+      "source_sha256": "7e9ed8bfd4bd332d7b7a8c5968fcc7602f38d5f11af97ec6b0c5703c1d392a47",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 85,
+      "source_section": "工作流程",
+      "source_sha256": "8e5a69c60f96e3d56c43d9ab5fb2260a06090d0541a1deb8fbd941bba1ccdcaa",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 86,
+      "source_section": "工作流程",
+      "source_sha256": "bf71bb31d1766b3aa9cfaa671e057be40e04cb5b835bfbb8472eac558cfe4640",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 87,
+      "source_section": "工作流程",
+      "source_sha256": "3344a914e467eabc2ae8be0b1bda99c8920d4429ceb4595f4759954e68410a59",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 88,
+      "source_section": "工作流程",
+      "source_sha256": "b6a4e4f1426c2946d559d1e8535385c2866b477bd0ae12567dcb8285a4b27b70",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 90,
+      "source_section": "工作流程",
+      "source_sha256": "d47052fa3681e9add10d6cf95f7e85a5b24610f5c2f06019bad40a233df7990d",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 91,
+      "source_section": "工作流程",
+      "source_sha256": "265a9646a397161beaa4737d0ca1d65f1ebb38fec29a887b323e9dffe6872d06",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 92,
+      "source_section": "工作流程",
+      "source_sha256": "a3f693986153c4a8cb3d92757fdb1011f3d6dbd24f34bad28f98196358946d94",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 94,
+      "source_section": "工作流程",
+      "source_sha256": "fd62baa9a9b6c149c3c25e65db8fa94fb2afdf072cce4bb2adaab23b3dc31fb9",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 95,
+      "source_section": "工作流程",
+      "source_sha256": "f8d4e273b372410d64263adca05df34fa4f7c1e0c45bba019b187d85252cbcb1",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 97,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "a21fe8d0e35743a611c03acbaf64355acdd48f14fd29b82fa1f03be41cae04e9",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 99,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "884ce244f5ae27c38986fbf939acd9e78b9a8d7b90ae3f7a9e81f3d9e8670b79",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 100,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "2eb5de8d78468fad26b7f4ab5361e10adc2821afeb6f288009857daeba86a1e9",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 102,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "46686ee1332c3253acf3d9261b8be113c7d467acce441f23372c5b245dcef3c2",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 103,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "d1878b431c8980561471b18308ebe4f24d9463c3bb07ef11135ad82caef69ec7",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 104,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "d96fbcc10595639e7bf7db40b419e58bb191216e2fbbc3fc276275c3e41b1d74",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 105,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "a69c447928b15be3d1877dbbf20ca484b9ee1d83a3893ac50478262f081975f4",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 106,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "46686ee1332c3253acf3d9261b8be113c7d467acce441f23372c5b245dcef3c2",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 108,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "d7d06b50919f6b8d62171012f7bdeeb9c532856519fb548cf7af0bb58145a4dc",
+      "target": "docs/requirements/templates/README.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 109,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "e1474de397fee630e07f632efccb6c417ae4857e24c1c3ffa0d80fb9db569916",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 110,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "0499c9247e1607e706e4692180e15f80e14b87b4ec23d9cb8fad7f7e36c6fc26",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 111,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "2a4575ac715ac8c978f33622031bef60fcbe740b721af475d059086dd3bcb087",
+      "target": "docs/requirements/templates/plan.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 112,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "a5de37c0a36b954257c0edf71307637e1e6dd7205d7e67dd28c87825684989c2",
+      "target": "docs/requirements/templates/tasks.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 113,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "5ebaab9fc5df407afd482258923ac7288e092b19b1cf4b70442b40b71450baed",
+      "target": "docs/requirements/templates/tasks.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 114,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "93a5fccf1188f9ee1ced1b9068131e0df5b9ddfee06a98651f29acb4e1aa3561",
+      "target": "docs/requirements/templates/tasks.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 115,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "b886773221e769f72483c86e682f6a0864ee6f1ef591f0eff3afe0cb511ad9e2",
+      "target": "docs/requirements/templates/tasks.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 116,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "02e9f0d933f93a61cbd0154cd02101bf82ae6ab2c697356802bcca4153104081",
+      "target": "docs/requirements/templates/tasks.md.模板.md",
+      "disposition": "format-delegated-to-template"
+    },
+    {
+      "source_line": 117,
+      "source_section": "任务文件夹约定",
+      "source_sha256": "aeb04ef1f7a39aaed7dd50d7b8776b12b65737e8aaf8c4a1bb2f0f259597e8fd",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 119,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "57ba4005a1a374b7fab6294204f54164ea37510e205ea9ded839d75cc6b7a133",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 121,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "c9ffed9577a259cc6e9a47dbde4e5d7a4936e7f421baba310f10ef415a711315",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 123,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "4698f380feda61d7e735aa9e47a0c76e86c21e447a65f7b0aa7f9d3a63c61fe6",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 125,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "8730fb4d0774d4ed35e059af37079b1215ed0967efadf5092a1347aba5296da8",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 127,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "08972d7ad5f4e8e4219ab0259ad517b8ff4b4ffaf511011734dc7634d50d5243",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 129,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "796ac97b197e38d38d95bb75f02761bfd05d24c9077335fe7b96aa4312db96d7",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 130,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "473f906ced35dd6ba2125ebb608a95b59049dd6c235a92a6756c54c7ef745df1",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 131,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "ce27e15db3b000088febc3e644503dfd30dfe28e1f46baddcf99789128fba8a6",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 132,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "266e5127d73ac1d2c83e261e8bd7091861e21efd6e7adb64b786219480c8914e",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 133,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "27f04f5e88d2c9abd180dfa673c8339d9ea6a5bb0b29621d8b940437b5275d3e",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 134,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "f7d63cff424c0b4aca8a9a8164b106f7c58946a81dcdf46889359a5f7f68a12e",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 135,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "7a6d181c6090e7286eaab96e9dddaad03b2e214da932611c43415d1104d9a34d",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 136,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "4224425634a1899919a529942ff3ff661d78e9461ddb9b39c429a396f6964fa0",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 137,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "97d8e91784fb08085b8c26e44b8ec59a84224d97bd15cfaa3e51183cde46731e",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 138,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "74e1dca927498a07bcf4fe436d5171a0ebd3e14a6cebe7aab7f6c46742fdb890",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 139,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "fd12abf5ec1a66d710799958b55419fe59d605405dc438ffdbe91840be18e1fa",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 140,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "e4fd7ca3981ccae5a3843fae48e42ec0c9b9f72ce1cc82de3122b97c5feee68d",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 142,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "9df4dfdb9ec9ac7ede4228ffffd34e8650c3dacd5fdfd4f376983cee5294a0d3",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 144,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "ac549b46ebfc523242bd993bdaafcb3a86a04d61c031efe64e5e5540423161f3",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 145,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "cf5716736d38438b3e137575a4a4397a8c94a0ce9e0cb0ade695f0834eb0e30d",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 146,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "af4d2e172990bc7c27b6b84cb75222ae405432b94f71b22d6ffad7398d2501af",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 147,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "4051dd180bf75c39d2e59f7366443470ff8a728d12b75e442451ec44313d1a0b",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 148,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "16ae27393522ac93d810c45771827617381265c26bac909634e780d638fe49e7",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 149,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "447094f95da62501261ad31a03ce4dfae195811752e4d40b63e77005e9fb0130",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 151,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "eb75e2e4c1cdb3a99a023b13c2ffda4f628237dfeb0dcad62ae5f166dffc0c11",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 152,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "36eedb42ac2215aecd8bc4fc14ff40c2bee49b0da6f1beb393aea7390958fc10",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 154,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "81f29a9e8e4bc190c3375432e176dab4261b4064a171ab5f62c394c9a0a5be50",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 156,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "9a5daa51dae23a6b27437c79d1144ce252946711fffaf5e29b7c1b11c6d0f945",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 157,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "4c643f65df45dba338aa6833c984bc4830c1a8cbe0c9c34451fc121c1598fd8e",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 158,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "09c01e4a7c56a7fb470245b57e544913c1b7ab805c6b2794aed4ddf7280d600b",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 159,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "717a009ddc1ad1d4708473256907f04feb5e2f666ca851d75e5c5c47ebde6a21",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 160,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "933b21ad4f07f8f5164f3777cdaa3e07f5151f09112002631693aa5ef133a972",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 161,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "abb42036e9d4c0d2d46624bfff3869dc61883650c4d3344f5b263cfa18d2295f",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 163,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "ce00c8db495e4566ba5d814f133c4e676ff2ae3c1550836d2c011bbc22bc344b",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 165,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "86994163e63311df04836eb474c157ce9f18d10475bad4387878022a5a652fd8",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 166,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "7e5a19b1b2abd6ad5b84f45afde3e5dd0178e9d66d44df868e6640aab232b4f5",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 167,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "8d5e8e606ae87ee0a9e638cb27ebe461f3602384e8893bf905368d11c1124787",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 168,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "6bcb3e5351016fb2e01563bef7c888221f4792cf917fbd5464334a873632bba5",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 170,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "e1943d7f1effd4bc43c4bd6321b6baccad8b5c324735cfd4c1bff1251acaae0c",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 172,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "1cba5b830ddd93e73168d2eee923661edd469838df1e2d42f95539c14103e32c",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 174,
+      "source_section": "方案评审机制（3 轮收敛）",
+      "source_sha256": "3eece42a39ad747e7d7de4f06963b92c52492d49da6f19bd50d83aa1133396ed",
+      "target": "docs/standards/workspace/方案评审.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 176,
+      "source_section": "Code Review 规则",
+      "source_sha256": "86c6bc407f89249f35cd4f18af63278965567185e008a481d97a26a64ef96fc4",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 178,
+      "source_section": "Code Review 规则",
+      "source_sha256": "0a6cf7d114a7f16dc73161c6ff88f87e824b7b52b373da8e734baa63eeed1ebd",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 180,
+      "source_section": "Code Review 规则",
+      "source_sha256": "50ce1f67e582c85fd8046b2cf481be5d627f68bc057ed52825f2f15e72a5e2f4",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 182,
+      "source_section": "Code Review 规则",
+      "source_sha256": "91e148b694fe88ea985a714817c34d1ff9b571a57f1e02292b51d1d676a54412",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 183,
+      "source_section": "Code Review 规则",
+      "source_sha256": "7dac4053c7b9cea1588f9982bde6657a263b99b507338896daa8cc79f307be31",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 184,
+      "source_section": "Code Review 规则",
+      "source_sha256": "139e095d8ef135c54c7fb8da4827864e834cc959707225a19d6409c0b4e911f0",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 185,
+      "source_section": "Code Review 规则",
+      "source_sha256": "ab26d5a7c3722431c8cb686625fd9b5c1afe73275045ab6ade7a3949bfdbc4fc",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 186,
+      "source_section": "Code Review 规则",
+      "source_sha256": "9860644e5c0eac963c82cdf95b51457361c44c9a8a7c434cf625a4e7cb7092ce",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 187,
+      "source_section": "Code Review 规则",
+      "source_sha256": "237052b64a97f48849b80b2694f2aab0cb3a6c228188f0d336f6459d72323ab1",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 188,
+      "source_section": "Code Review 规则",
+      "source_sha256": "ec161a67c68fa4dfd6269fca852be1c4580b1ae2895c9f1bd45f7b1526c21570",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 189,
+      "source_section": "Code Review 规则",
+      "source_sha256": "eb98c7fea5238e3fb8d1585c4356764d4654400f0de1a8c807f08cf3cfbd93df",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 191,
+      "source_section": "Code Review 规则",
+      "source_sha256": "7dc6b1577dc2f98e0fea7c0e7de719e9100c568c3290abbfe215866ceea69464",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 193,
+      "source_section": "Code Review 规则",
+      "source_sha256": "83c43ab8b44f68aabedd0cd0dd23e1bb91afa66f0c66fd9bb5b537d1aa442b1e",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 195,
+      "source_section": "Code Review 规则",
+      "source_sha256": "64d8e68ee0dada7a6da5def39cd3138d91092c6a2acf6164e9a10b423c1932d0",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 196,
+      "source_section": "Code Review 规则",
+      "source_sha256": "8b692098e510cf955f3eded84f9184f99d8ae1b4c21de10d9f3a6e73bddec057",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 197,
+      "source_section": "Code Review 规则",
+      "source_sha256": "088c711a2033077c1e74f93a246464fdba07105fa4ba25c308801f0a835a292e",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 198,
+      "source_section": "Code Review 规则",
+      "source_sha256": "3029e435068122711e35c4792b6c2708300fa58e758b0d520babf7ef06c4fd88",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 199,
+      "source_section": "Code Review 规则",
+      "source_sha256": "e05881a7013541b20557e5dd6529ca56de4cbcdc6fe1b41003f723bfb8060edf",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 200,
+      "source_section": "Code Review 规则",
+      "source_sha256": "5eb575f5a6103a40f2c2188f00083bd8fccb1e27744b753b8105db0e5381e008",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 201,
+      "source_section": "Code Review 规则",
+      "source_sha256": "67df275749ad1a29c74a88f4548c14cdae6e51801088d0422fe1b6d37e7598b6",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 202,
+      "source_section": "Code Review 规则",
+      "source_sha256": "0a415bbd5ac626a37dba9b8c36a926fdb46ea147ba69eabbacbad47eed3dc271",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 203,
+      "source_section": "Code Review 规则",
+      "source_sha256": "eb9d1930987ade015e237a861775896f1962267ae5fcc5156a72df9e41d9d674",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 204,
+      "source_section": "Code Review 规则",
+      "source_sha256": "8e7f3328ef574c025e190364e2829c3cec3f45d0b0eb835f46ed0f444c3bcc37",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 205,
+      "source_section": "Code Review 规则",
+      "source_sha256": "e5c567109c520e341ad312b70231305a03a759aec0c9179a346acce9d0dc1c68",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 206,
+      "source_section": "Code Review 规则",
+      "source_sha256": "e20cf4832cca3634a05576e013f8cdf514f04ee61e623358acb2e8e2c4f7d74f",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 207,
+      "source_section": "Code Review 规则",
+      "source_sha256": "3b9bce790ffc758368a57e0ac4fba4f44d7d5986073c0de32876487393e1e996",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 208,
+      "source_section": "Code Review 规则",
+      "source_sha256": "3e1b609266c2638a18260e707bcb9b68cc9cd8566b0083a3cd5f0ed76294de2f",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 209,
+      "source_section": "Code Review 规则",
+      "source_sha256": "dcb524db9bec5846e88a1617f2c1850f34e0ec495e1d13eb67e39eca3fd691e4",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 210,
+      "source_section": "Code Review 规则",
+      "source_sha256": "84f6ade333a6543aa956eb077e0eb50e94481f526959b9c3f61b1c496075f1c9",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 211,
+      "source_section": "Code Review 规则",
+      "source_sha256": "af52624afb1a74a2fdc2221c1b606dd290e8191b0e1b1cb9940afd529d4bee13",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 212,
+      "source_section": "Code Review 规则",
+      "source_sha256": "12894bb81799b316871d4950da2e93036b984cad09c64a0bf579c9fe8202fd3a",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 213,
+      "source_section": "Code Review 规则",
+      "source_sha256": "6f0fde8dc3756e159e25455b2858ebfb80bd61fef2530668c1d8ff8e4e07fea9",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 214,
+      "source_section": "Code Review 规则",
+      "source_sha256": "93c7fa3cc9fb1325fc4e727222f27a4bd45b40fbe4fdebda79a6431ee869e88c",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 215,
+      "source_section": "Code Review 规则",
+      "source_sha256": "25ed9364f3210f8632afeb75c18a5eb894f73cb12a772d4044fe1c2572dca3a3",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 217,
+      "source_section": "测试规则",
+      "source_sha256": "62048d6435c645d4afe54be66a6e2ac64e28707d1c58beff5fd0176b0624261f",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 219,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "7f5ac350634f4f14e5480295d0e6ac293a809509d5a51c3749067e6b8aaf4ce6",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 221,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "54b8c869bb9c582d5cdf0b9bfbcacc8e750d22b967b0343e5e543619935bcef5",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 222,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "43c9a33a7ba5c021e16a25b5ac7ab5ce72a0bbbace547d54233afd6b6acc1ef7",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 223,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "ec249c2690bb344f7f6337cb611d8d58d37cc70d7c3278934fb74953a3c65973",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 224,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "d23ae8f918bd3eb6d7738febbe085e4343a9394079f31127b802c18f9730f4e0",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 225,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "5d0610b169943174c3cab675064778b49c0f24b47048a6132190013937793113",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 226,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "e9ad474be6f68eb723f53a11c9ea0262c68e078e3b0ba3897604dc2e6a5e1514",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 227,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "f9595df6d43a7c27b4face20aabf62f394a7849f283c5040cf634bed450c44c0",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 228,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "a0b954f9ec8be876476abaa9ce7b9991fbd11a401f08bda0fe0da26ae2415f94",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 229,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "a1299e676d16b75aeb8490f36ef19f2e7ac87b0959338ff5eb73f4cc092dc6a4",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 230,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "2d658edb2b563b920d0293e399133d11a7696e588089f5c69b320c3c12ba3066",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 231,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "46e05394b5e79b94cfe7ad69035e8bcf06cefafd9ed816a6cd3c6e886f31d1ea",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 233,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "bbcca26c3cc349907900e3c1e7815f292a0a37cf2cf04333c8251f2da36d5cfc",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 235,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "73bf082729f96e6f0fa7ea9c536fdcecc3934d00286f4d4fe6cbfc2f80ea37ba",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 236,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "561c8e49a9fa737091c0e32d1abb15323c740a71545479f62119da356a65b521",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 237,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "5722f9ee8f119751cc8a414d457d90086569dc56e739f358af5a50412f14c553",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 238,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "0302135965b4f7d5272b1852e5f72988d6cd924c718c686f16898bb87c8ad225",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 239,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "3acf61f547e8cd37dedd698bb06dd15a4d2daa84c21d7f718a2a1af72189645a",
+      "target": "docs/standards/backend/量化开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 241,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "df9491714d4e2672df477511055e31da6d4d9f38b77f8793909819a16fbfffb1",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 242,
+      "source_section": "测试目录与用例维护（2026-10-01 用户确认）",
+      "source_sha256": "3fdc9f07e52c8ec7256b2205d0df83be42ac20b456a32829ce0bc6b45b7935d1",
+      "target": "docs/standards/workspace/代码验收.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 244,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "fffaead6e04a55e98ce05edf67af4eff3b0637b6ac30ca08ba0dced3e3652dc1",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 246,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "5ecd0744b06ddf8861931ef54f3c606a4fd654f4e5989914e1215b0c08a033b0",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 248,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 249,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "dbc366a3e3b30850a76b99c1f8d8f21be72c70061546b8a82b2b0f8367226c37",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 250,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "7500476752954b7f0ad23ddc348c5979ead91b7d4f0ac3536165217810364958",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 251,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "643e13bffc5d92fdf08e61d18f1438c241cf9fb3c08d5fae88769f85c235f901",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 252,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "64ffd172bc404d28c9edd9975372d15e2f90752f19fe8c6e58f7aae3647dc5d7",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 253,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "26622c9b10283f8940c8d962975110422c9c271e606790f85f63b1f4fafda85d",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 254,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "1aad3e036b9bb76f79171f97902c8ca472c2313006163dfbfc36fc53c60f3663",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 255,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "3ad830f68a067442cb719a5f6eb1057a5b83d56bb2fb810e3a85fcd894a86f1e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 256,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "98eecf79c2acc09ed25916cd4252b951ee32ea8d8e905590af9fc4712f2752ac",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 257,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "29e465004e7385a71f501fed698940145f9d73a844f20767f47105f5a70fb1b3",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 258,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "ad9bd69f07e238d4c00c6230ef26d0e025e5c22f9aea7952f0a2d0e624a4aa02",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 259,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "c105458ccefe818ff5108bfe3b65d47013a94630b0a6e8ae42379d02cf7715dc",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 260,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "9cf8352f3d4340292761ffd7e4795d72c8489e98d2b3e628de32f00bc4ecc5cf",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 261,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 263,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "6f15abadcb0cabd18a46008b84174436cf1ac696f79716e1d905a9f99ebc45fe",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 265,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "54f7cdf29720cfb2b9ec4c56052e5197f94f80941494c58d3d21f9fa69aea87a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 266,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "aa133da1258a87708e13aa447cb6456c7ea4c06977382a52359d5d0b1132f5ec",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 267,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "a07f226914e38435bb4ff2872b65672b791c6eb5398667cb5057264e2712f4f4",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 268,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "35ac3542170444d441d331017650fa9430d6442fa292716551e1ecfb0095b933",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 269,
+      "source_section": "经验沉淀规则（pitfalls + best-practices）",
+      "source_sha256": "93eba08ae2f61f1d03b4821095ffed1bc667d370a776d17e493d80689f4b39ea",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 271,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "7c7ad7013be93c9c9b27711cf24a5cd36854c57f1dfa45deaccf1b49f2f3f211",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 273,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "4a5744668eabe517552ca44d9bac083182a4647389f77b6cbc6f8572729cad08",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 275,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "f74ebc47b5f99616b8df119cc0b2d4a38d7819f8f5dfd687d480905aae70c11e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 276,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "79e6faf8e532be56e5311664e588b050829e96d355bac6482d58ecc5fbf6c88a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 277,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "1e26edb99ad33b0bf8beb3f8cb4de40cd2b346cd85394c9f49959d68e38fe384",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 278,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "69490a6b2163d0505f205d0383c4927310e902506d61d63bbdf09f10d8b75a78",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 279,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "270f2671ff34096781d9491193400b959d3ae63acfa126e4a106d329d3e941fd",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 280,
+      "source_section": "经验记录使用规则",
+      "source_sha256": "fee27f76a4830c8a0f862d63e90b2e0e4608e76a925d9c4319b4e7353fe74015",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 282,
+      "source_section": "AGENTS.md 自我更新规则",
+      "source_sha256": "964a0f2f116a4ddf14118cda51d6818379cb16863167544c30d011016a4caa53",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 284,
+      "source_section": "AGENTS.md 自我更新规则",
+      "source_sha256": "5e8e5b9446ef1f6682ef85290a19660f01042342a8d903f320dd9e252c411205",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 285,
+      "source_section": "AGENTS.md 自我更新规则",
+      "source_sha256": "94c3c3ffcdc8dca88edfdc507dbb0283b866a69980ed6278479d5b7c7f782ff6",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 286,
+      "source_section": "AGENTS.md 自我更新规则",
+      "source_sha256": "7000239dabb316652ea3b001d362c115ec09e1947b8100870184e745972e73c2",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 287,
+      "source_section": "AGENTS.md 自我更新规则",
+      "source_sha256": "da98dd70c757111bbc5c658ffb17e0193bda48ec773c960b27af09154e644bde",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 288,
+      "source_section": "AGENTS.md 自我更新规则",
+      "source_sha256": "8b0847aeb789e94fb3dfab7e1f538b314006803d0c56192559718997843a5f9c",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "approved-update-policy"
+    },
+    {
+      "source_line": 290,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "9385d79d64d563fd5b996519c871794d1e97edd2cbeac9ea308b8f5e3ab035e7",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 292,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "355970c5883f0b19db638eb1340ed1d19d647ceda3ba55926412167a1e608ddf",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 294,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "1aa168f3db01a9e285c744651f6db953b2a2ad9340b8ce6c638a19fc3fd03688",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 295,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "1a2da927d44158e4c8ee0438cc450ec2297bcc08689b86d4c4db4252979f01ac",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 297,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "2bfbae6e584bb2ec6af9a5cd0890eca29451442e236ba228e9c9e38fb7858335",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 298,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "28750ae9666c2b86ce89e6c8e0eca568d51ec321cf58c3542427421a332dbf6e",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 299,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "8dcffe86960b01d2b4147776cfbc8117b86d0c2daf2738474d2e7c36b233590c",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 300,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "724d8d6c7ebc3b031be373e0bb856cffa08ae8fb9801162d507ac8acbf7ac822",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 301,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "59634a113c3621dbfec00cbe30b76e9b55b1b01c9437650021b1ab8df50ddd41",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 303,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "14448c3ec5ccfb318e278b9de5a4f0ff54a95fa06bacedd653e8ed88b6781ae8",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 304,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "f47108dbd811134357a7e58c843d2614cc867123d78df1612d36a8e8f9d9e961",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 305,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "29fc72799f2816023f3d03023ce9fd1fed74c6fd3f0cb06184d99bd00e63eb9d",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 306,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "b4d50eef085a10812fa8e4a1a03edc1fefaedf87dca3edbbc358c8694f1fb159",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 308,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "9e19b721fe20198d82e5631bc1a59555bbe1863121b2e0de78cc5a174b9c7afd",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 310,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "85963ab30f5e1c9ff4fed4e2bd79eddc1bbd77103579fa9d3b8083cc2766d0fb",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 311,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "3d8b931e5473a9d95ca5d8c74cae1cd822e9f7666a76fd59693b045bac12a481",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 312,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "fc6e679ae07d0ed2e3cdbd32a6783d6227ce1c381623a63c29cfc4cb8633727f",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 313,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "bec9c029708ec69de936915e61d8d3d80bca2cc1014192b5e4001fa29c61cbb1",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 314,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "ccde68f96683786797dfcc9aa846e20ff9045001c5626be41ebe6ac4152d2bbe",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 315,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "9e3c610f8d4e2741575dbec4e59149e342133452797ef6789b8090aa2ac0d300",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 316,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "ee2a7556ba7e0a4c4fe2581cff580b04d6cb7e16f2043d062eb63aa201eda2c6",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 317,
+      "source_section": "Data Provider 接口约定",
+      "source_sha256": "9c5863807cf04ead0a8ba04bc46e80c5301b7e855c69fc135a9ef579f8c01778",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 319,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "dd0f004fdbb8c281ef09f0f5745501416ff1aae380cada5deb2fa6b388afc1a8",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 321,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "d2af38fdefe548a3e1c9514143f141fb4528268c12d6ff5a4d494c28740bb660",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 322,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "42480c1b1a33c0ff054c015fe7c26dff4dd3f36d3493ef33d439e637284b8c93",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 323,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "efb6350dc4c449e826fb801ab4a00c94627f08d5e0cd1e9c765ced98667b9814",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 324,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "891aa9841dd6a1fa79bef6a1ec430aba49b94eb9df72e9ed54e77c0d6abec0d2",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 325,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "fa940b3c446169835d5a4e0cebb6f2b10b5c6c9ae44d19f9c9a64954469bd5b9",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 326,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "1e8809df929e89e1a32c68e715366d2cd15ff30e1070324185cdbadf13ec30ae",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 327,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "397e9be8ea8328a73c2c579c05a9664a00347ac6340ed9bfb88ea48573608d7f",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 328,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "7ca3d42e47d36c5b0ba010f7fecb1b0c83679e391097afedc236218ac3130881",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 329,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "025e43c40219964b465b92f174f721421a46a000fabbc9a5767fb08167713a2f",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 330,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "bad0987db47982f1bf8e0ee012b1b1575c9b31cfc1acc9c58c6c5e308305424a",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 331,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "ba3b82b0a7da464c56001fbc06e0a06957fd5ca65585b93816cd4ae4d54dc5c8",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 332,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "c5961005dfa7124d3b84f0f7a038f17028b4da60d2cbceb2211f2e5dfb40db04",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 333,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "ac05c1a14f4c65db571a2fd22f88ed54cd98464b0e731a73da399c3f62aa412e",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 334,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "ee8376f53932b35016b77051b4f9afefd8c0a27f130abbf03e1fcdf7a8c19a72",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 335,
+      "source_section": "市场数据增量完整性",
+      "source_sha256": "0984cb8da60b0d179302e0d959a6c485367004b0074af82f74de798c41053460",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 337,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "c056fb898b84e5143faaca8371ee5c93ad5a271b4bb25f60f3cd11b6fa498973",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 339,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "c1276593e9e5f92a9b6b7e1d5a02604387dd97276bb9238d90aa6e66b762f9b8",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 340,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "54876e5a7bc89c6da3a6b802d97c8ff8f28eb6f5736cb0432dbd97a6a1149da4",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 341,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "511469742d17d370210af3266a13179db23c2cbf59a90560f757cae5590cfb66",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 342,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "919cd6dbc519b005507ed5df98e646402173daf9e1ff0be002061f58ed3bcd0a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 343,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "434d4b3ad1b33318970b58cd43b3a61444bc556ba14dfb316fef2a9997d45160",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 344,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "296b5323760429e19765e0b326e7ed536471e183c5f04d1bd8479dfd6a96394c",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 345,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "9090229051da6b2450d0750f30527ca3943dd3b233fd077e999fd8acb50905e4",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 346,
+      "source_section": "三方依赖能力评估",
+      "source_sha256": "2f52aaeee3c9db9a1994320207a7411c37be5a66f0007fc982809f66dbab879e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 348,
+      "source_section": "项目配置",
+      "source_sha256": "1bc533776eaaacc816a5526bfa331acd11e54fc41e3e980affe4f8573269747a",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 350,
+      "source_section": "pyproject.toml 优先",
+      "source_sha256": "0c4f2816c51a261fdacdc44e9c30983f340732f231f117687035ee9718cbec40",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 351,
+      "source_section": "pyproject.toml 优先",
+      "source_sha256": "5221e9c528e1fcdc82f0160eb6a0127e9d834aca787bcfb398d5407698b4f9fc",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 352,
+      "source_section": "pyproject.toml 优先",
+      "source_sha256": "1e7a5fa30d23dd42d62df3cd75d405579060a993a0e6bf250fc7ffb893d2e886",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 353,
+      "source_section": "pyproject.toml 优先",
+      "source_sha256": "49f3602296dede592917177a695aaa40d4dd9b868e66324068476af624831639",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 355,
+      "source_section": "LangGraph 图结构提取约定",
+      "source_sha256": "e8ef3af8dde774672fd03ec0ae3bc27f4d1614d89c334dce591012d4e96faaba",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 357,
+      "source_section": "LangGraph 图结构提取约定",
+      "source_sha256": "1ba9f701b368e30b5bd8153e954cf8b9de39b5954eb1c03291c83172d6bb7c1b",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 358,
+      "source_section": "LangGraph 图结构提取约定",
+      "source_sha256": "6585033a407a267b7438086458724ba47d0144b5a89c00e735f87bc4012b86fc",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 360,
+      "source_section": "事件研究严格历史检索",
+      "source_sha256": "34b2fee076e0bfc7bf0d2bc9a5a0c3af93a7a841d1624b512e54745d94c7948f",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 362,
+      "source_section": "事件研究严格历史检索",
+      "source_sha256": "e6689d785b6d83763bd28156ea65fe5512ef57d7ae5cc235a2f52e8bc612d71d",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 364,
+      "source_section": "单Agent重跑与提示词编辑",
+      "source_sha256": "d43a914b680c10dcd74b15c859daf429f8d3f034276c39dcb93cb0d32d7d18d1",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 366,
+      "source_section": "单Agent重跑与提示词编辑",
+      "source_sha256": "d3cc2595bf28c6578acb1bcad39b7dc0891e84a71d680dd3ce029c2e6601b555",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 367,
+      "source_section": "单Agent重跑与提示词编辑",
+      "source_sha256": "7b843c58a65ceaac692879b5c345a7a7bcdd28faa736fa38671281fc31c00308",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 368,
+      "source_section": "单Agent重跑与提示词编辑",
+      "source_sha256": "30a222b03f40c517b495f2ce16ea9627ca0b8fb41445f5796ef2bcda0aa25acc",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 370,
+      "source_section": "市场层证据驱动与事件路由（T6）",
+      "source_sha256": "9aecda39d6e5c9441315dd92699fc38dab1ece52a3d81cb42cd48f9823c6a9cd",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 372,
+      "source_section": "市场层证据驱动与事件路由（T6）",
+      "source_sha256": "77af3c856e3a9013f3492f2f44c87a9cb07854774f10e4038469e9cecbb59353",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 373,
+      "source_section": "市场层证据驱动与事件路由（T6）",
+      "source_sha256": "1b17acd39c0127146222d9783e9e44ba04d9860d37afd767718123d3a58661f6",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 375,
+      "source_section": "前端包管理器（pnpm）",
+      "source_sha256": "406fe4135402943135c878e821ab493729d4b20c59fedc7012cbccce1c861e7a",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 377,
+      "source_section": "前端包管理器（pnpm）",
+      "source_sha256": "712b9a77ab2578752c0a9d9876737af2d0879ef3bc1b99fe07c9e19dd734f500",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 378,
+      "source_section": "前端包管理器（pnpm）",
+      "source_sha256": "30213a863d301e5663381844b87e946d84768e73c48de8d2b4b2edae75ce5fb1",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 379,
+      "source_section": "前端包管理器（pnpm）",
+      "source_sha256": "de13539d4d85a114e8a6855941a3dc5312a2b7fd25196c31d875168235bdc2bb",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 381,
+      "source_section": "前端 markdown 渲染约定",
+      "source_sha256": "40aa2a4ecbb8102662f198c7fdd8ff267379ca2c7b9c0e223ca4e2ac7a375fd7",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 383,
+      "source_section": "前端 markdown 渲染约定",
+      "source_sha256": "1dd3712dff3caa91c03545d41071ec7e0c6c405a4eb455e62c34ab37cd89d03a",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 384,
+      "source_section": "前端 markdown 渲染约定",
+      "source_sha256": "5063bb03874845d620a855761b3923568cea89a201c7c451e8ab5f9d132ad73e",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 386,
+      "source_section": "前端页面重排规避（2026-09-16 用户拍板）",
+      "source_sha256": "7d7da5c73e92a852b862d212c104b90332418c729c2020d0862427a097b4578f",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 388,
+      "source_section": "前端页面重排规避（2026-09-16 用户拍板）",
+      "source_sha256": "ee6bdf59831166519525a98be87f7db98262d7fa0e4be8f4b79ea3caa494edba",
+      "target": "docs/standards/frontend/前端开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 390,
+      "source_section": "每日批处理触发方式（2026-08-31 起）",
+      "source_sha256": "48fdb4974413ce87998856ed412ee9be4264c583c27746b4fac90ab0c2f117d5",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 392,
+      "source_section": "每日批处理触发方式（2026-08-31 起）",
+      "source_sha256": "1985af51f236ec74f058f8e4db18ed6f7f3f96cc29d2ea949dd20aab25019873",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 393,
+      "source_section": "每日批处理触发方式（2026-08-31 起）",
+      "source_sha256": "d58703523b036960b7bb631cad154c33d44a980605cef508c5cca1007ea00fdf",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 394,
+      "source_section": "每日批处理触发方式（2026-08-31 起）",
+      "source_sha256": "46713f8a858eb9a77fe32f18972de37ff0edc23e96f5121dae066388d22267ed",
+      "target": "docs/standards/ai/AI链路开发约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 396,
+      "source_section": "后端平台踩坑（backend/）",
+      "source_sha256": "5259b509452454dd19c1e54b6a39ce047370bb85ff1250011785e55c63e4ddfb",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 398,
+      "source_section": "后端平台踩坑（backend/）",
+      "source_sha256": "be475b5f7951c957752f10b68d979715a4badc97597f0d4516e1abf09633304e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 399,
+      "source_section": "后端平台踩坑（backend/）",
+      "source_sha256": "29b51332eb50a52f9fc4ee698f71ca10ecec376faa45274c0d3a812fb38b27ea",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 401,
+      "source_section": "证券市场数据库（db.instrument 包）",
+      "source_sha256": "c3c762cb3124ca737d8427e1994d1c5e4916b45637037eda651b788fcfb4ab9d",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 403,
+      "source_section": "证券市场数据库（db.instrument 包）",
+      "source_sha256": "500e98625d21ac797ef27308831766ea9f3b699e38e48ffbc911e3b8bd53c9c7",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 405,
+      "source_section": "项目结构约定",
+      "source_sha256": "02eca90c860314b413026d73f281b6b6aa4854bbacb67d48546d680088f36ffd",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 407,
+      "source_section": "项目结构约定",
+      "source_sha256": "f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 408,
+      "source_section": "项目结构约定",
+      "source_sha256": "21d0bd47e077bd398f110aea5ecec29158ea27f0d71ff92779c34fc881433e9e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 409,
+      "source_section": "项目结构约定",
+      "source_sha256": "485e41d462c6ab7a25fd20ed327c9a91851a32b10d4d6b298788626997b20b8b",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 410,
+      "source_section": "项目结构约定",
+      "source_sha256": "2e84c041fbaa8cb0fc2082b4d9759a094ad2493eee07b73a497d2c0b552a5782",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 411,
+      "source_section": "项目结构约定",
+      "source_sha256": "c13938861e342d68c078e1f7ec3db6b8923eb7a18835e5c52ffb3991f33c8292",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 412,
+      "source_section": "项目结构约定",
+      "source_sha256": "56e22299b145549f32a29f4be63278a53cee26936da1834f3a95bd9eaf06edbb",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 413,
+      "source_section": "项目结构约定",
+      "source_sha256": "f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "layout-and-routing"
+    },
+    {
+      "source_line": 415,
+      "source_section": "环境配置",
+      "source_sha256": "5c5f5eb73112a4a486dee039be02e33591da7c31f6501971dc87495ea76c93e6",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 416,
+      "source_section": "环境配置",
+      "source_sha256": "d9fa181f48a0c265f7091f8c75654a91097309c3989e2684d6d63c4379887cd2",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 417,
+      "source_section": "环境配置",
+      "source_sha256": "c48b0d74ca27bc19f6248434a67c1de89bf15190543a948f5c043a21cbc4eef9",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 418,
+      "source_section": "环境配置",
+      "source_sha256": "e5ff5c27138515e992a2c04528ea319a191fe8a2a108bb069542c5de8911a005",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 420,
+      "source_section": "Git Bash 运行脚本注意（Windows）",
+      "source_sha256": "70fc4d3197ea22bb4288fc4d8c0478847b173f3aebb3ae680a8757f78b178f63",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 422,
+      "source_section": "Git Bash 运行脚本注意（Windows）",
+      "source_sha256": "25776ac613b55bf4e009323fb86d5d1f980f5b04009f984276757c2736b7547e",
+      "target": "docs/standards/workspace/开发流程.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 424,
+      "source_section": "Tushare 代理端点与数据接口（关键不变量）",
+      "source_sha256": "9b611198b966f878d8b1e4d8bd4d1c2f061a8cf20c5732a2eff6937472416a79",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 426,
+      "source_section": "Tushare 代理端点与数据接口（关键不变量）",
+      "source_sha256": "a9d2b678d0e70eccd4495f56ee9c0cfc80212f760c933659e832c75a9412c44d",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 427,
+      "source_section": "Tushare 代理端点与数据接口（关键不变量）",
+      "source_sha256": "bb1be707ae8a8f1e3e3e7e1cf32da8937d68c72351b9d9aeb6543df3cbd9a211",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 428,
+      "source_section": "Tushare 代理端点与数据接口（关键不变量）",
+      "source_sha256": "d6a121a7c697afd4c5596ed84348776c21d0fb014de615c06af3f8f4229a35f6",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 430,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "575e22a33ff58ab76b1764da6c7766f9ad65d9f87573e8f32e0754a8b0791741",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 432,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "3ff914af16886ff04cd5f0d08b4b0935a61cc3d150825eab9474f1b976c0e8e9",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 434,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "51d64154066187e79cb1424b1920cfa146129b0eb4031d6c087f86f3d479b656",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 435,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "189b34a27696b74a83143de4f174791acaf17e7e5c56c0bbfc8cba944a6e4ec7",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 436,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "0c6bff19bceec0afd4120b70aaf4d1d9b5c2df0cc1ec1e34da5ba5cc520dba10",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 437,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "c7e55c1d134056c59ebd6ff938c9d8814c0483b03aeaf4cc79eeaeb90be2af92",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 438,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "faac63299801913809f540293edc97d02afc97766388485029c56a48baf8d8dc",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 439,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "772aaef57a5465574d1db8e154d5c0cf2bb93a6a38e09784286e6fd89b60f972",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 440,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "ad7ca80a62fc5fc259c8d40e66ba6ccd556b508b172249effa1fbecdc9679385",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 441,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "4b33dac55b19bb2da267fa72d4c8928b2cfce67bfb58cec54622d8550970fa08",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 442,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "78d8c36235d7804aaef8b3bdcbaa4edc2093ed00c06ccfa59f5c4cfe5c2fec32",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 443,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "b5e8d07ae1d4672e931af55dc81b5232ab972726806c389ccf420a510eb33a01",
+      "target": "docs/knowledge/backend/数据库表结构.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 445,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "5bc4b2fb82eae4e5ab68cbe3205141332090df5b6de9c3c628b9220737f4732e",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "reference-or-format-clarified"
+    },
+    {
+      "source_line": 447,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "a35cb0a26341ab44c4be2564463acf509e5977c0fd72c88566b60a2318ecd2ac",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 448,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "4a45fd57d9f19a7e8f22b157fa8db26cc9dfd0aa1a36d7c314005c2e02226acc",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 449,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "ecb006b5c1c666caf434162282b341bf27bfc30f46ec178a0d9fe8deab5d7de9",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 450,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "277a5364eae32803f1269ad1abc059965fa4858b05ecc6e89156f6e6182bc74b",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 451,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "46a4a916bcefd47f47e47fb887d13e8db3db6c2fd5ecebf0d7e8a64cf8d9aead",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 452,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "e3035189d72b130176f33000aea91414a3b177956b76a869944348af841843df",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 454,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "367db1022ab626d0e3997fd9bd811e1a1a313319893d0727780da3f8d8e24c26",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 455,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "1248f2a87d7663591a368383f18ef9e470a05a277ef2d960f41d636257630c20",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    },
+    {
+      "source_line": 457,
+      "source_section": "证券市场数据库命名规范（2026-09-13 起，与用户共同制定）",
+      "source_sha256": "66ffc6913baecec1e9da451a09344c19de59659515b58be857dec1b3dd13ade6",
+      "target": "docs/standards/ai/行情与数据源约束.md",
+      "disposition": "preserved"
+    }
+  ],
+  "experience_files": [
+    {
+      "from": "docs/memory/index.md",
+      "to": "docs/experience/index.md",
+      "before_sha256": "2f3171b41aff6b617f43c1cfd69ec2b11656d81886a9d99987182856a78d5726",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/best-practices/ai/eventstudy-scheduler.md",
+      "to": "docs/experience/best-practices/ai/eventstudy-scheduler.md",
+      "before_sha256": "35fedcf7240f3ff4da9a6682a5bb19cf6979f567d9eb8e7376169d7b96a0ea1c",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/best-practices/ai/langgraph-topology.md",
+      "to": "docs/experience/best-practices/ai/langgraph-topology.md",
+      "before_sha256": "3273cc098a1dea74107705d2e4343a57a09111e5b0fc128221880eba816f6924",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/best-practices/ai/market-t6.md",
+      "to": "docs/experience/best-practices/ai/market-t6.md",
+      "before_sha256": "862fb6b9c3bba4ac7392e4c893f6f97148ec6fd12e36264336eb97ee626c4146",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/best-practices/backend/ingest-targeted-backfill.md",
+      "to": "docs/experience/best-practices/backend/ingest-targeted-backfill.md",
+      "before_sha256": "5eccdb29ff409bf935748ca68fd8984c5ebc3ef936a0a8c4ff94d0ccf1494a15",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/best-practices/frontend/markdown-render.md",
+      "to": "docs/experience/best-practices/frontend/markdown-render.md",
+      "before_sha256": "e743b9b8bf73ff6e6945033d28fb93b76d0b5dbc176bfb7df4f597c4569b3fbb",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/ai/prompts-checkpoint-rerun.md",
+      "to": "docs/experience/pitfalls/ai/prompts-checkpoint-rerun.md",
+      "before_sha256": "24c01ee722c06a69d08a1337f1b9b72e6cf6343a14b59fed7360430dfe274340",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/ai/store-daily.md",
+      "to": "docs/experience/pitfalls/ai/store-daily.md",
+      "before_sha256": "d805771a9bb110cb18dce9b5579405573efd94863464fdc0f7e85df505a904fe",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/ai/strict-event-vector-as-of.md",
+      "to": "docs/experience/pitfalls/ai/strict-event-vector-as-of.md",
+      "before_sha256": "6786d24083b1b7e26c01dbbbea695fa71390a2ceca4c42c46adf145844193af1",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/ai/testing-llm-exclusion.md",
+      "to": "docs/experience/pitfalls/ai/testing-llm-exclusion.md",
+      "before_sha256": "243355e8fef55d98daac67bc65bd6aa10ec6007e15991ffa3afb9267ba692286",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/ai/tushare-endpoints.md",
+      "to": "docs/experience/pitfalls/ai/tushare-endpoints.md",
+      "before_sha256": "fcf9fad0e0a55a7f5896c052ba5007ad9dd7edc60920901d61922a3b02e9f04f",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/account-ledger.md",
+      "to": "docs/experience/pitfalls/backend/account-ledger.md",
+      "before_sha256": "462d86651f869928f43c5b2b538e1b97a80d2ff6cad2883aa5dac69060bdd0c0",
+      "originally_tracked": false
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/account-sellability.md",
+      "to": "docs/experience/pitfalls/backend/account-sellability.md",
+      "before_sha256": "16f02c377735ebcf58ce7315ce3d26ff650fb7d65be26dcc2cffc473bde94083",
+      "originally_tracked": false
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/alembic-jsonb-settings.md",
+      "to": "docs/experience/pitfalls/backend/alembic-jsonb-settings.md",
+      "before_sha256": "94ad2a8dc46f912cfe0cc50eb5e40372ec3e44fd2eaef73669f3df66e09cec21",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/analysis-readiness-retry.md",
+      "to": "docs/experience/pitfalls/backend/analysis-readiness-retry.md",
+      "before_sha256": "cb3d65d4e65597ef31b9f5ada78a9ced3f0b399e300f0eb2768d374ebb54d56d",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/db-test-redis-safety.md",
+      "to": "docs/experience/pitfalls/backend/db-test-redis-safety.md",
+      "before_sha256": "22cef37a8868e3a71c18c504bd3482b31445d63504480d5383e510e76a4d1b98",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/dramatiq-windows.md",
+      "to": "docs/experience/pitfalls/backend/dramatiq-windows.md",
+      "before_sha256": "b9566b2ba67265b3bd3df446f6a7660198c76a63826ee2e7b4740626138f89fa",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/fastapi-openapi-prometheus.md",
+      "to": "docs/experience/pitfalls/backend/fastapi-openapi-prometheus.md",
+      "before_sha256": "f9fe1072daf24112f691ceba94c4474aa39af75920e83e5329170d24a973073a",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/instrument-trading-rules.md",
+      "to": "docs/experience/pitfalls/backend/instrument-trading-rules.md",
+      "before_sha256": "66f2e86cfc195c906e49cab1f198bf65afa11e9c2f3ce003a4b1482d4a36f1a2",
+      "originally_tracked": false
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/order-reconciliation.md",
+      "to": "docs/experience/pitfalls/backend/order-reconciliation.md",
+      "before_sha256": "3ed73bbdca92f16ee80b073eb6b130dbfb5577f9a06981797e85bb316d28bded",
+      "originally_tracked": false
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/portfolio-policy-routing.md",
+      "to": "docs/experience/pitfalls/backend/portfolio-policy-routing.md",
+      "before_sha256": "791e1fd2ec7125b1889f19277b57924566035d12458cbe8c89c3e6a846e5f579",
+      "originally_tracked": false
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/quant-target-asof.md",
+      "to": "docs/experience/pitfalls/backend/quant-target-asof.md",
+      "before_sha256": "48a74989392b33e8ff9afb54687f4dfbc29ab7f703cdc69799a0db8781401df3",
+      "originally_tracked": false
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/threading-futures.md",
+      "to": "docs/experience/pitfalls/backend/threading-futures.md",
+      "before_sha256": "2594ce49988784a28c24c960fb3c3d4c14469f615d0f83b98cddbf74fd70132f",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/backend/windows-pg-async.md",
+      "to": "docs/experience/pitfalls/backend/windows-pg-async.md",
+      "before_sha256": "3282968b96e62b00ec11363bf804f3a0615b8d8b6fd7357733880a7f84a4d29f",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/frontend/date-arithmetic-clamping.md",
+      "to": "docs/experience/pitfalls/frontend/date-arithmetic-clamping.md",
+      "before_sha256": "cb4726492a78ea538c3fd24827c72c3dcd7cf5b453063141be427afc136d2ca5",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/frontend/echarts-datazoom-anchors.md",
+      "to": "docs/experience/pitfalls/frontend/echarts-datazoom-anchors.md",
+      "before_sha256": "a6fbeed6211b69f58109bb7f05536f72fb12c84c9153eaf0a3cd626b46e165e9",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/frontend/grid-minmax-collapse.md",
+      "to": "docs/experience/pitfalls/frontend/grid-minmax-collapse.md",
+      "before_sha256": "0294df4da05305fd343758e3bd083f82df2f042d19bba27ba2e039d49ceea3f1",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/frontend/pnpm-openapi-codegen.md",
+      "to": "docs/experience/pitfalls/frontend/pnpm-openapi-codegen.md",
+      "before_sha256": "2c85d59da82958bd8abeaf2bbb399d74ea369b212702d2c592fdeb098d441769",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/frontend/react-query-dialog.md",
+      "to": "docs/experience/pitfalls/frontend/react-query-dialog.md",
+      "before_sha256": "e457c3dc4e0b7c6b1a6616ae83e9bb030008e7ee86adf50619f7d4609ec1b61c",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/frontend/zrender-shared-eventful.md",
+      "to": "docs/experience/pitfalls/frontend/zrender-shared-eventful.md",
+      "before_sha256": "91652e6c4476447b367521eb227c4e9eca11fad538c57641a2688c4ddb64a9af",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/workspace/git-bash-windows.md",
+      "to": "docs/experience/pitfalls/workspace/git-bash-windows.md",
+      "before_sha256": "1153ba740877a79545f3947fc2d9cebb8ba46fc3fcbeb62c4be0da736d5d86c4",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/workspace/git-status-porcelain-empty-path.md",
+      "to": "docs/experience/pitfalls/workspace/git-status-porcelain-empty-path.md",
+      "before_sha256": "c7c14c0341b85a37eb2b0d223d132a6bb131687a52387be82853695fe7e90581",
+      "originally_tracked": true
+    },
+    {
+      "from": "docs/memory/pitfalls/workspace/评审循环踩坑.md",
+      "to": "docs/experience/pitfalls/workspace/评审循环踩坑.md",
+      "before_sha256": "8ba10762077784f9deda32353cf36b8ba9d9709f3e9ffa5c6a2d7f09855bce99",
+      "originally_tracked": true
+    }
+  ],
+  "touched_existing": [
+    "AGENTS.md",
+    "docs/index.md",
+    "docs/knowledge/backend/数据库表结构.md",
+    "docs/knowledge/frontend/前端平台.md",
+    "docs/requirements/archive/USKR指数上线/retrospective.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/issues.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/log.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/plan.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/retrospective.md",
+    "docs/requirements/archive/前端体验优化/plan.md",
+    "docs/requirements/archive/指数K线图交互优化/result.md",
+    "docs/requirements/archive/指数K线图交互优化/retrospective.md",
+    "docs/requirements/archive/文档目录重构/README.md",
+    "docs/requirements/archive/文档目录重构/decisions.md",
+    "docs/requirements/archive/文档目录重构/issues.md",
+    "docs/requirements/archive/文档目录重构/log.md",
+    "docs/requirements/archive/文档目录重构/plan.md",
+    "docs/requirements/archive/文档目录重构/result.md",
+    "docs/requirements/archive/文档目录重构/retrospective.md",
+    "docs/requirements/archive/文档目录重构/tasks.md",
+    "docs/requirements/archive/板块概念Treemap/plan.md",
+    "docs/requirements/archive/板块概念Treemap/tasks.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/plan.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/result.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/retrospective.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/tasks.md",
+    "docs/requirements/templates/README.md.模板.md",
+    "docs/requirements/templates/issues.md.模板.md",
+    "docs/requirements/templates/retrospective.md.模板.md",
+    "docs/requirements/templates/骨架说明.md",
+    "docs/requirements/市场数据自动补齐/plan.md",
+    "docs/requirements/量化策略与实操层/retrospective.md",
+    "docs/requirements/量化策略优化与全生命周期验证/README.md",
+    "docs/requirements/量化策略优化与全生命周期验证/log.md",
+    "docs/requirements/量化策略优化与全生命周期验证/plan.md",
+    "docs/requirements/量化策略优化与全生命周期验证/result.md"
+  ],
+  "note": "All existing working content retained; S derives from HEAD, W from working baseline. Original untracked experience remains untracked.",
+  "document_hashes": {
+    "AGENTS.md": "6851049caf41486c5341738ecea4079beeffd611c5c3292ce993c2fba464e97d",
+    "docs/experience/best-practices/ai/eventstudy-scheduler.md": "3e32db353a194a33f8aa3b84dd8876f1db02cf9cea287ea8ed5321f43d9acacc",
+    "docs/experience/best-practices/ai/langgraph-topology.md": "46dc33c8cae43116bf054fe6a840a9895e8b9f337cc5eb414443edf6474f5b8a",
+    "docs/experience/best-practices/ai/market-t6.md": "e5adb76a56caeca4010ab91c80a99e8b117a546c969a55bd6233a9dbc96c1df2",
+    "docs/experience/best-practices/backend/ingest-targeted-backfill.md": "52267bfcaa85922e43913950ca486795784612e4479a0482bcb05db44484d9f5",
+    "docs/experience/best-practices/frontend/markdown-render.md": "ac3b1e4f266f8b5d7d80baee13fbe87250cabd94896f9b0a5d52cb2a80566d93",
+    "docs/experience/index.md": "0e9295a1c9830622a264cf47a07b07cf70c43dc8651af02540d9b043ca9bb9b5",
+    "docs/experience/pitfalls/ai/prompts-checkpoint-rerun.md": "551c87e9713349073b55d8f1bcc27fc2b4f6bff08e71dbcafa9f16590beaf620",
+    "docs/experience/pitfalls/ai/store-daily.md": "40baa0f73b22c5e450a10dbb4c19eabd42c12d33cdc72c920ff429a999034a04",
+    "docs/experience/pitfalls/ai/strict-event-vector-as-of.md": "6786d24083b1b7e26c01dbbbea695fa71390a2ceca4c42c46adf145844193af1",
+    "docs/experience/pitfalls/ai/testing-llm-exclusion.md": "6bb380a1e0f2ed0ee9d0020216fa48abaf351a48a5dc5de370dde7fe8ce8d6e8",
+    "docs/experience/pitfalls/ai/tushare-endpoints.md": "5801829a5243dc243ebec4fb08bfc50cd6116f5a0b372ddd5d25ff147e9d15e2",
+    "docs/experience/pitfalls/backend/account-ledger.md": "462d86651f869928f43c5b2b538e1b97a80d2ff6cad2883aa5dac69060bdd0c0",
+    "docs/experience/pitfalls/backend/account-sellability.md": "16f02c377735ebcf58ce7315ce3d26ff650fb7d65be26dcc2cffc473bde94083",
+    "docs/experience/pitfalls/backend/alembic-jsonb-settings.md": "94ad2a8dc46f912cfe0cc50eb5e40372ec3e44fd2eaef73669f3df66e09cec21",
+    "docs/experience/pitfalls/backend/analysis-readiness-retry.md": "cb3d65d4e65597ef31b9f5ada78a9ced3f0b399e300f0eb2768d374ebb54d56d",
+    "docs/experience/pitfalls/backend/db-test-redis-safety.md": "22cef37a8868e3a71c18c504bd3482b31445d63504480d5383e510e76a4d1b98",
+    "docs/experience/pitfalls/backend/dramatiq-windows.md": "2f144ed2640818d6b7e9f8da286cd1e7a5ae991613218e164989e148433f30c1",
+    "docs/experience/pitfalls/backend/fastapi-openapi-prometheus.md": "5c4d157b9dbe73e6489851c699e0934ab407d323faac630dae216849f9fb122d",
+    "docs/experience/pitfalls/backend/instrument-trading-rules.md": "66f2e86cfc195c906e49cab1f198bf65afa11e9c2f3ce003a4b1482d4a36f1a2",
+    "docs/experience/pitfalls/backend/order-reconciliation.md": "3ed73bbdca92f16ee80b073eb6b130dbfb5577f9a06981797e85bb316d28bded",
+    "docs/experience/pitfalls/backend/portfolio-policy-routing.md": "791e1fd2ec7125b1889f19277b57924566035d12458cbe8c89c3e6a846e5f579",
+    "docs/experience/pitfalls/backend/quant-target-asof.md": "f7077f117b4a4637cf14eb0c7c7093244c0dcc5c6860cdae18c2519b74ef2ded",
+    "docs/experience/pitfalls/backend/threading-futures.md": "275b3372714052d47dbbf9e9c3bbcfc26497df974961afb3785becbcece0b25a",
+    "docs/experience/pitfalls/backend/windows-pg-async.md": "826860caf20ceafefded6b2e93fb0e311cbf4bc7809ef5c00e9f993a0ecaac75",
+    "docs/experience/pitfalls/frontend/date-arithmetic-clamping.md": "cb4726492a78ea538c3fd24827c72c3dcd7cf5b453063141be427afc136d2ca5",
+    "docs/experience/pitfalls/frontend/echarts-datazoom-anchors.md": "6f65ec206ac240db87a67955bf53b104714365cc795f4f8f81dcf1805ec06649",
+    "docs/experience/pitfalls/frontend/grid-minmax-collapse.md": "0294df4da05305fd343758e3bd083f82df2f042d19bba27ba2e039d49ceea3f1",
+    "docs/experience/pitfalls/frontend/pnpm-openapi-codegen.md": "53cbb0dcd227934363fb3f0b8fc2a6f7afe9d0525cdf27f5743e46a3a9304daf",
+    "docs/experience/pitfalls/frontend/react-query-dialog.md": "95552fb48f88f0ca3682c75fe186a2290ff23444437905169bc6821644ac4255",
+    "docs/experience/pitfalls/frontend/zrender-shared-eventful.md": "1b26e2f40f91030eb8567d5ae9e5280e05f37a8379bb9d72b1bfa62f774149e8",
+    "docs/experience/pitfalls/workspace/git-bash-windows.md": "d07243dc1f132a58ec2f5d652598ba488dd90d970ae23162c69e20ec9a93fd80",
+    "docs/experience/pitfalls/workspace/git-status-porcelain-empty-path.md": "c7c14c0341b85a37eb2b0d223d132a6bb131687a52387be82853695fe7e90581",
+    "docs/experience/pitfalls/workspace/评审循环踩坑.md": "ae9f6c9d5704b67c15feeee260bd3d616c0190f8f4806e5b28f751ef99796edf",
+    "docs/index.md": "28921994807ea7ecc28fd4192239455f9558d4c4dec0faabbc2e7e813747cd96",
+    "docs/knowledge/backend/数据库表结构.md": "4c387079165c8304325e556efc560b2ce46fb55a71d4ee4c46461618996fb09d",
+    "docs/knowledge/frontend/前端平台.md": "23f384602fee784b43d1fd3b88b6ec0ce39463b43f8ae40e6d0dd7f300361d30",
+    "docs/requirements/archive/USKR指数上线/retrospective.md": "f4ab13f3ddbfea733bbc7c87037ab9f58ffee8a2565770bc0fd329831c9c507a",
+    "docs/requirements/archive/事件审核AI作用域解析方案/issues.md": "8c92cbcce66fbd2f3ee2d2fd256fe6be4adb5feab2adac47d7bc9390cddc9b65",
+    "docs/requirements/archive/事件审核AI作用域解析方案/log.md": "bd208cd99a413e0f6857f611239558341a547b2714bc826a7fd38f10c2f0d61a",
+    "docs/requirements/archive/事件审核AI作用域解析方案/plan.md": "8719f4efe292a0227304c33828e4b1c55df2dcc48ddf78a8061749d68e8dcfdf",
+    "docs/requirements/archive/事件审核AI作用域解析方案/retrospective.md": "d9b156420ece2ec05d266ad9bfedf31d1ee445d470836b1a83235767483b3a00",
+    "docs/requirements/archive/前端体验优化/plan.md": "8f27a695d58540ddcbe23122aa6a088504cde2b1b4f427ad04817eb2f64f16fb",
+    "docs/requirements/archive/指数K线图交互优化/result.md": "c70052a800710248867e47b9a50911fd41eb0b64375b03b8b1a49d4a6d37a958",
+    "docs/requirements/archive/指数K线图交互优化/retrospective.md": "2fb5c557bb462767eb8b3309164f956757f23fed54889be1c2d73fa7f1d9a0fc",
+    "docs/requirements/archive/文档目录重构/README.md": "33657cb05432604676e25f01a07cfe1dc60697a6dbd710928ec022eabb696268",
+    "docs/requirements/archive/文档目录重构/decisions.md": "c243b03a4d5809534e7364900bd7357c1fd344fb1aa09abf3fa97a960bc94d52",
+    "docs/requirements/archive/文档目录重构/issues.md": "f80d25af2c9d41931ffeabb099d858d749bf2fe36cb16c6117dfc2965cd1b7eb",
+    "docs/requirements/archive/文档目录重构/log.md": "019bddfe7c86fd96fa7f8f46041a353c19a6d0e3aad17abbc21d7486e847ebe1",
+    "docs/requirements/archive/文档目录重构/plan.md": "228281cf30b6dfae7a0b53c90596f255cd998d0b22ada43744c42dc6900c9bae",
+    "docs/requirements/archive/文档目录重构/result.md": "773b5a22430309195a774ddb2f240891bf360b3d4e7c1eaebdc14600f5b4d45a",
+    "docs/requirements/archive/文档目录重构/retrospective.md": "29d192e58ee3def562b0da495dd7970f7c63a4df2b9d7be5c4a4b4eb8466731f",
+    "docs/requirements/archive/文档目录重构/tasks.md": "a38ead4530d1c0ac80489d1a5b61c724a6cb6b7fe3f3c6ec173754b1dc822d55",
+    "docs/requirements/archive/板块概念Treemap/plan.md": "aab3dea2a35f12588f39715a5442bf20bc7575775cda859588ae4e12b53c92d9",
+    "docs/requirements/archive/板块概念Treemap/tasks.md": "fe2aada9f8ea781e9d90d4725ba93349af721cd8c538621e003f6e26bf123dd5",
+    "docs/requirements/archive/移除Streamlit与调试步进/plan.md": "732c86aee8b6fce28f1c93c76fa3c1d9b2a2d7b6582a5081cc9fe04622158cf2",
+    "docs/requirements/archive/移除Streamlit与调试步进/result.md": "177fa305b622ee54ee26c37f58948229be5a8d88c40c27ee8e7ebb341a762635",
+    "docs/requirements/archive/移除Streamlit与调试步进/retrospective.md": "4c06c50d0016d360c1d97a2c0f8920944e89d1bd1c42f30e685d770e107cebfa",
+    "docs/requirements/archive/移除Streamlit与调试步进/tasks.md": "f9a010822005534f211c2aa03bbc25fa7131568d26aaacddf69262e7c661e594",
+    "docs/requirements/templates/README.md.模板.md": "80d379f507869907feca9b6e750f48db7ad48064b9454565c08dc7377bfe98d5",
+    "docs/requirements/templates/issues.md.模板.md": "8c92cbcce66fbd2f3ee2d2fd256fe6be4adb5feab2adac47d7bc9390cddc9b65",
+    "docs/requirements/templates/plan.md.模板.md": "cd2e92e7e01163950d81fc1fc129445da70f0c7796c03f4862b1bb54b25fcd13",
+    "docs/requirements/templates/retrospective.md.模板.md": "77f5c8058790b0d84a363748eff01b00d16e9ea6a8efddccc84842b3d6575870",
+    "docs/requirements/templates/tasks.md.模板.md": "36fcdd4203b1112ff291f23fa5ad12bda3a0f611e89451b4ca5f1232840bd347",
+    "docs/requirements/templates/骨架说明.md": "9d2d2032c746459681cbfc36413fb20569895ba659ae6152d92eea48129ab227",
+    "docs/requirements/市场数据自动补齐/plan.md": "c1c453b55303cc40779b482806fc4afc52d54d36c8ae1abfedb4593e048e9b25",
+    "docs/requirements/量化策略与实操层/retrospective.md": "c48c3519ac925dd3e865ec233f056d27e7ac4aaa2a839ec57aa0695909365a0b",
+    "docs/requirements/量化策略优化与全生命周期验证/README.md": "890e9cfb07a279f967d8c1d7f56fa53128d6333de87b292eab303e28d9dc892a",
+    "docs/requirements/量化策略优化与全生命周期验证/log.md": "48a95a7475bb7630f35f1176763bed5eee14123ed9cbe4eb3ccf597ece10c742",
+    "docs/requirements/量化策略优化与全生命周期验证/plan.md": "2a9bda44eaa941d6400b6c14fdb77675360bd6683107181b3032fd8483b28860",
+    "docs/requirements/量化策略优化与全生命周期验证/result.md": "3c5ffb439b52a14ae119aaf289a330a0a0751fe82521ff18397e55b55eef4ab2",
+    "docs/standards/ai/AI链路开发约束.md": "794a2c4f996755c04f4fa79dba5c4e3bc0baf48961c40a87ab3c460a1bdf8192",
+    "docs/standards/ai/行情与数据源约束.md": "888d7a27019e0f62f7d5add9690ab386f8ddcd880181c19d000d704fa1042371",
+    "docs/standards/backend/量化开发约束.md": "974de45afa43d2638cef9eba112990963eabcf727bf4cbd30a902b71d3b7a191",
+    "docs/standards/frontend/前端开发约束.md": "bc5bb263ec9a105d6bbd5bf94ab9a2ecf140b3fbed8664f73f5c593d8eb311cd",
+    "docs/standards/index.md": "37a9b732a8cf4dc79faf926f4aa27c4434cf8fd0f9eb8e294eb2a40c3a424d72",
+    "docs/standards/workspace/代码验收.md": "7947d8c741337db8c9b862695c456014ed8f4b77c61b4203424d094649af05b5",
+    "docs/standards/workspace/开发流程.md": "10fa9f8359cf20d51990a1981ac13132e9752237c65a92a1ec98c506a7356981",
+    "docs/standards/workspace/方案评审.md": "feb3914b66e82153549a81b32ce24f1e7ebde380eae125001b8a580096ee754a"
+  },
+  "rule_assertions": [
+    {
+      "label": "逐任务验收后继续主线（2026-10-01 精简）",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "主线优先与系统治理（2026-09-26 用户明确）",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "先定范围",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "按变更复验",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "保留关键门禁",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "复核有终点",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "区分检查与验收",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "以最适合业务的整体设计为目标，不以少建表或复用旧结构为目标。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "比较方案后给出明确推荐。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "独立业务事实应有清晰的持久化模型，共性能力优先复用。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "按数据性质选择存储。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "归属规则",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "写入时机",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "与 requirements/ 分工",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "每个复杂任务 = `docs/requirements/<任务名>/` 下的一个任务文件夹",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "除非能确保 95% 实现无误，否则必须不断向我澄清问题",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "实时状态更新",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "实现完成 + review 通过后，将方案中的架构变更整合进对应领域文档（`docs/knowledge/`），README.md 状态更新为\"已完成\"，result.md / retrospective.md 填写完毕，整个任务文件夹移入 `docs/requirements/archive/<任务名>/` 归档（archive 深一层，同步把文件夹内相对链接整体上移一层：`../../X` → `../../../X`）；归档后自动提交 commit——暂存按路径显式 `git add <路径>`，禁止 `git add -A`（用户并发编辑），提交信息沿用仓库风格（如 `chore: <任务名> 实现 + 归档`），提交范围仅限本任务文件与归档文件夹",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "结构化 State 字段换代：直接替换、不搞 v1/v2 并存（2026-09-11 决策）",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "维度级门槛：任一维度 <8 分 = 该维度还有必须修的 findings",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "R1 全量评审",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "主会话修复 R1",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "R2 修复核验",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "R3 最终核验",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "终止条件",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "收尾（主会话，不占轮次）",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "代码逻辑正确性",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "SQLAlchemy并发写入",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化组合事务",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "组合目标来源",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "组合政策BUY门禁",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化目标时点",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化BUY流动性",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化风险档",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化品种规则",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化SELL可卖量",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化在途预留",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化成交修订与幂等",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化已发生事实与偏离",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化资金流单位化",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化签名摘要与生命周期修订",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化生产成交投影门禁",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化历史可得性",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化账户双时点",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化可空身份",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化输入认证",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化近期窗口",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "股票基准证据",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "正式测试统一归项目根 `tests/`",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "backend 按业务模块归属",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "按实际被测行为分类，不照搬旧路径",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "测试层级",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "存量修改与增量功能",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "bug 修复闭环",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "辅助代码和 fixture",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "先查文件级索引再维护测试",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "测试说明单一来源与同步",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "按影响范围选择回归",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "运行环境与测试层级正交",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "运行任何会执行 DDL、TRUNCATE 或写入的 DB 测试前，必须读测试函数和 fixture，确认连接已显式指向隔离测试库；测试名含 idempotent 也不能当作只读。",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "量化历史行像",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化前驱连续性",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化删源选择",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化命令选择",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "量化命令封口",
+      "target": "docs/standards/backend/量化开发约束.md"
+    },
+    {
+      "label": "自测禁止运行 AI 测试",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "`-k \"not integration\"` 排除不干净，全量自测前必须先检索 `real_llm|real_toolkit` fixture",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "增量更新不得凭最大日线日期判定窗口完整",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "增量目标日必须取交易所日历",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "基金技术因子整行缺采必须按已有日线逐日补；空指标须依基金上市日与独立交易日历，或上游完整历史日期/原价与本地逐项一致的有效样本数确认暖机",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "独立量化执行发现输入缺口时先提交有界补采",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "历史涨跌停价源的完整性按当日上市股票池核验",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "每日市场更新及历史审计必须传播不完整状态",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "停牌审计必须双向核对日线",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "复权因子不得反推交易日线",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "可信停牌证据跨链路一致",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "`suspend_d`必须显式取`suspend_timing`",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "历史北交所代码按开市日期与当日身份过滤",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "独立历史源必须按声明的全年证券范围及当日有效资格核全并标混合来源",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "Bao历史交易标记只作交叉证据",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "历史复合状态重采仅写缺口证券",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "北交所暖机根数按有效交易资格计算",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "技术方案文档必须包含三方依赖能力评估",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "不仅看端点是否存在，更要看能否拿到所需数据",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "所有 Python 项目使用 `pyproject.toml` 管理依赖",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "确定性拓扑必须用 `compiled.builder`",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "每日事件快照必须分别校验来源 `published_at`/`first_seen_at <= news_cutoff_at`，判断 `available_at <= report_as_of`，以及向量 `embedding_available_at <= report_as_of`；缺少向量可用时间时按当时无向量处理，禁止用事后回填向量改变历史召回。",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "提示词单一事实来源 = `AI/utils/prompts.py`",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "templates md 含 JSON 结论块保留单花括号",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "frontend 是 pnpm 布局",
+      "target": "docs/standards/frontend/前端开发约束.md"
+    },
+    {
+      "label": "所有 markdown 字符串内容一律经统一组件 `MarkdownView`",
+      "target": "docs/standards/frontend/前端开发约束.md"
+    },
+    {
+      "label": "前端禁止页面重排",
+      "target": "docs/standards/frontend/前端开发约束.md"
+    },
+    {
+      "label": "方案 B（推荐）：常驻自调度",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "动 backend 涉及上述领域前，先读对应文件",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "日线消费必须先 `_sort_asc_by_trade_date` 升序归一",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "超时线程内捕获并保留迟到的 `WinError 10013`",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "表名单数",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "已登记ST分歧的隔离必须覆盖既有状态",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "基金因子重跑须检查必需指标，不能只查整行存在",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "定向历史源必须持久记录scope_codes且不得冒充全市场ST名单",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    }
+  ],
+  "manual_review_scope": {
+    "reference_or_format": [
+      15,
+      75,
+      84,
+      85,
+      87,
+      99,
+      109,
+      110,
+      119,
+      121,
+      125,
+      135,
+      187,
+      403,
+      430,
+      432,
+      445
+    ],
+    "approved_policy": [
+      244,
+      246,
+      248,
+      250,
+      251,
+      252,
+      253,
+      254,
+      255,
+      256,
+      257,
+      258,
+      259,
+      260,
+      261,
+      263,
+      265,
+      266,
+      267,
+      268,
+      269,
+      271,
+      273,
+      275,
+      276,
+      277,
+      278,
+      279,
+      280,
+      282,
+      284,
+      285,
+      286,
+      287,
+      288
+    ],
+    "format_delegated": [
+      100,
+      102,
+      103,
+      104,
+      105,
+      106,
+      108,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116
+    ]
+  },
+  "committed_document_hashes": {
+    "docs/standards/workspace/开发流程.md": "9afbd7e435f9bfae0d7232d2b1580b160592a2530932f66e5096461fbf90c069",
+    "docs/standards/workspace/方案评审.md": "feb3914b66e82153549a81b32ce24f1e7ebde380eae125001b8a580096ee754a",
+    "docs/standards/workspace/代码验收.md": "81622685d605b61019fb4c27bbd2320a5a38b864b4654371a537e98648f45a48",
+    "docs/standards/backend/量化开发约束.md": "0213955be96ac01e10190ac70037f3080dc404415b71e1ab32e0711b0332342d",
+    "docs/standards/ai/行情与数据源约束.md": "5d83baf56d5b55b53ed7ebbfd3128912e33ef7fa4bc18a0e839abfb15d57fad5",
+    "docs/standards/ai/AI链路开发约束.md": "794a2c4f996755c04f4fa79dba5c4e3bc0baf48961c40a87ab3c460a1bdf8192",
+    "docs/standards/frontend/前端开发约束.md": "bc5bb263ec9a105d6bbd5bf94ab9a2ecf140b3fbed8664f73f5c593d8eb311cd",
+    "docs/standards/index.md": "37a9b732a8cf4dc79faf926f4aa27c4434cf8fd0f9eb8e294eb2a40c3a424d72",
+    "AGENTS.md": "f0f86c8bdae3fc68d935a2f13c13b9151ff85692daeaef4064b70916fef155e2",
+    "docs/index.md": "d0cb8cafc9e28fb01996155fb845d332e7ef63b7cb63b8c54a21e9c194d9b323",
+    "docs/knowledge/backend/数据库表结构.md": "1c7c1d0d622e424dee1b05e385fb47021ee9cde98df5f0fc6501f22d12affea4",
+    "docs/knowledge/frontend/前端平台.md": "23f384602fee784b43d1fd3b88b6ec0ce39463b43f8ae40e6d0dd7f300361d30",
+    "docs/requirements/archive/USKR指数上线/retrospective.md": "f4ab13f3ddbfea733bbc7c87037ab9f58ffee8a2565770bc0fd329831c9c507a",
+    "docs/requirements/archive/事件审核AI作用域解析方案/issues.md": "8c92cbcce66fbd2f3ee2d2fd256fe6be4adb5feab2adac47d7bc9390cddc9b65",
+    "docs/requirements/archive/事件审核AI作用域解析方案/log.md": "bd208cd99a413e0f6857f611239558341a547b2714bc826a7fd38f10c2f0d61a",
+    "docs/requirements/archive/事件审核AI作用域解析方案/plan.md": "8719f4efe292a0227304c33828e4b1c55df2dcc48ddf78a8061749d68e8dcfdf",
+    "docs/requirements/archive/事件审核AI作用域解析方案/retrospective.md": "d9b156420ece2ec05d266ad9bfedf31d1ee445d470836b1a83235767483b3a00",
+    "docs/requirements/archive/前端体验优化/plan.md": "8f27a695d58540ddcbe23122aa6a088504cde2b1b4f427ad04817eb2f64f16fb",
+    "docs/requirements/archive/指数K线图交互优化/result.md": "c70052a800710248867e47b9a50911fd41eb0b64375b03b8b1a49d4a6d37a958",
+    "docs/requirements/archive/指数K线图交互优化/retrospective.md": "2fb5c557bb462767eb8b3309164f956757f23fed54889be1c2d73fa7f1d9a0fc",
+    "docs/requirements/archive/文档目录重构/README.md": "33657cb05432604676e25f01a07cfe1dc60697a6dbd710928ec022eabb696268",
+    "docs/requirements/archive/文档目录重构/decisions.md": "c243b03a4d5809534e7364900bd7357c1fd344fb1aa09abf3fa97a960bc94d52",
+    "docs/requirements/archive/文档目录重构/issues.md": "f80d25af2c9d41931ffeabb099d858d749bf2fe36cb16c6117dfc2965cd1b7eb",
+    "docs/requirements/archive/文档目录重构/log.md": "019bddfe7c86fd96fa7f8f46041a353c19a6d0e3aad17abbc21d7486e847ebe1",
+    "docs/requirements/archive/文档目录重构/plan.md": "228281cf30b6dfae7a0b53c90596f255cd998d0b22ada43744c42dc6900c9bae",
+    "docs/requirements/archive/文档目录重构/result.md": "773b5a22430309195a774ddb2f240891bf360b3d4e7c1eaebdc14600f5b4d45a",
+    "docs/requirements/archive/文档目录重构/retrospective.md": "29d192e58ee3def562b0da495dd7970f7c63a4df2b9d7be5c4a4b4eb8466731f",
+    "docs/requirements/archive/文档目录重构/tasks.md": "a38ead4530d1c0ac80489d1a5b61c724a6cb6b7fe3f3c6ec173754b1dc822d55",
+    "docs/requirements/archive/板块概念Treemap/plan.md": "aab3dea2a35f12588f39715a5442bf20bc7575775cda859588ae4e12b53c92d9",
+    "docs/requirements/archive/板块概念Treemap/tasks.md": "fe2aada9f8ea781e9d90d4725ba93349af721cd8c538621e003f6e26bf123dd5",
+    "docs/requirements/archive/移除Streamlit与调试步进/plan.md": "732c86aee8b6fce28f1c93c76fa3c1d9b2a2d7b6582a5081cc9fe04622158cf2",
+    "docs/requirements/archive/移除Streamlit与调试步进/result.md": "177fa305b622ee54ee26c37f58948229be5a8d88c40c27ee8e7ebb341a762635",
+    "docs/requirements/archive/移除Streamlit与调试步进/retrospective.md": "4c06c50d0016d360c1d97a2c0f8920944e89d1bd1c42f30e685d770e107cebfa",
+    "docs/requirements/archive/移除Streamlit与调试步进/tasks.md": "f9a010822005534f211c2aa03bbc25fa7131568d26aaacddf69262e7c661e594",
+    "docs/requirements/templates/README.md.模板.md": "80d379f507869907feca9b6e750f48db7ad48064b9454565c08dc7377bfe98d5",
+    "docs/requirements/templates/issues.md.模板.md": "8c92cbcce66fbd2f3ee2d2fd256fe6be4adb5feab2adac47d7bc9390cddc9b65",
+    "docs/requirements/templates/retrospective.md.模板.md": "77f5c8058790b0d84a363748eff01b00d16e9ea6a8efddccc84842b3d6575870",
+    "docs/requirements/templates/骨架说明.md": "c6d37ab5093efde6c6242828fcb37df5d5d55895dee69542ce609a87d0f9badf",
+    "docs/requirements/市场数据自动补齐/plan.md": "c1c453b55303cc40779b482806fc4afc52d54d36c8ae1abfedb4593e048e9b25",
+    "docs/requirements/量化策略与实操层/retrospective.md": "c48c3519ac925dd3e865ec233f056d27e7ac4aaa2a839ec57aa0695909365a0b",
+    "docs/requirements/量化策略优化与全生命周期验证/README.md": "941a34284bde0e47ab6bd716a11ebf30efaffe9afba019916a0b7a7809d7508a",
+    "docs/requirements/量化策略优化与全生命周期验证/log.md": "170082259ac4546495e867b3108505094b1cf12e8eabc95d8206b87f9cd1a4ca",
+    "docs/requirements/量化策略优化与全生命周期验证/plan.md": "a00f8a1e921e886a38bec0e92611b4501982f8803171e15cfc0b9c397cab9475",
+    "docs/requirements/量化策略优化与全生命周期验证/result.md": "0a7f2608b70759507010ea5f0d39605c65337c78592c8cf06eae27d9ca926309",
+    "docs/experience/index.md": "869f7e697e7f48c64783984910de023093584f7369b416ed8b72bdbbb0cb2410",
+    "docs/experience/best-practices/ai/eventstudy-scheduler.md": "3e32db353a194a33f8aa3b84dd8876f1db02cf9cea287ea8ed5321f43d9acacc",
+    "docs/experience/best-practices/ai/langgraph-topology.md": "46dc33c8cae43116bf054fe6a840a9895e8b9f337cc5eb414443edf6474f5b8a",
+    "docs/experience/best-practices/ai/market-t6.md": "e5adb76a56caeca4010ab91c80a99e8b117a546c969a55bd6233a9dbc96c1df2",
+    "docs/experience/best-practices/backend/ingest-targeted-backfill.md": "77589f24dd96f12e7c172788a4024ccd2694e6b5ffe98dfbaa95b7a7a6ec3229",
+    "docs/experience/best-practices/frontend/markdown-render.md": "ac3b1e4f266f8b5d7d80baee13fbe87250cabd94896f9b0a5d52cb2a80566d93",
+    "docs/experience/pitfalls/ai/prompts-checkpoint-rerun.md": "551c87e9713349073b55d8f1bcc27fc2b4f6bff08e71dbcafa9f16590beaf620",
+    "docs/experience/pitfalls/ai/store-daily.md": "10aaa30c6fd2e5070a0acb75a12390c1634474e68b64bff7509142f381625441",
+    "docs/experience/pitfalls/ai/strict-event-vector-as-of.md": "6786d24083b1b7e26c01dbbbea695fa71390a2ceca4c42c46adf145844193af1",
+    "docs/experience/pitfalls/ai/testing-llm-exclusion.md": "6bb380a1e0f2ed0ee9d0020216fa48abaf351a48a5dc5de370dde7fe8ce8d6e8",
+    "docs/experience/pitfalls/ai/tushare-endpoints.md": "8990950ec63c7016241b0352c77f78f3c2fd507d7a5759b040528c84180c8a3b",
+    "docs/experience/pitfalls/backend/alembic-jsonb-settings.md": "20841e544c57d86c6fc84c4b8e7f1e39b2d46134abbad70ea533cdac13a84ef8",
+    "docs/experience/pitfalls/backend/analysis-readiness-retry.md": "0fc2b07f06bcbfd0befeeb3f1885d61e391e7bd2e844169d0a3ce92b5c8ffd0f",
+    "docs/experience/pitfalls/backend/db-test-redis-safety.md": "6f4f56b579e556ae09fd452cdf26c15733828a1ccc907689a5683a30e39f0d4f",
+    "docs/experience/pitfalls/backend/dramatiq-windows.md": "2f144ed2640818d6b7e9f8da286cd1e7a5ae991613218e164989e148433f30c1",
+    "docs/experience/pitfalls/backend/fastapi-openapi-prometheus.md": "5c4d157b9dbe73e6489851c699e0934ab407d323faac630dae216849f9fb122d",
+    "docs/experience/pitfalls/backend/threading-futures.md": "275b3372714052d47dbbf9e9c3bbcfc26497df974961afb3785becbcece0b25a",
+    "docs/experience/pitfalls/backend/windows-pg-async.md": "826860caf20ceafefded6b2e93fb0e311cbf4bc7809ef5c00e9f993a0ecaac75",
+    "docs/experience/pitfalls/frontend/date-arithmetic-clamping.md": "cb4726492a78ea538c3fd24827c72c3dcd7cf5b453063141be427afc136d2ca5",
+    "docs/experience/pitfalls/frontend/echarts-datazoom-anchors.md": "6f65ec206ac240db87a67955bf53b104714365cc795f4f8f81dcf1805ec06649",
+    "docs/experience/pitfalls/frontend/grid-minmax-collapse.md": "0294df4da05305fd343758e3bd083f82df2f042d19bba27ba2e039d49ceea3f1",
+    "docs/experience/pitfalls/frontend/pnpm-openapi-codegen.md": "53cbb0dcd227934363fb3f0b8fc2a6f7afe9d0525cdf27f5743e46a3a9304daf",
+    "docs/experience/pitfalls/frontend/react-query-dialog.md": "95552fb48f88f0ca3682c75fe186a2290ff23444437905169bc6821644ac4255",
+    "docs/experience/pitfalls/frontend/zrender-shared-eventful.md": "1b26e2f40f91030eb8567d5ae9e5280e05f37a8379bb9d72b1bfa62f774149e8",
+    "docs/experience/pitfalls/workspace/git-bash-windows.md": "d07243dc1f132a58ec2f5d652598ba488dd90d970ae23162c69e20ec9a93fd80",
+    "docs/experience/pitfalls/workspace/git-status-porcelain-empty-path.md": "c7c14c0341b85a37eb2b0d223d132a6bb131687a52387be82853695fe7e90581",
+    "docs/experience/pitfalls/workspace/评审循环踩坑.md": "d4cd045c9ba387b3d69c51a2125df5e1e7a08a0fbba0db6c8b7f9526e1311fb3",
+    "docs/requirements/templates/plan.md.模板.md": "cd2e92e7e01163950d81fc1fc129445da70f0c7796c03f4862b1bb54b25fcd13",
+    "docs/requirements/templates/tasks.md.模板.md": "0e06ca094085a375d8f9b1cb144116ada9b6c32c006d00ae4c69da5781801bf9"
+  },
+  "committed_rule_assertions": [
+    {
+      "label": "以最适合业务的整体设计为目标，不以少建表或复用旧结构为目标。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "比较方案后给出明确推荐。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "独立业务事实应有清晰的持久化模型，共性能力优先复用。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "按数据性质选择存储。",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "归属规则",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "写入时机",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "与 requirements/ 分工",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "每个复杂任务 = `docs/requirements/<任务名>/` 下的一个任务文件夹",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "除非能确保 95% 实现无误，否则必须不断向我澄清问题",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "实时状态更新",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "实现完成 + review 通过后，将方案中的架构变更整合进对应领域文档（`docs/knowledge/`），README.md 状态更新为\"已完成\"，result.md / retrospective.md 填写完毕，整个任务文件夹移入 `docs/requirements/archive/<任务名>/` 归档（archive 深一层，同步把文件夹内相对链接整体上移一层：`../../X` → `../../../X`）；归档后自动提交 commit——暂存按路径显式 `git add <路径>`，禁止 `git add -A`（用户并发编辑），提交信息沿用仓库风格（如 `chore: <任务名> 实现 + 归档`），提交范围仅限本任务文件与归档文件夹",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "结构化 State 字段换代：直接替换、不搞 v1/v2 并存（2026-09-11 决策）",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "维度级门槛：任一维度 <8 分 = 该维度还有必须修的 findings",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "R1 全量评审",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "主会话修复 R1",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "R2 修复核验",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "R3 最终核验",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "终止条件",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "收尾（主会话，不占轮次）",
+      "target": "docs/standards/workspace/方案评审.md"
+    },
+    {
+      "label": "代码逻辑正确性",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "自测禁止运行 AI 测试",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "`-k \"not integration\"` 排除不干净，全量自测前必须先 `grep -rl \"real_llm\\|real_toolkit\" tests/`",
+      "target": "docs/standards/workspace/代码验收.md"
+    },
+    {
+      "label": "技术方案文档必须包含三方依赖能力评估",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "不仅看端点是否存在，更要看能否拿到所需数据",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "所有 Python 项目使用 `pyproject.toml` 管理依赖",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "确定性拓扑必须用 `compiled.builder`",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "每日事件快照必须分别校验来源 `published_at`/`first_seen_at <= news_cutoff_at`，判断 `available_at <= report_as_of`，以及向量 `embedding_available_at <= report_as_of`；缺少向量可用时间时按当时无向量处理，禁止用事后回填向量改变历史召回。",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "提示词单一事实来源 = `AI/utils/prompts.py`",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "templates md 含 JSON 结论块保留单花括号",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "frontend 是 pnpm 布局",
+      "target": "docs/standards/frontend/前端开发约束.md"
+    },
+    {
+      "label": "所有 markdown 字符串内容一律经统一组件 `MarkdownView`",
+      "target": "docs/standards/frontend/前端开发约束.md"
+    },
+    {
+      "label": "前端禁止页面重排",
+      "target": "docs/standards/frontend/前端开发约束.md"
+    },
+    {
+      "label": "方案 B（推荐）：常驻自调度",
+      "target": "docs/standards/ai/AI链路开发约束.md"
+    },
+    {
+      "label": "动 backend 涉及上述领域前，先读对应文件",
+      "target": "docs/standards/workspace/开发流程.md"
+    },
+    {
+      "label": "日线消费必须先 `_sort_asc_by_trade_date` 升序归一",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "超时线程内捕获并保留迟到的 `WinError 10013`",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    },
+    {
+      "label": "表名单数",
+      "target": "docs/standards/ai/行情与数据源约束.md"
+    }
+  ]
+}

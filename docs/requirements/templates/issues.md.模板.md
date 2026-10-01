@@ -8,4 +8,4 @@
 - **根因**：<定位到的原因>
 - **解决**：<修复方式 + 验证结果>
 
-> **使用方式**：复制本文件到 `docs/requirements/<任务名>/issues.md`。方案评审的 findings 在评审轮结束后归档进本文件；跨任务可复用的教训另按「经验沉淀规则」写 docs/memory/。
+> **使用方式**：复制本文件到 `docs/requirements/<任务名>/issues.md`。方案评审的 findings 在评审轮结束后归档进本文件；跨任务可复用的教训另按「经验沉淀规则」写 docs/experience/。

@@ -94,8 +94,8 @@
   - 修改：`CLAUDE.md`（命名规范表 sector_daily 行）
   - 修改：`docs/knowledge/backend/API契约.md`（§8.3 补 tree/bars 契约段、§8.2 indicators 补注）
   - 修改：`docs/knowledge/产品需求分析.md`（§3.1.4 卡片→treemap、§3.1.4.3 契约收敛）
-  - 修改：`docs/memory/pitfalls/ai/tushare-endpoints.md`（三条实测追加）
-  - 修改：`docs/memory/index.md`（如条目描述变化）
+  - 修改：`docs/experience/pitfalls/ai/tushare-endpoints.md`（三条实测追加）
+  - 修改：`docs/experience/index.md`（如条目描述变化）
 - **依赖**：T4（交互定稿后文档才准确）
 - **验收标准**：
   - [x] 人工检查：四处文档按方案 3.5.1 逐条对照已更新；grep `docs/(done|plans)` 于上述文档 0 命中（含顺修 API契约.md 两处存量死链）

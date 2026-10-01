@@ -38,5 +38,5 @@
 ## 2026-09-13/14 三桶结构
 
 - **背景**：docs/ 一级文档平铺，过程文档与知识文档混排；用户要求分桶。
-- **结论**：requirements/（任务）+ knowledge/（知识）+ memory/（经验）三桶，index.md 总导航。
+- **结论**：requirements/（任务）+ knowledge/（知识）+ experience/（经验）三桶，index.md 总导航。
 - **理由**：任务过程、领域知识、经验教训三种内容生命周期不同，分桶后各守各的写入规则（见 CLAUDE.md「knowledge/ 刻意使用」）。

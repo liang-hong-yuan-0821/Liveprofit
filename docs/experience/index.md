@@ -1,6 +1,7 @@
 # 经验记录索引（pitfalls + best-practices）
 
-> 新增/更新经验文件后，同步更新本索引（规则见 Liveprofit/CLAUDE.md「经验沉淀规则」）。
+> 新增/更新经验文件后，同步更新本索引（规则见 [开发流程](../standards/workspace/开发流程.md#规范知识和经验的维护)）。
+> 强制规范维护在 [standards](../standards/index.md)，本目录保存已核实的原因、经验及做法。
 > **pitfalls** = 踩坑记录（做错了会坏）；**best-practices** = 最佳实践（照着做能对）。
 
 ## pitfalls/（bad：踩坑记录）

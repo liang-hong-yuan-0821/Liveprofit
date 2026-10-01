@@ -116,14 +116,14 @@
 
 - **目标**：删调试步进文档三处（CLAUDE.md 章节 + memory 文件 + index 行），现状知识 6 文件随迁；archive/** 与历史 pitfalls 不回溯
 - **涉及文件**：
-  - 删除：`docs/memory/best-practices/ai/debug-step-mode.md`
-  - 修改：`CLAUDE.md`（删「调试步进模式（Debug Step Mode）」章节，含 `streamlit run AI/logviewer/app.py` 描述）、`docs/memory/index.md`（删 debug-step-mode 行）、`README.md:307`「FastAPI + Streamlit」→「FastAPI + React」、`docs/index.md:233`「Streamlit 审核界面」→「平台审核界面」（其余描述保留）、`docs/knowledge/backend/API契约.md:590-592`（「平台集成版替代 Streamlit review_app」→「审核 API」；「行为对齐原 Streamlit 审核界面；」→「审核流复用 AI 侧 review_dao；」）、`docs/knowledge/ai/市场层.md:38`「两条审核链路：Streamlit + 平台」→「平台审核链路」、`docs/knowledge/ai/板块层.md` 4 处（:15/:78/:98 句内已含产物路径，「logviewer 报告 tab 渲染」改尾注「（原 logviewer 渲染入口已移除，2026-09-16）」；:31 树状图「（logviewer 渲染）」→「（HTML 产物）」）
-  - 不动：`docs/requirements/archive/**` 全部历史方案、`docs/memory/pitfalls/workspace/评审循环踩坑.md`
+  - 删除：`docs/experience/best-practices/ai/debug-step-mode.md`
+  - 修改：`CLAUDE.md`（删「调试步进模式（Debug Step Mode）」章节，含 `streamlit run AI/logviewer/app.py` 描述）、`docs/experience/index.md`（删 debug-step-mode 行）、`README.md:307`「FastAPI + Streamlit」→「FastAPI + React」、`docs/index.md:233`「Streamlit 审核界面」→「平台审核界面」（其余描述保留）、`docs/knowledge/backend/API契约.md:590-592`（「平台集成版替代 Streamlit review_app」→「审核 API」；「行为对齐原 Streamlit 审核界面；」→「审核流复用 AI 侧 review_dao；」）、`docs/knowledge/ai/市场层.md:38`「两条审核链路：Streamlit + 平台」→「平台审核链路」、`docs/knowledge/ai/板块层.md` 4 处（:15/:78/:98 句内已含产物路径，「logviewer 报告 tab 渲染」改尾注「（原 logviewer 渲染入口已移除，2026-09-16）」；:31 树状图「（logviewer 渲染）」→「（HTML 产物）」）
+  - 不动：`docs/requirements/archive/**` 全部历史方案、`docs/experience/pitfalls/workspace/评审循环踩坑.md`
 - **依赖**：无（可与代码任务并行）
 - **验收标准**（全部勾选才算完成）：
   - [x] `grep -rn "streamlit\|Streamlit" CLAUDE.md README.md docs/index.md docs/knowledge/ frontend/src/` 归零（archive/** 与 pitfalls 不查；ReviewTab.tsx:8 已由 T1 处理）
   - [x] `grep -rn "logviewer" docs/index.md docs/knowledge/` 仅剩板块层 3 处指定尾注（:15/:78/:98）
-  - [x] `grep -rn "调试步进" CLAUDE.md docs/memory/index.md` 归零
+  - [x] `grep -rn "调试步进" CLAUDE.md docs/experience/index.md` 归零
 - **状态**：`已完成`（2026-09-19）
 
 ### T7 全量回归与收尾（方案 4.7）

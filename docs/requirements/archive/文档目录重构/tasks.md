@@ -19,7 +19,7 @@
 ## T1 目录与 git 迁移
 
 - **内容**：mkdir 三桶目录；`git add -u docs/plans`；git mv ×6 知识文档（数据库表结构.md 未跟踪用 mv）、×3 方案（未跟踪用 mv，K线方案只移动不重写内容）、docs/done → requirements/archive、docs/template → requirements/templates（含 2 个改名）；rmdir docs/plans、docs/tasks。
-- **验收**：`ls docs/` = index.md + knowledge/ + memory/ + requirements/；git status 无意外文件。✅ 已完成
+- **验收**：`ls docs/` = index.md + knowledge/ + experience/ + requirements/；git status 无意外文件。✅ 已完成
 
 ## T2 任务骨架与模板
 

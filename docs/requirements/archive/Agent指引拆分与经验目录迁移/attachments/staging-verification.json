@@ -1,0 +1,203 @@
+{
+  "result": "PASS",
+  "staged_paths": 110,
+  "version_s_paths": 83,
+  "moved_tracked_experience": 27,
+  "original_untracked_experience_preserved": [
+    "docs/experience/pitfalls/backend/account-ledger.md",
+    "docs/experience/pitfalls/backend/account-sellability.md",
+    "docs/experience/pitfalls/backend/instrument-trading-rules.md",
+    "docs/experience/pitfalls/backend/order-reconciliation.md",
+    "docs/experience/pitfalls/backend/portfolio-policy-routing.md",
+    "docs/experience/pitfalls/backend/quant-target-asof.md"
+  ],
+  "working_vs_staged_differences": {
+    "docs/standards/workspace/开发流程.md": {
+      "staged_sha256": "9afbd7e435f9bfae0d7232d2b1580b160592a2530932f66e5096461fbf90c069",
+      "working_sha256": "10fa9f8359cf20d51990a1981ac13132e9752237c65a92a1ec98c506a7356981"
+    },
+    "docs/standards/workspace/代码验收.md": {
+      "staged_sha256": "81622685d605b61019fb4c27bbd2320a5a38b864b4654371a537e98648f45a48",
+      "working_sha256": "7947d8c741337db8c9b862695c456014ed8f4b77c61b4203424d094649af05b5"
+    },
+    "docs/standards/backend/量化开发约束.md": {
+      "staged_sha256": "0213955be96ac01e10190ac70037f3080dc404415b71e1ab32e0711b0332342d",
+      "working_sha256": "974de45afa43d2638cef9eba112990963eabcf727bf4cbd30a902b71d3b7a191"
+    },
+    "docs/standards/ai/行情与数据源约束.md": {
+      "staged_sha256": "5d83baf56d5b55b53ed7ebbfd3128912e33ef7fa4bc18a0e839abfb15d57fad5",
+      "working_sha256": "888d7a27019e0f62f7d5add9690ab386f8ddcd880181c19d000d704fa1042371"
+    },
+    "AGENTS.md": {
+      "staged_sha256": "f0f86c8bdae3fc68d935a2f13c13b9151ff85692daeaef4064b70916fef155e2",
+      "working_sha256": "6851049caf41486c5341738ecea4079beeffd611c5c3292ce993c2fba464e97d"
+    },
+    "docs/index.md": {
+      "staged_sha256": "d0cb8cafc9e28fb01996155fb845d332e7ef63b7cb63b8c54a21e9c194d9b323",
+      "working_sha256": "28921994807ea7ecc28fd4192239455f9558d4c4dec0faabbc2e7e813747cd96"
+    },
+    "docs/knowledge/backend/数据库表结构.md": {
+      "staged_sha256": "1c7c1d0d622e424dee1b05e385fb47021ee9cde98df5f0fc6501f22d12affea4",
+      "working_sha256": "4c387079165c8304325e556efc560b2ce46fb55a71d4ee4c46461618996fb09d"
+    },
+    "docs/requirements/templates/骨架说明.md": {
+      "staged_sha256": "c6d37ab5093efde6c6242828fcb37df5d5d55895dee69542ce609a87d0f9badf",
+      "working_sha256": "9d2d2032c746459681cbfc36413fb20569895ba659ae6152d92eea48129ab227"
+    },
+    "docs/requirements/量化策略优化与全生命周期验证/README.md": {
+      "staged_sha256": "941a34284bde0e47ab6bd716a11ebf30efaffe9afba019916a0b7a7809d7508a",
+      "working_sha256": "890e9cfb07a279f967d8c1d7f56fa53128d6333de87b292eab303e28d9dc892a"
+    },
+    "docs/requirements/量化策略优化与全生命周期验证/plan.md": {
+      "staged_sha256": "a00f8a1e921e886a38bec0e92611b4501982f8803171e15cfc0b9c397cab9475",
+      "working_sha256": "2a9bda44eaa941d6400b6c14fdb77675360bd6683107181b3032fd8483b28860"
+    },
+    "docs/experience/index.md": {
+      "staged_sha256": "869f7e697e7f48c64783984910de023093584f7369b416ed8b72bdbbb0cb2410",
+      "working_sha256": "0e9295a1c9830622a264cf47a07b07cf70c43dc8651af02540d9b043ca9bb9b5"
+    },
+    "docs/experience/best-practices/backend/ingest-targeted-backfill.md": {
+      "staged_sha256": "77589f24dd96f12e7c172788a4024ccd2694e6b5ffe98dfbaa95b7a7a6ec3229",
+      "working_sha256": "5eccdb29ff409bf935748ca68fd8984c5ebc3ef936a0a8c4ff94d0ccf1494a15"
+    },
+    "docs/experience/pitfalls/ai/store-daily.md": {
+      "staged_sha256": "10aaa30c6fd2e5070a0acb75a12390c1634474e68b64bff7509142f381625441",
+      "working_sha256": "d805771a9bb110cb18dce9b5579405573efd94863464fdc0f7e85df505a904fe"
+    },
+    "docs/experience/pitfalls/ai/tushare-endpoints.md": {
+      "staged_sha256": "8990950ec63c7016241b0352c77f78f3c2fd507d7a5759b040528c84180c8a3b",
+      "working_sha256": "fcf9fad0e0a55a7f5896c052ba5007ad9dd7edc60920901d61922a3b02e9f04f"
+    },
+    "docs/experience/pitfalls/backend/alembic-jsonb-settings.md": {
+      "staged_sha256": "20841e544c57d86c6fc84c4b8e7f1e39b2d46134abbad70ea533cdac13a84ef8",
+      "working_sha256": "94ad2a8dc46f912cfe0cc50eb5e40372ec3e44fd2eaef73669f3df66e09cec21"
+    },
+    "docs/experience/pitfalls/backend/analysis-readiness-retry.md": {
+      "staged_sha256": "0fc2b07f06bcbfd0befeeb3f1885d61e391e7bd2e844169d0a3ce92b5c8ffd0f",
+      "working_sha256": "cb3d65d4e65597ef31b9f5ada78a9ced3f0b399e300f0eb2768d374ebb54d56d"
+    },
+    "docs/experience/pitfalls/backend/db-test-redis-safety.md": {
+      "staged_sha256": "6f4f56b579e556ae09fd452cdf26c15733828a1ccc907689a5683a30e39f0d4f",
+      "working_sha256": "22cef37a8868e3a71c18c504bd3482b31445d63504480d5383e510e76a4d1b98"
+    },
+    "docs/experience/pitfalls/workspace/评审循环踩坑.md": {
+      "staged_sha256": "d4cd045c9ba387b3d69c51a2125df5e1e7a08a0fbba0db6c8b7f9526e1311fb3",
+      "working_sha256": "ae9f6c9d5704b67c15feeee260bd3d616c0190f8f4806e5b28f751ef99796edf"
+    }
+  },
+  "new_commit_snapshot_broken_links": [],
+  "non_document_staged_paths": [],
+  "scope": [
+    "AGENTS.md",
+    "docs/experience/best-practices/ai/eventstudy-scheduler.md",
+    "docs/experience/best-practices/ai/langgraph-topology.md",
+    "docs/experience/best-practices/ai/market-t6.md",
+    "docs/experience/best-practices/backend/ingest-targeted-backfill.md",
+    "docs/experience/best-practices/frontend/markdown-render.md",
+    "docs/experience/index.md",
+    "docs/experience/pitfalls/ai/prompts-checkpoint-rerun.md",
+    "docs/experience/pitfalls/ai/store-daily.md",
+    "docs/experience/pitfalls/ai/strict-event-vector-as-of.md",
+    "docs/experience/pitfalls/ai/testing-llm-exclusion.md",
+    "docs/experience/pitfalls/ai/tushare-endpoints.md",
+    "docs/experience/pitfalls/backend/alembic-jsonb-settings.md",
+    "docs/experience/pitfalls/backend/analysis-readiness-retry.md",
+    "docs/experience/pitfalls/backend/db-test-redis-safety.md",
+    "docs/experience/pitfalls/backend/dramatiq-windows.md",
+    "docs/experience/pitfalls/backend/fastapi-openapi-prometheus.md",
+    "docs/experience/pitfalls/backend/threading-futures.md",
+    "docs/experience/pitfalls/backend/windows-pg-async.md",
+    "docs/experience/pitfalls/frontend/date-arithmetic-clamping.md",
+    "docs/experience/pitfalls/frontend/echarts-datazoom-anchors.md",
+    "docs/experience/pitfalls/frontend/grid-minmax-collapse.md",
+    "docs/experience/pitfalls/frontend/pnpm-openapi-codegen.md",
+    "docs/experience/pitfalls/frontend/react-query-dialog.md",
+    "docs/experience/pitfalls/frontend/zrender-shared-eventful.md",
+    "docs/experience/pitfalls/workspace/git-bash-windows.md",
+    "docs/experience/pitfalls/workspace/git-status-porcelain-empty-path.md",
+    "docs/experience/pitfalls/workspace/评审循环踩坑.md",
+    "docs/index.md",
+    "docs/knowledge/backend/数据库表结构.md",
+    "docs/knowledge/frontend/前端平台.md",
+    "docs/memory/best-practices/ai/eventstudy-scheduler.md",
+    "docs/memory/best-practices/ai/langgraph-topology.md",
+    "docs/memory/best-practices/ai/market-t6.md",
+    "docs/memory/best-practices/backend/ingest-targeted-backfill.md",
+    "docs/memory/best-practices/frontend/markdown-render.md",
+    "docs/memory/index.md",
+    "docs/memory/pitfalls/ai/prompts-checkpoint-rerun.md",
+    "docs/memory/pitfalls/ai/store-daily.md",
+    "docs/memory/pitfalls/ai/strict-event-vector-as-of.md",
+    "docs/memory/pitfalls/ai/testing-llm-exclusion.md",
+    "docs/memory/pitfalls/ai/tushare-endpoints.md",
+    "docs/memory/pitfalls/backend/alembic-jsonb-settings.md",
+    "docs/memory/pitfalls/backend/analysis-readiness-retry.md",
+    "docs/memory/pitfalls/backend/db-test-redis-safety.md",
+    "docs/memory/pitfalls/backend/dramatiq-windows.md",
+    "docs/memory/pitfalls/backend/fastapi-openapi-prometheus.md",
+    "docs/memory/pitfalls/backend/threading-futures.md",
+    "docs/memory/pitfalls/backend/windows-pg-async.md",
+    "docs/memory/pitfalls/frontend/date-arithmetic-clamping.md",
+    "docs/memory/pitfalls/frontend/echarts-datazoom-anchors.md",
+    "docs/memory/pitfalls/frontend/grid-minmax-collapse.md",
+    "docs/memory/pitfalls/frontend/pnpm-openapi-codegen.md",
+    "docs/memory/pitfalls/frontend/react-query-dialog.md",
+    "docs/memory/pitfalls/frontend/zrender-shared-eventful.md",
+    "docs/memory/pitfalls/workspace/git-bash-windows.md",
+    "docs/memory/pitfalls/workspace/git-status-porcelain-empty-path.md",
+    "docs/memory/pitfalls/workspace/评审循环踩坑.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/README.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/attachments/migration-map.json",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/attachments/pre-existing-links.json",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/attachments/staging-verification.json",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/attachments/validation.json",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/attachments/verify.py",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/decisions.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/issues.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/log.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/plan.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/result.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/retrospective.md",
+    "docs/requirements/archive/Agent指引拆分与经验目录迁移/tasks.md",
+    "docs/requirements/archive/USKR指数上线/retrospective.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/issues.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/log.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/plan.md",
+    "docs/requirements/archive/事件审核AI作用域解析方案/retrospective.md",
+    "docs/requirements/archive/前端体验优化/plan.md",
+    "docs/requirements/archive/指数K线图交互优化/result.md",
+    "docs/requirements/archive/指数K线图交互优化/retrospective.md",
+    "docs/requirements/archive/文档目录重构/README.md",
+    "docs/requirements/archive/文档目录重构/decisions.md",
+    "docs/requirements/archive/文档目录重构/issues.md",
+    "docs/requirements/archive/文档目录重构/log.md",
+    "docs/requirements/archive/文档目录重构/plan.md",
+    "docs/requirements/archive/文档目录重构/result.md",
+    "docs/requirements/archive/文档目录重构/retrospective.md",
+    "docs/requirements/archive/文档目录重构/tasks.md",
+    "docs/requirements/archive/板块概念Treemap/plan.md",
+    "docs/requirements/archive/板块概念Treemap/tasks.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/plan.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/result.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/retrospective.md",
+    "docs/requirements/archive/移除Streamlit与调试步进/tasks.md",
+    "docs/requirements/templates/README.md.模板.md",
+    "docs/requirements/templates/issues.md.模板.md",
+    "docs/requirements/templates/plan.md.模板.md",
+    "docs/requirements/templates/retrospective.md.模板.md",
+    "docs/requirements/templates/骨架说明.md",
+    "docs/requirements/市场数据自动补齐/plan.md",
+    "docs/requirements/量化策略与实操层/retrospective.md",
+    "docs/requirements/量化策略优化与全生命周期验证/README.md",
+    "docs/requirements/量化策略优化与全生命周期验证/plan.md",
+    "docs/standards/ai/AI链路开发约束.md",
+    "docs/standards/ai/行情与数据源约束.md",
+    "docs/standards/backend/量化开发约束.md",
+    "docs/standards/frontend/前端开发约束.md",
+    "docs/standards/index.md",
+    "docs/standards/workspace/代码验收.md",
+    "docs/standards/workspace/开发流程.md",
+    "docs/standards/workspace/方案评审.md"
+  ],
+  "head_before": "74af4b1c48db65b634321ef86140c2afdad1d158"
+}

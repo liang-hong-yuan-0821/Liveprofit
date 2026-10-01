@@ -212,7 +212,7 @@ Lua 原子操作：① 同资源准入/复用当前 job；② claim：验证 cur
 
 已查 [官方用法](https://github.com/gerrymanoim/exchange_calendars)、[日历注册表](https://github.com/gerrymanoim/exchange_calendars/blob/master/exchange_calendars/calendar_utils.py)，并完成本地隔离实测，证据见 [calendar-poc.md](attachments/calendar-poc.md)、[原始 JSON](attachments/calendar-poc.json)、[可复现脚本](attachments/calendar_poc.py)。版本 4.13.2 可在项目 pandas 3.0.5/numpy 2.5.1 上运行，纽约 DST/提前收盘抽样通过，CN 当前年与缓存集合一致；XSHG 2027 不支持，已按 4.1.1 定义为维护边界。额外依赖只安装在 var 隔离目录，未修改项目 .venv/uv.lock；正式实现时再锁项目依赖。
 
-代理端点的返回窗口、升序归一、单日截断和指标来源遵循 [现有端点实测](../../memory/pitfalls/ai/tushare-endpoints.md)。发布缓冲是本项目调度策略，不以官方市场收盘时间冒充代理发布保证。
+代理端点的返回窗口、升序归一、单日截断和指标来源遵循 [现有端点实测](../../experience/pitfalls/ai/tushare-endpoints.md)。发布缓冲是本项目调度策略，不以官方市场收盘时间冒充代理发布保证。
 
 Tushare [stock_basic 文档](https://tushare.pro/document/2?doc_id=25) 明确说明 `list_status` 支持 `L/D/P/G/UN`、缺省为 `L`，并声明单次最多 6000 行；端点也支持 `exchange` 分区。实现逐状态、逐 SSE/SZSE/BSE 调用，并校验响应保留请求的状态/交易所筛选及行数上限。每次维护共最多 15 次顺序只读请求（低于文档 50 次/分钟限制）；官方文档不证明自建代理完全同构，所以代理若拒绝某筛选会整体失败并继续保留已有目录，不把部分结果提交为成功。
 
@@ -339,7 +339,7 @@ GET 每个 group 字段固定：`resource/market/market_date/calendar_status/sup
 
 #### 4.4.2 三方依赖能力评估
 
-复用 FastAPI/Pydantic、已有线程池 `analysis_services.run` 执行短 SQL；禁止在 async 路由直接阻塞。先导出 OpenAPI 再生成 TypeScript Service，见 [codegen 约定](../../memory/pitfalls/frontend/pnpm-openapi-codegen.md)。
+复用 FastAPI/Pydantic、已有线程池 `analysis_services.run` 执行短 SQL；禁止在 async 路由直接阻塞。先导出 OpenAPI 再生成 TypeScript Service，见 [codegen 约定](../../experience/pitfalls/frontend/pnpm-openapi-codegen.md)。
 
 #### 4.4.3 风险与验证方式
 

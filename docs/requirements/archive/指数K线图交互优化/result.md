@@ -30,4 +30,4 @@
 - `frontend/src/shared/format/volume.ts`（+ test）：量级缩写
 - `frontend/src/modules/market/pages/MarketIndicesPanel.tsx`（按需加载状态机 + 画线持久化接线）、`queries.ts`（placeholderData）、`shared/format/dateTime.ts`（daysBetween）及对应测试
 - 知识库同步：`docs/knowledge/产品需求分析.md`（v1.6：§3.1.3.2/🟦/契约/错误码总表/AC-25/AC-26）、`docs/knowledge/frontend/前端平台.md`
-- 经验沉淀：`docs/memory/pitfalls/frontend/zrender-shared-eventful.md`（+ index 挂载）
+- 经验沉淀：`docs/experience/pitfalls/frontend/zrender-shared-eventful.md`（+ index 挂载）

@@ -7,6 +7,6 @@
 
 ## 任务总览
 
-- **目标**：docs/ 重组为三桶——requirements/（任务桶，每任务一文件夹 8 文件骨架）+ knowledge/（知识沉淀：backend/frontend/ai + 产品基线）+ memory/（不动）；全仓链接修复 + CLAUDE.md 语义重写
+- **目标**：docs/ 重组为三桶——requirements/（任务桶，每任务一文件夹 8 文件骨架）+ knowledge/（知识沉淀：backend/frontend/ai + 产品基线）+ experience/（不动）；全仓链接修复 + CLAUDE.md 语义重写
 - **负责人**：qiyanqiao（Claude 实施）
 - **骨架文件**：[plan.md](plan.md)（方案正文）｜[tasks.md](tasks.md)（拆任务清单）｜[log.md](log.md)（时间线）｜[decisions.md](decisions.md)（决策）｜[issues.md](issues.md)（问题）｜[result.md](result.md)（产出结论）｜[retrospective.md](retrospective.md)（复盘）

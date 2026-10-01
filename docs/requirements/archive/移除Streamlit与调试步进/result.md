@@ -19,7 +19,7 @@
 
 ## 交付物
 
-- **删除**：`AI/eventStudy/review/review_app.py`、`AI/logviewer/`（app.py + \_\_init\_\_.py + logs_reader.py，目录归零）、`AI/utils/step_gate.py`、`tests/utils/test_logviewer_smoke.py`、`tests/utils/test_step_gate.py`、`docs/memory/best-practices/ai/debug-step-mode.md`、run.sh 第 5 步启动段、pyproject.toml streamlit 依赖、CLAUDE.md 调试步进章节、test_review_regressions.py 的 review_app 用例、test_logs_reader.py 的检查点用例段
+- **删除**：`AI/eventStudy/review/review_app.py`、`AI/logviewer/`（app.py + \_\_init\_\_.py + logs_reader.py，目录归零）、`AI/utils/step_gate.py`、`tests/utils/test_logviewer_smoke.py`、`tests/utils/test_step_gate.py`、`docs/experience/best-practices/ai/debug-step-mode.md`、run.sh 第 5 步启动段、pyproject.toml streamlit 依赖、CLAUDE.md 调试步进章节、test_review_regressions.py 的 review_app 用例、test_logs_reader.py 的检查点用例段
 - **平移**：`AI/utils/logs_reader.py`（数据层保留，去调试步进段；backend 3 处 import + 测试随迁——平台执行日志/图拓扑功能不变）
 - **接线拆除**：trading_graph.py（step_gate import/enable/disable/debug_step 参数链，`_prepare_run` 3 元组、`_propagate_inner` 4 参）、dataprovider_log.py、llm_callbacks.py 的 checkpoint 调用；default_config.py debug_step 死键；test_tushare_call_log.py / test_rerun_entry.py 消费方随迁
 - **注释/文档随迁**：7 文件 11 处注释改平台口径；README/docs.index/API契约/市场层/板块层/memory index 现状知识更新

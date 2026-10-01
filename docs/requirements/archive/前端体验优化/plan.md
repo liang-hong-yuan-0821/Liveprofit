@@ -184,7 +184,7 @@
 
 #### 4.2.2 三方依赖能力评估
 
-复用 ECharts 和既有 `CandlestickChart`、`ConceptTreemap`，不换图库。遵守 [日期锚互斥](../../../memory/pitfalls/frontend/echarts-datazoom-anchors.md) 与 [事件解绑约定](../../../memory/pitfalls/frontend/zrender-shared-eventful.md)。概念节点继续静态着色，避免恢复已证实不生效的颜色回调。
+复用 ECharts 和既有 `CandlestickChart`、`ConceptTreemap`，不换图库。遵守 [日期锚互斥](../../../experience/pitfalls/frontend/echarts-datazoom-anchors.md) 与 [事件解绑约定](../../../experience/pitfalls/frontend/zrender-shared-eventful.md)。概念节点继续静态着色，避免恢复已证实不生效的颜色回调。
 
 #### 4.2.3 风险与验证方式
 
@@ -225,7 +225,7 @@
 
 #### 4.3.2 三方依赖能力评估
 
-现有 FastAPI/Pydantic、生成客户端与 Query 足够。按 [codegen 约定](../../../memory/pitfalls/frontend/pnpm-openapi-codegen.md) 先导出后消费；Literal 的 enum／union 形状以重新生成结果为准。无新 API、无新行情或 LLM 请求。
+现有 FastAPI/Pydantic、生成客户端与 Query 足够。按 [codegen 约定](../../../experience/pitfalls/frontend/pnpm-openapi-codegen.md) 先导出后消费；Literal 的 enum／union 形状以重新生成结果为准。无新 API、无新行情或 LLM 请求。
 
 #### 4.3.3 风险与验证方式
 
@@ -293,7 +293,7 @@ PercentField 只处理展示与字符串编辑，保留空串、小数编辑中�
 
 #### 4.5.2 三方依赖能力评估
 
-复用现有 react-hook-form／zod、Radix Dialog，不引入金融计算库；PercentField 是边界适配，不替代后端金融计算。遵守 [弹窗回填保护](../../../memory/pitfalls/frontend/react-query-dialog.md)：显式 dirty 标识，包括用户清空操作。
+复用现有 react-hook-form／zod、Radix Dialog，不引入金融计算库；PercentField 是边界适配，不替代后端金融计算。遵守 [弹窗回填保护](../../../experience/pitfalls/frontend/react-query-dialog.md)：显式 dirty 标识，包括用户清空操作。
 
 #### 4.5.3 风险与验证方式
 
@@ -328,7 +328,7 @@ PercentField 只处理展示与字符串编辑，保留空串、小数编辑中�
 
 #### 4.6.2 三方依赖能力评估
 
-无新增服务端搜索、分页、任务取消端点。复用现有 query／mutation／Radix；HTML 使用白名单文本转换，不引入 rehype-raw 或第二 Markdown 引擎。完整表格遵守 [Grid 正下界约定](../../../memory/pitfalls/frontend/grid-minmax-collapse.md)。
+无新增服务端搜索、分页、任务取消端点。复用现有 query／mutation／Radix；HTML 使用白名单文本转换，不引入 rehype-raw 或第二 Markdown 引擎。完整表格遵守 [Grid 正下界约定](../../../experience/pitfalls/frontend/grid-minmax-collapse.md)。
 
 #### 4.6.3 风险与验证方式
 

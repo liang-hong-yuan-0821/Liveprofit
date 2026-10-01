@@ -23,7 +23,7 @@
 删除：review_app.py、AI/logviewer/{app.py,__init__.py}、AI/utils/step_gate.py、
       tests/utils/test_logviewer_smoke.py、tests/utils/test_step_gate.py、
       run.sh 日志查看器段、pyproject streamlit 依赖、
-      CLAUDE.md 调试步进章节、memory/debug-step-mode.md
+      CLAUDE.md 调试步进章节、experience/debug-step-mode.md
 平移：AI/logviewer/logs_reader.py → AI/utils/logs_reader.py
       （删 find_checkpoint/find_active_checkpoint 与 CHECKPOINT_FILE import；
        消费方 backend 3 处 + tests/utils/test_logs_reader.py import 随迁）
@@ -70,7 +70,7 @@
 
 | 具体对象 | 修改范围 | 主要文件或目录 | 交付行为变化 |
 |----------|----------|----------------|--------------|
-| 调试步进文档【删除】 | CLAUDE.md 章节 + memory 文件 + index 行 | CLAUDE.md、docs/memory/best-practices/ai/debug-step-mode.md、docs/memory/index.md | 无失效机制文档 |
+| 调试步进文档【删除】 | CLAUDE.md 章节 + memory 文件 + index 行 | CLAUDE.md、docs/experience/best-practices/ai/debug-step-mode.md、docs/experience/index.md | 无失效机制文档 |
 | 现状知识随迁【修改】 | 审核链路/渲染入口 Streamlit 表述 | docs/index.md:233、docs/knowledge/backend/API契约.md:590-592、docs/knowledge/ai/市场层.md:38、docs/knowledge/ai/板块层.md（4 处 logviewer 渲染表述） | 现状文档与实际一致 |
 | 测试【删除/修改】 | 删 smoke/step_gate 测试与 review_app 用例；logs_reader 测试 import 随迁 | tests/utils/test_logviewer_smoke.py、tests/utils/test_step_gate.py、tests/event_study/test_review_regressions.py:387-408、tests/utils/test_logs_reader.py | 无指向已删对象的测试 |
 
@@ -84,7 +84,7 @@
 | logs_reader 平移 | 平台 3 处 import `AI.logviewer.logs_reader`，删 logviewer 包会断平台执行日志 | 移至 `AI/utils/logs_reader.py`，删 checkpoint 两函数与 CHECKPOINT_FILE import；3 处 import + 测试随迁 |
 | 调试步进接线拆除 | 三处接线（trading_graph/dataprovider_log/llm_callbacks）——不拆则 `LIVEPROFIT_DEBUG_STEP=true` 时分析进程在检查点死锁 | 删 step_gate.py + 全部接线 + default_config debug_step 键 + test_step_gate |
 | 依赖移除 | `pyproject.toml:43` streamlit 依赖；uv 命令不可用（本机实测 NO UV） | pyproject 手删该行；uv.lock 注明需用户 `uv lock` 同步（无 uv 环境不代跑） |
-| run.sh 与文档 | run.sh 第 5 步启动 logviewer；CLAUDE.md 调试步进章节；memory/debug-step-mode.md；README:307 | 删段/删章/删文件/改表；现状知识文档随迁 |
+| run.sh 与文档 | run.sh 第 5 步启动 logviewer；CLAUDE.md 调试步进章节；experience/debug-step-mode.md；README:307 | 删段/删章/删文件/改表；现状知识文档随迁 |
 | 测试与验证 | 删 3 处测试、随迁 1 处 import | 全量回归（tests/event_study、tests/utils、tests/graph、backend 单测+契约、前端 vitest/typecheck） |
 
 ### 4.1 Streamlit 审核页删除
@@ -217,14 +217,14 @@ pandas 不在删除范围（review_app 之外的 AI 链路仍重度使用）；p
 
 #### 4.6.1 模块设计
 
-- **删除**：CLAUDE.md「调试步进模式（Debug Step Mode）」章节（含 `streamlit run AI/logviewer/app.py` 描述）；`docs/memory/best-practices/ai/debug-step-mode.md`；`docs/memory/index.md` 对应行；
+- **删除**：CLAUDE.md「调试步进模式（Debug Step Mode）」章节（含 `streamlit run AI/logviewer/app.py` 描述）；`docs/experience/best-practices/ai/debug-step-mode.md`；`docs/experience/index.md` 对应行；
 - **现状知识随迁**：
   - `README.md:307`「\| API/Web UI \| FastAPI + Streamlit \|」→「\| API/Web UI \| FastAPI + React \|」（React 前端为实际 UI）
   - `docs/index.md:233`「人工审核：Streamlit 审核界面（…）」→「人工审核：平台审核界面（…）」（其余描述保留）
   - `docs/knowledge/backend/API契约.md:590-592`「平台集成版替代 Streamlit review_app」→「审核 API」；「行为对齐原 Streamlit 审核界面；」→「审核流复用 AI 侧 review_dao；」（行为对齐的锚点已不存在，改为事实表述）
   - `docs/knowledge/ai/市场层.md:38`「两条审核链路：Streamlit + 平台」→「平台审核链路」
   - `docs/knowledge/ai/板块层.md` 4 处 logviewer 渲染表述（评审 m9 按行替换，避免同句重复路径）：`:15/:78/:98` 句内已含 `logs/{ts}/reports/charts/sector_daily_heatmaps.html`，将「logviewer 报告 tab 渲染」改尾注「（原 logviewer 渲染入口已移除，2026-09-16）」；`:31` 树状图「（logviewer 渲染）」→「（HTML 产物）」
-- **保留不动**：docs/requirements/archive/** 全部历史方案（含 Streamlit 描述，历史记录不回溯）；docs/memory/pitfalls/workspace/评审循环踩坑.md（历史踩坑故事）。
+- **保留不动**：docs/requirements/archive/** 全部历史方案（含 Streamlit 描述，历史记录不回溯）；docs/experience/pitfalls/workspace/评审循环踩坑.md（历史踩坑故事）。
 
 #### 4.6.2 三方依赖能力评估
 
@@ -232,12 +232,12 @@ pandas 不在删除范围（review_app 之外的 AI 链路仍重度使用）；p
 
 #### 4.6.3 风险与验证方式
 
-- 验证：现状文档类（CLAUDE.md/README/docs/index.md/docs/knowledge/**）grep streamlit 仅剩「已移除/历史」语境或归零；**frontend/src 一并纳入 grep 口径**（评审 m1：前端注释同属「仓库零 streamlit」目标）；archive/** 与 memory/pitfalls 不查。
+- 验证：现状文档类（CLAUDE.md/README/docs/index.md/docs/knowledge/**）grep streamlit 仅剩「已移除/历史」语境或归零；**frontend/src 一并纳入 grep 口径**（评审 m1：前端注释同属「仓库零 streamlit」目标）；archive/** 与 experience/pitfalls 不查。
 
 #### 4.6.4 文件变更清单
 
-- **删除文件**：`docs/memory/best-practices/ai/debug-step-mode.md`
-- **修改文件**：`CLAUDE.md`、`README.md`、`docs/index.md`、`docs/knowledge/backend/API契约.md`、`docs/knowledge/ai/市场层.md`、`docs/knowledge/ai/板块层.md`、`docs/memory/index.md`
+- **删除文件**：`docs/experience/best-practices/ai/debug-step-mode.md`
+- **修改文件**：`CLAUDE.md`、`README.md`、`docs/index.md`、`docs/knowledge/backend/API契约.md`、`docs/knowledge/ai/市场层.md`、`docs/knowledge/ai/板块层.md`、`docs/experience/index.md`
 
 ### 4.7 测试
 

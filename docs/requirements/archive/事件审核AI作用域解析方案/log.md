@@ -26,7 +26,7 @@
 | 2026-09-16 | Code Review 第 1 轮 | verdict PASS（无 blocker/major），6 条 minor/polish（F1 层级顺序/F2 包含未批量/F3 契约注释/F4 缺断言/F5 Streamlit 护栏/F6 口径确认） |
 | 2026-09-16 | 修复 F1-F6 | F1 两层循环（全局精确优先）；F2 ILIKE ANY 批量化；F3 注释随迁；F4 补断言；F5 Streamlit prelabeled==0 提前终止；F6 契约文档补口径 |
 | 2026-09-16 | Code Review 第 2 轮 | verdict PASS：F1-F6 全落地；新发现 N1（重复名称破坏唯一包含计数）、N2（大小写归属不等价）→ 收尾修复（dict.fromkeys + casefold）+ 补两用例 |
-| 2026-09-16 | 收尾 | 全量验证 281 passed（后端侧）+ 59 passed（前端）；typecheck 报错确认全部位于用户并发开发的 analysis 模块（与本任务无关，未改动）；result/retrospective 填写；经验沉淀 docs/memory/pitfalls/frontend/grid-minmax-collapse.md + index 更新；任务文件夹归档 |
+| 2026-09-16 | 收尾 | 全量验证 281 passed（后端侧）+ 59 passed（前端）；typecheck 报错确认全部位于用户并发开发的 analysis 模块（与本任务无关，未改动）；result/retrospective 填写；经验沉淀 docs/experience/pitfalls/frontend/grid-minmax-collapse.md + index 更新；任务文件夹归档 |
 | 2026-09-16 | 用户拍板撤销 Streamlit 改动 | 「不要再改 streamlit 审核页了，不是已经全部改到 frontend 的页面了吗」——review_app.py 的 T7 UI 改动（force checkbox 分片 + unresolved 警示，31 行）全部撤销恢复 HEAD；AI 侧回填谓词对 Streamlit 自动生效无需 UI 改动；decisions/result/tasks 同步更新 |
 
 > **使用方式**：复制本文件到 `docs/requirements/<任务名>/log.md`，随实施过程逐条追加。归档时定格。

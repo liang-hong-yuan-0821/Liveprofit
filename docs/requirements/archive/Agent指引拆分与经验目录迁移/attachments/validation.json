@@ -1,0 +1,17 @@
+{
+  "failures": [],
+  "root_bytes": 5764,
+  "root_lines": 40,
+  "mapped_source_lines": 349,
+  "mapping_dispositions": {
+    "format-delegated-to-template": 13,
+    "preserved": 275,
+    "layout-and-routing": 9,
+    "reference-or-format-clarified": 17,
+    "approved-update-policy": 35
+  },
+  "experience_files": 33,
+  "preserved_untracked_experience": 6,
+  "pre_existing_broken_targets_remaining": 150,
+  "legacy_path_references": []
+}

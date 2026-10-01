@@ -224,7 +224,7 @@ Tushare优先的数据源、交易规则、公司行为、历史证券状态
 
 验证除权前后基准、上下游ATR20定义、升降序、重复行、缺日期、退市样本、历史ST/行业、ETF分类、源不可用、并发采集、PG断连停止和超过单批参数上限。修改未来数据不得改变此前特征。快照发布中断后不能读到READY半文件。
 
-经验依据：[Tushare端点](../../memory/pitfalls/ai/tushare-endpoints.md)、[定向回填](../../memory/best-practices/backend/ingest-targeted-backfill.md)。上游优先及有证据的本地补足是本任务已确认例外，不把网络失败作为回退依据。
+经验依据：[Tushare端点](../../experience/pitfalls/ai/tushare-endpoints.md)、[定向回填](../../experience/best-practices/backend/ingest-targeted-backfill.md)。上游优先及有证据的本地补足是本任务已确认例外，不把网络失败作为回退依据。
 
 #### 4.1.4 文件变更清单
 
@@ -410,7 +410,7 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 
 验证基线、重复导入、资金流、实际费用、部分成交、更正/撤销首笔成交、公司行为、同日重跑、两会话并发、数据由缺变齐、持仓策略与扫描策略不同、暂停版本继续退出、旧API绕过尝试及事务失败。账本重放应与现金/持仓投影一致，日事实当前版本唯一。
 
-集成测试使用隔离测试库和Redis命名空间；先核验fixture目标，禁止清空业务库。参考[数据库测试与Redis安全](../../memory/pitfalls/backend/db-test-redis-safety.md)。
+集成测试使用隔离测试库和Redis命名空间；先核验fixture目标，禁止清空业务库。参考[数据库测试与Redis安全](../../experience/pitfalls/backend/db-test-redis-safety.md)。
 
 #### 4.4.4 文件变更清单
 
@@ -519,7 +519,7 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 
 #### 4.6.2 三方依赖能力评估
 
-复用React Query、既有组件和OpenAPI生成链；后端导出后再生成前端客户端，不手改生成代码。Markdown使用现有MarkdownView。第一阶段为人工执行建议，不接券商自动下单。参考[OpenAPI约定](../../memory/pitfalls/frontend/pnpm-openapi-codegen.md)、[Markdown展示](../../memory/best-practices/frontend/markdown-render.md)、[每日补跑](../../memory/best-practices/ai/eventstudy-scheduler.md)。
+复用React Query、既有组件和OpenAPI生成链；后端导出后再生成前端客户端，不手改生成代码。Markdown使用现有MarkdownView。第一阶段为人工执行建议，不接券商自动下单。参考[OpenAPI约定](../../experience/pitfalls/frontend/pnpm-openapi-codegen.md)、[Markdown展示](../../experience/best-practices/frontend/markdown-render.md)、[每日补跑](../../experience/best-practices/ai/eventstudy-scheduler.md)。
 
 #### 4.6.3 风险与验证方式
 

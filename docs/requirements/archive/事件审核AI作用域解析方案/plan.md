@@ -114,7 +114,7 @@ class NameResolver:
 2. **唯一包含兜底**：仍未解析的名称（长度 ≥2），按 `name ILIKE %s`（**参数绑定 `'%词%'`**——psycopg3 下 SQL 文本直接写 `%词%` 会被当占位符报错；查询前对名称中的 LIKE 元字符 `%`/`_`/`\` 转义）查，**恰好命中 1 行**才采用（「茅台」→ 贵州茅台；「光伏」命中光伏概念/光伏设备/…多行 → 不采用）；
 3. **同表多行命中**（精确匹配时同名字段多行，dc 概念确存在重名：跨境电商 BK1115.DC/BK1547.DC）：按代码升序取首行（确定性）；
 4. **行业与概念都命中**：行业优先（申万是互斥完备分类体系，概念是多对多标签）；
-5. 失败语义：查询异常 → **每个 except 分支先 `conn.rollback()`（自身再包 try）**——共享 PG conn（`AI/eventStudy/db/connection.py` autocommit=False，与 `RouteExistence` 同连接），不回滚会事务中毒，同一批内后续全部语句（含逐草稿的 `filter_existing_refs` 初筛）静默失效（先例：`AI/utils/event_prefetch_core.py:72`，见 docs/memory/pitfalls/workspace/评审循环踩坑.md）→ 回滚后对应名称全部未解析（fail-open，不抛，不阻塞预填）；resolver 为 None（PG 不可用）→ 调用侧不建 resolver，名称直接进 unresolved_entities。
+5. 失败语义：查询异常 → **每个 except 分支先 `conn.rollback()`（自身再包 try）**——共享 PG conn（`AI/eventStudy/db/connection.py` autocommit=False，与 `RouteExistence` 同连接），不回滚会事务中毒，同一批内后续全部语句（含逐草稿的 `filter_existing_refs` 初筛）静默失效（先例：`AI/utils/event_prefetch_core.py:72`，见 docs/experience/pitfalls/workspace/评审循环踩坑.md）→ 回滚后对应名称全部未解析（fail-open，不抛，不阻塞预填）；resolver 为 None（PG 不可用）→ 调用侧不建 resolver，名称直接进 unresolved_entities。
 
 数据事实（2026-09-16 实测）：instrument stock 目录 5564 只全部 A 股（无美股个股，见第五章决策 2）；industry 31 条 SW2021；sector dc 概念含「英伟达概念 BK1161.DC」「算力概念 BK1134.DC」「创新药 BK1106.DC」等。
 

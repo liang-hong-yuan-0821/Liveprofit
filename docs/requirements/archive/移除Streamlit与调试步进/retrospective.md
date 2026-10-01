@@ -8,7 +8,7 @@
 
 ## 踩了什么坑（教训）
 
-- **评审 agent 路径核验陷阱**：R1 评审把 `backend/modules/analysis/infrastructure/execution_control.py` 误写成 `application/` 前缀，`git status --porcelain <不存在路径>` 静默返回空输出（exit 0），被误读为「文件未修改」并写进报告结论。主会话用正确路径复验才纠正。教训已沉淀 docs/memory/pitfalls/workspace/git-status-porcelain-empty-path.md
+- **评审 agent 路径核验陷阱**：R1 评审把 `backend/modules/analysis/infrastructure/execution_control.py` 误写成 `application/` 前缀，`git status --porcelain <不存在路径>` 静默返回空输出（exit 0），被误读为「文件未修改」并写进报告结论。主会话用正确路径复验才纠正。教训已沉淀 docs/experience/pitfalls/workspace/git-status-porcelain-empty-path.md
 - **尾注日期语义**：方案 4.6.1 指定尾注日期为拍板日（2026-09-16），实施后尾注表达的是「移除日」语义，两者不一致被 R1 评审点出——文案写日期时应先明确是决策日还是事件发生日
 - **「全仓零 streamlit」字面口径**：T5/T7 验收用 `import streamlit` 口径通过后，logs_reader.py docstring 的「无 streamlit 依赖」仍是全仓唯一 streamlit 字面残留（R1 polish 1）——归零类任务的顶层目标要按「字面归零」而非「功能归零」设最终口径
 

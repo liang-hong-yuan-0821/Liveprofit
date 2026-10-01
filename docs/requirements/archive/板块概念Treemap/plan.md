@@ -117,7 +117,7 @@ def get_sector_daily_df(self, source: str, ts_code: str, start_date: str, end_da
 ```
 
 TushareProvider 覆写（首期仅 dc 分支）：
-- `source == 'dc'`：`self._api_call(self.api.dc_daily, ts_code=ts_code, start_date=start_date, end_date=end_date, idx_type="概念板块")` + `_sort_asc_by_trade_date` 升序归一（端点降序返回，实测；[tushare-endpoints.md](Liveprofit/docs/memory/pitfalls/ai/tushare-endpoints.md) 正确姿势）；**端点能力注记（实测 2026-09-13）：仅返回最近 33 交易日，更早窗口 0 行——窗口型数据源，无历史**
+- `source == 'dc'`：`self._api_call(self.api.dc_daily, ts_code=ts_code, start_date=start_date, end_date=end_date, idx_type="概念板块")` + `_sort_asc_by_trade_date` 升序归一（端点降序返回，实测；[tushare-endpoints.md](Liveprofit/docs/experience/pitfalls/ai/tushare-endpoints.md) 正确姿势）；**端点能力注记（实测 2026-09-13）：仅返回最近 33 交易日，更早窗口 0 行——窗口型数据源，无历史**
 - `source == 'ths'`：未覆写分支（暂缓，留 TODO 注释指向本方案）
 
 **新模块 `db/instrument/ingest/sector_daily.py`**（**无回填模式、无 checkpoint**——历史不可采，断点续跑无意义：每日重拉窗口天然自愈）：
@@ -125,7 +125,7 @@ TushareProvider 覆写（首期仅 dc 分支）：
 1. `collect_sector_daily_incremental(conn, provider, window_days: int = 70) -> dict`
    - 板块清单 = `dao.sector.get_sectors(conn, "dc")`（1031 个；周刷新增板块自然进入次日增量；复用既有 DAO 不内联 SQL）
    - 窗口：`start = today - window_days(70) 自然日`（**70 自然日恒覆盖 ≥33 交易日**——45 自然日跨春节/国庆只剩 26–28 个交易日，首跑会少采；放宽到 70 后任何窗口都超端点上限，**返回行数仍由 dc_daily 端点封顶 33**，成本为零；**每次拉全窗口而非最近 3 日**——首跑即有 33 行/板块 → 热度完整公式（>10 行）当天可用；且漏采日/上游修订由每日全窗口重拉自然自愈），`end = today`（日期 YYYY-MM-DD 入口 → 内部转 YYYYMMDD）
-   - 逐板块：`get_sector_daily_df("dc", ts_code, start, end)` → 列映射 `trade_date/open/high/low/close/change/pct_change→pct_chg/vol/amount/turnover_rate`（**pre_close 置 None**——dc_daily 无此列实测；**swing/category/ts_code 丢弃**）→ **补写入列：`source='dc'`（恒值，NOT NULL）+ `updated_at=采集时刻`（DAO 不自动补——[sector_daily.py:17](Liveprofit/db/instrument/dao/sector_daily.py#L17)，sector_daily.updated_at 可空无默认；对齐增量采集层显式填 updated_at 的做法（[incremental.py:252](Liveprofit/db/instrument/ingest/incremental.py#L252)）；漏填则 DO UPDATE 会把 `EXCLUDED.updated_at` NULL 覆盖回已有行 → 契约 `source_updated_at` 恒空）** → `drop_duplicates(subset=PK)`（[store-daily.md](Liveprofit/docs/memory/pitfalls/ai/store-daily.md) 实测踩坑 4"重复 con_code 同批次 PK 冲突"的双保险）→ `bulk_upsert_sector_daily(conn, df, update=True)`（**DO UPDATE**——决策 5：增量窗口覆盖日终修正）→ **每板块独立 commit**（对齐 collect_sectors 的按工作单元独立 commit 事务约定，粒度为板块：后板块失败回滚不得丢前板块成果；SQL 级失败 rollback 恢复干净状态）
+   - 逐板块：`get_sector_daily_df("dc", ts_code, start, end)` → 列映射 `trade_date/open/high/low/close/change/pct_change→pct_chg/vol/amount/turnover_rate`（**pre_close 置 None**——dc_daily 无此列实测；**swing/category/ts_code 丢弃**）→ **补写入列：`source='dc'`（恒值，NOT NULL）+ `updated_at=采集时刻`（DAO 不自动补——[sector_daily.py:17](Liveprofit/db/instrument/dao/sector_daily.py#L17)，sector_daily.updated_at 可空无默认；对齐增量采集层显式填 updated_at 的做法（[incremental.py:252](Liveprofit/db/instrument/ingest/incremental.py#L252)）；漏填则 DO UPDATE 会把 `EXCLUDED.updated_at` NULL 覆盖回已有行 → 契约 `source_updated_at` 恒空）** → `drop_duplicates(subset=PK)`（[store-daily.md](Liveprofit/docs/experience/pitfalls/ai/store-daily.md) 实测踩坑 4"重复 con_code 同批次 PK 冲突"的双保险）→ `bulk_upsert_sector_daily(conn, df, update=True)`（**DO UPDATE**——决策 5：增量窗口覆盖日终修正）→ **每板块独立 commit**（对齐 collect_sectors 的按工作单元独立 commit 事务约定，粒度为板块：后板块失败回滚不得丢前板块成果；SQL 级失败 rollback 恢复干净状态）
    - 失败分层（同 collect_sectors）**+ 熔断**：单板块失败跳过不阻断（次日全窗口重拉自然重试）；**连续 5 个板块失败即终止本步骤、剩余板块记入 failed**（防端点整体退化时 1031 次串行 × 30s 超时 ≈ 8.6 小时/日；仓库先例 get_all_concept_boards 连续 2 次失败终止）；整体失败由调用方 try/except 兜底
    - 返回汇总 `{"boards": n, "rows": n, "failed": [...]}`
 2. 无需 CLI（无回填模式）；首跑 = 人工执行一次 `collect_incremental`（或显式调本函数），此后随每日批处理自动。
@@ -213,7 +213,7 @@ TushareProvider 覆写（首期仅 dc 分支）：
   - `backend/api/schemas/market.py`：3 个新 DTO
   - `backend/api/routers/market_data.py`：tree 端点
   - `backend/tests/contract/api/test_market_data.py`：tree 用例
-- **OpenAPI 重导出链（必做步骤，产物入清单）**：`python -m backend.scripts.export_openapi`（产物 `backend/openapi/openapi.v1.json`——[test_openapi_gate.py](Liveprofit/backend/tests/contract/test_openapi_gate.py) 断言再导出与提交件**结构等价**（解析后 JSON 对象相等），不重导出门禁红）→ `pnpm run generate:api`（产物 `frontend/src/api/generated/**`，新端点方法只能来自产物；[pnpm-openapi-codegen.md](Liveprofit/docs/memory/pitfalls/frontend/pnpm-openapi-codegen.md)）
+- **OpenAPI 重导出链（必做步骤，产物入清单）**：`python -m backend.scripts.export_openapi`（产物 `backend/openapi/openapi.v1.json`——[test_openapi_gate.py](Liveprofit/backend/tests/contract/test_openapi_gate.py) 断言再导出与提交件**结构等价**（解析后 JSON 对象相等），不重导出门禁红）→ `pnpm run generate:api`（产物 `frontend/src/api/generated/**`，新端点方法只能来自产物；[pnpm-openapi-codegen.md](Liveprofit/docs/experience/pitfalls/frontend/pnpm-openapi-codegen.md)）
 
 ### 3.3 概念 K 线 + 个股 K 线 API
 
@@ -332,11 +332,11 @@ useStockBarsQuery(symbol, { market, interval, from, to })                 // GET
 3. **docs/knowledge/产品需求分析.md §3.1.4 板块区块**（实现收尾时同步；注意热门概念契约在 **§3.1.4.3**，非 §3.1.3——§3.1.3 是市场区块）：
    - 卡片交互描述 → treemap 两层 + 悬浮 tooltip + 点击弹窗 K 线；
    - §3.1.4.3 契约段按现状实现收敛（现文档已漂移：仍写 concept_code/concept_name、cursor、503 HOT_CONCEPTS_UPSTREAM_UNAVAILABLE——现行实现为 sector_code/sector_name、无 cursor、503 已删，R1 F17）并注明以 API契约.md 为准；新增 tree/bars 端点描述。
-4. **docs/memory/pitfalls/ai/tushare-endpoints.md** 追加三条实测（2026-09-13）：① dc_daily 仅最近 33 交易日（更早区间 0 行），**窗口型数据源，不可用于历史回填，只能每日增量积累**；② ths_daily 单请求全历史（20/20 板块实测、列集、无 amount、降序归一）；③ akshare 东财 kline 主机 push2his.eastmoney.com 不可达（直连+本地代理均重置），板块历史行情不要走东财直连。
+4. **docs/experience/pitfalls/ai/tushare-endpoints.md** 追加三条实测（2026-09-13）：① dc_daily 仅最近 33 交易日（更早区间 0 行），**窗口型数据源，不可用于历史回填，只能每日增量积累**；② ths_daily 单请求全历史（20/20 板块实测、列集、无 amount、降序归一）；③ akshare 东财 kline 主机 push2his.eastmoney.com 不可达（直连+本地代理均重置），板块历史行情不要走东财直连。
 
 #### 3.5.2 文件变更清单
 
-- **修改**：`CLAUDE.md`、`docs/knowledge/backend/API契约.md`、`docs/knowledge/产品需求分析.md`、`docs/memory/pitfalls/ai/tushare-endpoints.md`、`docs/memory/index.md`（如文件条目描述变化）
+- **修改**：`CLAUDE.md`、`docs/knowledge/backend/API契约.md`、`docs/knowledge/产品需求分析.md`、`docs/experience/pitfalls/ai/tushare-endpoints.md`、`docs/experience/index.md`（如文件条目描述变化）
 
 ## 四、已确认决策 / 待确认问题
 

@@ -1,6 +1,6 @@
 # 复盘
 
-归档前写。任务级复盘；**跨任务可复用的主题沉淀进 docs/memory/**（按「经验沉淀规则」），本文件只留本任务的视角。
+归档前写。任务级复盘；**跨任务可复用的主题沉淀进 docs/experience/**（按「经验沉淀规则」），本文件只留本任务的视角。
 
 ## 做对了什么（可复用）
 
@@ -10,7 +10,7 @@
 
 ## 踩了什么坑（教训）
 
-- **git mv 对未跟踪文件报错**（not under version control）：plans/ 3 个方案文件与数据库表结构.md 均未跟踪，git mv 直接失败；未跟踪文件要改用 mv。同类教训见 [../../../memory/pitfalls/workspace/评审循环踩坑.md](../../../memory/pitfalls/workspace/评审循环踩坑.md) 的 git 边界章节（若有）
+- **git mv 对未跟踪文件报错**（not under version control）：plans/ 3 个方案文件与数据库表结构.md 均未跟踪，git mv 直接失败；未跟踪文件要改用 mv。同类教训见 [../../../experience/pitfalls/workspace/评审循环踩坑.md](../../../experience/pitfalls/workspace/评审循环踩坑.md) 的 git 边界章节（若有）
 - **Git Bash 循环拆分中文文件名乱码**：for 循环内 `${f%%:*}` 拆分中文文件名产生 mojibake，改用逐条显式命令
 - **基线 diff 对路径敏感**：迁移后文件路径全变，直接 diff 新旧断链清单会全量误报——比较口径必须按"迁移前后路径映射"归一化，或改用"docs 内链接全量解析 + 已知噪声白名单"
 - **模板文件里的旧路径是第二波修复**：机械替换覆盖了文档正文，但模板（开发任务模板）内的 `../plans/<方案名>.md` 引用在骨架复制时被带进了新任务文件夹，靠 docs 内链接检查才抓出——模板内路径指令要单独 grep 一遍

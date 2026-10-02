@@ -1,7 +1,7 @@
 # 前端体验优化技术方案
 
 > **状态**：待确认（2026-09-22，R2核验PASS）；权威进度见 [README.md](README.md)。
-> **关联文档**：[项目约定](../../../../agent.md)｜[方案模板](../../templates/plan.md.模板.md)｜[前端平台](../../../knowledge/frontend/前端平台.md)｜[API 契约](../../../knowledge/backend/API契约.md)｜[量化策略与实操层](../../量化策略与实操层/plan.md)
+> **关联文档**：[项目约定](../../../../agent.md)｜[方案模板](../../templates/plan.md.模板.md)｜[前端平台](../../../knowledge/frontend/前端平台.md)｜[API 契约](../../../knowledge/backend/API契约.md)｜[量化策略与实操层](../量化策略与实操层/plan.md)
 
 ## 一、背景与动机
 

@@ -1,7 +1,7 @@
 # 量化策略优化与全生命周期验证
 
 > **状态**：实现中（2026-09-26；已获实施授权，按最新用户决定主线优先、问题集中治理）
-> **关联文档**：[README.md](README.md)｜[tasks.md](tasks.md)｜[decisions.md](decisions.md)｜[issues.md](issues.md)｜[原量化策略与实操层方案](../量化策略与实操层/plan.md)
+> **关联文档**：[README.md](README.md)｜[tasks.md](tasks.md)｜[decisions.md](decisions.md)｜[issues.md](issues.md)｜[原量化策略与实操层方案](../archive/量化策略与实操层/plan.md)
 > **证据边界**：会话草稿已完成 R1 全量评审与 R2 修复核验；本文件按仓库模板整理落盘，未另行启动全量评审。业务代码已有阶段实现与定向验证，整体验收、回测、独立留出集和影子观察仍未完成。
 
 ## 实施顺序补充（2026-09-26 用户决定）

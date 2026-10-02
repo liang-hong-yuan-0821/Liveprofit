@@ -4,7 +4,7 @@
 >
 > **修订范围**：本文件为统一方案，包含原实操层、策略参考规则和成交后生命周期。保留用户已确认的自定义代码输入、执行期读取行情、frontend/backend 优先；历史 8/8 完成记录只适用于原基础任务。
 
-> **关联文档**：[任务总览](README.md)｜[决策记录](decisions.md)｜[个股层](../../knowledge/ai/个股层.md)｜[API 契约](../../knowledge/backend/API契约.md)
+> **关联文档**：[任务总览](README.md)｜[决策记录](decisions.md)｜[个股层](../../../knowledge/ai/个股层.md)｜[API 契约](../../../knowledge/backend/API契约.md)
 
 ---
 

@@ -52,6 +52,8 @@ export interface CandlestickChartViewModel {
   /** [open, close, low, high] */
   ohlc: [number, number, number, number][];
   volume?: (number | null)[];
+  /** 涨跌幅 %（后端 pct_chg 原值透传，不自算）；整列缺失时读条不出现「涨幅」项 */
+  pctChg?: (number | null)[];
   /** 均线（后端 ma 数组原样透传），缺失不渲染 */
   ma?: { period: number; values: (number | null)[] }[];
   /** 布林带（后端 boll 原样透传），缺失不渲染 */
@@ -144,10 +146,14 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
-// 图例 = label + value（2026-09-15 用户改版，替代原读条）：每个图例项显示"名称 + 当前值"，
-// 悬浮跟随、未悬浮显示可见窗口末根。行 1 = 开/高/低/收（+量，纯展示/可开关项），
-// 行 2 = MA+BOLL、行 3 = DIF/DEA；读条 overlay 已移除。
-const FIXED_OHLC_NAMES = ['开', '高', '低', '收'];
+// 顶部读数 = label + value（2026-09-15 用户改版；2026-10-02 修正行 1 渲染方式）：
+// 行 1 = 涨幅（置前）+ 开/高/低/收 由 DOM 读条承载（覆盖画布顶带 top 0..18，随悬浮跟随、
+// 未悬浮显示可见窗口末根）——ECharts 6 的 legend 只渲染 `getSeriesByName(name)` 命中的项
+// （LegendModel._availableNames 取自 series，LegendView 对无系列名直接跳过），OHLC 是
+// candlestick 的数组数据、无同名系列，留在 legend 里永远不渲染（2026-10-02 实测：仅剩「量」）。
+// 行 2 = MA+BOLL、行 3 = DIF/DEA 仍走 ECharts legend；行 1 的图例位仅保留有真实系列的
+// 「量」（右对齐，仍可点击开关副图）。
+// 读条项按值着色：开/高/低/收随当根涨跌（收 ≥ 开红涨），涨幅按自身正负、+ 号前缀与卡片一致。
 const LEGEND_DISPLAY_NAMES: Record<string, string> = {
   成交量: '量',
   BOLL上轨: 'BOLL上',
@@ -156,19 +162,45 @@ const LEGEND_DISPLAY_NAMES: Record<string, string> = {
 };
 
 function legendItemColor(name: string, up: boolean): string {
-  if (FIXED_OHLC_NAMES.includes(name) || name === '成交量') {
+  if (name === '成交量') {
     return up ? '#ef4444' : '#22c55e'; // 与 K 线同色红涨绿跌
   }
   return legendColor(name);
 }
 
+interface ReadoutItem {
+  label: string;
+  text: string | null; // null = 该根无值（源未提供），只显示 label
+  color: string;
+}
+
+function buildReadoutItems(model: CandlestickChartViewModel, idx: number): ReadoutItem[] {
+  const row = model.ohlc[idx];
+  if (!row) return [];
+  const fmt2 = (v: number | null | undefined) => (v === null || v === undefined ? null : v.toFixed(2));
+  const ohlcColor = row[1] >= row[0] ? '#ef4444' : '#22c55e'; // 收 ≥ 开（与图例/蜡烛同口径）
+  const items: ReadoutItem[] = [];
+  // 涨幅排在最前（2026-10-02 用户要求，置于开之前）；整列缺失时 mapper 不设 pctChg
+  // （不占位），单根缺失只出 label
+  if (model.pctChg) {
+    const pct = model.pctChg[idx];
+    items.push({
+      label: '涨幅',
+      text: pct === null || pct === undefined ? null : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`,
+      color: pct == null || pct === 0 ? LEGEND_INACTIVE_COLOR : pct > 0 ? '#ef4444' : '#22c55e',
+    });
+  }
+  items.push(
+    { label: '开', text: fmt2(row[0]), color: ohlcColor },
+    { label: '高', text: fmt2(row[3]), color: ohlcColor },
+    { label: '低', text: fmt2(row[2]), color: ohlcColor },
+    { label: '收', text: fmt2(row[1]), color: ohlcColor },
+  );
+  return items;
+}
+
 function legendValueFor(name: string, model: CandlestickChartViewModel, idx: number): string | null {
   const fmt2 = (v: number | null | undefined) => (v === null || v === undefined ? null : v.toFixed(2));
-  const row = model.ohlc[idx];
-  if (name === '开') return row ? fmt2(row[0]) : null;
-  if (name === '高') return row ? fmt2(row[3]) : null;
-  if (name === '低') return row ? fmt2(row[2]) : null;
-  if (name === '收') return row ? fmt2(row[1]) : null;
   if (name === '成交量') {
     const v = model.volume?.[idx];
     return v === null || v === undefined ? null : formatVolume(v);
@@ -207,9 +239,10 @@ function buildLegendOptions(params: {
     }
     return out;
   };
-  const legendFor = (top: number, names: string[]) => ({
+  const legendFor = (top: number, names: string[], rightAlign = false) => ({
     top,
-    left: 0,
+    // 行 1（量）右对齐：左上留给 DOM 读条（开/高/低/收/涨幅），避免同带重合
+    ...(rightAlign ? { right: 0 } : { left: 0 }),
     itemWidth: 0,
     itemGap: 6,
     icon: 'none',
@@ -224,9 +257,10 @@ function buildLegendOptions(params: {
     selected: selectedSubset(names),
     data: names.map((name) => ({ name, textStyle: { color: name === 'DIF' ? (params.neutralColor ?? MACD_DIF_COLOR) : legendItemColor(name, up) } })),
   });
-  const legends: Array<Record<string, unknown>> = [
-    legendFor(0, hasVolume ? [...FIXED_OHLC_NAMES, '成交量'] : FIXED_OHLC_NAMES),
-  ];
+  // 行 1 图例只剩「量」（开高低收/涨幅由 DOM 读条承载，见 buildReadoutItems 注释）；
+  // 无成交量时不建行 1 图例（读条行的顶距仍由 grid.top 预留）
+  const legends: Array<Record<string, unknown>> = [];
+  if (hasVolume) legends.push(legendFor(0, ['成交量'], true));
   if (legendMain.length > 0) legends.push(legendFor(18, legendMain));
   if (legendMacd.length > 0) legends.push(legendFor(legendMain.length > 0 ? 36 : 18, legendMacd));
   return legends;
@@ -301,7 +335,7 @@ export function CandlestickChart({
 
     // 成交量副图（§3.1）：volume 存在且含非 null 值才挂 bar 系列（全 null 不开副图）；
     // 三元组 [类目索引, 成交量, 方向]——方向 1 涨（收≥开）、-1 跌，红涨绿跌回调着色。
-    // 成交量不进 legend（与 MACD 柱一致，柱不进 legend）。
+    // 成交量进图例行 1（右对齐，左侧让位 DOM 读条），点击可开关副图；MACD 柱不进 legend。
     const volumeOn = (model.volume ?? []).some((v) => v !== null);
     if (volumeOn && model.volume) {
       const volumes = model.volume.map((v, i) =>
@@ -826,13 +860,12 @@ export function CandlestickChart({
       hoverIdxRef.current = next;
       setHoverIdx(next);
     };
-    // 图例选中回填（防 notMerge 重建重置选中）；开/高/低/收为纯展示固定项，
-    // 点击切换对其无系列可联动——过滤掉，保持"点击无效"（不变灰）
+    // 图例选中回填（防 notMerge 重建重置选中）；图例项全部为真实系列
+    // （开/高/低/收/涨幅走 DOM 读条、非图例项，无点击态）
     events.legendselectchanged = (_params: unknown, instance: EChartsType) => {
       const legendOption = (instance.getOption().legend as Array<{ selected?: Record<string, boolean> }>) ?? [];
       const merged: Record<string, boolean> = {};
       for (const l of legendOption) Object.assign(merged, l.selected ?? {});
-      for (const n of FIXED_OHLC_NAMES) delete merged[n];
       setLegendSelected(merged);
     };
     return events;
@@ -870,8 +903,8 @@ export function CandlestickChart({
   // option 全量构建收敛进 useMemo：grid/xAxis/yAxis/dataZoom/legend 的对象引用必须稳定——
   // 外层 hover 等逐像素 state 变化时不重建 → ChartCore memo 拦截、无 setOption 风暴。
   const option = useMemo(() => {
-    // 图例行数（行 1 开高低收+量恒在）：3 行 56 / 2 行 40 / 1 行 24（读条已移除，
-    // 无"无图例"布局——行 1 恒渲染）
+    // 图例行数（行 1 = DOM 读条恒在，画布顶带 top 0..18 让位）：3 行 56 / 2 行 40 /
+    // 1 行 24（行 1 恒占位，无"无图例"布局）
     const legendRows = 1 + (legendMain.length > 0 ? 1 : 0) + (legendMacd.length > 0 ? 1 : 0);
     const mainGrid = {
       left: 48,
@@ -955,9 +988,10 @@ export function CandlestickChart({
       },
     ];
 
-    // 图例 = label + value（buildLegendOptions，行 1 开高低收+量恒在、行 2 MA+BOLL、行 3 DIF/DEA）；
+    // 图例 = label + value（buildLegendOptions，行 1 量（右对齐）、行 2 MA+BOLL、行 3 DIF/DEA；
+    // 开高低收/涨幅不在图例——见 buildReadoutItems 的 ECharts 6 图例限制注释）；
     // 纯文字（icon none）、逐项系列色（实测默认文字色 #54555a 不继承系列色）、
-    // 点击隐藏变灰（inactiveColor）、left 0 + itemWidth 0 + 紧凑 gap（值为本随行显示，无右侧读条）
+    // 点击隐藏变灰（inactiveColor）、itemWidth 0 + 紧凑 gap
     const legends = buildLegendOptions({
           neutralColor: initialTheme.neutral,
       model,
@@ -1058,6 +1092,9 @@ export function CandlestickChart({
     }
     return { lines, texts };
   }, [viewport, referenceLines, windowIdx]);
+
+  // 行 1 读条（DOM 覆盖层，见 buildReadoutItems 注释）：悬浮跟随，未悬浮取可见窗口末根
+  const readoutItems = buildReadoutItems(model, hoverIdx ?? fallbackIdx);
 
   return (
     <div data-testid="candlestick-chart">
@@ -1162,6 +1199,34 @@ export function CandlestickChart({
       )}
       <div style={{ position: 'relative', cursor: mode === 'eraser' ? 'pointer' : undefined }}>
         <ChartCore option={option} onEvents={onEvents} onChartReady={onChartReady} height={height} />
+        {readoutItems.length > 0 && (
+          // 行 1 数值读条（开/高/低/收/涨幅）：占据画布图例行 1 的顶带（top 0..18，
+          // 与图例行 2 top 18 错开）；pointerEvents none——滚轮/悬浮/点击穿透给画布；
+          // 有量时右侧 maxWidth 让位于右对齐的「量」图例项（无量时行 1 无图例、全宽）
+          <div
+            data-testid="chart-readout"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              zIndex: 2,
+              display: 'flex',
+              columnGap: 6,
+              maxWidth: hasVolume ? 'calc(100% - 84px)' : '100%',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              fontSize: 10.5,
+              lineHeight: '14px',
+            }}
+          >
+            {readoutItems.map((item) => (
+              <span key={item.label} style={{ color: item.color }}>
+                {item.text === null ? item.label : `${item.label} ${item.text}`}
+              </span>
+            ))}
+          </div>
+        )}
         {(hasDrawings || (referenceLines && referenceLines.length > 0)) && viewport && (
           // 画线/参考价覆盖层：pointerEvents none——滚轮/悬浮/点击全部穿透给 ECharts 画布
           <svg

@@ -1,6 +1,6 @@
 // test-catalog-begin
 // {
-//   "purpose": "行情界面 / barsToCandlestickViewModel：空 bars 返回 null（调用方不渲染空壳图）；按时间升序映射 [open, close, low, high]；indicators 与 bars 等长时透传 ma/boll 到 ViewModel",
+//   "purpose": "行情界面 / barsToCandlestickViewModel：空 bars 返回 null（调用方不渲染空壳图）；按时间升序映射 [open, close, low, high]；pct_chg 升序透传为 pctChg、整列 null 或旧后端缺字段时不设置（读条不占空白涨幅项）；indicators 与 bars 等长时透传 ma/boll 到 ViewModel",
 //   "keywords": [
 //     "行情界面",
 //     "市场分析",
@@ -25,8 +25,8 @@ import { barsToCandlestickViewModel } from '../../../../../../frontend/src/modul
 // groupAssetsByMarket 随目录端点删除（目录写死 MARKET_INDEX_CATALOG，
 // 组序固化——"12 指数 + 组序"回归迁为 MarketIndicesPanel 测试的常量断言）。
 
-function bar(timestamp: string, o: number, h: number, l: number, c: number): BarDTO {
-  return { timestamp, open: o, high: h, low: l, close: c, volume: null };
+function bar(timestamp: string, o: number, h: number, l: number, c: number, pctChg: number | null = null): BarDTO {
+  return { timestamp, open: o, high: h, low: l, close: c, pct_chg: pctChg, volume: null };
 }
 
 describe('barsToCandlestickViewModel', () => {
@@ -72,6 +72,26 @@ describe('barsToCandlestickViewModel', () => {
       upper: [null, 1.9],
       lower: [null, 1.3],
     });
+  });
+
+  it('pct_chg 随 bars 升序透传为 pctChg（上游原值，不自算）', () => {
+    const model = barsToCandlestickViewModel([
+      bar('2026-09-04T00:00:00Z', 4, 5, 3, 4.5, -1.25),
+      bar('2026-09-03T00:00:00Z', 1, 2, 0.5, 1.8, 2.5),
+    ]);
+
+    expect(model?.pctChg).toEqual([2.5, -1.25]);
+  });
+
+  it('pct_chg 整列为 null 时不设置 pctChg（读条不占空白「涨幅」项）', () => {
+    const bars = [bar('2026-09-03T00:00:00Z', 1, 2, 0.5, 1.8), bar('2026-09-04T00:00:00Z', 4, 5, 3, 4.5)];
+    expect(barsToCandlestickViewModel(bars)?.pctChg).toBeUndefined();
+  });
+
+  it('旧后端响应整体缺 pct_chg 字段时同样不设置 pctChg', () => {
+    const bars = [bar('2026-09-03T00:00:00Z', 1, 2, 0.5, 1.8), bar('2026-09-04T00:00:00Z', 4, 5, 3, 4.5)]
+      .map(({ pct_chg: _dropped, ...rest }) => rest as BarDTO);
+    expect(barsToCandlestickViewModel(bars)?.pctChg).toBeUndefined();
   });
 
   it('indicators 缺失/null 时不设置 ma/boll（旧后端降级渲染纯 K 线）', () => {

@@ -8,7 +8,7 @@ import { Input } from '../../../shared/ui/input';
 import { Label } from '../../../shared/ui/label';
 import { ConceptTreemap } from '../components/ConceptTreemap';
 import { KLineDialog } from '../components/KLineDialog';
-import { pctColor, pctText, type TreemapNodeClick } from '../components/conceptTreeOption';
+import { pctColor, pctText, sortByPctDesc, type TreemapNodeClick } from '../components/conceptTreeOption';
 import { useConceptTreeQuery } from './queries';
 
 // 板块区块（热门概念，板块概念Treemap方案 3.4）：treemap 两层展示——概念矩形
@@ -31,6 +31,9 @@ export function HotConceptsPanel() {
   const items = query.data?.items ?? [];
   const snapshot = query.data;
   const stale = snapshot?.freshness_status === 'STALE';
+  // 列表按涨跌幅降序（与 treemap 同口径）；未选日期时输入框回显解析出的榜单日，
+  // 不再停在原生空值占位——空值仍是查询语义（LATEST），只是不被显示。
+  const rankedItems = sortByPctDesc(items);
 
   const handleNodeClick = (node: TreemapNodeClick) => {
     setSelectedNode(node);
@@ -45,7 +48,7 @@ export function HotConceptsPanel() {
           <Input
             id="hot-from"
             type="date"
-            value={asOf}
+            value={asOf || snapshot?.as_of || ''}
             onChange={(event) => setAsOf(event.target.value)}
           />
         </div>
@@ -79,7 +82,7 @@ export function HotConceptsPanel() {
         <details onToggle={event => setListOpen(event.currentTarget.open)} className="rounded-xl border border-[var(--color-border)] p-4">
           <summary className="text-sm font-medium">概念列表 · 完整名称与涨跌幅</summary>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {listOpen && items.map(item => <button type="button" key={item.sector_code} onClick={() => handleNodeClick({ kind: 'concept', code: item.sector_code, name: item.sector_name })} className="flex items-center justify-between gap-3 rounded-lg p-2 text-left text-xs hover:bg-[var(--color-surface)]"><span>{item.sector_name}<span className="ml-2 text-[var(--color-fg-muted)]">{item.sector_code}</span></span><span className="shrink-0 tabular-nums" style={{ color: pctColor(item.pct_chg) }}>{pctText(item.pct_chg)} ↗</span></button>)}
+            {listOpen && rankedItems.map(item => <button type="button" key={item.sector_code} onClick={() => handleNodeClick({ kind: 'concept', code: item.sector_code, name: item.sector_name })} className="flex items-center justify-between gap-3 rounded-lg p-2 text-left text-xs hover:bg-[var(--color-surface)]"><span>{item.sector_name}<span className="ml-2 text-[var(--color-fg-muted)]">{item.sector_code}</span></span><span className="shrink-0 tabular-nums" style={{ color: pctColor(item.pct_chg) }}>{pctText(item.pct_chg)} ↗</span></button>)}
           </div>
         </details>
       </>}

@@ -1,5 +1,5 @@
 import { Resource } from '../../../api/generated';
-import { MarketRefreshStatus } from '../components/MarketRefreshStatus';
+import { MarketRefreshInline } from '../components/MarketRefreshInline';
 import { MarketDatesContext, useMarketRefresh } from './refreshQueries';
 import { MarketIndicesPanel } from './MarketIndicesPanel';
 import { TrendComparisonPanel } from './TrendComparisonPanel';
@@ -27,8 +27,7 @@ export default function MarketOverviewPage() {
 
       <section id="indices" aria-label="市场区块（宏观指数）">
         <h2 className="mb-3 text-base font-semibold">市场</h2>
-        <div className="mb-3"><MarketRefreshStatus refresh={refresh} resources={[Resource.CN_INDEX_BARS, Resource.CN_INDEX_FACTORS, Resource.US_INDEX_BARS, Resource.KR_INDEX_BARS]} /></div>
-        <MarketIndicesPanel />
+        <MarketIndicesPanel refresh={refresh} />
       </section>
 
       <section id="trends" aria-label="趋势对比区块">
@@ -37,8 +36,10 @@ export default function MarketOverviewPage() {
       </section>
 
       <section id="concepts" aria-label="板块区块（热门概念）">
-        <h2 className="mb-3 text-base font-semibold">板块</h2>
-        <div className="mb-3"><MarketRefreshStatus refresh={refresh} resources={[Resource.CN_SECTOR_DAILY]} /></div>
+        <h2 className="mb-3 flex flex-wrap items-baseline gap-x-2 text-base font-semibold">
+          <span>板块</span>
+          <MarketRefreshInline refresh={refresh} resources={[Resource.CN_SECTOR_DAILY]} named />
+        </h2>
         <HotConceptsPanel />
       </section>
 

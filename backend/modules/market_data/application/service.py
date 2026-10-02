@@ -260,6 +260,7 @@ class MarketDataService:
                     "high": float(row["high"]) if pd.notna(row["high"]) else None,
                     "low": float(row["low"]) if pd.notna(row["low"]) else None,
                     "close": float(row["close"]) if pd.notna(row["close"]) else None,
+                    "pct_chg": float(row["pct_chg"]) if pd.notna(row["pct_chg"]) else None,
                     "volume": float(row["vol"]) if pd.notna(row["vol"]) else None,
                 }
                 for _, row in bars_full.iterrows()
@@ -496,6 +497,7 @@ class MarketDataService:
                     "high": float(row["high"]),
                     "low": float(row["low"]),
                     "close": float(row["close"]),
+                    "pct_chg": float(row["pct_chg"]) if pd.notna(row["pct_chg"]) else None,
                     "volume": float(row["vol"]) if pd.notna(row["vol"]) else None,
                 })
         indicators = self._compute_sector_indicators(warmup_bars, len(bar_dicts))

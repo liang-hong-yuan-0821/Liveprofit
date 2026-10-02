@@ -26,25 +26,25 @@
 场景声明（20）：
 
 - [test_bars_success_with_freshness_and_closed](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L67)
-- [test_bars_param_errors](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L92)
-- [test_bars_include_indicators_aligned_with_factors](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L117) — 指标契约（技术指标数据源切换方案 §3.3.3）：指标逐值透传因子读模型（不自算）、与 bars 等长对齐。
-- [test_bars_factor_row_with_null_column_falls_back_to_none](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L157) — 因子行存在但列为 NULL（NaN 清洗结果）：该位置指标 None、整请求 200 不 500（2026-09-12 Code Review blocker 回归）。
-- [test_bars_us_asset_returns_200_empty_bars_unavailable](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L192) — US 资产：instrument 有行而 instrument_daily 无数据 → 200 空 bars +
-- [test_hot_concepts_empty_is_normal_business_state](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L208)
-- [test_hot_concepts_computed_on_the_fly](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L222) — 热度现场计算（决策 13）：source='dc' 过滤 ths、score 降序与 limit、
-- [test_hot_concepts_single_row_degradation](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L251) — M3 三段降级之 ①：≤1 行板块热度 = 最新行 pct_chg × 0.6。
-- [test_hot_concepts_non_cn_returns_empty](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L265)
-- [test_concept_tree_computed_with_members](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L277) — 概念树（板块概念Treemap方案 3.2）：热度排序与 heat_score、pct_chg 显式按
-- [test_concept_tree_empty_is_normal_business_state](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L321)
-- [test_concept_tree_non_cn_returns_empty](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L332)
-- [test_concept_bars_returns_ohlc_ascending](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L344) — 概念 K 线（板块概念Treemap方案 3.3 + m7 修订）：读 sector_daily、OHLC 脏行
-- [test_concept_bars_compute_indicators_with_warmup](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L379) — 概念指标自算（m7）：预热窗口计算（[from−120d, to] 全段 → 切回请求窗口），
-- [test_concept_bars_errors](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L423)
-- [test_stock_bars_returns_pure_kline](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L447) — 个股 K 线（板块概念Treemap方案 3.3 + m7 修订）：get_bars 放宽 stock、因子表
-- [test_stock_bars_fetches_stk_factors_on_demand_and_caches](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L466) — 个股因子按需拉取（m7 用户拍板 2026-09-16：个股接因子、概念自算）：因子表
-- [test_stock_bars_refetches_when_factor_cache_is_daily_residue](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L521) — 因子缓存残段不挡历史补拉（2026-09-21 实况修复）：每日增量只写最新 1~2 天
-- [test_stock_bars_rejects_non_stock_index](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L575)
-- [test_trends_endpoints_contract](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L590) — 趋势端点契约（趋势对比面板方案 4.2.3）：2 端点 200 响应形状（序列条目录
+- [test_bars_param_errors](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L94)
+- [test_bars_include_indicators_aligned_with_factors](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L119) — 指标契约（技术指标数据源切换方案 §3.3.3）：指标逐值透传因子读模型（不自算）、与 bars 等长对齐。
+- [test_bars_factor_row_with_null_column_falls_back_to_none](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L161) — 因子行存在但列为 NULL（NaN 清洗结果）：该位置指标 None、整请求 200 不 500（2026-09-12 Code Review blocker 回归）。
+- [test_bars_us_asset_returns_200_empty_bars_unavailable](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L196) — US 资产：instrument 有行而 instrument_daily 无数据 → 200 空 bars +
+- [test_hot_concepts_empty_is_normal_business_state](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L212)
+- [test_hot_concepts_computed_on_the_fly](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L226) — 热度现场计算（决策 13）：source='dc' 过滤 ths、score 降序与 limit、
+- [test_hot_concepts_single_row_degradation](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L255) — M3 三段降级之 ①：≤1 行板块热度 = 最新行 pct_chg × 0.6。
+- [test_hot_concepts_non_cn_returns_empty](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L269)
+- [test_concept_tree_computed_with_members](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L281) — 概念树（板块概念Treemap方案 3.2）：热度排序与 heat_score、pct_chg 显式按
+- [test_concept_tree_empty_is_normal_business_state](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L325)
+- [test_concept_tree_non_cn_returns_empty](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L336)
+- [test_concept_bars_returns_ohlc_ascending](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L348) — 概念 K 线（板块概念Treemap方案 3.3 + m7 修订）：读 sector_daily、OHLC 脏行
+- [test_concept_bars_compute_indicators_with_warmup](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L385) — 概念指标自算（m7）：预热窗口计算（[from−120d, to] 全段 → 切回请求窗口），
+- [test_concept_bars_errors](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L429)
+- [test_stock_bars_returns_pure_kline](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L453) — 个股 K 线（板块概念Treemap方案 3.3 + m7 修订）：get_bars 放宽 stock、因子表
+- [test_stock_bars_fetches_stk_factors_on_demand_and_caches](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L473) — 个股因子按需拉取（m7 用户拍板 2026-09-16：个股接因子、概念自算）：因子表
+- [test_stock_bars_refetches_when_factor_cache_is_daily_residue](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L528) — 因子缓存残段不挡历史补拉（2026-09-21 实况修复）：每日增量只写最新 1~2 天
+- [test_stock_bars_rejects_non_stock_index](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L582)
+- [test_trends_endpoints_contract](../../../../../tests/backend/market_data/contract/api/test_market_data.py#L597) — 趋势端点契约（趋势对比面板方案 4.2.3）：2 端点 200 响应形状（序列条目录
 
 ## test_market_refresh.py
 

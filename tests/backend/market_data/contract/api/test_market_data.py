@@ -78,6 +78,8 @@ def test_bars_success_with_freshness_and_closed(client):
     assert data["to"] == "2026-09-05"
     assert len(data["bars"]) == 1
     assert data["bars"][0]["close"] == 3340.0
+    # 涨跌幅 = 上游 pct_chg 原值透传（不自算；源未提供时为 null，见 dense 用例）
+    assert data["bars"][0]["pct_chg"] == 1.25
     assert data["freshness_status"] == "FRESH"
     assert data["market_session_status"] == "CLOSED"
     assert data["market_closed_reason"] is not None
@@ -129,6 +131,8 @@ def test_bars_include_indicators_aligned_with_factors(client):
     # 返回区间仍为 [from, to]，共 60 根
     assert len(data["bars"]) == 60
     assert data["bars"][0]["close"] == 3390.0
+    # 该 seed 未写 pct_chg（上游缺列）→ null 透传，不从相邻 close 自算
+    assert data["bars"][0]["pct_chg"] is None
     # 指标与 bars 等长、按 index 对齐
     indicators = data["indicators"]
     assert indicators is not None
@@ -361,6 +365,8 @@ def test_concept_bars_returns_ohlc_ascending(client):
     assert bars[0]["high"] == 105.0 and bars[0]["low"] == 99.0
     assert bars[0]["volume"] == 1000.0
     assert bars[2]["volume"] == 1200.0
+    # 涨跌幅透传 sector_daily.pct_chg 原值（升序对齐；不与 close 自算值混淆）
+    assert [b["pct_chg"] for b in bars] == [2.0, 1.96, 0.96]
     # 指标自算契约（m7）：结构完整、与 bars 等长；3 根短序列窗口不足 → 全 None
     indicators = data["indicators"]
     assert indicators is not None
@@ -459,6 +465,7 @@ def test_stock_bars_returns_pure_kline(client):
     data = response.json()["data"]
     assert data["asset"] == {"market": "CN", "symbol": "600519.SH", "name": "贵州茅台"}
     assert [b["close"] for b in data["bars"]] == [1500.0, 1501.0]
+    assert [b["pct_chg"] for b in data["bars"]] == [0.5, 1.5]  # 上游原值透传
     assert data["indicators"] is None  # 拉取无数据 → 纯 K 线
     assert data["freshness_status"] == "FRESH"
 

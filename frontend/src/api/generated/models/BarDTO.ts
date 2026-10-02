@@ -8,6 +8,7 @@ export type BarDTO = {
     high: number;
     low: number;
     close: number;
+    pct_chg: (number | null);
     volume: (number | null);
 };
 

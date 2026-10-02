@@ -115,10 +115,10 @@
 
 ## 代理端点（自定义 URL）
 
-- 位置：`TushareProvider._connect()`（`AI/dataflows/providers/cn/tushare.py`）——`ts.set_token(TUSHARE_TOKEN)` + `ts.pro_api()` 之后覆写私有属性指向自定义端点：
+- 位置：`TushareProvider._connect()`（`AI/dataflows/providers/cn/tushare.py`）——token **直传** `ts.pro_api(token)`，**不调用 `ts.set_token`**（后者无条件写 `~/tk.csv`，受限服务账户下 PermissionError 会导致 provider 永久未连接）；连接后覆写私有属性指向自定义端点：
 
   ```python
-  self.api = ts.pro_api()
+  self.api = ts.pro_api(token)
   self.api._DataApi__http_url = "https://ts.gyzcloud.top/api"  # 自定义 Tushare 端点
   ```
 

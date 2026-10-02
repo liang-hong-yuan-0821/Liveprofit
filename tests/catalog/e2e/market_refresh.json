@@ -22,7 +22,7 @@
         "status"
       ],
       "covers": [
-        "frontend/src/modules/market/components/MarketRefreshStatus.tsx",
+        "frontend/src/modules/market/components/MarketRefreshInline.tsx",
         "frontend/src/modules/market/pages/refreshQueries.ts"
       ],
       "environment": [
@@ -39,11 +39,11 @@
         },
         {
           "name": "failure and offline status preserve the existing chart and history selection",
-          "line": 108,
+          "line": 112,
           "description": ""
         }
       ],
-      "source_sha256": "54ea1d02055492b3ddaf36c0570a3bc465932425f28a7918c866f8cce639125c"
+      "source_sha256": "efd215337252c04bc3090146dbc23f66f7f072a33b0b095acf6ed23264ed3fed"
     }
   ]
 }

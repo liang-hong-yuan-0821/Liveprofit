@@ -27,7 +27,7 @@ def _seed_instrument(client, symbol: str, name: str = "上证综指") -> None:
 
 
 def _seed_bars(client, symbol: str = "000001.SH", trade_date: date = date(2026, 9, 4),
-               close: float = 3340.0) -> None:
+               close: float = 3340.0, pct_chg: float | None = 1.25) -> None:
     from sqlalchemy import create_engine, text
 
     from backend.bootstrap.settings import CoreSettings
@@ -40,11 +40,12 @@ def _seed_bars(client, symbol: str = "000001.SH", trade_date: date = date(2026, 
         conn.execute(
             text(
                 "INSERT INTO market.instrument_daily "
-                "(ts_code, trade_date, open, high, low, close, vol, source) "
-                "VALUES (:ts_code, :trade_date, 3300, 3350, 3290, :close, 1000000, 'tushare') "
+                "(ts_code, trade_date, open, high, low, close, pct_chg, vol, source) "
+                "VALUES (:ts_code, :trade_date, 3300, 3350, 3290, :close, :pct_chg, 1000000, 'tushare') "
                 "ON CONFLICT (ts_code, trade_date) DO NOTHING"
             ),
-            {"ts_code": symbol, "trade_date": trade_date, "close": close},
+            {"ts_code": symbol, "trade_date": trade_date, "close": close,
+             "pct_chg": pct_chg},
         )
     engine.dispose()
 
@@ -251,20 +252,20 @@ def _seed_sector_daily_bars(client) -> None:
             "INSERT INTO market.sector (source, sector_code, name, type) "
             "VALUES ('dc', 'BK1753', '光刻胶', 'N') ON CONFLICT DO NOTHING"))
         rows = [
-            (date(2026, 9, 2), 100.0, 105.0, 99.0, 102.0, 1000.0),
-            (date(2026, 9, 3), 102.0, 106.0, 100.0, 104.0, 1100.0),
-            (date(2026, 9, 4), 104.0, 107.0, 101.0, 105.0, 1200.0),
-            (date(2026, 9, 5), None, None, None, 106.0, 1300.0),  # 脏行
+            (date(2026, 9, 2), 100.0, 105.0, 99.0, 102.0, 1000.0, 2.0),
+            (date(2026, 9, 3), 102.0, 106.0, 100.0, 104.0, 1100.0, 1.96),
+            (date(2026, 9, 4), 104.0, 107.0, 101.0, 105.0, 1200.0, 0.96),
+            (date(2026, 9, 5), None, None, None, 106.0, 1300.0, None),  # 脏行
         ]
-        for d, o, h, l, c, v in rows:
+        for d, o, h, l, c, v, p in rows:
             conn.execute(
                 text(
                     "INSERT INTO market.sector_daily "
-                    "(source, sector_code, trade_date, open, high, low, close, vol) "
-                    "VALUES ('dc', 'BK1753', :d, :o, :h, :l, :c, :v) "
+                    "(source, sector_code, trade_date, open, high, low, close, pct_chg, vol) "
+                    "VALUES ('dc', 'BK1753', :d, :o, :h, :l, :c, :p, :v) "
                     "ON CONFLICT DO NOTHING"
                 ),
-                {"d": d, "o": o, "h": h, "l": l, "c": c, "v": v},
+                {"d": d, "o": o, "h": h, "l": l, "c": c, "p": p, "v": v},
             )
     engine.dispose()
 
@@ -327,11 +328,11 @@ def _seed_stock_bars(client) -> None:
             conn.execute(
                 text(
                     "INSERT INTO market.instrument_daily "
-                    "(ts_code, trade_date, open, high, low, close, vol, source) "
-                    "VALUES ('600519.SH', :d, :o, :h, :l, :c, 5000, 'tushare') "
+                    "(ts_code, trade_date, open, high, low, close, pct_chg, vol, source) "
+                    "VALUES ('600519.SH', :d, :o, :h, :l, :c, :p, 5000, 'tushare') "
                     "ON CONFLICT (ts_code, trade_date) DO NOTHING"
                 ),
                 {"d": trading_date, "o": close - 5.0, "h": close + 10.0,
-                 "l": close - 10.0, "c": close},
+                 "l": close - 10.0, "c": close, "p": 0.5 + offset},
             )
     engine.dispose()

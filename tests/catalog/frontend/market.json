@@ -47,6 +47,78 @@
       "source_sha256": "1187785fa58671999b6477a386d5fd74c1606da556fd4897d9a1f57ec5a20f95"
     },
     {
+      "path": "tests/frontend/market/integration/components/MarketRefreshInline.test.tsx",
+      "module": "frontend.market",
+      "level": "integration",
+      "purpose": "行情界面 / MarketRefreshInline：标题旁行内状态——已更新到目标交易日只显示 MM.DD；未更新且任务在跑显示「MM.DD 更新中（x%）」；排队显示排队中；无任务未达标显示待补齐 x/y 并可重试；中国行两资源短名并列；状态接口失败标明只是上次核验、不伪造日期",
+      "keywords": [
+        "行情界面",
+        "市场分析",
+        "行情刷新",
+        "状态",
+        "market_refresh_inline",
+        "market"
+      ],
+      "covers": [
+        "frontend/src/api/generated/index.ts",
+        "frontend/src/modules/market/components/MarketRefreshInline.tsx",
+        "frontend/src/modules/market/pages/refreshQueries.ts"
+      ],
+      "environment": [
+        "local"
+      ],
+      "related_tests": [],
+      "related_modules": [],
+      "scenarios": [
+        {
+          "name": "已更新到目标交易日只显示 MM.DD，不写「已更新」",
+          "line": 76,
+          "description": ""
+        },
+        {
+          "name": "未更新且任务在跑显示「目标日 + 更新中（完成百分比）」",
+          "line": 83,
+          "description": ""
+        },
+        {
+          "name": "排队中不显示百分比，等重试沿用已处理计数",
+          "line": 95,
+          "description": ""
+        },
+        {
+          "name": "无活跃任务未达标时显示待补齐 x/y，并可手动重试",
+          "line": 103,
+          "description": ""
+        },
+        {
+          "name": "状态接口失败但留有缓存时标明只是上次核验，不把旧状态当现状",
+          "line": 117,
+          "description": ""
+        },
+        {
+          "name": "状态暂不可用时不猜测日期或进度",
+          "line": 125,
+          "description": ""
+        },
+        {
+          "name": "较早历史缺口随行标注，不读成目标日未更新",
+          "line": 132,
+          "description": ""
+        },
+        {
+          "name": "中国行两资源短名并列，各自显示目标日",
+          "line": 141,
+          "description": ""
+        },
+        {
+          "name": "目标交易日缺失时不编造日期，只给状态",
+          "line": 157,
+          "description": ""
+        }
+      ],
+      "source_sha256": "08ccc8250b3a85dbd6f51cab514748b0b3ae0854586b09d88071362e2bfe2e09"
+    },
+    {
       "path": "tests/frontend/market/integration/components/MarketRefreshStatus.test.tsx",
       "module": "frontend.market",
       "level": "integration",
@@ -109,7 +181,7 @@
       "path": "tests/frontend/market/integration/pages/HotConceptsPanel.test.tsx",
       "module": "frontend.market",
       "level": "integration",
-      "purpose": "行情界面 / HotConceptsPanel：默认不指定日期；历史选择不会被后台刷新覆盖；StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询；NO_HOT_CONCEPTS / 空列表是正常空态",
+      "purpose": "行情界面 / HotConceptsPanel：默认不指定日期但输入框回显解析出的榜单日、历史选择不会被后台刷新覆盖；概念列表按涨幅降序（无行情最后）；StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询；NO_HOT_CONCEPTS / 空列表是正常空态",
       "keywords": [
         "行情界面",
         "市场分析",
@@ -129,42 +201,47 @@
       "related_modules": [],
       "scenarios": [
         {
-          "name": "默认不指定日期；历史选择不会被后台刷新覆盖",
+          "name": "默认不指定日期（输入框回显解析出的榜单日）；历史选择不会被后台刷新覆盖",
           "line": 126,
           "description": ""
         },
         {
+          "name": "概念列表按涨幅降序（涨多→涨少→跌，无行情最后）",
+          "line": 144,
+          "description": ""
+        },
+        {
           "name": "StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询",
-          "line": 138,
+          "line": 162,
           "description": ""
         },
         {
           "name": "NO_HOT_CONCEPTS / 空列表是正常空态",
-          "line": 159,
+          "line": 183,
           "description": ""
         },
         {
           "name": "treemap 渲染榜单数据；STALE 显示数据延迟徽标",
-          "line": 168,
+          "line": 192,
           "description": ""
         },
         {
           "name": "点击概念节点 → 弹窗 K 线：sectorBars 参数正确、关闭后卸载不再请求",
-          "line": 178,
+          "line": 202,
           "description": ""
         },
         {
           "name": "点击个股节点 → 个股 K 线：stockBars 参数正确",
-          "line": 203,
+          "line": 227,
           "description": ""
         },
         {
           "name": "弹窗 K 线透传指标（m7：MA/BOLL/MACD 进 mapper → 与指数 K 线同款渲染）",
-          "line": 218,
+          "line": 242,
           "description": ""
         }
       ],
-      "source_sha256": "73a5ba2043867d195098e6e691789208e1ab67eeba599d6007cb6abfb26c1454"
+      "source_sha256": "e7a60812856579a801f8937d1865228231f88ed25460c08018c6b42457596780"
     },
     {
       "path": "tests/frontend/market/integration/pages/HotConceptsPanelClose.test.tsx",
@@ -244,7 +321,7 @@
       "path": "tests/frontend/market/integration/pages/MarketIndicesPanel.test.tsx",
       "module": "frontend.market",
       "level": "integration",
-      "purpose": "行情界面 / MarketIndicesPanel：新交易日推进最新窗口，同时保留用户手动平移的历史窗口；目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）；AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无\"暂不可用\"卡片",
+      "purpose": "行情界面 / MarketIndicesPanel：新交易日推进最新窗口，同时保留用户手动平移的历史窗口；目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）；分组标题旁内联行情状态（US/KR 只显目标日、中国行指数与指标短名并列）；AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无\"暂不可用\"卡片",
       "keywords": [
         "行情界面",
         "市场分析",
@@ -269,61 +346,66 @@
       "scenarios": [
         {
           "name": "新交易日推进最新窗口，同时保留用户手动平移的历史窗口",
-          "line": 132,
+          "line": 156,
           "description": ""
         },
         {
           "name": "目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）",
-          "line": 149,
+          "line": 173,
           "description": ""
         },
         {
-          "name": "AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无\"暂不可用\"卡片",
-          "line": 164,
-          "description": ""
-        },
-        {
-          "name": "无 bars 不绘制空壳图，显示无可展示时序",
-          "line": 179,
-          "description": ""
-        },
-        {
-          "name": "STALE 显示延迟标识；闭市显示闭市原因",
+          "name": "分组标题旁内联行情状态：US/KR 只显目标日，中国行指数与指标短名并列",
           "line": 188,
           "description": ""
         },
         {
+          "name": "AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无\"暂不可用\"卡片",
+          "line": 213,
+          "description": ""
+        },
+        {
+          "name": "无 bars 不绘制空壳图，显示无可展示时序",
+          "line": 228,
+          "description": ""
+        },
+        {
+          "name": "STALE 显示延迟标识；闭市显示闭市原因",
+          "line": 237,
+          "description": ""
+        },
+        {
           "name": "旧后端无 indicators 字段：降级渲染纯 K 线",
-          "line": 199,
+          "line": 248,
           "description": ""
         },
         {
           "name": "按需加载初载：请求 from = 180 天前、图表收到 90 天可见窗口、首行 178 天前不误判到头",
-          "line": 208,
+          "line": 257,
           "description": ""
         },
         {
           "name": "缩小到 100 天可见：扩展请求 from = 200 天前；响应首行前移（198 天前）未到头",
-          "line": 224,
+          "line": 273,
           "description": ""
         },
         {
           "name": "左平移逼近左界（leftBuffer 22d < 半屏）：预拉一屏，请求 from = 300 天前；首行 298 天前未到头",
-          "line": 241,
+          "line": 290,
           "description": ""
         },
         {
           "name": "继续左平移 → 请求 400 天；响应首行未前移 → 到头，后续 onDataZoom 不再产生新请求",
-          "line": 267,
+          "line": 316,
           "description": ""
         },
         {
           "name": "画线持久化接线：初载从 localStorage 按标的 key 读取、onDrawingsChange 后保存、切标的不串",
-          "line": 302,
+          "line": 351,
           "description": ""
         }
       ],
-      "source_sha256": "6adce82d45adfc5a74017a68f2ff48d438bf49a3dd9db76e6ef53139e1662e12"
+      "source_sha256": "0ec7a8a3e54e5e2dd504764ef7a569ce6db10bf6713c74185fd2db2586659bd6"
     },
     {
       "path": "tests/frontend/market/integration/pages/MarketOverviewPage.test.tsx",
@@ -362,7 +444,7 @@
           "description": ""
         }
       ],
-      "source_sha256": "1a59503a41afa88fbaaa8b874f10118da14e8631746031fc526a6f8023ae1c32"
+      "source_sha256": "d9bc50363732684ac2bf3a3e5ce8482c95ba82c68c4a820872163607e28262ff"
     },
     {
       "path": "tests/frontend/market/integration/pages/refreshQueries.test.tsx",
@@ -605,7 +687,7 @@
       "path": "tests/frontend/market/unit/pages/mappers/toChartViewModels.test.ts",
       "module": "frontend.market",
       "level": "unit",
-      "purpose": "行情界面 / barsToCandlestickViewModel：空 bars 返回 null（调用方不渲染空壳图）；按时间升序映射 [open, close, low, high]；indicators 与 bars 等长时透传 ma/boll 到 ViewModel",
+      "purpose": "行情界面 / barsToCandlestickViewModel：空 bars 返回 null（调用方不渲染空壳图）；按时间升序映射 [open, close, low, high]；pct_chg 升序透传为 pctChg、整列 null 或旧后端缺字段时不设置（读条不占空白涨幅项）；indicators 与 bars 等长时透传 ma/boll 到 ViewModel",
       "keywords": [
         "行情界面",
         "市场分析",
@@ -639,32 +721,47 @@
           "description": ""
         },
         {
-          "name": "indicators 缺失/null 时不设置 ma/boll（旧后端降级渲染纯 K 线）",
+          "name": "pct_chg 随 bars 升序透传为 pctChg（上游原值，不自算）",
           "line": 77,
           "description": ""
         },
         {
+          "name": "pct_chg 整列为 null 时不设置 pctChg（读条不占空白「涨幅」项）",
+          "line": 86,
+          "description": ""
+        },
+        {
+          "name": "旧后端响应整体缺 pct_chg 字段时同样不设置 pctChg",
+          "line": 91,
+          "description": ""
+        },
+        {
+          "name": "indicators 缺失/null 时不设置 ma/boll（旧后端降级渲染纯 K 线）",
+          "line": 97,
+          "description": ""
+        },
+        {
           "name": "indicators 数组长度与 bars 不一致时整体丢弃（不渲染错位指标）",
-          "line": 83,
+          "line": 103,
           "description": ""
         },
         {
           "name": "macd 与 bars 等长时透传到 ViewModel",
-          "line": 101,
+          "line": 121,
           "description": ""
         },
         {
           "name": "macd 数组与 bars 不等长时仅丢弃 macd（ma/boll 保留）",
-          "line": 114,
+          "line": 134,
           "description": ""
         },
         {
           "name": "macd 三数组全 null 时整体丢弃（视为无副图，不白让主图高度）",
-          "line": 129,
+          "line": 149,
           "description": ""
         }
       ],
-      "source_sha256": "dc292bbabb320ae0999434cc20195470fb31d055b44c9f6f40c89d6dd54ece90"
+      "source_sha256": "279e9c41e331b72a2debdca33258a465de21bde46ae9d819c958e119befc50cb"
     },
     {
       "path": "tests/frontend/market/unit/pages/mappers/toTrendViewModels.test.ts",

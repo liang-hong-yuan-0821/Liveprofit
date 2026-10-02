@@ -50,101 +50,101 @@
         },
         {
           "name": "test_bars_param_errors",
-          "line": 92,
+          "line": 94,
           "description": ""
         },
         {
           "name": "test_bars_include_indicators_aligned_with_factors",
-          "line": 117,
+          "line": 119,
           "description": "指标契约（技术指标数据源切换方案 §3.3.3）：指标逐值透传因子读模型（不自算）、与 bars 等长对齐。"
         },
         {
           "name": "test_bars_factor_row_with_null_column_falls_back_to_none",
-          "line": 157,
+          "line": 161,
           "description": "因子行存在但列为 NULL（NaN 清洗结果）：该位置指标 None、整请求 200 不 500（2026-09-12 Code Review blocker 回归）。"
         },
         {
           "name": "test_bars_us_asset_returns_200_empty_bars_unavailable",
-          "line": 192,
+          "line": 196,
           "description": "US 资产：instrument 有行而 instrument_daily 无数据 → 200 空 bars +"
         },
         {
           "name": "test_hot_concepts_empty_is_normal_business_state",
-          "line": 208,
+          "line": 212,
           "description": ""
         },
         {
           "name": "test_hot_concepts_computed_on_the_fly",
-          "line": 222,
+          "line": 226,
           "description": "热度现场计算（决策 13）：source='dc' 过滤 ths、score 降序与 limit、"
         },
         {
           "name": "test_hot_concepts_single_row_degradation",
-          "line": 251,
+          "line": 255,
           "description": "M3 三段降级之 ①：≤1 行板块热度 = 最新行 pct_chg × 0.6。"
         },
         {
           "name": "test_hot_concepts_non_cn_returns_empty",
-          "line": 265,
+          "line": 269,
           "description": ""
         },
         {
           "name": "test_concept_tree_computed_with_members",
-          "line": 277,
+          "line": 281,
           "description": "概念树（板块概念Treemap方案 3.2）：热度排序与 heat_score、pct_chg 显式按"
         },
         {
           "name": "test_concept_tree_empty_is_normal_business_state",
-          "line": 321,
+          "line": 325,
           "description": ""
         },
         {
           "name": "test_concept_tree_non_cn_returns_empty",
-          "line": 332,
+          "line": 336,
           "description": ""
         },
         {
           "name": "test_concept_bars_returns_ohlc_ascending",
-          "line": 344,
+          "line": 348,
           "description": "概念 K 线（板块概念Treemap方案 3.3 + m7 修订）：读 sector_daily、OHLC 脏行"
         },
         {
           "name": "test_concept_bars_compute_indicators_with_warmup",
-          "line": 379,
+          "line": 385,
           "description": "概念指标自算（m7）：预热窗口计算（[from−120d, to] 全段 → 切回请求窗口），"
         },
         {
           "name": "test_concept_bars_errors",
-          "line": 423,
+          "line": 429,
           "description": ""
         },
         {
           "name": "test_stock_bars_returns_pure_kline",
-          "line": 447,
+          "line": 453,
           "description": "个股 K 线（板块概念Treemap方案 3.3 + m7 修订）：get_bars 放宽 stock、因子表"
         },
         {
           "name": "test_stock_bars_fetches_stk_factors_on_demand_and_caches",
-          "line": 466,
+          "line": 473,
           "description": "个股因子按需拉取（m7 用户拍板 2026-09-16：个股接因子、概念自算）：因子表"
         },
         {
           "name": "test_stock_bars_refetches_when_factor_cache_is_daily_residue",
-          "line": 521,
+          "line": 528,
           "description": "因子缓存残段不挡历史补拉（2026-09-21 实况修复）：每日增量只写最新 1~2 天"
         },
         {
           "name": "test_stock_bars_rejects_non_stock_index",
-          "line": 575,
+          "line": 582,
           "description": ""
         },
         {
           "name": "test_trends_endpoints_contract",
-          "line": 590,
+          "line": 597,
           "description": "趋势端点契约（趋势对比面板方案 4.2.3）：2 端点 200 响应形状（序列条目录"
         }
       ],
-      "source_sha256": "9a39bb7963b5e79141dbd63f0674245371c4aefaa44c232abe6642d20465479c"
+      "source_sha256": "fd8668a18f0ddd6138fa0da1dba6fd31ea63ad0cc951c4841678fe484a3b1921"
     },
     {
       "path": "tests/backend/market_data/contract/api/test_market_refresh.py",

@@ -4680,6 +4680,17 @@
             "type": "number",
             "title": "Close"
           },
+          "pct_chg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Chg"
+          },
           "volume": {
             "anyOf": [
               {
@@ -4699,6 +4710,7 @@
           "high",
           "low",
           "close",
+          "pct_chg",
           "volume"
         ],
         "title": "BarDTO"

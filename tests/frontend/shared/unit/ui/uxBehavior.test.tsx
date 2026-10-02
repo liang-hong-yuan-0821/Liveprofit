@@ -28,7 +28,7 @@ import { normalizeEventText } from '../../../../../frontend/src/modules/event-st
 import { percentDraft, percentValue } from '../../../../../frontend/src/shared/ui/PercentField';
 import { AssetCombobox } from '../../../../../frontend/src/shared/ui/AssetCombobox';
 import { MarkdownView } from '../../../../../frontend/src/shared/ui/markdown';
-const bar = (day: number, close: number) => ({ timestamp: `2026-09-${String(day).padStart(2, '0')}`, open: close, high: close, low: close, close, volume: null });
+const bar = (day: number, close: number) => ({ timestamp: `2026-09-${String(day).padStart(2, '0')}`, open: close, high: close, low: close, close, pct_chg: null, volume: null });
 describe('UX data boundaries', () => {
   it('sorts a copy, ignores invalid closes and never invents a percent', () => {
     const bars = [bar(3, 110), bar(1, 100), bar(2, NaN)];

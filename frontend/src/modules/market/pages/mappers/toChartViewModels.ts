@@ -19,6 +19,10 @@ export function barsToCandlestickViewModel(
     ohlc: sorted.map((bar) => [bar.open, bar.close, bar.low, bar.high] as [number, number, number, number]),
     volume: sorted.map((bar) => bar.volume),
   };
+  // 涨幅整列缺失（源未提供/上游 NaN → null；旧后端整体缺字段 → undefined）时不占读条位，
+  // 避免空白「涨幅」项
+  const pctChg = sorted.map((bar) => bar.pct_chg);
+  if (pctChg.some((value) => value != null)) viewModel.pctChg = pctChg;
   if (indicators && indicatorsAligned(indicators, sorted.length)) {
     viewModel.ma = indicators.ma.map((line) => ({ period: line.period, values: line.values }));
     viewModel.boll = {

@@ -682,7 +682,7 @@ Query 全部必填：`market`（US/KR/CN）、`interval`（目录白名单）、
     "from": "2026-08-01",
     "to": "2026-09-04",
     "bars": [
-      { "timestamp": "2026-08-03T00:00:00Z", "open": 3352.1, "high": 3368.5, "low": 3341.2, "close": 3360.4, "volume": 421000000 }
+      { "timestamp": "2026-08-03T00:00:00Z", "open": 3352.1, "high": 3368.5, "low": 3341.2, "close": 3360.4, "pct_chg": 0.87, "volume": 421000000 }
     ],
     "indicators": {
       "ma": [
@@ -706,6 +706,7 @@ Query 全部必填：`market`（US/KR/CN）、`interval`（目录白名单）、
 ```
 
 - bars 按 timestamp 升序；`volume` 可选（无成交量数据整体省略）。
+- `pct_chg`（bars 内每个元素，必填可为 null）：**上游原始涨跌幅（%）透传，后端不自算**（与库内 `instrument_daily.pct_chg` / `sector_daily.pct_chg` 同值，2026-10-02 用户拍板）；源未提供或上游为 NaN（如 akshare 兜底的 CN 指数字段缺失）→ null。前端 K 线图「涨幅」读数（DOM 读条，非 legend 项）只在整列含非 null 值时出现，null 处不显示数值、不回退用相邻 close 自算。
 - `indicators`（可选，bars 为空时整个字段为 null）：MA5/10/20/60 均线、BOLL(20,2) 布林带与 MACD(12,26,9) 副图，值取自 `idx_factor_pro` 因子接口入库数据（**技术指标不自算**，2026-09-12 决策，见 docs/requirements/archive/技术指标数据源切换方案.md）。各数组**与 bars 等长、按 index 对齐**；因子行自带全历史窗口（上游用区间前历史计算），请求区间起点处指标即有值；因子行缺失（如 bars 有而因子无）处为 null。`macd.hist` 为上游 `macd_bfq` 原值（≈2×(dif−dea)，上游口径）；`macd` 字段可选——旧后端响应无此字段时前端降级渲染纯主图。前端遇无 `indicators` 字段的旧后端响应应降级渲染纯 K 线。上方 JSON 为片段示意：实际响应中 indicators 各数组与 bars 严格等长（示例省略了其余 bars 与指标值）。**个股/板块 K 线（§8.2.1/§8.2.2）m7 修订（2026-09-16 用户拍板）**：个股因子表无行时按需调 stk_factor_pro 拉真因子入库 factor_daily 缓存（拉取失败仍 indicators=null 纯 K 线）；板块指数无上游因子源，`indicators` 为后端自算值（口径沿用归档 K线指标叠加方案 3.1 / MACD指标副图方案 3.1 已批纯函数设计，预热窗口 [from−120d, to] 全段计算后切回请求窗口，板块历史不足处为 null）。
 - freshness_status 与 market_session_status **正交**：休市不是错误——返回 200 + 最近闭市 bars 并以 CLOSED + market_closed_reason 提示；休市日的收盘数据可以是 FRESH（覆盖最近收盘日）。FRESH 正常展示；STALE 保留最近成功快照 + "数据可能延迟"标注；UNAVAILABLE 无可展示时序。
 - 错误：422 INTERVAL_NOT_SUPPORTED（interval 白名单 '1d'）；422 RANGE_TOO_LARGE（from>to）；404 RESOURCE_NOT_FOUND。409/503 语义整体删除（门控列与上游不可用错误类随统一方案删除）；US/KR 资产 instrument 有行而 instrument_daily 无数据 → 200 空 bars + freshness_status=UNAVAILABLE。前端不得依据字段缺失猜测状态。

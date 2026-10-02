@@ -18,6 +18,7 @@ class BarDTO(BaseModel):
     high: float
     low: float
     close: float
+    pct_chg: float | None  # 上游原始涨跌幅（%），透传不自算；源未提供时为 null
     volume: float | None
 
 

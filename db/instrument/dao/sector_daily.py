@@ -43,12 +43,15 @@ def query_by_window(conn, source: str, start_date: str, end_date: str) -> pd.Dat
 
 def query_bars(conn, source: str, sector_code: str, start_date: str,
                end_date: str) -> pd.DataFrame:
-    """单板块区间日线（板块概念Treemap方案 3.3：概念 K 线读模型，升序）。"""
+    """单板块区间日线（板块概念Treemap方案 3.3：概念 K 线读模型，升序）。
+
+    pct_chg 为上游原值透传给读模型（K 线涨幅），非本地自算。
+    """
     rows = conn.execute(
-        "SELECT trade_date, open, high, low, close, vol FROM market.sector_daily "
+        "SELECT trade_date, open, high, low, close, pct_chg, vol FROM market.sector_daily "
         "WHERE source = %s AND sector_code = %s "
         "AND trade_date BETWEEN %s AND %s ORDER BY trade_date",
         (source, sector_code, start_date, end_date),
     ).fetchall()
     return pd.DataFrame(rows, columns=["trade_date", "open", "high", "low",
-                                       "close", "vol"])
+                                       "close", "pct_chg", "vol"])

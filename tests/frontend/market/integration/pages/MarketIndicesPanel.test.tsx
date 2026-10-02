@@ -1,6 +1,6 @@
 // test-catalog-begin
 // {
-//   "purpose": "行情界面 / MarketIndicesPanel：新交易日推进最新窗口，同时保留用户手动平移的历史窗口；目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）；AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无\"暂不可用\"卡片",
+//   "purpose": "行情界面 / MarketIndicesPanel：新交易日推进最新窗口，同时保留用户手动平移的历史窗口；目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）；分组标题旁内联行情状态（US/KR 只显目标日、中国行指数与指标短名并列）；AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无\"暂不可用\"卡片",
 //   "keywords": [
 //     "行情界面",
 //     "市场分析",
@@ -31,6 +31,30 @@ import { daysAgoLocalDate, todayLocalDate } from '../../../../../frontend/src/sh
 import type { Drawing } from '../../../../../frontend/src/shared/charts/drawings';
 import { MarketIndicesPanel } from '../../../../../frontend/src/modules/market/pages/MarketIndicesPanel';
 import { MarketDatesContext } from '../../../../../frontend/src/modules/market/pages/refreshQueries';
+import type { MarketRefreshState } from '../../../../../frontend/src/modules/market/components/MarketRefreshInline';
+import { RefreshGroup as RefreshGroupModel, Resource, type RefreshGroup } from '../../../../../frontend/src/api/generated';
+
+// 本文件只测按需加载状态机与目录渲染：行情状态空组（不渲染重试按钮，最小 DOM），
+// 行内状态文案的格式化规则在 components/MarketRefreshInline.test.tsx 覆盖
+const refreshStub = {
+  status: { groups: [] }, error: null, pending: false, retry: vi.fn(),
+} as unknown as MarketRefreshState;
+
+function refreshGroup(resource: Resource): RefreshGroup {
+  return {
+    resource, market: RefreshGroupModel.market.CN, market_date: '2026-09-30',
+    calendar_status: RefreshGroupModel.calendar_status.OK, supported_through: '2027-12-31',
+    expected_trade_date: '2026-09-30', next_ready_at: null,
+    latest_observed_date: '2026-09-30', complete_through_date: '2026-09-30',
+    expected_count: 11, available_count: 11, exempt_count: 0, missing_count: 0,
+    freshness: RefreshGroupModel.freshness.FRESH,
+    window_coverage: { from: '2026-09-28', to: '2026-09-30', expected_count: 33, available_count: 33, exempt_count: 0, missing_count: 0 },
+    data_version: 'coverage-test',
+    auto_eligibility: { allowed: false, reason: 'UP_TO_DATE', next_retry_at: null },
+    manual_eligibility: { allowed: false, reason: 'UP_TO_DATE', next_retry_at: null },
+    job: null,
+  };
+}
 
 // 目录端点已删：MarketAssetsService mock 与 assetsMock 全部删除（目录写死
 // MARKET_INDEX_CATALOG）；MarketDataService mock 保留；CandlestickChart mock
@@ -134,7 +158,7 @@ describe('MarketIndicesPanel', () => {
     function Harness() {
       const [day, setDay] = useState('2026-09-22');
       setMarketDate = setDay;
-      return <MarketDatesContext.Provider value={{ US: day }}><MarketIndicesPanel /></MarketDatesContext.Provider>;
+      return <MarketDatesContext.Provider value={{ US: day }}><MarketIndicesPanel refresh={refreshStub} /></MarketDatesContext.Provider>;
     }
     renderWithRouter(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
@@ -147,7 +171,7 @@ describe('MarketIndicesPanel', () => {
   });
 
   it('目录写死：11 指数 + US→KR→CN 组序 + 组内顺序固化（polish g 回归落点）', async () => {
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
 
     // 11 指数全部渲染（US 3 + KS11 + CN 7 请求 bars 渲染图表；KOSDAQ 已移除）
     for (const name of ['标普500', '道琼斯工业指数', '纳斯达克综合指数',
@@ -155,14 +179,39 @@ describe('MarketIndicesPanel', () => {
                         '上证综指', '深证成指', '创业板指', '科创50', '上证50', '中证1000', '上证红利']) {
       expect(await screen.findByText(name)).toBeInTheDocument();
     }
-    // 组序：页面区块按 US → KR → CN 排列（取全部区块标题顺序）
+    // 组序：页面区块按 US → KR → CN 排列（标题首个子元素 = 分组名，其后接行内行情状态）
     const headings = screen.getAllByRole('heading', { level: 3 })
-      .map((h) => h.textContent ?? '');
+      .map((h) => h.firstElementChild?.textContent ?? '');
     expect(headings).toEqual(['美国（US）', '韩国（KR）', '中国（CN）']);
   });
 
+  it('分组标题旁内联行情状态：US/KR 只显目标日，中国行指数与指标短名并列', async () => {
+    const group = (resource: Resource, expected: string, freshness: RefreshGroupModel.freshness) => ({
+      ...refreshGroup(resource), expected_trade_date: expected, freshness,
+    });
+    const inlineRefresh = {
+      status: {
+        groups: [
+          group(Resource.US_INDEX_BARS, '2026-10-02', RefreshGroupModel.freshness.FRESH),
+          group(Resource.KR_INDEX_BARS, '2026-10-01', RefreshGroupModel.freshness.FRESH),
+          group(Resource.CN_INDEX_BARS, '2026-09-30', RefreshGroupModel.freshness.FRESH),
+          group(Resource.CN_INDEX_FACTORS, '2026-09-30', RefreshGroupModel.freshness.FRESH),
+        ],
+      },
+      error: null, pending: false, retry: vi.fn(),
+    } as unknown as MarketRefreshState;
+    renderWithRouter(<MarketIndicesPanel refresh={inlineRefresh} />);
+    await screen.findByText('上证综指');
+
+    const [us, kr, cn] = screen.getAllByRole('heading', { level: 3 });
+    expect(us).toHaveTextContent('美国（US）10.02'); // 已更新 → 只显示 MM.DD
+    expect(kr).toHaveTextContent('韩国（KR）10.01');
+    expect(cn).toHaveTextContent('中国（CN）指数 09.30 · 指标 09.30');
+    expect(screen.getAllByLabelText('行情拉取状态')).toHaveLength(3);
+  });
+
   it('AVAILABLE 资产发 11 个请求、KOSDAQ 已移除无"暂不可用"卡片', async () => {
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
@@ -178,7 +227,7 @@ describe('MarketIndicesPanel', () => {
 
   it('无 bars 不绘制空壳图，显示无可展示时序', async () => {
     barsMock.mockResolvedValue(envelope({ ...barsData, bars: [] }));
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
 
     expect(await screen.findByText('无可展示时序')).toBeInTheDocument();
@@ -187,7 +236,7 @@ describe('MarketIndicesPanel', () => {
 
   it('STALE 显示延迟标识；闭市显示闭市原因', async () => {
     barsMock.mockResolvedValue(envelope({ ...barsData, freshness_status: 'STALE' }));
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
 
     // 11 个 AVAILABLE 卡片同 mock 帧（US 3 + KS11 + CN 7；KOSDAQ 已移除不发请求）
@@ -199,7 +248,7 @@ describe('MarketIndicesPanel', () => {
   it('旧后端无 indicators 字段：降级渲染纯 K 线', async () => {
     const { indicators: _dropped, ...barsWithoutIndicators } = barsData;
     barsMock.mockResolvedValue(envelope(barsWithoutIndicators));
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
 
     expect(await screen.findByTestId('candlestick-chart')).toBeInTheDocument();
@@ -207,7 +256,7 @@ describe('MarketIndicesPanel', () => {
 
   it('按需加载初载：请求 from = 180 天前、图表收到 90 天可见窗口、首行 178 天前不误判到头', async () => {
     mockInxResponses([178]);
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
@@ -223,7 +272,7 @@ describe('MarketIndicesPanel', () => {
 
   it('缩小到 100 天可见：扩展请求 from = 200 天前；响应首行前移（198 天前）未到头', async () => {
     mockInxResponses([178, 198]);
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
@@ -240,7 +289,7 @@ describe('MarketIndicesPanel', () => {
 
   it('左平移逼近左界（leftBuffer 22d < 半屏）：预拉一屏，请求 from = 300 天前；首行 298 天前未到头', async () => {
     mockInxResponses([178, 198, 298]);
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
@@ -266,7 +315,7 @@ describe('MarketIndicesPanel', () => {
 
   it('继续左平移 → 请求 400 天；响应首行未前移 → 到头，后续 onDataZoom 不再产生新请求', async () => {
     mockInxResponses([178, 198, 298, 298]);
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 
@@ -302,7 +351,7 @@ describe('MarketIndicesPanel', () => {
   it('画线持久化接线：初载从 localStorage 按标的 key 读取、onDrawingsChange 后保存、切标的不串', async () => {
     const seeded: Drawing[] = [{ id: 's1', kind: 'hline', p1: { date: '2026-09-01', price: 3000 } }];
     localStorage.setItem('liveprofit.market.drawings.v1..INX', JSON.stringify(seeded));
-    renderWithRouter(<MarketIndicesPanel />);
+    renderWithRouter(<MarketIndicesPanel refresh={refreshStub} />);
     fireEvent.click(screen.getByRole('button', { name: '标普500 展开 K 线' }));
     await screen.findAllByTestId('candlestick-chart');
 

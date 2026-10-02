@@ -7,7 +7,7 @@
       "path": "tests/frontend/shared/unit/charts/CandlestickChart.test.tsx",
       "module": "frontend.shared",
       "level": "unit",
-      "purpose": "公共组件 / CandlestickChart：无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；图例行 1 开高低收恒在）；含 ma/boll 时叠加 4 条均线 + BOLL 五系列与 legend；dataZoom：inside 滚轮缩放 + slider 底部滑条联动",
+      "purpose": "公共组件 / CandlestickChart：无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；无 legend、读条显示末根 开/高/低/收）；含 ma/boll 时叠加 4 条均线 + BOLL 五系列与 legend；dataZoom：inside 滚轮缩放 + slider 底部滑条联动",
       "keywords": [
         "公共组件",
         "成交",
@@ -32,242 +32,252 @@
       ],
       "scenarios": [
         {
-          "name": "无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；图例行 1 开高低收恒在）",
-          "line": 238,
+          "name": "无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；无 legend；读条显示末根 开/高/低/收）",
+          "line": 260,
           "description": ""
         },
         {
           "name": "含 ma/boll 时叠加 4 条均线 + BOLL 五系列与 legend",
-          "line": 247,
+          "line": 274,
           "description": ""
         },
         {
           "name": "dataZoom：inside 滚轮缩放 + slider 底部滑条联动",
-          "line": 280,
+          "line": 308,
           "description": ""
         },
         {
           "name": "含 macd 时挂双 grid 副图：2 grid/2 yAxis、副图三系列绑定轴 1、dataZoom 联动、axisPointer.link 顶层",
-          "line": 286,
+          "line": 314,
           "description": ""
         },
         {
           "name": "无 macd 时回归单 grid：grid 非数组、series 数量回归 10（含 ma/boll）",
-          "line": 333,
+          "line": 362,
           "description": ""
         },
         {
           "name": "MA 参考样式（smooth+调色板色+symbol none）、BOLL 细线半透明：带宽隐藏系列不变",
-          "line": 357,
+          "line": 386,
           "description": ""
         },
         {
-          "name": "hasVolume：成交量 bar 系列绑定 (1,1)、红涨绿跌回调着色、null 值透传、不进 legend",
-          "line": 405,
+          "name": "hasVolume：成交量 bar 系列绑定 (1,1)、红涨绿跌回调着色、null 值透传、入 legend 行 1 且右对齐",
+          "line": 434,
           "description": ""
         },
         {
           "name": "volume+MACD 共存：3 grid/3 xAxis/3 yAxis、成交量 (1,1)、MACD 迁至 (2,2)、dataZoom [0,1,2]",
-          "line": 429,
+          "line": 459,
           "description": ""
         },
         {
           "name": "volume 全 null：不开副图（单 grid、无成交量系列）",
-          "line": 465,
-          "description": ""
-        },
-        {
-          "name": "visibleRange 传入时 dataZoom 以日期锚定（startValue/endValue），未传时回落旧行为；两种锚互斥不混写",
-          "line": 477,
-          "description": ""
-        },
-        {
-          "name": "成交量 y 轴可见：标签量级缩写（万/亿手）、splitNumber 2、保留暗色轴样式",
           "line": 495,
           "description": ""
         },
         {
+          "name": "visibleRange 传入时 dataZoom 以日期锚定（startValue/endValue），未传时回落旧行为；两种锚互斥不混写",
+          "line": 507,
+          "description": ""
+        },
+        {
+          "name": "成交量 y 轴可见：标签量级缩写（万/亿手）、splitNumber 2、保留暗色轴样式",
+          "line": 525,
+          "description": ""
+        },
+        {
           "name": "onDataZoom 传入时挂 datazoom 事件、索引→日期换算上报、等值去重；未传时不挂 onEvents",
-          "line": 514,
+          "line": 544,
           "description": ""
         },
         {
           "name": "option 含 animation:false（数据扩展重建不闪、不产生动画重绘）",
-          "line": 536,
+          "line": 566,
           "description": ""
         },
         {
           "name": "画线覆盖层渲染：trend/hline 线段像素与样式、hline 价格标签、text 文本",
-          "line": 543,
+          "line": 573,
           "description": ""
         },
         {
           "name": "小数锚点 x 渲染：线段精确落在按点像素（回归锚：线的起点 = 鼠标的起点）",
-          "line": 575,
+          "line": 605,
           "description": ""
         },
         {
           "name": "真 echarts 实例回归锚：viewport 读取 → 覆盖层出图（拆引用裸调 getComponent 会丢 this 抛 TypeError）",
-          "line": 591,
+          "line": 621,
           "description": ""
         },
         {
           "name": "无 drawings 覆盖层无线段；无 onDrawingsChange → 无工具栏（概念卡回归）",
-          "line": 619,
+          "line": 649,
           "description": ""
         },
         {
           "name": "参考价横线：无画线工具也渲染覆盖层——虚线贯穿窗口全宽 + 左端标签与配色",
-          "line": 631,
+          "line": 661,
           "description": ""
         },
         {
           "name": "参考价越出真实 extent 不渲染；y 轴注入函数形式 min/max（扩展自动 extent）",
-          "line": 663,
+          "line": 693,
           "description": ""
         },
         {
           "name": "真 echarts SSR：参考价扩展主图 y 轴 extent（scale:true + 函数形式 min/max 生效）",
-          "line": 681,
+          "line": 711,
           "description": ""
         },
         {
           "name": "绘制 trend：mousedown→mousemove→mouseup 提交新画线；起点精确落点；mouseup 出 grid 取消",
-          "line": 709,
+          "line": 739,
           "description": ""
         },
         {
           "name": "绘制预览按线型：ray 锚点→主图右缘（斜率跟手）、hline 锚点价格全窗宽；起点恒钉锚点",
-          "line": 743,
+          "line": 773,
           "description": ""
         },
         {
           "name": "draw 模式滚轮缩放不锁（滚轮与 zr 绘制事件不冲突）、拖拽平移保持锁定；退出恢复平移",
-          "line": 766,
+          "line": 796,
           "description": ""
         },
         {
           "name": "绘制 trend 垂直两点（同日）拒绝提交；空 text 拒绝提交",
-          "line": 775,
+          "line": 805,
           "description": ""
         },
         {
           "name": "text 标注：定位 + 输入 + 回车提交；Esc 取消优先于 blur",
-          "line": 795,
+          "line": 825,
           "description": ""
         },
         {
           "name": "draw 模式命中线身 → 拖动平移、不新建线（画错不用重画，拖一下即到位）",
-          "line": 821,
+          "line": 851,
           "description": ""
         },
         {
           "name": "draw 模式命中端点 → 只移该锚点",
-          "line": 844,
+          "line": 874,
           "description": ""
         },
         {
           "name": "draw 模式拖拽提交后仍在 draw 模式，可继续画第二条",
-          "line": 863,
+          "line": 893,
           "description": ""
         },
         {
           "name": "draw 模式 text 工具命中已有线 → 拖动而非弹标注框",
-          "line": 881,
+          "line": 911,
           "description": ""
         },
         {
           "name": "draw 模式工具栏提示可拖动已有线",
-          "line": 902,
-          "description": ""
-        },
-        {
-          "name": "编辑：命中端点只移该锚点、选中态 width 3",
-          "line": 908,
-          "description": ""
-        },
-        {
-          "name": "编辑：拖到两锚点同日 → 回退（不更新）；线身拖拽双锚点同步平移",
           "line": 932,
           "description": ""
         },
         {
+          "name": "编辑：命中端点只移该锚点、选中态 width 3",
+          "line": 938,
+          "description": ""
+        },
+        {
+          "name": "编辑：拖到两锚点同日 → 回退（不更新）；线身拖拽双锚点同步平移",
+          "line": 962,
+          "description": ""
+        },
+        {
           "name": "编辑：Delete 键删除选中；Esc 退出模式并取消进行中绘制",
-          "line": 954,
+          "line": 984,
           "description": ""
         },
         {
           "name": "橡皮擦：悬停高亮（sky-300/宽3）+ 单击删除命中线 + 空处不删 + Esc 退出",
-          "line": 970,
+          "line": 1000,
           "description": ""
         },
         {
           "name": "橡皮擦删除文字标注（harness 回填 → 覆盖层同步消失）",
-          "line": 1003,
+          "line": 1033,
           "description": ""
         },
         {
-          "name": "图例三行分组（label+value 版）：行 1 开高低收 top 0、行 2 MA+BOLL top 18、行 3 DIF/DEA top 36、icon none、逐项系列色、inactiveColor、left 0/itemWidth 0",
-          "line": 1029,
+          "name": "图例两行分组（label+value 版）：行 1（画布 top 0）由 DOM 读条承载、行 2 MA+BOLL top 18、行 3 DIF/DEA top 36、icon none、逐项系列色、inactiveColor、left 0/itemWidth 0",
+          "line": 1059,
           "description": ""
         },
         {
-          "name": "图例降级布局：无 MACD 2 行、仅 MACD 2 行（MACD 行提至 top 18）、纯 K 仅行 1；tooltip showContent:false；grid top 24/40/56",
-          "line": 1053,
+          "name": "图例降级布局：无 MACD 1 行、仅 MACD 1 行（MACD 行提至 top 18）、纯 K 无 legend；tooltip showContent:false；grid top 24/40/56",
+          "line": 1086,
           "description": ""
         },
         {
-          "name": "legendSelected：legendselectchanged 回填并注入 option（各 legend 只注入自己 data 的项），重渲染不回全选；固定展示项点击无效",
-          "line": 1074,
+          "name": "legendSelected：legendselectchanged 回填并注入 option（各 legend 只注入自己 data 的项），重渲染不回全选",
+          "line": 1106,
           "description": ""
         },
         {
-          "name": "图例 label+value 与 ChartCore memo：updateAxisPointer 驱动、hide 回落窗口末根、hover 不重渲染内核",
-          "line": 1096,
+          "name": "涨幅：有 pctChg 时读条「涨幅」置前（涨幅 开 高 低 收），值带符号与百分号、按自身正负着色、随悬浮更新",
+          "line": 1126,
+          "description": ""
+        },
+        {
+          "name": "pctChg 缺失时读条不含「涨幅」（旧数据/源未提供不占空白项）",
+          "line": 1160,
+          "description": ""
+        },
+        {
+          "name": "读条与图例 label+value 与 ChartCore memo：updateAxisPointer 驱动、hide 回落窗口末根、hover 不重渲染内核",
+          "line": 1165,
           "description": ""
         },
         {
           "name": "真 echarts SSR：双 legend 渲染无异常、图例文字 fill 含系列色（无可见标记图形）",
-          "line": 1147,
+          "line": 1213,
           "description": ""
         },
         {
           "name": "zr handler 不累积（F1 回归）：draw 模式多次重渲染后每事件仍恰一个活跃 handler；退出后清空",
-          "line": 1172,
+          "line": 1238,
           "description": ""
         },
         {
           "name": "按引用精确 off 不误删外来 handler（R2-1 回归：ECharts 内部监听存活）",
-          "line": 1190,
+          "line": 1256,
           "description": ""
         },
         {
           "name": "仅 MACD 布局：MACD 副图 yAxis 保持价格轴样式（F3 回归：不被成交量轴样式误套）",
-          "line": 1220,
+          "line": 1286,
           "description": ""
         },
         {
           "name": "MA/BOLL + MACD 无成交量：图例三行 → 主图 top 56（F4 回归：按图例行数而非副图数）",
-          "line": 1241,
+          "line": 1307,
           "description": ""
         },
         {
           "name": "渲染用真实 extent 不夹带内价格（§3.6.3 验证 4 回归锚：守护过度夹取）",
-          "line": 1254,
+          "line": 1320,
           "description": ""
         },
         {
           "name": "编辑拖拽提交后覆盖层重渲染为选中态 width 3（§3.6.3 验证 6 回归锚：渲染与命中同源几何）",
-          "line": 1273,
+          "line": 1339,
           "description": ""
         },
         {
           "name": "theme toggling merges colors without replaying dataZoom or removing drawings",
-          "line": 1289,
+          "line": 1355,
           "description": ""
         }
       ],
-      "source_sha256": "c5a4f0936f5402b8835fadde654a9b5cd1536d604a26286736eb3fbe898f957c"
+      "source_sha256": "b73a42a1a846bec4c67220db5e91baf8f6cd00c24884f08965686819a56bc70c"
     },
     {
       "path": "tests/frontend/shared/unit/charts/drawings.test.ts",
@@ -627,7 +637,7 @@
           "description": ""
         }
       ],
-      "source_sha256": "72002511699790804829b73caeef46df4490a3be84321e7e3089f8660ce27c69"
+      "source_sha256": "d7d9a9c0cba29fce85bc92c41a23f024d6a4ae47c687e9c55a022ae2b1ba06fd"
     }
   ]
 }

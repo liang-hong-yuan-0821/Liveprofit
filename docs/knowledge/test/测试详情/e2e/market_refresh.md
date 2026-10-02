@@ -18,7 +18,7 @@
 
 被测代码：
 
-- [frontend/src/modules/market/components/MarketRefreshStatus.tsx](../../../../../frontend/src/modules/market/components/MarketRefreshStatus.tsx)
+- [frontend/src/modules/market/components/MarketRefreshInline.tsx](../../../../../frontend/src/modules/market/components/MarketRefreshInline.tsx)
 - [frontend/src/modules/market/pages/refreshQueries.ts](../../../../../frontend/src/modules/market/pages/refreshQueries.ts)
 
 关联模块：无显式登记。
@@ -26,4 +26,4 @@
 场景声明（2）：
 
 - [stale → queued → partial → complete, page reload reuses the running job](../../../../../tests/e2e/market_refresh/ui/market-refresh.spec.ts#L81)
-- [failure and offline status preserve the existing chart and history selection](../../../../../tests/e2e/market_refresh/ui/market-refresh.spec.ts#L108)
+- [failure and offline status preserve the existing chart and history selection](../../../../../tests/e2e/market_refresh/ui/market-refresh.spec.ts#L112)

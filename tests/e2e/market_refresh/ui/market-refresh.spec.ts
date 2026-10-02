@@ -15,7 +15,7 @@
 //     "status"
 //   ],
 //   "covers": [
-//     "frontend/src/modules/market/components/MarketRefreshStatus.tsx",
+//     "frontend/src/modules/market/components/MarketRefreshInline.tsx",
 //     "frontend/src/modules/market/pages/refreshQueries.ts"
 //   ],
 //   "environment": [
@@ -82,7 +82,8 @@ test('stale → queued → partial → complete, page reload reuses the running 
   const fixture = await isolate(page);
   await page.clock.install({ time: new Date('2026-09-23T01:00:00Z') });
   await page.goto('/market');
-  const state = page.locator('#indices').getByLabel('行情拉取状态');
+  // 行情状态内联在分组标题旁：指数区有三个（美/韩/中），断言锚定中国市场分组
+  const state = page.locator('#indices section[aria-label="中国市场"]').getByLabel('行情拉取状态');
   await expect(state).toContainText('排队中');
   expect(fixture.submissions()).toBe(1);
   expect(fixture.requestedDates[0]).toBeNull();
@@ -95,10 +96,13 @@ test('stale → queued → partial → complete, page reload reuses the running 
   await expect(page.getByText('榜单 2026-08-31 · heat_v1')).toBeVisible();
   fixture.setStage('partial');
   await page.clock.runFor(10_100);
-  await expect(state).toContainText('7/11');
+  await expect(state).toContainText('更新中（64%）'); // RUNNING processed 7/11
   fixture.setStage('complete');
   await page.clock.runFor(10_100);
-  await expect(state).toContainText('已更新');
+  // 已更新到目标交易日 → 该资源只显示 MM.DD、不残留进度文案；中国行恒渲染「指数 + 指标」
+  // 两段（本 fixture 只提供指数 group，指标段恒为「正在核验」），故用包含匹配而非整文本
+  await expect(state).toContainText('指数 09.22');
+  await expect(state).not.toContainText('更新中');
   await expect(page.getByRole('button', { name: '上证综指 收起 K 线' })).toBeVisible();
   await expect(page.getByLabel('榜单日期')).toHaveValue('2026-08-31');
   expect(fixture.submissions()).toBe(1);
@@ -109,7 +113,8 @@ test('failure and offline status preserve the existing chart and history selecti
   const fixture = await isolate(page);
   await page.clock.install({ time: new Date('2026-09-23T01:00:00Z') });
   await page.goto('/market');
-  const state = page.locator('#indices').getByLabel('行情拉取状态');
+  // 行情状态内联在分组标题旁：指数区有三个（美/韩/中），断言锚定中国市场分组
+  const state = page.locator('#indices section[aria-label="中国市场"]').getByLabel('行情拉取状态');
   await expect(state).toContainText('排队中');
   await page.getByRole('button', { name: '上证综指 展开 K 线' }).click();
   const chart = page.locator('[id="chart-CN-000001.SH"]');

@@ -32,6 +32,7 @@
 | [react-query-dialog.md](pitfalls/frontend/react-query-dialog.md) | refetchOnMount 门控、RegExp g 标志、弹窗回填 userEditedRef |
 | [zrender-shared-eventful.md](pitfalls/frontend/zrender-shared-eventful.md) | zr.on/off 与 ECharts 共用 Handler Eventful：裸 off 误删内部监听且不可恢复，按引用 off + 外来 handler 存活断言 |
 | [echarts-datazoom-anchors.md](pitfalls/frontend/echarts-datazoom-anchors.md) | dataZoom 百分比与日期锚互斥：混写锁死窗口致放大失效；jsdom wheel 探针验证交互行为 |
+| [echarts-legend-series-binding.md](pitfalls/frontend/echarts-legend-series-binding.md) | ECharts 6 legend 只渲染有同名 series 的项（无系列项静默跳过）；OHLC/涨幅读数须走 DOM 覆盖层，渲染核验须真渲染 |
 | [date-arithmetic-clamping.md](pitfalls/frontend/date-arithmetic-clamping.md) | 近 N 月区间：setMonth 溢出滚动、负号方向漏负出未来日期；addMonthsClamped 夹取写法 |
 | [grid-minmax-collapse.md](pitfalls/frontend/grid-minmax-collapse.md) | grid-cols 任意值固定列超宽时 minmax(0,Xfr) 弹性列塌缩为 0px 整列不可见；标题类弹性列须正下界 + overflow-x-auto |
 

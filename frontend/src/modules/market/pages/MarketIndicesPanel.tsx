@@ -1,4 +1,6 @@
 import { daysBefore, useMarketDate } from './refreshQueries';
+import { Resource } from '../../../api/generated';
+import { MarketRefreshInline, type MarketRefreshState } from '../components/MarketRefreshInline';
 import { ChevronDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { toIndexQuote } from './mappers/toIndexQuote';
 import { useEffect, useRef, useState } from 'react';
@@ -49,9 +51,15 @@ interface CatalogEntry {
 // 市场区块分组序（原 MARKET_GROUP_ORDER US → KR → CN 固化）
 const MARKET_GROUP_ORDER: string[] = ['US', 'KR', 'CN'];
 const MARKET_LABELS: Record<string, string> = { US: '美国', KR: '韩国', CN: '中国' };
+// 分组 → 覆盖资源（中国行两个：指数 K 线与指数指标，用户拍板 2026-10-02 短名内联）
+const MARKET_GROUP_RESOURCES: Record<string, readonly Resource[]> = {
+  US: [Resource.US_INDEX_BARS],
+  KR: [Resource.KR_INDEX_BARS],
+  CN: [Resource.CN_INDEX_BARS, Resource.CN_INDEX_FACTORS],
+};
 const DEFAULT_INTERVAL = '1d';
 
-export function MarketIndicesPanel() {
+export function MarketIndicesPanel({ refresh }: { refresh: MarketRefreshState }) {
   const [expanded, setExpanded] = useState<Record<string, string | null>>({});
   const groups = MARKET_GROUP_ORDER.map((market) => ({
     market,
@@ -62,7 +70,10 @@ export function MarketIndicesPanel() {
     <div className="flex flex-col gap-4">
       {groups.map((group) => (
         <section key={group.market} aria-label={`${MARKET_LABELS[group.market]}市场`}>
-          <h3 className="mb-2 text-sm font-semibold">{MARKET_LABELS[group.market]}（{group.market}）</h3>
+          <h3 className="mb-2 flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
+            <span>{MARKET_LABELS[group.market]}（{group.market}）</span>
+            <MarketRefreshInline refresh={refresh} resources={MARKET_GROUP_RESOURCES[group.market]} />
+          </h3>
           {group.assets.length === 0 ? (
             <EmptyState title="该市场暂无可用资产" />
           ) : (

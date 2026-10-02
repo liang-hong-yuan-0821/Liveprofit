@@ -1,6 +1,6 @@
 // test-catalog-begin
 // {
-//   "purpose": "行情界面 / HotConceptsPanel：默认不指定日期；历史选择不会被后台刷新覆盖；StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询；NO_HOT_CONCEPTS / 空列表是正常空态",
+//   "purpose": "行情界面 / HotConceptsPanel：默认不指定日期但输入框回显解析出的榜单日、历史选择不会被后台刷新覆盖；概念列表按涨幅降序（无行情最后）；StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询；NO_HOT_CONCEPTS / 空列表是正常空态",
 //   "keywords": [
 //     "行情界面",
 //     "市场分析",
@@ -123,16 +123,40 @@ afterEach(() => {
 });
 
 describe('HotConceptsPanel', () => {
-  it('默认不指定日期；历史选择不会被后台刷新覆盖', async () => {
+  it('默认不指定日期（输入框回显解析出的榜单日）；历史选择不会被后台刷新覆盖', async () => {
     treeMock.mockResolvedValue(envelope(treeSnapshot([])));
     const { queryClient } = renderWithRouter(<HotConceptsPanel />);
     await screen.findByText('当前条件下暂无热门概念');
     expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, undefined);
+    // 空选择仍是 LATEST 查询语义，但输入框显示服务端解析出的具体日期（停 yyyy/mm/日 占位）
+    expect(screen.getByLabelText('榜单日期')).toHaveValue('2026-09-04');
     fireEvent.change(screen.getByLabelText('榜单日期'), { target: { value: '2026-08-31' } });
     await waitFor(() => expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, '2026-08-31'));
     await act(async () => { await queryClient.invalidateQueries({ queryKey: queryKeys.conceptTree.all }); });
     expect(screen.getByLabelText('榜单日期')).toHaveValue('2026-08-31');
     expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, '2026-08-31');
+    // 「最近可展示日」清空显式日期 → 回到 LATEST（不传 as_of），输入框回显解析日
+    await userEvent.setup().click(screen.getByRole('button', { name: '最近可展示日' }));
+    await waitFor(() => expect(treeMock).toHaveBeenLastCalledWith('CN', '1d', 30, undefined));
+    expect(screen.getByLabelText('榜单日期')).toHaveValue('2026-09-04');
+  });
+
+  it('概念列表按涨幅降序（涨多→涨少→跌，无行情最后）', async () => {
+    treeMock.mockResolvedValue(envelope(treeSnapshot([
+      { ...makeConcept('BK1', '甲概念', 1), pct_chg: -2.5 },
+      { ...makeConcept('BK2', '乙概念', 2), pct_chg: 3.4 },
+      { ...makeConcept('BK3', '丙概念', 3), pct_chg: null },
+    ])));
+    renderWithRouter(<HotConceptsPanel />);
+    const summary = await screen.findByText('概念列表 · 完整名称与涨跌幅');
+    // jsdom 的 details 点击不派发 toggle（真实浏览器会）→ 手动置 open 并派发
+    const details = summary.closest('details')!;
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+
+    const order = Array.from(details.querySelectorAll('button')).map((button) =>
+      ['甲概念', '乙概念', '丙概念'].find((name) => button.textContent?.includes(name)));
+    expect(order).toEqual(['乙概念', '甲概念', '丙概念']);
   });
 
   it('StrictMode 下用户打开个股仅 ensure 一次，100 次自动刷新均 cache_only，关闭后无活跃查询', async () => {

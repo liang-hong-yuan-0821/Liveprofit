@@ -1,6 +1,6 @@
 // test-catalog-begin
 // {
-//   "purpose": "公共组件 / CandlestickChart：无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；图例行 1 开高低收恒在）；含 ma/boll 时叠加 4 条均线 + BOLL 五系列与 legend；dataZoom：inside 滚轮缩放 + slider 底部滑条联动",
+//   "purpose": "公共组件 / CandlestickChart：无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；无 legend、读条显示末根 开/高/低/收）；含 ma/boll 时叠加 4 条均线 + BOLL 五系列与 legend；dataZoom：inside 滚轮缩放 + slider 底部滑条联动",
 //   "keywords": [
 //     "公共组件",
 //     "成交",
@@ -84,6 +84,7 @@ interface LegendItemShape {
 interface LegendShape {
   top?: number;
   left?: number;
+  right?: number;
   itemWidth?: number;
   itemGap?: number;
   icon?: string;
@@ -117,6 +118,27 @@ function renderProps(): PropsShape {
 
 function renderOption(): OptionShape {
   return renderProps().option;
+}
+
+// 行 1 DOM 读条（开/高/低/收[+涨幅]）：ECharts 6 legend 只渲染有同名 series 的项，
+// OHLC 无同名系列（candlestick 数组数据）→ 走 DOM 覆盖层，见 CandlestickChart.buildReadoutItems。
+function readoutSpans(): Array<{ text: string; color: string }> {
+  const host = screen.getByTestId('chart-readout');
+  return Array.from(host.querySelectorAll('span')).map((el) => ({
+    text: el.textContent ?? '',
+    color: el.style.color,
+  }));
+}
+
+function readoutTexts(): string[] {
+  return readoutSpans().map((s) => s.text);
+}
+
+// 颜色断言经同一 DOM 归一化（jsdom 把 hex 序列化为 rgb 形式），不硬编码序列化格式
+const colorProbe = document.createElement('span');
+function domColor(hex: string): string {
+  colorProbe.style.color = hex;
+  return colorProbe.style.color;
 }
 
 // 假实例：grid 矩形 600×420、extent [2900, 3200]、convert 像素↔数据（x/100, 3200−y——
@@ -235,13 +257,18 @@ afterEach(() => {
 });
 
 describe('CandlestickChart', () => {
-  it('无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；图例行 1 开高低收恒在）', () => {
+  it('无 ma/boll 时只渲染 candlestick 系列（降级纯 K 线；无 legend；读条显示末根 开/高/低/收）', () => {
     render(<CandlestickChart model={baseModel} />);
     const option = renderOption();
     expect(option.series).toHaveLength(1);
     expect(option.series[0].type).toBe('candlestick');
-    expect(option.legend).toHaveLength(1);
-    expect(option.legend?.[0].data.map((d) => d.name)).toEqual(['开', '高', '低', '收']);
+    // 无成交量/MA/BOLL/MACD → 无图例组件（开高低收走 DOM 读条，非 legend 项）
+    expect(option.legend).toBeUndefined();
+    // 未悬浮 = 末根 [2, 2.2, 1.8, 2.1]：收 2.20 ≥ 开 2.00 → 四项同涨红
+    expect(readoutTexts()).toEqual(['开 2.00', '高 2.10', '低 1.80', '收 2.20']);
+    expect(readoutSpans().map((s) => s.color)).toEqual([
+      domColor('#ef4444'), domColor('#ef4444'), domColor('#ef4444'), domColor('#ef4444'),
+    ]);
   });
 
   it('含 ma/boll 时叠加 4 条均线 + BOLL 五系列与 legend', () => {
@@ -267,9 +294,10 @@ describe('CandlestickChart', () => {
     expect(option.series.map((s) => s.type)).toEqual([
       'candlestick', 'line', 'line', 'line', 'line', 'line', 'line', 'line', 'line', 'line',
     ]);
-    // 图例 = label+value 三行（2026-09-15）：行 1 开高低收、行 2 MA+BOLL、行 3 DIF/DEA
-    expect(option.legend?.[0].data.map((d) => d.name)).toEqual(['开', '高', '低', '收']);
-    expect(option.legend?.[1].data.map((d) => d.name)).toEqual(['MA5', 'MA10', 'MA20', 'MA60', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨']);
+    // 图例 = label+value（2026-10-02 起行 1 开高低收/涨幅由 DOM 读条承载，不在 legend）：
+    // 单个 legend = MA+BOLL 行（top 18，行 1 让位读条）
+    expect(option.legend).toHaveLength(1);
+    expect(option.legend?.[0].data.map((d) => d.name)).toEqual(['MA5', 'MA10', 'MA20', 'MA60', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨']);
     // Confidence Band：2 条隐藏堆叠系列——下轨垫底 → 带宽差值，保证填充落在 [lower, upper]
     const stacked = option.series.filter((s) => s.stack === 'boll-band');
     expect(stacked).toHaveLength(2);
@@ -323,11 +351,12 @@ describe('CandlestickChart', () => {
     // dataZoom 覆盖两图 + 顶层 axisPointer.link
     expect(option.dataZoom?.map((d) => d.xAxisIndex)).toEqual([[0, 1], [0, 1]]);
     expect(option.axisPointer?.link).toEqual([{ xAxisIndex: 'all' }]);
-    // legend 三行分组（2026-09-15 label+value）：行 2 MA+BOLL、行 3 DIF/DEA（MACD 柱不进 legend）
-    expect(option.legend?.[1].data.map((d) => d.name)).toEqual([
+    // legend 两行（2026-10-02：行 1 开高低收/涨幅走 DOM 读条不在 legend）：行 1 MA+BOLL、
+    // 行 2 DIF/DEA（MACD 柱不进 legend）
+    expect(option.legend?.[0].data.map((d) => d.name)).toEqual([
       'MA5', 'MA10', 'MA20', 'MA60', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨',
     ]);
-    expect(option.legend?.[2].data.map((d) => d.name)).toEqual(['DIF', 'DEA']);
+    expect(option.legend?.[1].data.map((d) => d.name)).toEqual(['DIF', 'DEA']);
   });
 
   it('无 macd 时回归单 grid：grid 非数组、series 数量回归 10（含 ma/boll）', () => {
@@ -402,7 +431,7 @@ describe('CandlestickChart', () => {
     }
   });
 
-  it('hasVolume：成交量 bar 系列绑定 (1,1)、红涨绿跌回调着色、null 值透传、不进 legend', () => {
+  it('hasVolume：成交量 bar 系列绑定 (1,1)、红涨绿跌回调着色、null 值透传、入 legend 行 1 且右对齐', () => {
     const model: CandlestickChartViewModel = {
       ...baseModel,
       volume: [100, null, 300],
@@ -417,8 +446,9 @@ describe('CandlestickChart', () => {
     const colorFn = (volumeSeries!.itemStyle?.color ?? (() => '')) as (p: { value?: unknown }) => string;
     expect(colorFn({ value: [0, 100, 1] })).toBe('#ef4444'); // 涨（收≥开）红
     expect(colorFn({ value: [0, 100, -1] })).toBe('#22c55e'); // 跌绿
-    // 量入图例（2026-09-15）：行 1 = 开高低收+量
-    expect(option.legend?.[0].data.map((d) => d.name)).toEqual(['开', '高', '低', '收', '成交量']);
+    // 量入图例行 1（top 0、右对齐——左上让位 DOM 读条）；MA 行进第 2 行
+    expect(option.legend?.[0]).toMatchObject({ top: 0, right: 0 });
+    expect(option.legend?.[0].data.map((d) => d.name)).toEqual(['成交量']);
     expect(option.legend?.[1].data.map((d) => d.name)).toEqual(['MA5']);
     // 仅成交量布局：2 grid、dataZoom 覆盖 [0,1]、axisPointer.link 顶层
     expect(option.grid).toHaveLength(2);
@@ -1026,74 +1056,113 @@ describe('CandlestickChart', () => {
     macd: { dif: drawDates.map(() => 0.3), dea: drawDates.map(() => 0.2), hist: drawDates.map(() => 0.2) },
   };
 
-  it('图例三行分组（label+value 版）：行 1 开高低收 top 0、行 2 MA+BOLL top 18、行 3 DIF/DEA top 36、icon none、逐项系列色、inactiveColor、left 0/itemWidth 0', () => {
+  it('图例两行分组（label+value 版）：行 1（画布 top 0）由 DOM 读条承载、行 2 MA+BOLL top 18、行 3 DIF/DEA top 36、icon none、逐项系列色、inactiveColor、left 0/itemWidth 0', () => {
     render(<CandlestickChart model={fullModel} />);
     const legends = renderOption().legend!;
-    expect(legends).toHaveLength(3);
+    // 开高低收/涨幅不在 legend（ECharts 6 只渲染有同名 series 的项）→ 无成交量时 legend 两行
+    expect(legends).toHaveLength(2);
     expect(legends[0]).toMatchObject({
-      top: 0, left: 0, itemWidth: 0, itemGap: 6, icon: 'none', inactiveColor: '#8b95a1',
+      top: 18, left: 0, itemWidth: 0, itemGap: 6, icon: 'none', inactiveColor: '#8b95a1',
     });
-    expect(legends[0].data.map((d) => d.name)).toEqual(['开', '高', '低', '收']);
-    expect(legends[1].data.map((d) => d.name)).toEqual([
+    expect(legends[0].data.map((d) => d.name)).toEqual([
       'MA5', 'MA10', 'MA20', 'MA60', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨',
     ]);
-    expect(legends[1].top).toBe(18);
-    expect(legends[2].data.map((d) => d.name)).toEqual(['DIF', 'DEA']);
-    expect(legends[2].top).toBe(36);
-    // 逐项系列色（实测图例文字默认不继承系列色，须显式指定；开高低收按涨跌色）
+    expect(legends[1].data.map((d) => d.name)).toEqual(['DIF', 'DEA']);
+    expect(legends[1].top).toBe(36);
+    // 逐项系列色（实测图例文字默认不继承系列色，须显式指定）
     const byName = Object.fromEntries(legends.flatMap((l) => l.data.map((d) => [d.name, d.textStyle?.color])));
     expect(byName).toEqual({
-      开: '#ef4444', 高: '#ef4444', 低: '#ef4444', 收: '#ef4444', // drawModel 收≥开 → 红
       MA5: '#91cc75', MA10: '#fac858', MA20: '#ee6666', MA60: '#73c0de', // 参考调色板色（2026-09-16）
       'BOLL上轨': '#94a3b8', 'BOLL中轨': '#94a3b8', 'BOLL下轨': '#94a3b8',
       DIF: '#eaf0f8', DEA: '#fbbf24',
     });
+    // 画布顶带（top 0）改由 DOM 读条占据：末根 [3000,3100,2950,3150] 收≥开 → 涨红
+    expect(readoutTexts()).toEqual(['开 3000.00', '高 3150.00', '低 2950.00', '收 3100.00']);
+    expect(readoutSpans().map((s) => s.color)).toEqual([
+      domColor('#ef4444'), domColor('#ef4444'), domColor('#ef4444'), domColor('#ef4444'),
+    ]);
   });
 
-  it('图例降级布局：无 MACD 2 行、仅 MACD 2 行（MACD 行提至 top 18）、纯 K 仅行 1；tooltip showContent:false；grid top 24/40/56', () => {
+  it('图例降级布局：无 MACD 1 行、仅 MACD 1 行（MACD 行提至 top 18）、纯 K 无 legend；tooltip showContent:false；grid top 24/40/56', () => {
     const { rerender } = render(<CandlestickChart model={fullModel} />);
     expect(renderOption().tooltip).toEqual({ showContent: false, trigger: 'axis' });
-    // 无 MACD → 2 行（行 1 + MA/BOLL）
+    // 无 MACD → 1 行 legend（MA/BOLL top 18；行 1 画布顶带恒归 DOM 读条）
     const { macd: _macd, ...noMacd } = fullModel;
     rerender(<CandlestickChart model={noMacd} />);
-    expect(renderOption().legend).toHaveLength(2);
-    // 仅 MACD（无 MA/BOLL）→ 2 行：MACD 行提至 top 18（行 2 缺失时不空位）
-    rerender(<CandlestickChart model={{ ...drawModel, macd: fullModel.macd }} />);
-    expect(renderOption().legend).toHaveLength(2);
-    expect(renderOption().legend![1].top).toBe(18);
-    // 纯 K → 仅行 1（开高低收）；grid top 24（1 行预算）
-    rerender(<CandlestickChart model={drawModel} />);
     expect(renderOption().legend).toHaveLength(1);
-    expect(renderOption().legend![0].data.map((d) => d.name)).toEqual(['开', '高', '低', '收']);
+    // 仅 MACD（无 MA/BOLL）→ 1 行：MACD 行提至 top 18（行 2 缺失时不空位）
+    rerender(<CandlestickChart model={{ ...drawModel, macd: fullModel.macd }} />);
+    expect(renderOption().legend).toHaveLength(1);
+    expect(renderOption().legend![0].top).toBe(18);
+    // 纯 K → 无 legend 组件（开高低收由 DOM 读条承载）；grid top 24（1 行预算）
+    rerender(<CandlestickChart model={drawModel} />);
+    expect(renderOption().legend).toBeUndefined();
     expect((renderOption().grid as GridShape).top).toBe(24);
-    // 仅成交量+MA → 2 行 → grid top 40（多 grid 数组取 [0]）
+    // 仅成交量+MA → 2 行（量+MA）→ grid top 40（多 grid 数组取 [0]）
     rerender(<CandlestickChart model={{ ...drawModel, ma: fullModel.ma, volume: drawDates.map(() => 100) }} />);
     expect((renderOption().grid as GridShape[])[0].top).toBe(40);
   });
 
-  it('legendSelected：legendselectchanged 回填并注入 option（各 legend 只注入自己 data 的项），重渲染不回全选；固定展示项点击无效', () => {
+  it('legendSelected：legendselectchanged 回填并注入 option（各 legend 只注入自己 data 的项），重渲染不回全选', () => {
     setupFakeInstance();
     render(<CandlestickChart model={fullModel} />);
     fireChartReady();
-    // legend 共享同一份全局 selected（实测）；开为纯展示固定项（无系列），点击后必须过滤（不变灰）
+    // legend 共享同一份全局 selected（实测）；回填按各 legend 自己的 data 过滤
     act(() => {
       (renderProps().onEvents!.legendselectchanged as (p: unknown, i: unknown) => void)(undefined, {
         getOption: () => ({
           legend: [
-            { selected: { 开: false, MA5: false, DIF: false } },
-            { selected: { 开: false, MA5: false, DIF: false } },
-            { selected: { 开: false, MA5: false, DIF: false } },
+            { selected: { MA5: false, DIF: false } },
+            { selected: { MA5: false, DIF: false } },
           ],
         }),
       });
     });
     const legends = renderOption().legend!;
-    expect(legends[0].selected).toEqual({}); // 开 被过滤（点击无效、不变灰）
-    expect(legends[1].selected).toEqual({ MA5: false }); // 行 2 只注入自己 data 的项
-    expect(legends[2].selected).toEqual({ DIF: false });
+    expect(legends[0].selected).toEqual({ MA5: false }); // 行 1（MA/BOLL）只注入自己 data 的项
+    expect(legends[1].selected).toEqual({ DIF: false });
   });
 
-  it('图例 label+value 与 ChartCore memo：updateAxisPointer 驱动、hide 回落窗口末根、hover 不重渲染内核', () => {
+  it('涨幅：有 pctChg 时读条「涨幅」置前（涨幅 开 高 低 收），值带符号与百分号、按自身正负着色、随悬浮更新', () => {
+    setupFakeInstance();
+    const pctModel: CandlestickChartViewModel = {
+      ...fullModel,
+      volume: drawDates.map(() => 1e6),
+      pctChg: drawDates.map((_d, i) => (i === 0 ? 1.234 : i === 1 ? -0.5 : i === 2 ? null : 0)),
+    };
+    render(<CandlestickChart model={pctModel} visibleRange={{ start: drawDates[0], end: drawDates[0] }} />);
+    fireChartReady();
+    // 读条顺序：涨幅 开 高 低 收（涨幅置前、2026-10-02 用户要求；量仍是图例项）；
+    // 颜色按涨幅自身正负。未悬浮 = 可见窗口末根（idx 0，+1.234 → 两位小数 + 号 → 红）
+    expect(readoutTexts()).toEqual(['涨幅 +1.23%', '开 3000.00', '高 3150.00', '低 2950.00', '收 3100.00']);
+    expect(readoutSpans()[0].color).toBe(domColor('#ef4444'));
+    // hover 到 -0.5 与 null/0 根：符号保留、缺失不编造数值（只留 label）、0 不加 + 号走中性色
+    const fireAxis = renderProps().onEvents!.updateAxisPointer as (p: unknown) => void;
+    act(() => {
+      fireAxis({ axesInfo: [{ value: 1 }] });
+    });
+    expect(readoutTexts()[0]).toBe('涨幅 -0.50%');
+    expect(readoutSpans()[0].color).toBe(domColor('#22c55e'));
+    act(() => {
+      fireAxis({ axesInfo: [{ value: 2 }] });
+    });
+    expect(readoutTexts()[0]).toBe('涨幅'); // null：不编造数值
+    expect(readoutSpans()[0].color).toBe(domColor('#8b95a1'));
+    act(() => {
+      fireAxis({ axesInfo: [{ value: 3 }] });
+    });
+    expect(readoutTexts()[0]).toBe('涨幅 0.00%');
+    expect(readoutSpans()[0].color).toBe(domColor('#8b95a1'));
+    // 涨幅是读条项、非图例项：legend 行 1 只有「量」（点击开关副图语义保留）
+    expect(renderOption().legend![0].data.map((d) => d.name)).toEqual(['成交量']);
+  });
+
+  it('pctChg 缺失时读条不含「涨幅」（旧数据/源未提供不占空白项）', () => {
+    render(<CandlestickChart model={fullModel} />);
+    expect(readoutTexts()).toEqual(['开 3000.00', '高 3150.00', '低 2950.00', '收 3100.00']);
+  });
+
+  it('读条与图例 label+value 与 ChartCore memo：updateAxisPointer 驱动、hide 回落窗口末根、hover 不重渲染内核', () => {
     setupFakeInstance();
     const readoutModel: CandlestickChartViewModel = {
       xAxisData: drawDates,
@@ -1106,42 +1175,39 @@ describe('CandlestickChart', () => {
     };
     render(<CandlestickChart model={readoutModel} visibleRange={{ start: drawDates[4], end: drawDates[7] }} />);
     fireChartReady();
-    // 未悬浮：图例值 = 可见窗口末根（drawDates[7]），非数据集末尾（drawDates[9]）
+    // 未悬浮：读条 = 可见窗口末根（drawDates[7]），非数据集末尾（drawDates[9]）
+    expect(readoutTexts()).toEqual(['开 3007.00', '高 3157.00', '低 2957.00', '收 3107.00']);
     const legends = renderOption().legend!;
-    const row1Formatter = legends[0].formatter as (n: string) => string;
+    const volumeFormatter = legends[0].formatter as (n: string) => string;
     const row2Formatter = legends[1].formatter as (n: string) => string;
     const row3Formatter = legends[2].formatter as (n: string) => string;
-    expect(row1Formatter('开')).toBe('开 3007.00');
-    expect(row1Formatter('成交量')).toBe('量 100.00万手'); // formatter 入参 = data 名（成交量）
+    expect(volumeFormatter('成交量')).toBe('量 100.00万手'); // formatter 入参 = data 名（成交量）
     expect(row2Formatter('MA5')).toBe('MA5 3012.00'); // 3005 + 7
     expect(row3Formatter('DIF')).toBe('DIF 0.30');
     const rendersBefore = mockState.renderCount;
-    // updateAxisPointer → hoverIdx = 2（该根收<开 → 绿），图例经 merge 刷新（不重建 option）
+    // updateAxisPointer → hoverIdx = 2（该根收<开 → 绿），读条随 hover 重渲染（DOM 覆盖层）、
+    // 图例值经 merge 刷新（不重建 option）
     const fireAxis = renderProps().onEvents!.updateAxisPointer as (p: unknown) => void;
     act(() => {
       fireAxis({ axesInfo: [{ value: 2 }] });
     });
+    expect(readoutTexts()).toEqual(['开 3002.00', '高 3150.00', '低 2950.00', '收 2998.00']);
+    expect(readoutSpans().map((s) => s.color)).toEqual([
+      domColor('#22c55e'), domColor('#22c55e'), domColor('#22c55e'), domColor('#22c55e'),
+    ]);
     const setOptionMock = mockState.fakeInstance.setOption as Mock;
     const legendMerge = setOptionMock.mock.calls
       .map((call) => call[0] as { legend?: Array<{ formatter?: (n: string) => string }> })
       .find((arg) => arg.legend)!;
-    const mergedRow1 = legendMerge.legend![0].formatter!;
-    const mergedRow2 = legendMerge.legend![1].formatter!;
-    expect(mergedRow1('开')).toBe('开 3002.00');
-    expect(mergedRow1('收')).toBe('收 2998.00');
-    expect(mergedRow2('MA5')).toBe('MA5 3007.00'); // 3005 + 2
+    expect(legendMerge.legend![1].formatter!('MA5')).toBe('MA5 3007.00'); // 3005 + 2
     // ChartCore memo 守卫：hover 变化未重渲染内核（renderCount 不变 → 无 option 重建风暴；
-    // 图例值经定向 merge 更新）
+    // 读条为独立 DOM 覆盖层、图例值经定向 merge 更新）
     expect(mockState.renderCount).toBe(rendersBefore);
-    // hide（实测 mouseleave 再派发 axesInfo: []）→ 回落窗口末根
+    // hide（实测 mouseleave 再派发 axesInfo: []）→ 读条回落窗口末根
     act(() => {
       fireAxis({ axesInfo: [] });
     });
-    const legendCalls2 = setOptionMock.mock.calls
-      .map((call) => call[0] as { legend?: Array<{ formatter?: (n: string) => string }> })
-      .filter((arg) => arg.legend);
-    const legendMerge2 = legendCalls2.at(-1)!;
-    expect(legendMerge2.legend![0].formatter!('开')).toBe('开 3007.00');
+    expect(readoutTexts()).toEqual(['开 3007.00', '高 3157.00', '低 2957.00', '收 3107.00']);
   });
 
   it('真 echarts SSR：双 legend 渲染无异常、图例文字 fill 含系列色（无可见标记图形）', () => {
@@ -1248,7 +1314,7 @@ describe('CandlestickChart', () => {
     render(<CandlestickChart model={model} />);
     const grids = renderOption().grid as GridShape[];
     expect(grids).toHaveLength(2); // 主图 + MACD
-    expect(grids[0].top).toBe(56); // 三行图例（行 1 开高低收恒在）→ 56
+    expect(grids[0].top).toBe(56); // 行 1 读条恒占位 + 两行图例 → 56
   });
 
   it('渲染用真实 extent 不夹带内价格（§3.6.3 验证 4 回归锚：守护过度夹取）', () => {

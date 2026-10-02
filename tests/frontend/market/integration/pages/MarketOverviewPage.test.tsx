@@ -143,10 +143,13 @@ describe('MarketOverviewPage', () => {
 
     expect(screen.getByRole('heading', { name: '市场' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '趋势对比' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '板块' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^板块/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '信息' })).toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     expect(screen.queryByText('个股日线')).not.toBeInTheDocument();
-    expect(screen.getByText('板块日线')).toBeInTheDocument();
+    // 行情状态内联在标题旁（2026-10-02 用户拍板：不再有独立状态模块）：
+    // 板块标题带「板块日线」，美国/韩国/中国三个分组标题各一个
+    expect(screen.getByText('板块日线').closest('h2')).not.toBeNull();
+    expect(screen.getAllByLabelText('行情拉取状态')).toHaveLength(4);
   });
 });

@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-09-25T21:53:48.168235+00:00",
+  "reports": [
+    {
+      "day": "2020-08-03",
+      "before": "2020-07-31",
+      "after": "2020-08-05",
+      "before_count": 212,
+      "after_count": 212,
+      "target_source_empty": true,
+      "bridge_events": {
+        "2020-08-03": [],
+        "2020-08-04": [
+          {
+            "ts_code": "002089.SZ",
+            "name": "ST新海",
+            "pub_date": "20200801",
+            "imp_date": "20200804",
+            "st_type": "撤消*ST并实行ST"
+          },
+          {
+            "ts_code": "002427.SZ",
+            "name": "ST尤夫",
+            "pub_date": "20200803",
+            "imp_date": "20200804",
+            "st_type": "撤消*ST并实行ST"
+          }
+        ],
+        "2020-08-05": [
+          {
+            "ts_code": "300216.SZ",
+            "name": "千山退",
+            "pub_date": "20200805",
+            "imp_date": "20200805",
+            "st_type": "退市整理期"
+          }
+        ]
+      },
+      "candidates": {
+        "2020-08-03": {
+          "count": 212,
+          "sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107"
+        },
+        "2020-08-04": {
+          "count": 212,
+          "sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107"
+        }
+      },
+      "candidate_count": 212,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-08-04",
+      "before": "2020-07-31",
+      "after": "2020-08-05",
+      "before_count": 212,
+      "after_count": 212,
+      "target_source_empty": true,
+      "bridge_events": {
+        "2020-08-03": [],
+        "2020-08-04": [
+          {
+            "ts_code": "002089.SZ",
+            "name": "ST新海",
+            "pub_date": "20200801",
+            "imp_date": "20200804",
+            "st_type": "撤消*ST并实行ST"
+          },
+          {
+            "ts_code": "002427.SZ",
+            "name": "ST尤夫",
+            "pub_date": "20200803",
+            "imp_date": "20200804",
+            "st_type": "撤消*ST并实行ST"
+          }
+        ],
+        "2020-08-05": [
+          {
+            "ts_code": "300216.SZ",
+            "name": "千山退",
+            "pub_date": "20200805",
+            "imp_date": "20200805",
+            "st_type": "退市整理期"
+          }
+        ]
+      },
+      "candidates": {
+        "2020-08-03": {
+          "count": 212,
+          "sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107"
+        },
+        "2020-08-04": {
+          "count": 212,
+          "sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107"
+        }
+      },
+      "candidate_count": 212,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    }
+  ]
+}

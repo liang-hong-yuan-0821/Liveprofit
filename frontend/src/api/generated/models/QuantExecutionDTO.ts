@@ -12,6 +12,7 @@ import type { SuggestedOrderPreviewDTO } from './SuggestedOrderPreviewDTO';
  * decision["quant_execution"] 的无源码投影（旧报告为 null，不渲染面板）。
  */
 export type QuantExecutionDTO = {
+    admission?: (Record<string, any> | null);
     strategy: StrategyAuditDTO;
     portfolio_snapshot: PortfolioSnapshotDTO;
     matching_buy_preview: Array<MatchingBuyPreviewDTO>;

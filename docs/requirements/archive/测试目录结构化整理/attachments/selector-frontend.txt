@@ -1,0 +1,15 @@
+Modules: frontend.market
+Scope: tests/frontend/market/unit
+
+ RUN  v3.2.7 D:/code/workspace/python/Liveprofit
+
+ ✓ tests/frontend/market/unit/pages/mappers/toTrendViewModels.test.ts (7 tests) 4ms
+ ✓ tests/frontend/market/unit/pages/mappers/toChartViewModels.test.ts (8 tests) 10ms
+ ✓ tests/frontend/market/unit/components/conceptTreeOption.test.ts (11 tests) 5ms
+ ✓ tests/frontend/market/unit/pages/queries.test.ts (6 tests) 360ms
+
+ Test Files  4 passed (4)
+      Tests  32 passed (32)
+   Start at  21:22:45
+   Duration  2.27s (transform 306ms, setup 1.39s, collect 735ms, tests 379ms, environment 2.95s, prepare 454ms)
+

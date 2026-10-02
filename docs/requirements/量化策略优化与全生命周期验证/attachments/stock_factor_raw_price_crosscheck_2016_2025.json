@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-09-26T04:31:26.229756+00:00",
+  "scope": "stock factor rows joined to valid daily bars 2016-2025",
+  "years": [
+    {
+      "year": 2016,
+      "paired_rows": 638012,
+      "missing_source_close": 55042,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2017,
+      "paired_rows": 735916,
+      "missing_source_close": 5300,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2018,
+      "paired_rows": 815239,
+      "missing_source_close": 4413,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2019,
+      "paired_rows": 881438,
+      "missing_source_close": 4614,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2020,
+      "paired_rows": 939389,
+      "missing_source_close": 4946,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2021,
+      "paired_rows": 1052573,
+      "missing_source_close": 4610,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2022,
+      "paired_rows": 1164767,
+      "missing_source_close": 4660,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2023,
+      "paired_rows": 1253799,
+      "missing_source_close": 4336,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2024,
+      "paired_rows": 1291833,
+      "missing_source_close": 3808,
+      "mismatched_source_close": 0
+    },
+    {
+      "year": 2025,
+      "paired_rows": 1311932,
+      "missing_source_close": 921922,
+      "mismatched_source_close": 0
+    }
+  ]
+}

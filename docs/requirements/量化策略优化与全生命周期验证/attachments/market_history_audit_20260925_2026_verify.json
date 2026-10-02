@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-09-25T11:47:02.619875+00:00",
+  "through": "2026-09-24",
+  "calendar_source": "Tushare trade_cal(exchange=SSE,is_open=1), yearly request",
+  "scope": "listed stock and broad fund symbol-days; factor gaps include warmup; fund is not ETF classification",
+  "inventory": {
+    "fund": {
+      "count": 2955,
+      "unknown_list_date": 152,
+      "has_delist_date": 626
+    },
+    "stock": {
+      "count": 5907,
+      "unknown_list_date": 0,
+      "has_delist_date": 339
+    }
+  },
+  "etf_catalog": {
+    "observations": 1829,
+    "first": "2026-09-25",
+    "last": "2026-09-25"
+  },
+  "years": [
+    {
+      "year": 2026,
+      "calendar_days": 178,
+      "calendar_sha256": "75220c2dfc4818ecabfb656ec05e540dec3bcd520176d136ec3002e377b712c2",
+      "expected": 981659,
+      "trusted_suspension": 2106,
+      "unexplained_bar": 7,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 957511,
+      "status_gap": 18,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2026-01-12",
+          "ts_code": "603056.SH"
+        },
+        {
+          "trade_date": "2026-01-13",
+          "ts_code": "605028.SH"
+        },
+        {
+          "trade_date": "2026-01-15",
+          "ts_code": "688005.SH"
+        },
+        {
+          "trade_date": "2026-01-22",
+          "ts_code": "603616.SH"
+        },
+        {
+          "trade_date": "2026-06-16",
+          "ts_code": "603159.SH"
+        },
+        {
+          "trade_date": "2026-07-06",
+          "ts_code": "002731.SZ"
+        },
+        {
+          "trade_date": "2026-09-15",
+          "ts_code": "601238.SH"
+        }
+      ],
+      "broad_fund": {
+        "listed_fund_days": 358542,
+        "daily_gap": 10062,
+        "adj_gap": 0,
+        "factor_gap_including_warmup": 348480
+      }
+    }
+  ]
+}

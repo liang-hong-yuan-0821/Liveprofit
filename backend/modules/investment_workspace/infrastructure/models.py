@@ -11,6 +11,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import (
+    CheckConstraint,
     ForeignKey,
     Index,
     Integer,
@@ -58,6 +59,9 @@ class WatchlistItem(Base, TimestampMixin):
 
 class Portfolio(Base, TimestampMixin):
     __tablename__ = "portfolios"
+    __table_args__ = (CheckConstraint(
+        "risk_profile IN ('CONSERVATIVE','BALANCED','AGGRESSIVE')",
+        name="ck_portfolios_risk_profile"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
@@ -81,6 +85,7 @@ class Portfolio(Base, TimestampMixin):
     peak_net_asset_value: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
     day_start_net_asset_value: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
     risk_facts_as_of: Mapped[date | None] = mapped_column(nullable=True)
+    risk_profile: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     positions: Mapped[list["PortfolioPosition"]] = relationship(
         back_populates="portfolio", cascade="all, delete-orphan"

@@ -23,6 +23,7 @@ export type PortfolioUpdateRequest = {
     peak_net_asset_value?: (number | null);
     day_start_net_asset_value?: (number | null);
     risk_facts_as_of?: (string | null);
+    risk_profile?: ('CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | null);
     expected_version: number;
 };
 

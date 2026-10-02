@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-09-25T18:53:31.087432+00:00",
+  "source": "tushare_suspend_d",
+  "details": [
+    {
+      "ts_code": "300456.SZ",
+      "source_rows": 103,
+      "full_day_rows": 102
+    },
+    {
+      "ts_code": "300466.SZ",
+      "source_rows": 99,
+      "full_day_rows": 97
+    }
+  ],
+  "verified_target_rows": 199,
+  "target": "2015 factor-only no-bar dates for 2016 warmup candidates"
+}

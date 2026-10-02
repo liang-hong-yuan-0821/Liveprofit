@@ -13,6 +13,7 @@ from db.instrument.dao import ingest_state as state_dao
 from db.instrument.dao.factor_daily import bulk_upsert_factor_daily
 from db.instrument.dao.trade_status import (
     bulk_upsert_trade_status,
+    remove_ambiguous_tushare_status,
     upsert_observed_trade_status,
 )
 from db.instrument.ingest.frames import fetch_stock_technical_factor_frame
@@ -25,6 +26,7 @@ MIN_GLOBAL_COVERAGE = 0.95
 REQUIRED_QFQ = [
     "ma_qfq_5", "ma_qfq_20", "ma_qfq_60", "boll_mid_qfq", "boll_upper_qfq",
     "boll_lower_qfq", "macd_dif_qfq", "macd_dea_qfq", "macd_qfq", "rsi_qfq_6",
+    "atr_qfq",
 ]
 
 
@@ -40,6 +42,7 @@ def collect_stock_quant_day(conn, provider, trade_date: str, active_codes: list[
     raise_if_network_access_denied(provider)
     if status is None or status.empty or len(status) >= 6000:
         raise ValueError("UPSTREAM_NOT_READY")
+    ambiguous_codes = set(status.attrs.get("ambiguous_codes", ())) & set(active_codes)
     factor = factor.copy()
     status = status.copy()
     required_factor = {"ts_code", "trade_date", *REQUIRED_QFQ}
@@ -87,8 +90,11 @@ def collect_stock_quant_day(conn, provider, trade_date: str, active_codes: list[
         if (raw.notna() & status[column].isna()).any():
             raise ValueError("STATUS_INVALID_LIMIT")
         values = status[column].dropna().to_numpy(dtype=float)
-        if not np.isfinite(values).all() or (values <= 0).any():
+        if not np.isfinite(values).all() or (values < 0).any():
             raise ValueError("STATUS_INVALID_LIMIT")
+        # stk_limit may report 0 for an unavailable limit (observed on BJ
+        # stocks). Keep the limit unknown; zero is not an executable price.
+        status.loc[status[column].eq(0), column] = np.nan
     both_limits = status["up_limit"].notna() & status["down_limit"].notna()
     if (status.loc[both_limits, "up_limit"] < status.loc[both_limits, "down_limit"]).any():
         raise ValueError("STATUS_INVALID_LIMIT_ORDER")
@@ -107,6 +113,7 @@ def collect_stock_quant_day(conn, provider, trade_date: str, active_codes: list[
     try:
         n_factor = bulk_upsert_factor_daily(conn, eligible, update=True)
         n_status = bulk_upsert_trade_status(conn, status, update=True)
+        remove_ambiguous_tushare_status(conn, trade_date, ambiguous_codes)
         summary = {
             "trade_date": trade_date, "active": len(expected), "factor_rows": n_factor,
             "status_rows": n_status, "coverage": coverage, "status_coverage": status_coverage,
@@ -115,12 +122,14 @@ def collect_stock_quant_day(conn, provider, trade_date: str, active_codes: list[
             conn, RESOURCE_STOCK_FACTORS, SOURCE_TUSHARE,
             coverage=coverage, member_hash=_codes_hash(eligible_codes & expected), summary=summary,
         )
-        state_dao.record_success(
-            conn, RESOURCE_TRADE_STATUS, SOURCE_TUSHARE,
-            coverage=status_coverage, member_hash=_codes_hash(status_codes & expected), summary=summary,
-        )
+        if not ambiguous_codes:
+            state_dao.record_success(
+                conn, RESOURCE_TRADE_STATUS, SOURCE_TUSHARE,
+                coverage=status_coverage, member_hash=_codes_hash(status_codes & expected), summary=summary,
+            )
         conn.commit()
-        return {"status": "SUCCESS", **summary}
+        return {"status": "PARTIAL" if ambiguous_codes else "SUCCESS",
+                "ambiguous_codes": sorted(ambiguous_codes), **summary}
     except FATAL_INGEST_ERRORS:
         raise
     except Exception:
@@ -129,12 +138,22 @@ def collect_stock_quant_day(conn, provider, trade_date: str, active_codes: list[
 
 
 def _collect_stock_status_day_unlocked(conn, provider, trade_date: str,
-                                      active_codes: list[str] | None = None) -> dict:
+                                      active_codes: list[str] | None = None,
+                                      st_observations=None, no_trade_observations=None) -> dict:
     """Independent trusted status observations, without qfq/ingest_state writes."""
-    status = provider.get_full_market_trade_status_df(trade_date)
+    source_inputs = {}
+    if st_observations is not None:
+        source_inputs["st_observations"] = st_observations
+    if no_trade_observations is not None:
+        source_inputs["no_trade_observations"] = no_trade_observations
+    status = provider.get_full_market_trade_status_df(trade_date, **source_inputs)
     raise_if_network_access_denied(provider)
     if status is None or status.empty or len(status) >= 6000:
         return {"status": "UNAVAILABLE", "rows": 0, "trade_date": trade_date}
+    ambiguous_codes = set(status.attrs.get("ambiguous_codes", ()))
+    st_source = status.attrs.get("st_source", "tushare")
+    if st_source not in ("tushare", "baostock_kline"):
+        return {"status": "UNAVAILABLE", "rows": 0, "code": "STATUS_ST_SOURCE_INVALID"}
     required = {"ts_code", "trade_date", "is_suspended", "is_st", "market_board"}
     if not required.issubset(status.columns):
         return {"status": "UNAVAILABLE", "rows": 0, "code": "STATUS_COLUMNS_MISSING"}
@@ -146,13 +165,18 @@ def _collect_stock_status_day_unlocked(conn, provider, trade_date: str,
     status = status.copy()
     if active_codes is not None:
         status = status[status["ts_code"].isin(active_codes)].copy()
-    status["source"] = SOURCE_TUSHARE
+        ambiguous_codes &= set(active_codes)
+    status["source"] = (SOURCE_TUSHARE if st_source == "tushare" and not status.attrs.get("uses_independent_trading", False)
+                        else "tushare+baostock")
     status["updated_at"] = pd.Timestamp.now(tz="UTC")
     try:
         rows = upsert_observed_trade_status(conn, status)
+        remove_ambiguous_tushare_status(conn, trade_date, ambiguous_codes)
         conn.commit()
-        return {"status": "SUCCESS" if rows else "UNAVAILABLE", "rows": rows,
-                "trade_date": trade_date}
+        return {"status": "PARTIAL" if ambiguous_codes else ("SUCCESS" if rows else "UNAVAILABLE"),
+                "rows": rows, "trade_date": trade_date,
+                "source": status["source"].iloc[0] if rows else None,
+                "ambiguous_codes": sorted(ambiguous_codes)}
     except FATAL_INGEST_ERRORS:
         raise
     except ValueError:

@@ -7,8 +7,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
-from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
+from datetime import date
+from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_FLOOR
+
+from backend.modules.quant_strategy.domain.instrument_rules import InstrumentTradingRule
 
 
 BUY_REJECTED_SUSPENDED = "BUY_REJECTED_SUSPENDED"
@@ -18,6 +20,7 @@ BUY_REJECTED_LIQUIDITY = "BUY_REJECTED_LIQUIDITY"
 SELL_REJECTED_SUSPENDED = "SELL_REJECTED_SUSPENDED"
 SELL_REJECTED_LIMIT_DOWN = "SELL_REJECTED_LIMIT_DOWN"
 SELL_REJECTED_T1 = "SELL_REJECTED_T1"
+EXECUTION_CALENDAR_UNAVAILABLE = "EXECUTION_CALENDAR_UNAVAILABLE"
 
 
 def _dec(value, default: str = "0") -> Decimal:
@@ -26,11 +29,12 @@ def _dec(value, default: str = "0") -> Decimal:
     return Decimal(str(value))
 
 
-def _next_weekday(value: date) -> date:
-    result = value + timedelta(days=1)
-    while result.weekday() >= 5:
-        result += timedelta(days=1)
-    return result
+def next_execution_session(value: date, *, calendar, market: str = "CN") -> date | None:
+    schedule = calendar.schedule(market)
+    if not schedule.available or not schedule.supported_from <= value <= schedule.supported_through:
+        return None
+    return min((session.trade_date for session in schedule.sessions
+                if value < session.trade_date <= schedule.supported_through), default=None)
 
 
 @dataclass(frozen=True)
@@ -94,13 +98,16 @@ class OrderPriceNormalizer:
     def __init__(self, policy: ExecutionPolicy) -> None:
         self.policy = policy
 
-    def _ceil_tick(self, value: Decimal) -> Decimal:
-        return (value / self.policy.tick_size).to_integral_value(rounding=ROUND_CEILING) * self.policy.tick_size
+    def _ceil_tick(self, value: Decimal, *, tick_size: Decimal | None = None) -> Decimal:
+        tick = tick_size or self.policy.tick_size
+        return (value / tick).to_integral_value(rounding=ROUND_CEILING) * tick
 
-    def _floor_tick(self, value: Decimal) -> Decimal:
-        return (value / self.policy.tick_size).to_integral_value(rounding=ROUND_FLOOR) * self.policy.tick_size
+    def _floor_tick(self, value: Decimal, *, tick_size: Decimal | None = None) -> Decimal:
+        tick = tick_size or self.policy.tick_size
+        return (value / tick).to_integral_value(rounding=ROUND_FLOOR) * tick
 
-    def buy_prices(self, entry, stop, take, *, qfq_close, raw_close) -> NormalizedPrices:
+    def buy_prices(self, entry, stop, take, *, qfq_close, raw_close,
+                   tick_size: Decimal | None = None) -> NormalizedPrices:
         qfq = _dec(qfq_close)
         raw = _dec(raw_close)
         ratio = raw / qfq
@@ -108,11 +115,11 @@ class OrderPriceNormalizer:
         mapped_stop = PriceBasisMapper.qfq_to_raw(stop, qfq_close=qfq, raw_close=raw)
         mapped_take = PriceBasisMapper.qfq_to_raw(take, qfq_close=qfq, raw_close=raw)
         slipped = mapped_entry * (Decimal(1) + self.policy.slippage_bps / Decimal(10000))
-        normalized_entry = self._ceil_tick(max(raw, slipped))
+        normalized_entry = self._ceil_tick(max(raw, slipped), tick_size=tick_size)
         return NormalizedPrices(
             entry=normalized_entry,
-            stop=self._floor_tick(mapped_stop),
-            take=self._floor_tick(mapped_take),
+            stop=self._floor_tick(mapped_stop, tick_size=tick_size),
+            take=self._floor_tick(mapped_take, tick_size=tick_size),
             mapping_ratio=ratio,
             slippage_per_share=max(Decimal(0), normalized_entry - mapped_entry),
         )
@@ -137,14 +144,36 @@ class ConstraintDecision:
 
 
 class ExecutionConstraintEvaluator:
-    def __init__(self, policy: ExecutionPolicy) -> None:
+    def __init__(self, policy: ExecutionPolicy, *, calendar=None) -> None:
         self.policy = policy
         self.normalizer = OrderPriceNormalizer(policy)
+        if calendar is None:
+            from backend.modules.market_data.infrastructure.calendar_adapter import MarketCalendarAdapter
+            calendar = MarketCalendarAdapter()
+        self.calendar = calendar
 
-    def evaluate_buy(self, *, entry, stop, take, market: dict) -> ConstraintDecision:
+    @staticmethod
+    def _blocks_next_day(market: dict) -> bool:
+        # Decisions here target the next trading day. An observed intraday
+        # pause on the signal day does not make that whole day untradeable.
+        # Legacy rows without scope remain conservative.
+        return bool(market.get("is_suspended")) and market.get("suspension_scope") != "intraday"
+
+    def evaluate_buy(self, *, entry, stop, take, market: dict, symbol: str | None = None,
+                     instrument_rule: InstrumentTradingRule | None = None) -> ConstraintDecision:
         trade_date = date.fromisoformat(str(market["trade_date"])[:10])
-        earliest = _next_weekday(trade_date)
-        if bool(market.get("is_suspended")):
+        earliest = next_execution_session(trade_date, calendar=self.calendar)
+        if earliest is None:
+            return ConstraintDecision(EXECUTION_CALENDAR_UNAVAILABLE, None, None, None)
+        if instrument_rule is not None:
+            instrument_rule.validate()
+            if not (symbol == instrument_rule.symbol
+                    and instrument_rule.effective_from <= earliest
+                    and (instrument_rule.effective_through is None
+                         or earliest <= instrument_rule.effective_through)
+                    and instrument_rule.published_on < trade_date):
+                raise ValueError("instrument rule is not known and effective for execution")
+        if self._blocks_next_day(market):
             return ConstraintDecision(BUY_REJECTED_SUSPENDED, None, None, earliest)
         if bool(market.get("is_st")):
             return ConstraintDecision(BUY_REJECTED_ST, None, None, earliest)
@@ -155,21 +184,31 @@ class ExecutionConstraintEvaluator:
         prices = self.normalizer.buy_prices(
             entry, stop, take,
             qfq_close=market.get("qfq_close"), raw_close=raw_close,
+            tick_size=instrument_rule.price_tick if instrument_rule else None,
         )
-        raw_amount = _dec(market.get("raw_amount"))
-        # Tushare daily.amount 单位为千元；未知/零成交额时 BUY fail-closed。
-        if raw_amount <= 0:
+        # A persisted pre-ADV20 signal must not regain BUY eligibility through
+        # the old single-day amount. Both amounts use Tushare's 千元 unit.
+        value = market.get("adv20_amount")
+        try:
+            amount = _dec(value)
+        except (InvalidOperation, ValueError, TypeError):
+            amount = Decimal(0)
+        if not amount.is_finite() or amount <= 0:
             return ConstraintDecision(BUY_REJECTED_LIQUIDITY, prices, Decimal(0), earliest)
-        max_notional = raw_amount * Decimal(1000) * self.policy.max_participation_rate
-        max_shares = (max_notional / prices.entry / Decimal(100)).to_integral_value(rounding=ROUND_FLOOR) * Decimal(100)
-        if max_shares < 100:
+        max_notional = amount * Decimal(1000) * self.policy.max_participation_rate
+        raw_shares = int((max_notional / prices.entry).to_integral_value(rounding=ROUND_FLOOR))
+        max_shares = (Decimal(instrument_rule.floor_buy_quantity(raw_shares)) if instrument_rule
+                      else Decimal(raw_shares // 100 * 100))
+        if max_shares < (instrument_rule.min_buy_quantity if instrument_rule else 100):
             return ConstraintDecision(BUY_REJECTED_LIQUIDITY, prices, max_shares, earliest)
         return ConstraintDecision(None, prices, max_shares, earliest)
 
-    def evaluate_sell(self, *, market: dict, available_quantity) -> tuple[str | None, Decimal, Decimal, date]:
+    def evaluate_sell(self, *, market: dict, available_quantity) -> tuple[str | None, Decimal, Decimal, date | None]:
         trade_date = date.fromisoformat(str(market["trade_date"])[:10])
-        earliest = _next_weekday(trade_date)
-        if bool(market.get("is_suspended")):
+        earliest = next_execution_session(trade_date, calendar=self.calendar)
+        if earliest is None:
+            return EXECUTION_CALENDAR_UNAVAILABLE, Decimal(0), Decimal(0), None
+        if self._blocks_next_day(market):
             return SELL_REJECTED_SUSPENDED, Decimal(0), Decimal(0), earliest
         raw_close = _dec(market.get("raw_close"))
         down_limit = _dec(market.get("down_limit")) if market.get("down_limit") is not None else None

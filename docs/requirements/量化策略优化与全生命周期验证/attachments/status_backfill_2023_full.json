@@ -1,0 +1,1463 @@
+{
+  "start": "2023-01-01",
+  "end": "2023-12-31",
+  "calendar_days": 242,
+  "pending_before": 242,
+  "attempted": [
+    {
+      "trade_date": "20231229",
+      "status": "SUCCESS",
+      "rows": 5335,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231228",
+      "status": "SUCCESS",
+      "rows": 5334,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231227",
+      "status": "SUCCESS",
+      "rows": 5332,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231226",
+      "status": "SUCCESS",
+      "rows": 5331,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231225",
+      "status": "SUCCESS",
+      "rows": 5330,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231222",
+      "status": "SUCCESS",
+      "rows": 5330,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231221",
+      "status": "SUCCESS",
+      "rows": 5329,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231220",
+      "status": "SUCCESS",
+      "rows": 5327,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231219",
+      "status": "SUCCESS",
+      "rows": 5326,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231218",
+      "status": "SUCCESS",
+      "rows": 5325,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231215",
+      "status": "SUCCESS",
+      "rows": 5324,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231214",
+      "status": "SUCCESS",
+      "rows": 5323,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231213",
+      "status": "SUCCESS",
+      "rows": 5322,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231212",
+      "status": "SUCCESS",
+      "rows": 5321,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231211",
+      "status": "SUCCESS",
+      "rows": 5319,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231208",
+      "status": "SUCCESS",
+      "rows": 5319,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231207",
+      "status": "SUCCESS",
+      "rows": 5318,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231206",
+      "status": "SUCCESS",
+      "rows": 5318,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231205",
+      "status": "SUCCESS",
+      "rows": 5317,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231204",
+      "status": "SUCCESS",
+      "rows": 5315,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231201",
+      "status": "SUCCESS",
+      "rows": 5315,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231130",
+      "status": "SUCCESS",
+      "rows": 5314,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231129",
+      "status": "SUCCESS",
+      "rows": 5313,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231128",
+      "status": "SUCCESS",
+      "rows": 5312,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231127",
+      "status": "SUCCESS",
+      "rows": 5311,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231124",
+      "status": "SUCCESS",
+      "rows": 5311,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231123",
+      "status": "SUCCESS",
+      "rows": 5311,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231122",
+      "status": "SUCCESS",
+      "rows": 5310,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231121",
+      "status": "SUCCESS",
+      "rows": 5310,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231120",
+      "status": "SUCCESS",
+      "rows": 5310,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231117",
+      "status": "SUCCESS",
+      "rows": 5310,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231116",
+      "status": "SUCCESS",
+      "rows": 5309,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231115",
+      "status": "SUCCESS",
+      "rows": 5306,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231114",
+      "status": "SUCCESS",
+      "rows": 5306,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231113",
+      "status": "SUCCESS",
+      "rows": 5306,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231110",
+      "status": "SUCCESS",
+      "rows": 5305,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231109",
+      "status": "SUCCESS",
+      "rows": 5304,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231108",
+      "status": "SUCCESS",
+      "rows": 5303,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231107",
+      "status": "SUCCESS",
+      "rows": 5302,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231106",
+      "status": "SUCCESS",
+      "rows": 5301,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231103",
+      "status": "SUCCESS",
+      "rows": 5301,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231102",
+      "status": "SUCCESS",
+      "rows": 5300,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231101",
+      "status": "SUCCESS",
+      "rows": 5299,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231031",
+      "status": "SUCCESS",
+      "rows": 5297,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231030",
+      "status": "SUCCESS",
+      "rows": 5296,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231027",
+      "status": "SUCCESS",
+      "rows": 5295,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231026",
+      "status": "SUCCESS",
+      "rows": 5294,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231025",
+      "status": "SUCCESS",
+      "rows": 5295,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231024",
+      "status": "SUCCESS",
+      "rows": 5295,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231023",
+      "status": "SUCCESS",
+      "rows": 5294,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231020",
+      "status": "SUCCESS",
+      "rows": 5293,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231019",
+      "status": "SUCCESS",
+      "rows": 5293,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231018",
+      "status": "SUCCESS",
+      "rows": 5292,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231017",
+      "status": "SUCCESS",
+      "rows": 5292,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231016",
+      "status": "SUCCESS",
+      "rows": 5290,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231013",
+      "status": "SUCCESS",
+      "rows": 5290,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231012",
+      "status": "SUCCESS",
+      "rows": 5289,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231011",
+      "status": "SUCCESS",
+      "rows": 5289,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231010",
+      "status": "SUCCESS",
+      "rows": 5288,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20231009",
+      "status": "SUCCESS",
+      "rows": 5287,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230928",
+      "status": "SUCCESS",
+      "rows": 5287,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230927",
+      "status": "SUCCESS",
+      "rows": 5284,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230926",
+      "status": "SUCCESS",
+      "rows": 5284,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230925",
+      "status": "SUCCESS",
+      "rows": 5283,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230922",
+      "status": "SUCCESS",
+      "rows": 5281,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230921",
+      "status": "SUCCESS",
+      "rows": 5281,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230920",
+      "status": "SUCCESS",
+      "rows": 5280,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230919",
+      "status": "SUCCESS",
+      "rows": 5278,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230918",
+      "status": "SUCCESS",
+      "rows": 5278,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230915",
+      "status": "SUCCESS",
+      "rows": 5277,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230914",
+      "status": "SUCCESS",
+      "rows": 5275,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230913",
+      "status": "SUCCESS",
+      "rows": 5274,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230912",
+      "status": "SUCCESS",
+      "rows": 5274,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230911",
+      "status": "SUCCESS",
+      "rows": 5274,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230908",
+      "status": "SUCCESS",
+      "rows": 5272,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230907",
+      "status": "SUCCESS",
+      "rows": 5271,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230906",
+      "status": "SUCCESS",
+      "rows": 5270,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230905",
+      "status": "SUCCESS",
+      "rows": 5269,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230904",
+      "status": "SUCCESS",
+      "rows": 5268,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230901",
+      "status": "SUCCESS",
+      "rows": 5268,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230831",
+      "status": "SUCCESS",
+      "rows": 5266,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230830",
+      "status": "SUCCESS",
+      "rows": 5266,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230829",
+      "status": "SUCCESS",
+      "rows": 5265,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230828",
+      "status": "SUCCESS",
+      "rows": 5265,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230825",
+      "status": "SUCCESS",
+      "rows": 5264,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230824",
+      "status": "SUCCESS",
+      "rows": 5263,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230823",
+      "status": "SUCCESS",
+      "rows": 5263,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230822",
+      "status": "SUCCESS",
+      "rows": 5261,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230821",
+      "status": "SUCCESS",
+      "rows": 5260,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230818",
+      "status": "SUCCESS",
+      "rows": 5260,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230817",
+      "status": "SUCCESS",
+      "rows": 5257,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230816",
+      "status": "SUCCESS",
+      "rows": 5254,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230815",
+      "status": "SUCCESS",
+      "rows": 5252,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230814",
+      "status": "SUCCESS",
+      "rows": 5250,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230811",
+      "status": "SUCCESS",
+      "rows": 5250,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230810",
+      "status": "SUCCESS",
+      "rows": 5251,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230809",
+      "status": "SUCCESS",
+      "rows": 5249,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230808",
+      "status": "SUCCESS",
+      "rows": 5246,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230807",
+      "status": "SUCCESS",
+      "rows": 5244,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230804",
+      "status": "SUCCESS",
+      "rows": 5243,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230803",
+      "status": "SUCCESS",
+      "rows": 5244,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230802",
+      "status": "SUCCESS",
+      "rows": 5242,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230801",
+      "status": "SUCCESS",
+      "rows": 5242,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230731",
+      "status": "SUCCESS",
+      "rows": 5240,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230728",
+      "status": "SUCCESS",
+      "rows": 5241,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230727",
+      "status": "SUCCESS",
+      "rows": 5241,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230726",
+      "status": "SUCCESS",
+      "rows": 5240,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230725",
+      "status": "SUCCESS",
+      "rows": 5237,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230724",
+      "status": "SUCCESS",
+      "rows": 5236,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230721",
+      "status": "SUCCESS",
+      "rows": 5234,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230720",
+      "status": "SUCCESS",
+      "rows": 5233,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230719",
+      "status": "SUCCESS",
+      "rows": 5230,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230718",
+      "status": "SUCCESS",
+      "rows": 5226,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230717",
+      "status": "SUCCESS",
+      "rows": 5226,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230714",
+      "status": "SUCCESS",
+      "rows": 5223,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230713",
+      "status": "SUCCESS",
+      "rows": 5223,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230712",
+      "status": "SUCCESS",
+      "rows": 5225,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230711",
+      "status": "SUCCESS",
+      "rows": 5223,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230710",
+      "status": "SUCCESS",
+      "rows": 5223,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230707",
+      "status": "SUCCESS",
+      "rows": 5222,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230706",
+      "status": "SUCCESS",
+      "rows": 5222,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230705",
+      "status": "SUCCESS",
+      "rows": 5225,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230704",
+      "status": "SUCCESS",
+      "rows": 5226,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230703",
+      "status": "SUCCESS",
+      "rows": 5225,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230630",
+      "status": "SUCCESS",
+      "rows": 5223,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230629",
+      "status": "SUCCESS",
+      "rows": 5221,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230628",
+      "status": "SUCCESS",
+      "rows": 5221,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230627",
+      "status": "SUCCESS",
+      "rows": 5220,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230626",
+      "status": "SUCCESS",
+      "rows": 5215,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230621",
+      "status": "SUCCESS",
+      "rows": 5216,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230620",
+      "status": "SUCCESS",
+      "rows": 5212,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230619",
+      "status": "SUCCESS",
+      "rows": 5210,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230616",
+      "status": "SUCCESS",
+      "rows": 5208,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230615",
+      "status": "SUCCESS",
+      "rows": 5207,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230614",
+      "status": "SUCCESS",
+      "rows": 5206,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230613",
+      "status": "SUCCESS",
+      "rows": 5205,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230612",
+      "status": "SUCCESS",
+      "rows": 5205,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230609",
+      "status": "SUCCESS",
+      "rows": 5204,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230608",
+      "status": "SUCCESS",
+      "rows": 5202,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230607",
+      "status": "SUCCESS",
+      "rows": 5200,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230606",
+      "status": "SUCCESS",
+      "rows": 5200,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230605",
+      "status": "SUCCESS",
+      "rows": 5199,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230602",
+      "status": "SUCCESS",
+      "rows": 5198,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230601",
+      "status": "SUCCESS",
+      "rows": 5196,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230531",
+      "status": "SUCCESS",
+      "rows": 5193,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230530",
+      "status": "SUCCESS",
+      "rows": 5192,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230529",
+      "status": "SUCCESS",
+      "rows": 5192,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230526",
+      "status": "SUCCESS",
+      "rows": 5192,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230525",
+      "status": "SUCCESS",
+      "rows": 5190,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230524",
+      "status": "SUCCESS",
+      "rows": 5188,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230523",
+      "status": "SUCCESS",
+      "rows": 5187,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230522",
+      "status": "SUCCESS",
+      "rows": 5185,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230519",
+      "status": "SUCCESS",
+      "rows": 5183,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230518",
+      "status": "SUCCESS",
+      "rows": 5180,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230517",
+      "status": "SUCCESS",
+      "rows": 5177,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230516",
+      "status": "SUCCESS",
+      "rows": 5176,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230515",
+      "status": "SUCCESS",
+      "rows": 5174,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230512",
+      "status": "SUCCESS",
+      "rows": 5173,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230511",
+      "status": "SUCCESS",
+      "rows": 5171,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230510",
+      "status": "SUCCESS",
+      "rows": 5170,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230509",
+      "status": "SUCCESS",
+      "rows": 5168,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230508",
+      "status": "SUCCESS",
+      "rows": 5167,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230505",
+      "status": "SUCCESS",
+      "rows": 5166,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230504",
+      "status": "SUCCESS",
+      "rows": 5164,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230428",
+      "status": "SUCCESS",
+      "rows": 5164,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230427",
+      "status": "SUCCESS",
+      "rows": 5164,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230426",
+      "status": "SUCCESS",
+      "rows": 5164,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230425",
+      "status": "SUCCESS",
+      "rows": 5164,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230424",
+      "status": "SUCCESS",
+      "rows": 5162,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230421",
+      "status": "SUCCESS",
+      "rows": 5159,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230420",
+      "status": "SUCCESS",
+      "rows": 5158,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230419",
+      "status": "SUCCESS",
+      "rows": 5157,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230418",
+      "status": "SUCCESS",
+      "rows": 5155,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230417",
+      "status": "SUCCESS",
+      "rows": 5151,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230414",
+      "status": "SUCCESS",
+      "rows": 5149,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230413",
+      "status": "SUCCESS",
+      "rows": 5149,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230412",
+      "status": "SUCCESS",
+      "rows": 5148,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230411",
+      "status": "SUCCESS",
+      "rows": 5148,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230410",
+      "status": "SUCCESS",
+      "rows": 5148,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230407",
+      "status": "SUCCESS",
+      "rows": 5138,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230406",
+      "status": "SUCCESS",
+      "rows": 5137,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230404",
+      "status": "SUCCESS",
+      "rows": 5136,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230403",
+      "status": "SUCCESS",
+      "rows": 5132,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230331",
+      "status": "SUCCESS",
+      "rows": 5131,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230330",
+      "status": "SUCCESS",
+      "rows": 5130,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230329",
+      "status": "SUCCESS",
+      "rows": 5129,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230328",
+      "status": "SUCCESS",
+      "rows": 5126,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230327",
+      "status": "SUCCESS",
+      "rows": 5125,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230324",
+      "status": "SUCCESS",
+      "rows": 5126,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230323",
+      "status": "SUCCESS",
+      "rows": 5126,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230322",
+      "status": "SUCCESS",
+      "rows": 5125,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230321",
+      "status": "SUCCESS",
+      "rows": 5125,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230320",
+      "status": "SUCCESS",
+      "rows": 5123,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230317",
+      "status": "SUCCESS",
+      "rows": 5121,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230316",
+      "status": "SUCCESS",
+      "rows": 5120,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230315",
+      "status": "SUCCESS",
+      "rows": 5119,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230314",
+      "status": "SUCCESS",
+      "rows": 5116,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230313",
+      "status": "SUCCESS",
+      "rows": 5115,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230310",
+      "status": "SUCCESS",
+      "rows": 5113,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230309",
+      "status": "SUCCESS",
+      "rows": 5111,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230308",
+      "status": "SUCCESS",
+      "rows": 5109,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230307",
+      "status": "SUCCESS",
+      "rows": 5107,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230306",
+      "status": "SUCCESS",
+      "rows": 5106,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230303",
+      "status": "SUCCESS",
+      "rows": 5105,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230302",
+      "status": "SUCCESS",
+      "rows": 5103,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230301",
+      "status": "SUCCESS",
+      "rows": 5103,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230228",
+      "status": "SUCCESS",
+      "rows": 5100,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230227",
+      "status": "SUCCESS",
+      "rows": 5099,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230224",
+      "status": "SUCCESS",
+      "rows": 5098,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230223",
+      "status": "SUCCESS",
+      "rows": 5098,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230222",
+      "status": "SUCCESS",
+      "rows": 5097,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230221",
+      "status": "SUCCESS",
+      "rows": 5095,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230220",
+      "status": "SUCCESS",
+      "rows": 5093,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230217",
+      "status": "SUCCESS",
+      "rows": 5092,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230216",
+      "status": "SUCCESS",
+      "rows": 5090,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230215",
+      "status": "SUCCESS",
+      "rows": 5086,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230214",
+      "status": "SUCCESS",
+      "rows": 5087,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230213",
+      "status": "SUCCESS",
+      "rows": 5086,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230210",
+      "status": "SUCCESS",
+      "rows": 5086,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230209",
+      "status": "SUCCESS",
+      "rows": 5085,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230208",
+      "status": "SUCCESS",
+      "rows": 5082,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230207",
+      "status": "SUCCESS",
+      "rows": 5080,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230206",
+      "status": "SUCCESS",
+      "rows": 5080,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230203",
+      "status": "SUCCESS",
+      "rows": 5079,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230202",
+      "status": "SUCCESS",
+      "rows": 5079,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230201",
+      "status": "SUCCESS",
+      "rows": 5078,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230131",
+      "status": "SUCCESS",
+      "rows": 5077,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230130",
+      "status": "SUCCESS",
+      "rows": 5076,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230120",
+      "status": "SUCCESS",
+      "rows": 5074,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230119",
+      "status": "SUCCESS",
+      "rows": 5074,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230118",
+      "status": "SUCCESS",
+      "rows": 5071,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230117",
+      "status": "SUCCESS",
+      "rows": 5069,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230116",
+      "status": "SUCCESS",
+      "rows": 5069,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230113",
+      "status": "SUCCESS",
+      "rows": 5069,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230112",
+      "status": "SUCCESS",
+      "rows": 5069,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230111",
+      "status": "SUCCESS",
+      "rows": 5069,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230110",
+      "status": "SUCCESS",
+      "rows": 5068,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230109",
+      "status": "SUCCESS",
+      "rows": 5068,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230106",
+      "status": "SUCCESS",
+      "rows": 5068,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230105",
+      "status": "SUCCESS",
+      "rows": 5067,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230104",
+      "status": "SUCCESS",
+      "rows": 5067,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20230103",
+      "status": "SUCCESS",
+      "rows": 5067,
+      "ambiguous_codes": []
+    }
+  ],
+  "pending_after": 0,
+  "next_dates": [],
+  "generated_at": "2026-09-25T21:23:41.288360+00:00"
+}

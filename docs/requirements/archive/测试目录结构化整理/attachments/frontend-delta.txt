@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 D:/code/workspace/python/Liveprofit
+
+ ✓ tests/frontend/analysis/integration/pages/tasks/AiTasksPage.test.tsx (9 tests) 791ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  21:18:49
+   Duration  3.67s (transform 259ms, setup 246ms, collect 1.76s, tests 791ms, environment 603ms, prepare 112ms)
+

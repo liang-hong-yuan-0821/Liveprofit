@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-09-25T20:47:51.021017+00:00",
+  "results": [
+    {
+      "trade_date": "20220118",
+      "status": "PARTIAL",
+      "rows": 4701,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20220415",
+      "status": "PARTIAL",
+      "rows": 4781,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20220513",
+      "status": "PARTIAL",
+      "rows": 4806,
+      "ambiguous_codes": [
+        "000670.SZ"
+      ]
+    },
+    {
+      "trade_date": "20220901",
+      "status": "SUCCESS",
+      "rows": 4895,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220927",
+      "status": "SUCCESS",
+      "rows": 4934,
+      "ambiguous_codes": []
+    }
+  ]
+}

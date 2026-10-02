@@ -1,0 +1,1138 @@
+{
+  "start": "2018-05-09",
+  "end": "2018-12-31",
+  "calendar_days": 161,
+  "attempted": 161,
+  "verified_rows": 18455,
+  "non_success_days": [],
+  "results": [
+    {
+      "day": "2018-05-09",
+      "status": "SUCCESS",
+      "rows": 232,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-10",
+      "status": "SUCCESS",
+      "rows": 227,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-11",
+      "status": "SUCCESS",
+      "rows": 222,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-14",
+      "status": "SUCCESS",
+      "rows": 217,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-15",
+      "status": "SUCCESS",
+      "rows": 216,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-16",
+      "status": "SUCCESS",
+      "rows": 208,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-17",
+      "status": "SUCCESS",
+      "rows": 205,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-18",
+      "status": "SUCCESS",
+      "rows": 205,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-21",
+      "status": "SUCCESS",
+      "rows": 209,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-22",
+      "status": "SUCCESS",
+      "rows": 209,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-23",
+      "status": "SUCCESS",
+      "rows": 208,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-24",
+      "status": "SUCCESS",
+      "rows": 212,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-25",
+      "status": "SUCCESS",
+      "rows": 210,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-28",
+      "status": "SUCCESS",
+      "rows": 204,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-29",
+      "status": "SUCCESS",
+      "rows": 206,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-30",
+      "status": "SUCCESS",
+      "rows": 212,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-05-31",
+      "status": "SUCCESS",
+      "rows": 215,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-01",
+      "status": "SUCCESS",
+      "rows": 214,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-04",
+      "status": "SUCCESS",
+      "rows": 208,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-05",
+      "status": "SUCCESS",
+      "rows": 206,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-06",
+      "status": "SUCCESS",
+      "rows": 209,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-07",
+      "status": "SUCCESS",
+      "rows": 215,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-08",
+      "status": "SUCCESS",
+      "rows": 218,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-11",
+      "status": "SUCCESS",
+      "rows": 214,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-12",
+      "status": "SUCCESS",
+      "rows": 215,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-13",
+      "status": "SUCCESS",
+      "rows": 214,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-14",
+      "status": "SUCCESS",
+      "rows": 217,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-15",
+      "status": "SUCCESS",
+      "rows": 222,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-19",
+      "status": "SUCCESS",
+      "rows": 238,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-20",
+      "status": "SUCCESS",
+      "rows": 235,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-21",
+      "status": "SUCCESS",
+      "rows": 236,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-22",
+      "status": "SUCCESS",
+      "rows": 233,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-25",
+      "status": "SUCCESS",
+      "rows": 227,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-26",
+      "status": "SUCCESS",
+      "rows": 223,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-27",
+      "status": "SUCCESS",
+      "rows": 214,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-28",
+      "status": "SUCCESS",
+      "rows": 209,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-06-29",
+      "status": "SUCCESS",
+      "rows": 202,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-02",
+      "status": "SUCCESS",
+      "rows": 191,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-03",
+      "status": "SUCCESS",
+      "rows": 182,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-04",
+      "status": "SUCCESS",
+      "rows": 182,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-05",
+      "status": "SUCCESS",
+      "rows": 178,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-06",
+      "status": "SUCCESS",
+      "rows": 178,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-09",
+      "status": "SUCCESS",
+      "rows": 171,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-10",
+      "status": "SUCCESS",
+      "rows": 169,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-11",
+      "status": "SUCCESS",
+      "rows": 171,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-12",
+      "status": "SUCCESS",
+      "rows": 173,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-13",
+      "status": "SUCCESS",
+      "rows": 164,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-16",
+      "status": "SUCCESS",
+      "rows": 155,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-17",
+      "status": "SUCCESS",
+      "rows": 153,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-18",
+      "status": "SUCCESS",
+      "rows": 149,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-19",
+      "status": "SUCCESS",
+      "rows": 147,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-20",
+      "status": "SUCCESS",
+      "rows": 144,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-23",
+      "status": "SUCCESS",
+      "rows": 143,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-24",
+      "status": "SUCCESS",
+      "rows": 144,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-25",
+      "status": "SUCCESS",
+      "rows": 141,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-26",
+      "status": "SUCCESS",
+      "rows": 140,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-27",
+      "status": "SUCCESS",
+      "rows": 140,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-30",
+      "status": "SUCCESS",
+      "rows": 139,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-07-31",
+      "status": "SUCCESS",
+      "rows": 135,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-01",
+      "status": "SUCCESS",
+      "rows": 131,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-02",
+      "status": "SUCCESS",
+      "rows": 129,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-03",
+      "status": "SUCCESS",
+      "rows": 125,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-06",
+      "status": "SUCCESS",
+      "rows": 123,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-07",
+      "status": "SUCCESS",
+      "rows": 118,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-08",
+      "status": "SUCCESS",
+      "rows": 120,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-09",
+      "status": "SUCCESS",
+      "rows": 118,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-10",
+      "status": "SUCCESS",
+      "rows": 119,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-13",
+      "status": "SUCCESS",
+      "rows": 119,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-14",
+      "status": "SUCCESS",
+      "rows": 117,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-15",
+      "status": "SUCCESS",
+      "rows": 115,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-16",
+      "status": "SUCCESS",
+      "rows": 115,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-17",
+      "status": "SUCCESS",
+      "rows": 111,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-20",
+      "status": "SUCCESS",
+      "rows": 108,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-21",
+      "status": "SUCCESS",
+      "rows": 106,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-22",
+      "status": "SUCCESS",
+      "rows": 106,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-23",
+      "status": "SUCCESS",
+      "rows": 108,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-24",
+      "status": "SUCCESS",
+      "rows": 105,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-27",
+      "status": "SUCCESS",
+      "rows": 103,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-28",
+      "status": "SUCCESS",
+      "rows": 102,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-29",
+      "status": "SUCCESS",
+      "rows": 102,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-30",
+      "status": "SUCCESS",
+      "rows": 100,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-08-31",
+      "status": "SUCCESS",
+      "rows": 99,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-03",
+      "status": "SUCCESS",
+      "rows": 98,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-04",
+      "status": "SUCCESS",
+      "rows": 97,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-05",
+      "status": "SUCCESS",
+      "rows": 96,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-06",
+      "status": "SUCCESS",
+      "rows": 97,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-07",
+      "status": "SUCCESS",
+      "rows": 100,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-10",
+      "status": "SUCCESS",
+      "rows": 102,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-11",
+      "status": "SUCCESS",
+      "rows": 99,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-12",
+      "status": "SUCCESS",
+      "rows": 99,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-13",
+      "status": "SUCCESS",
+      "rows": 92,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-14",
+      "status": "SUCCESS",
+      "rows": 91,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-17",
+      "status": "SUCCESS",
+      "rows": 93,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-18",
+      "status": "SUCCESS",
+      "rows": 90,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-19",
+      "status": "SUCCESS",
+      "rows": 92,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-20",
+      "status": "SUCCESS",
+      "rows": 90,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-21",
+      "status": "SUCCESS",
+      "rows": 87,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-25",
+      "status": "SUCCESS",
+      "rows": 82,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-26",
+      "status": "SUCCESS",
+      "rows": 81,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-27",
+      "status": "SUCCESS",
+      "rows": 80,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-09-28",
+      "status": "SUCCESS",
+      "rows": 79,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-08",
+      "status": "SUCCESS",
+      "rows": 83,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-09",
+      "status": "SUCCESS",
+      "rows": 73,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-10",
+      "status": "SUCCESS",
+      "rows": 69,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-11",
+      "status": "SUCCESS",
+      "rows": 71,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-12",
+      "status": "SUCCESS",
+      "rows": 67,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-15",
+      "status": "SUCCESS",
+      "rows": 70,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-16",
+      "status": "SUCCESS",
+      "rows": 66,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-17",
+      "status": "SUCCESS",
+      "rows": 64,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-18",
+      "status": "SUCCESS",
+      "rows": 68,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-19",
+      "status": "SUCCESS",
+      "rows": 72,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-22",
+      "status": "SUCCESS",
+      "rows": 77,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-23",
+      "status": "SUCCESS",
+      "rows": 77,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-24",
+      "status": "SUCCESS",
+      "rows": 77,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-25",
+      "status": "SUCCESS",
+      "rows": 81,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-26",
+      "status": "SUCCESS",
+      "rows": 80,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-29",
+      "status": "SUCCESS",
+      "rows": 73,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-30",
+      "status": "SUCCESS",
+      "rows": 69,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-10-31",
+      "status": "SUCCESS",
+      "rows": 74,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-01",
+      "status": "SUCCESS",
+      "rows": 72,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-02",
+      "status": "SUCCESS",
+      "rows": 71,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-05",
+      "status": "SUCCESS",
+      "rows": 61,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-06",
+      "status": "SUCCESS",
+      "rows": 62,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-07",
+      "status": "SUCCESS",
+      "rows": 59,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-08",
+      "status": "SUCCESS",
+      "rows": 56,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-09",
+      "status": "SUCCESS",
+      "rows": 53,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-12",
+      "status": "SUCCESS",
+      "rows": 49,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-13",
+      "status": "SUCCESS",
+      "rows": 47,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-14",
+      "status": "SUCCESS",
+      "rows": 46,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-15",
+      "status": "SUCCESS",
+      "rows": 42,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-16",
+      "status": "SUCCESS",
+      "rows": 37,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-19",
+      "status": "SUCCESS",
+      "rows": 37,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-20",
+      "status": "SUCCESS",
+      "rows": 37,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-21",
+      "status": "SUCCESS",
+      "rows": 38,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-22",
+      "status": "SUCCESS",
+      "rows": 33,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-23",
+      "status": "SUCCESS",
+      "rows": 31,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-26",
+      "status": "SUCCESS",
+      "rows": 32,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-27",
+      "status": "SUCCESS",
+      "rows": 31,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-28",
+      "status": "SUCCESS",
+      "rows": 25,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-29",
+      "status": "SUCCESS",
+      "rows": 27,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-11-30",
+      "status": "SUCCESS",
+      "rows": 25,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-03",
+      "status": "SUCCESS",
+      "rows": 23,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-04",
+      "status": "SUCCESS",
+      "rows": 21,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-05",
+      "status": "SUCCESS",
+      "rows": 22,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-06",
+      "status": "SUCCESS",
+      "rows": 21,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-07",
+      "status": "SUCCESS",
+      "rows": 18,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-10",
+      "status": "SUCCESS",
+      "rows": 14,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-11",
+      "status": "SUCCESS",
+      "rows": 18,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-12",
+      "status": "SUCCESS",
+      "rows": 15,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-13",
+      "status": "SUCCESS",
+      "rows": 15,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-14",
+      "status": "SUCCESS",
+      "rows": 15,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-17",
+      "status": "SUCCESS",
+      "rows": 16,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-18",
+      "status": "SUCCESS",
+      "rows": 18,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-19",
+      "status": "SUCCESS",
+      "rows": 19,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-20",
+      "status": "SUCCESS",
+      "rows": 14,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-21",
+      "status": "SUCCESS",
+      "rows": 14,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-24",
+      "status": "SUCCESS",
+      "rows": 15,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-25",
+      "status": "SUCCESS",
+      "rows": 20,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-26",
+      "status": "SUCCESS",
+      "rows": 21,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-27",
+      "status": "SUCCESS",
+      "rows": 21,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    },
+    {
+      "day": "2018-12-28",
+      "status": "SUCCESS",
+      "rows": 14,
+      "bar_conflicts": [],
+      "outside_stock_pool": []
+    }
+  ],
+  "generated_at": "2026-09-25T18:43:55.927307+00:00"
+}

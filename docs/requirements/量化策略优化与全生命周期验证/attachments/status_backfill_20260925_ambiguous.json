@@ -1,0 +1,134 @@
+{
+  "start": "2026-01-01",
+  "end": "2026-09-24",
+  "calendar_days": 178,
+  "pending_before": 13,
+  "attempted": [
+    {
+      "trade_date": "20260915",
+      "status": "PARTIAL",
+      "rows": 5561,
+      "ambiguous_codes": [
+        "601238.SH"
+      ]
+    },
+    {
+      "trade_date": "20260709",
+      "status": "PARTIAL",
+      "rows": 5528,
+      "ambiguous_codes": [
+        "920305.BJ"
+      ]
+    },
+    {
+      "trade_date": "20260706",
+      "status": "PARTIAL",
+      "rows": 5526,
+      "ambiguous_codes": [
+        "002731.SZ"
+      ]
+    },
+    {
+      "trade_date": "20260626",
+      "status": "PARTIAL",
+      "rows": 5527,
+      "ambiguous_codes": [
+        "002898.SZ"
+      ]
+    },
+    {
+      "trade_date": "20260623",
+      "status": "PARTIAL",
+      "rows": 5526,
+      "ambiguous_codes": [
+        "000004.SZ",
+        "002808.SZ"
+      ]
+    },
+    {
+      "trade_date": "20260616",
+      "status": "PARTIAL",
+      "rows": 5527,
+      "ambiguous_codes": [
+        "603159.SH"
+      ]
+    },
+    {
+      "trade_date": "20260608",
+      "status": "PARTIAL",
+      "rows": 5523,
+      "ambiguous_codes": [
+        "600193.SH",
+        "600608.SH",
+        "605081.SH"
+      ]
+    },
+    {
+      "trade_date": "20260601",
+      "status": "PARTIAL",
+      "rows": 5522,
+      "ambiguous_codes": [
+        "600421.SH",
+        "600599.SH",
+        "600696.SH"
+      ]
+    },
+    {
+      "trade_date": "20260320",
+      "status": "PARTIAL",
+      "rows": 5490,
+      "ambiguous_codes": [
+        "300391.SZ"
+      ]
+    },
+    {
+      "trade_date": "20260122",
+      "status": "PARTIAL",
+      "rows": 5472,
+      "ambiguous_codes": [
+        "603616.SH"
+      ]
+    },
+    {
+      "trade_date": "20260115",
+      "status": "PARTIAL",
+      "rows": 5470,
+      "ambiguous_codes": [
+        "688005.SH"
+      ]
+    },
+    {
+      "trade_date": "20260113",
+      "status": "PARTIAL",
+      "rows": 5469,
+      "ambiguous_codes": [
+        "605028.SH"
+      ]
+    },
+    {
+      "trade_date": "20260112",
+      "status": "PARTIAL",
+      "rows": 5469,
+      "ambiguous_codes": [
+        "603056.SH"
+      ]
+    }
+  ],
+  "pending_after": 13,
+  "next_dates": [
+    "2026-09-15",
+    "2026-07-09",
+    "2026-07-06",
+    "2026-06-26",
+    "2026-06-23",
+    "2026-06-16",
+    "2026-06-08",
+    "2026-06-01",
+    "2026-03-20",
+    "2026-01-22",
+    "2026-01-15",
+    "2026-01-13",
+    "2026-01-12"
+  ],
+  "generated_at": "2026-09-25T11:36:12.028539+00:00"
+}

@@ -1,0 +1,119 @@
+[
+  {
+    "ts_code": "000670.SZ",
+    "first": "2021-01-04",
+    "last": "2021-12-31",
+    "count": 243,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk02/finalpage/2020-04-03/fa462ff1-cb90-45c0-be24-a7ea757df62f.PDF",
+    "published_on": "2020-04-03",
+    "evidence_note": "2020-04-07起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "002260.SZ",
+    "first": "2021-01-04",
+    "last": "2021-12-31",
+    "count": 243,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk01/finalpage/2019-05-13/59971502-83c4-4bdb-b5ba-e0a616a3b1cf.PDF",
+    "published_on": "2019-05-13",
+    "evidence_note": "2019-05-15起暂停上市；2020年内未恢复交易。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "000792.SZ",
+    "first": "2021-01-04",
+    "last": "2021-08-09",
+    "count": 146,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk02/finalpage/2020-05-21/8fba7650-41c1-477d-8eda-7e92be248039.PDF",
+    "published_on": "2020-05-21",
+    "evidence_note": "2020-05-22起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "300362.SZ",
+    "first": "2021-01-04",
+    "last": "2021-07-16",
+    "count": 130,
+    "source_url": "https://disc.static.szse.cn/disc/disk02/finalpage/2020-05-09/db70cc33-6e60-4309-beda-5093ff67ebb5.PDF",
+    "published_on": "2020-05-09",
+    "evidence_note": "2020-05-13起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "000760.SZ",
+    "first": "2021-01-04",
+    "last": "2021-06-09",
+    "count": 104,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk02/finalpage/2020-07-06/29e6f611-18e8-4288-b373-ba998ca8c1fa.PDF",
+    "published_on": "2020-07-06",
+    "evidence_note": "2020-07-06起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "002359.SZ",
+    "first": "2021-01-04",
+    "last": "2021-06-09",
+    "count": 104,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk02/finalpage/2020-07-03/6d8e0bc6-164a-4854-8e1b-3b20274ad93b.PDF",
+    "published_on": "2020-07-03",
+    "evidence_note": "2020-07-09起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "002711.SZ",
+    "first": "2021-01-04",
+    "last": "2021-06-01",
+    "count": 98,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk02/finalpage/2020-05-12/8cb7ac43-f2e4-43b7-9286-958d51072bf7.PDF",
+    "published_on": "2020-05-12",
+    "evidence_note": "2020-05-15起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "600614.SH",
+    "first": "2021-01-04",
+    "last": "2021-06-01",
+    "count": 98,
+    "source_url": "https://www.sse.com.cn/disclosure/announcement/listing/stock/c/c_20210525_81710481.shtml",
+    "published_on": "2021-05-25",
+    "evidence_note": "上交所终止上市公告追溯确认2020-07-17起暂停上市；2020研究as-of不得提前使用。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "600634.SH",
+    "first": "2021-01-04",
+    "last": "2021-06-01",
+    "count": 98,
+    "source_url": "https://www.sse.com.cn/disclosure/announcement/listing/stock/c/c_20210525_81710480.shtml",
+    "published_on": "2021-05-25",
+    "evidence_note": "上交所终止上市公告追溯确认2020-12-09起暂停上市；2020研究as-of不得提前使用。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "600485.SH",
+    "first": "2021-01-04",
+    "last": "2021-05-31",
+    "count": 97,
+    "source_url": "https://www.sse.com.cn/disclosure/announcement/listing/stock/c/c_20210525_81710479.shtml",
+    "published_on": "2021-05-25",
+    "evidence_note": "上交所终止上市公告追溯确认2020-05-15起暂停上市；2020研究as-of不得提前使用。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "002450.SZ",
+    "first": "2021-01-04",
+    "last": "2021-04-13",
+    "count": 66,
+    "source_url": "https://disc.static.szse.cn/download/disc/disk02/finalpage/2020-07-08/048e2d01-6889-4ad4-ba8f-496a9bf59c58.PDF",
+    "published_on": "2020-07-08",
+    "evidence_note": "2020-07-10起暂停上市，年末未恢复。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "600677.SH",
+    "first": "2021-01-04",
+    "last": "2021-03-17",
+    "count": 48,
+    "source_url": "https://www.sse.com.cn/services/information/delisting/c/600677_20210417_1.pdf",
+    "published_on": "2021-04-17",
+    "evidence_note": "上交所退市公司资料追溯确认2020-05-29起暂停上市；2020研究as-of不得提前使用。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  },
+  {
+    "ts_code": "600701.SH",
+    "first": "2021-01-04",
+    "last": "2021-03-12",
+    "count": 45,
+    "source_url": "https://www.sse.com.cn/disclosure/announcement/listing/stock/c/c_20210305_80770476.shtml",
+    "published_on": "2021-03-05",
+    "evidence_note": "上交所终止上市公告追溯确认2020-05-29起暂停上市；2020研究as-of不得提前使用。 2021年延续未交易，区间终点以主库日线恢复或退市资格截止核验。"
+  }
+]

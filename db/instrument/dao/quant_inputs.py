@@ -31,7 +31,8 @@ def read_stock_quant_facts(conn, codes: list[str], trade_day, qfq_columns: list[
         params,
     ).fetchall()
     status_rows = conn.execute(
-        "SELECT ts_code, is_suspended, source FROM market.trade_status_daily "
+        "SELECT ts_code, (is_suspended AND suspension_scope='full_day'), source "
+        "FROM market.trade_status_effective "
         "WHERE ts_code = ANY(%s) AND trade_date = %s",
         params,
     ).fetchall()
@@ -47,6 +48,7 @@ def read_stock_quant_facts(conn, codes: list[str], trade_day, qfq_columns: list[
     ).fetchall()
     status_validity = (
         "is_suspended IS NOT NULL AND is_st IS NOT NULL AND market_board IS NOT NULL "
+        "AND (is_suspended IS FALSE OR suspension_scope IN ('full_day','intraday')) "
         "AND btrim(market_board) <> '' "
         "AND (up_limit IS NULL OR (up_limit > 0 AND up_limit NOT IN "
         "('NaN'::float8, 'Infinity'::float8, '-Infinity'::float8))) "
@@ -55,8 +57,9 @@ def read_stock_quant_facts(conn, codes: list[str], trade_day, qfq_columns: list[
         "AND (up_limit IS NULL OR down_limit IS NULL OR up_limit >= down_limit)"
     )
     status_facts = conn.execute(
-        f"SELECT ts_code, ({status_validity}) FROM market.trade_status_daily "
-        "WHERE ts_code = ANY(%s) AND trade_date = %s AND source = 'tushare'",
+        f"SELECT ts_code, ({status_validity}) FROM market.trade_status_effective "
+        "WHERE ts_code = ANY(%s) AND trade_date = %s "
+        "AND source IN ('tushare','tushare+baostock')",
         params,
     ).fetchall()
     status_valid = {code for code, valid in status_facts if valid}
@@ -64,7 +67,7 @@ def read_stock_quant_facts(conn, codes: list[str], trade_day, qfq_columns: list[
         "daily_valid": {code for code, valid in daily_rows if valid},
         "daily_seen": {code for code, _ in daily_rows},
         "suspended": {code for code, flag, source in status_rows
-                      if flag is True and source == "tushare"} & status_valid,
+                      if flag is True and source in ("tushare", "tushare+baostock")} & status_valid,
         "qfq_valid": {code for code, valid in qfq_rows if valid},
         "qfq_seen": {code for code, _ in qfq_rows},
         "adj_valid": {code for code, valid in adj_rows if valid},

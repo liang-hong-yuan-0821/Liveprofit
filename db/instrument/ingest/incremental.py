@@ -33,10 +33,12 @@ from db.instrument.ingest.guard import ALL_RESOURCES, FATAL_INGEST_ERRORS, locke
 
 from db.instrument.dao import fund_info, stock_info
 from db.instrument.dao import instrument as instrument_dao
-from db.instrument.dao.instrument_daily import bulk_upsert_daily, latest_trade_date
+from db.instrument.dao.instrument_daily import bulk_upsert_daily
 from db.instrument.dao.adj_factor import bulk_upsert_factor
 from db.instrument.dao.factor_daily import bulk_upsert_factor_daily
 from db.instrument.ingest.frames import fetch_day_frames
+from db.instrument.ingest.etf_catalog import collect_etf_catalog
+from db.instrument.ingest.fund_factors import collect_fund_factor_day
 from db.instrument.ingest.sector_daily import collect_sector_daily_incremental
 from db.instrument.ingest.sectors import collect_sectors
 from db.instrument.ingest.stock_factors import collect_stock_quant_day
@@ -129,6 +131,137 @@ def _last_trade_days(provider, n: int = _WINDOW_DAYS) -> list:
         return []
     days = sorted(pd.to_datetime(cal["trade_date"]).dt.strftime("%Y%m%d").unique())
     return days[-n:]
+
+
+def _unreconciled_stock_days(conn, calendar_days: list[str], limit: int = 3) -> list[str]:
+    """Find old stock dates and recent whole-fund days needing replay.
+
+    Existing stock daily rows reveal adj gaps at any age; the independent recent
+    calendar reveals missing stock rows or an entirely absent fund day.
+    Trusted suspension is the only missing-bar exemption. Bound replay so one
+    incremental run cannot turn into an unplanned full backfill.
+    """
+    if not calendar_days or limit < 1:
+        return []
+    rows = conn.execute(
+        "WITH recent(day) AS (SELECT unnest(%s::date[])), "
+        "uncovered AS ("
+        " SELECT r.day FROM recent r WHERE EXISTS ("
+        "  SELECT 1 FROM market.instrument i "
+        "  LEFT JOIN market.instrument_daily d ON d.ts_code=i.ts_code AND d.trade_date=r.day "
+        "  LEFT JOIN market.trade_status_effective s ON s.ts_code=i.ts_code AND s.trade_date=r.day "
+        "  WHERE i.instrument_type='stock' AND i.list_date<=r.day "
+        "   AND (i.delist_date IS NULL OR i.delist_date>r.day) "
+        "   AND (i.ts_code NOT LIKE '%%.BJ' OR r.day>=DATE '2021-11-15') "
+        "   AND d.ts_code IS NULL "
+        "   AND (s.is_suspended IS TRUE AND s.suspension_scope='full_day' "
+        "   AND s.source IN ('tushare','tushare+baostock')) IS NOT TRUE "
+        "   AND NOT EXISTS (SELECT 1 FROM market.suspension_evidence e "
+        "    WHERE e.ts_code=i.ts_code AND e.trade_date=r.day AND e.scope='full_day') "
+        "   AND NOT EXISTS (SELECT 1 FROM market.suspension_source_daily v "
+        "    WHERE v.ts_code=i.ts_code AND v.trade_date=r.day "
+        "    AND v.scope='full_day' AND v.source='tushare_suspend_d')) "
+        " UNION "
+        " SELECT DISTINCT d.trade_date FROM market.instrument_daily d "
+        " JOIN market.instrument i ON i.ts_code=d.ts_code AND i.instrument_type IN ('stock','fund') "
+        " LEFT JOIN market.adj_factor a ON a.ts_code=d.ts_code AND a.trade_date=d.trade_date "
+        " WHERE ((i.instrument_type='stock' AND i.list_date<=d.trade_date "
+        "  AND (i.delist_date IS NULL OR d.trade_date<i.delist_date) "
+        "  AND (i.ts_code NOT LIKE '%%.BJ' OR d.trade_date>=DATE '2021-11-15')) "
+        "  OR (i.instrument_type='fund' AND d.trade_date IN (SELECT day FROM recent))) "
+        " AND (a.ts_code IS NULL OR a.adj_factor<=0 "
+        "  OR a.adj_factor='NaN'::float8 OR a.adj_factor='Infinity'::float8)"
+        " UNION "
+        " SELECT r.day FROM recent r WHERE EXISTS ("
+        "  SELECT 1 FROM market.instrument i WHERE i.instrument_type='fund' "
+        "   AND i.list_date<=r.day AND (i.delist_date IS NULL OR i.delist_date>r.day)) "
+        " AND NOT EXISTS (SELECT 1 FROM market.instrument_daily b "
+        "  JOIN market.instrument i ON i.ts_code=b.ts_code "
+        "  WHERE i.instrument_type='fund' AND b.trade_date=r.day)"
+        ") SELECT day FROM uncovered ORDER BY day LIMIT %s",
+        ([pd.Timestamp(day).date() for day in calendar_days], limit),
+    ).fetchall()
+    return [pd.Timestamp(row[0]).strftime("%Y%m%d") for row in rows]
+
+
+def _active_stock_codes(conn, trade_date: str) -> list[str]:
+    """Use the date's listed universe for factor coverage, not today's catalog."""
+    rows = conn.execute(
+        "SELECT ts_code FROM market.instrument "
+        "WHERE instrument_type='stock' AND list_date <= %s::date "
+        "AND (delist_date IS NULL OR delist_date > %s::date) "
+        "AND (ts_code NOT LIKE '%%.BJ' OR %s::date>=DATE '2021-11-15') ORDER BY ts_code",
+        (trade_date, trade_date, trade_date),
+    ).fetchall()
+    return [row[0] for row in rows]
+
+
+def _stock_day_quality_gaps(conn, days: list[str]) -> list[dict]:
+    """Check persisted daily/adjustment/status against each day's listed stocks."""
+    if not days:
+        return []
+    rows = conn.execute(
+        "WITH days(day) AS (SELECT unnest(%s::date[])) "
+        "SELECT d.day, "
+        " count(*) FILTER (WHERE b.ts_code IS NULL AND ("
+        "  s.is_suspended IS TRUE AND s.suspension_scope='full_day' "
+        "  AND s.source IN ('tushare','tushare+baostock')) IS NOT TRUE "
+        "  AND NOT EXISTS (SELECT 1 FROM market.suspension_evidence e "
+        "   WHERE e.ts_code=i.ts_code AND e.trade_date=d.day AND e.scope='full_day') "
+        "  AND NOT EXISTS (SELECT 1 FROM market.suspension_source_daily v "
+        "   WHERE v.ts_code=i.ts_code AND v.trade_date=d.day "
+        "   AND v.scope='full_day' AND v.source='tushare_suspend_d')) AS daily_missing, "
+        " count(*) FILTER (WHERE b.ts_code IS NOT NULL AND "
+        "  (a.adj_factor IS NULL OR a.adj_factor<=0 "
+        "   OR a.adj_factor='NaN'::float8 OR a.adj_factor='Infinity'::float8)) "
+        "  AS adj_missing, "
+        " count(*) FILTER (WHERE s.ts_code IS NULL OR s.source NOT IN ('tushare','tushare+baostock') "
+        "  OR s.is_suspended IS NULL OR s.is_st IS NULL OR s.market_board IS NULL "
+        "  OR (s.is_suspended IS TRUE AND (s.suspension_scope IS NULL "
+        "    OR s.suspension_scope NOT IN ('full_day','intraday')))) "
+        "  AS status_missing "
+        "FROM days d JOIN market.instrument i ON i.instrument_type='stock' "
+        " AND i.list_date<=d.day AND (i.delist_date IS NULL OR i.delist_date>d.day) "
+        " AND (i.ts_code NOT LIKE '%%.BJ' OR d.day>=DATE '2021-11-15') "
+        "LEFT JOIN market.instrument_daily b ON b.ts_code=i.ts_code AND b.trade_date=d.day "
+        "LEFT JOIN market.adj_factor a ON a.ts_code=i.ts_code AND a.trade_date=d.day "
+        "LEFT JOIN market.trade_status_effective s ON s.ts_code=i.ts_code AND s.trade_date=d.day "
+        "GROUP BY d.day ORDER BY d.day",
+        ([pd.Timestamp(day).date() for day in days],),
+    ).fetchall()
+    return [
+        {"trade_date": pd.Timestamp(day).strftime("%Y%m%d"),
+         "daily_missing": int(daily), "adj_missing": int(adj),
+         "status_missing": int(status)}
+        for day, daily, adj, status in rows if daily or adj or status
+    ]
+
+
+def _fund_day_quality_gaps(conn, days: list[str]) -> list[dict]:
+    """Flag whole-day fund outages and missing adjustment for observed fund bars."""
+    if not days:
+        return []
+    rows = conn.execute(
+        "WITH days(day) AS (SELECT unnest(%s::date[])) "
+        "SELECT d.day, "
+        " EXISTS (SELECT 1 FROM market.instrument i WHERE i.instrument_type='fund' "
+        "  AND i.list_date<=d.day AND (i.delist_date IS NULL OR i.delist_date>d.day)) "
+        "  AND NOT EXISTS (SELECT 1 FROM market.instrument_daily b "
+        "   JOIN market.instrument i ON i.ts_code=b.ts_code "
+        "   WHERE i.instrument_type='fund' AND b.trade_date=d.day) AS daily_missing, "
+        " (SELECT count(*) FROM market.instrument_daily b "
+        "  JOIN market.instrument i ON i.ts_code=b.ts_code AND i.instrument_type='fund' "
+        "  LEFT JOIN market.adj_factor a ON a.ts_code=b.ts_code AND a.trade_date=b.trade_date "
+        "  WHERE b.trade_date=d.day AND (a.ts_code IS NULL OR a.adj_factor<=0 "
+        "   OR a.adj_factor='NaN'::float8 OR a.adj_factor='Infinity'::float8)) AS adj_missing "
+        "FROM days d ORDER BY d.day",
+        ([pd.Timestamp(day).date() for day in days],),
+    ).fetchall()
+    return [
+        {"trade_date": pd.Timestamp(day).strftime("%Y%m%d"),
+         "daily_missing": bool(daily), "adj_missing": int(adj)}
+        for day, daily, adj in rows if daily or adj
+    ]
 
 
 def _refresh_basics(conn, provider) -> tuple:
@@ -384,9 +517,10 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
     _assert_index_targets_valid()
     provider = provider_factory()
     fallback = fallback_provider_factory() if fallback_provider_factory else None
-    days = _last_trade_days(provider)
-    if not days:
+    calendar_days = _last_trade_days(provider, n=30)
+    if not calendar_days:
         return {"error": "交易日历不可用"}
+    days = calendar_days[-_WINDOW_DAYS:]
 
     summary = {}
 
@@ -409,6 +543,10 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
         except Exception:
             pass
 
+    repair_days = _unreconciled_stock_days(conn, calendar_days)
+    daily_days = sorted(set(days) | set(repair_days))
+    summary["repair_days"] = repair_days
+
     # ---- 步骤 3：指数日线+因子（独立于个股基金窗口覆盖判定） ----
     try:
         summary["index"] = _ingest_index_bars_and_factors(
@@ -428,29 +566,27 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
         except Exception:
             pass
 
-    # ---- 步骤 4：个股基金日线+复权（窗口覆盖判定只作用于本步骤；
-    # 门控按数据域判定——过滤 instrument_type IN ('stock','fund')，否则
-    # 步骤 3 先写入的指数行抬高全局 max 后本步骤被静默跳过，CR B1） ----
-    summary["daily"] = {}
-    latest = latest_trade_date(conn, instrument_types=("stock", "fund"))
-    window_covered = False
-    if latest is not None:
-        latest_dt = latest if hasattr(latest, "strftime") else pd.Timestamp(latest)
-        if pd.Timestamp(latest_dt) >= pd.Timestamp(days[-1]):
-            window_covered = True
-            logger.info("增量: 库内个股基金最新 %s 已覆盖目标窗口（最近交易日 %s），"
-                        "跳过日线窗口", pd.Timestamp(latest_dt).date(), days[-1])
-    if not window_covered:
-        summary["daily"] = _ingest_stock_fund_daily(
-            conn, provider, days, stock_codes, fund_codes)
+    # ---- 步骤 4：个股基金日线+复权。最新日期存在不能证明三日窗口内
+    # 每日复权与行情完整；DO UPDATE 重拉三日，同时接收日终修正。 ----
+    summary["daily"] = _ingest_stock_fund_daily(
+        conn, provider, daily_days, stock_codes, fund_codes)
 
     # ---- 量化 qfq 因子与交易状态：即使日线窗口已覆盖也要独立补齐。 ----
     summary["quant_data"] = {}
     if isinstance(provider, BaseStockDataProvider):
-        for d in days:
+        try:
+            summary["etf_catalog"] = collect_etf_catalog(conn, provider)
+        except FATAL_INGEST_ERRORS:
+            raise
+        except ProviderNetworkAccessDenied:
+            raise
+        except Exception as e:
+            logger.warning("增量: ETF目录观察失败（不阻断其他数据）: %s", e)
+            conn.rollback()
+        for d in daily_days:
             try:
                 summary["quant_data"][d] = collect_stock_quant_day(
-                    conn, provider, d, stock_codes,
+                    conn, provider, d, _active_stock_codes(conn, d),
                 )
             except FATAL_INGEST_ERRORS:
                 raise
@@ -466,6 +602,21 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
                     raise
                 except Exception:
                     pass
+
+        # 独立于日线窗口与股票 qfq：仅用同日已落库的基金原价校验后写 bfq。
+        summary["fund_quant_data"] = {}
+        for d in daily_days:
+            try:
+                summary["fund_quant_data"][d] = collect_fund_factor_day(
+                    conn, provider, pd.Timestamp(d).strftime("%Y-%m-%d"),
+                )
+            except FATAL_INGEST_ERRORS:
+                raise
+            except ProviderNetworkAccessDenied:
+                raise
+            except Exception as e:
+                logger.warning("增量: %s 基金技术因子失败（不阻断其他数据）: %s", d, e)
+                conn.rollback()
 
     # ---- 步骤 5：板块日线增量（每日常规、非周一限定——板块概念Treemap方案 3.1；
     # dc_daily 窗口型数据源无历史回填，历史自启动日起每日 +1 行积累；
@@ -540,6 +691,28 @@ def collect_incremental(conn, provider_factory, fallback_provider_factory=None,
                 raise
             except Exception:
                 pass
+    summary["daily_failed_days"] = [d for d in daily_days if d not in summary["daily"]]
+    if isinstance(provider, BaseStockDataProvider):
+        # Replay is bounded, but an unselected recent gap must still prevent a
+        # success report. Historical repair dates are checked as well.
+        quality_days = sorted(set(calendar_days) | set(daily_days))
+        summary["stock_day_quality_gaps"] = _stock_day_quality_gaps(conn, quality_days)
+        summary["fund_day_quality_gaps"] = _fund_day_quality_gaps(conn, quality_days)
+    if isinstance(provider, BaseStockDataProvider):
+        summary["quant_failed_days"] = [
+            d for d in daily_days
+            if summary["quant_data"].get(d, {}).get("status") != "SUCCESS"
+        ]
+        summary["fund_quant_failed_days"] = [
+            d for d in daily_days
+            if summary["fund_quant_data"].get(d, {}).get("status") != "SUCCESS"
+        ]
+    if any(summary.get(key) for key in (
+        "daily_failed_days", "quant_failed_days", "fund_quant_failed_days",
+        "stock_day_quality_gaps",
+        "fund_day_quality_gaps",
+    )):
+        summary["error"] = "INCREMENTAL_INCOMPLETE"
     return summary
 
 
@@ -571,7 +744,7 @@ def main():
     with get_connection() as conn, IngestGuard(conn, changed=market_changed_notifier_from_env()) as guard:
         summary = collect_incremental(conn, provider_factory, fallback_factory, guard=guard)
     logger.info("增量完成: %s", summary)
-    return 0
+    return 0 if "error" not in summary else 1
 
 
 if __name__ == "__main__":

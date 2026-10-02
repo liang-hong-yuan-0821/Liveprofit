@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-09-26T03:30:07.693733+00:00",
+  "through": "2017-12-31",
+  "calendar_source": "Tushare trade_cal(exchange=SSE,is_open=1), yearly request",
+  "scope": "listed stock and broad fund symbol-days; factor gaps include warmup; fund is not ETF classification",
+  "inventory": {
+    "fund": {
+      "count": 2955,
+      "unknown_list_date": 149,
+      "has_delist_date": 626
+    },
+    "stock": {
+      "count": 5907,
+      "unknown_list_date": 0,
+      "has_delist_date": 339
+    }
+  },
+  "etf_catalog": {
+    "observations": 3658,
+    "first": "2026-09-25",
+    "last": "2026-09-26"
+  },
+  "years": [
+    {
+      "year": 2016,
+      "calendar_days": 244,
+      "calendar_sha256": "1eb6874f3b807aa87e20a021433d876405c6e9aa7cb3e66fea0181e2203b91df",
+      "expected": 704145,
+      "trusted_suspension": 62599,
+      "unexplained_bar": 0,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 11581,
+      "status_gap": 5,
+      "factor_row_absent": 3534,
+      "factor_atr_missing": 887,
+      "status_row_absent": 5,
+      "status_row_absent_with_bar": 5,
+      "status_row_absent_trusted_pause": 0,
+      "status_row_absent_unexplained_no_bar": 0,
+      "excluded_bj_before_open": 0,
+      "unexplained_bar_examples": [],
+      "suspension_bar_spikes": [],
+      "suspension_scope_conflicts": [],
+      "official_evidence_conflicts": [],
+      "source_suspension_conflicts": [],
+      "broad_fund": {
+        "listed_fund_days": 148282,
+        "daily_gap": 10570,
+        "adj_gap": 855,
+        "factor_gap_including_warmup": 137712
+      }
+    },
+    {
+      "year": 2017,
+      "calendar_days": 244,
+      "calendar_sha256": "85444890d8fa513fadcaf063f3ac84cd52ea6e4e59bc4fb9f66ac361834df6f7",
+      "expected": 799064,
+      "trusted_suspension": 55825,
+      "unexplained_bar": 0,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 26826,
+      "status_gap": 3,
+      "factor_row_absent": 7323,
+      "factor_atr_missing": 1630,
+      "status_row_absent": 3,
+      "status_row_absent_with_bar": 3,
+      "status_row_absent_trusted_pause": 0,
+      "status_row_absent_unexplained_no_bar": 0,
+      "excluded_bj_before_open": 0,
+      "unexplained_bar_examples": [],
+      "suspension_bar_spikes": [],
+      "suspension_scope_conflicts": [],
+      "official_evidence_conflicts": [],
+      "source_suspension_conflicts": [],
+      "broad_fund": {
+        "listed_fund_days": 162197,
+        "daily_gap": 21239,
+        "adj_gap": 617,
+        "factor_gap_including_warmup": 140958
+      }
+    }
+  ]
+}

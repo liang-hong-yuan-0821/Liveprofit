@@ -72,6 +72,8 @@ def step_collect_market(conn, *, refresh_sectors: bool | None = None,
             guard=guard,
         )
     logger.info(f"[2/5] 统一市场采集完成: {result}")
+    if "error" in result:
+        raise RuntimeError(f"MARKET_INGEST_INCOMPLETE: {result['error']}")
     return result
 
 
@@ -171,6 +173,7 @@ def run_daily_job():
             ("vectorize", lambda: step_vectorize(conn)),
             ("study", lambda: step_event_study(conn)),
         ]
+        market_failed = False
         for name, fn in steps:
             if name in args.skip:
                 logger.info(f"跳过步骤: {name}")
@@ -181,6 +184,11 @@ def run_daily_job():
                 raise  # Lost market write session must not proceed into AI work.
             except Exception as e:
                 logger.exception(f"步骤 {name} 失败（继续执行后续步骤）")
+                if name == "market":
+                    market_failed = True
+        if market_failed:
+            logger.error("市场数据采集未完整，日任务不写完成标记")
+            raise SystemExit(1)
         logger.info("每日批处理完成")
     finally:
         if conn is not None:

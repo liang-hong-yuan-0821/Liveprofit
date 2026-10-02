@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-09-26T04:35:55.862959+00:00",
+  "through": "2026-09-24",
+  "calendar_source": "Tushare trade_cal(exchange=SSE,is_open=1), yearly request",
+  "scope": "listed stock and broad fund symbol-days; factor gaps include warmup; fund is not ETF classification",
+  "inventory": {
+    "fund": {
+      "count": 2955,
+      "unknown_list_date": 149,
+      "has_delist_date": 626
+    },
+    "stock": {
+      "count": 5907,
+      "unknown_list_date": 0,
+      "has_delist_date": 339
+    }
+  },
+  "etf_catalog": {
+    "observations": 3658,
+    "first": "2026-09-25",
+    "last": "2026-09-26"
+  },
+  "years": [
+    {
+      "year": 2026,
+      "calendar_days": 178,
+      "calendar_sha256": "75220c2dfc4818ecabfb656ec05e540dec3bcd520176d136ec3002e377b712c2",
+      "expected": 981659,
+      "trusted_suspension": 2113,
+      "unexplained_bar": 0,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 6845,
+      "status_gap": 9,
+      "factor_row_absent": 2153,
+      "factor_atr_missing": 275,
+      "status_row_absent": 9,
+      "status_row_absent_with_bar": 1,
+      "status_row_absent_trusted_pause": 8,
+      "status_row_absent_unexplained_no_bar": 0,
+      "excluded_bj_before_open": 0,
+      "unexplained_bar_examples": [],
+      "suspension_bar_spikes": [],
+      "suspension_scope_conflicts": [],
+      "official_evidence_conflicts": [],
+      "source_suspension_conflicts": [],
+      "broad_fund": {
+        "listed_fund_days": 358542,
+        "daily_gap": 3649,
+        "adj_gap": 0,
+        "factor_gap_including_warmup": 71147
+      }
+    }
+  ]
+}

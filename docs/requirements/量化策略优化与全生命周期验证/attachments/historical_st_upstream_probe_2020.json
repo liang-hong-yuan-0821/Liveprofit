@@ -1,0 +1,19 @@
+{
+  "checked_on": "2026-09-26",
+  "method": "Tushare raw stock_st and bak_basic by trade_date; market.instrument_daily stock bar counts from read-only PG query",
+  "interpretation": "Both ST sources returned zero rows on every sampled unavailable date despite thousands of stock bars. Zero rows are treated as unavailable, not as all stocks non-ST.",
+  "days": [
+    {"trade_date":"2020-01-02","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3796},
+    {"trade_date":"2020-02-20","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3830},
+    {"trade_date":"2020-02-25","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3836},
+    {"trade_date":"2020-03-16","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3850},
+    {"trade_date":"2020-04-23","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3902},
+    {"trade_date":"2020-06-18","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3899},
+    {"trade_date":"2020-07-08","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3927},
+    {"trade_date":"2020-07-20","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3933},
+    {"trade_date":"2020-08-03","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3999},
+    {"trade_date":"2020-08-04","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":3990},
+    {"trade_date":"2020-08-24","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":4028},
+    {"trade_date":"2020-11-20","stock_st_rows":0,"bak_basic_rows":0,"stock_bar_rows":4138}
+  ]
+}

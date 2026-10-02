@@ -6,19 +6,35 @@
 
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import create_engine
 
 from backend.bootstrap.settings import CoreSettings
-from backend.shared.db import Base
 
 # 导入全部平台 ORM 模型以填充 Base.metadata
-from backend.modules.analysis.infrastructure import models as analysis_models  # noqa: F401
-from backend.modules.event_study.infrastructure import models as event_study_models  # noqa: F401
-from backend.modules.investment_workspace.infrastructure import models as workspace_models  # noqa: F401
+from backend.modules.analysis.infrastructure import (
+    models as analysis_models,  # noqa: F401
+)
+from backend.modules.event_study.infrastructure import (
+    models as event_study_models,  # noqa: F401
+)
+from backend.modules.investment_workspace.infrastructure import (
+    account_ledger_models as workspace_account_ledger_models,  # noqa: F401
+    account_models as workspace_account_models,  # noqa: F401
+    fill_report_models as workspace_fill_report_models,  # noqa: F401
+    models as workspace_models,  # noqa: F401
+)
+from backend.modules.quant_research.infrastructure import (
+    models as research_models,  # noqa: F401
+)
+from backend.modules.quant_strategy.infrastructure import (
+    allocation_models, admission_models, instrument_rule_models, lifecycle_models, lifecycle_operation_models, models as strategy_models,
+    portfolio_risk_models,
+    target_binding_models,  # noqa: F401
+)
+from backend.shared.db import Base
 
 config = context.config
 

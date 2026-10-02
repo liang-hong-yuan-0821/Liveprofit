@@ -216,6 +216,7 @@ export interface UpdatePortfolioVariables {
   peakNetAssetValue: number | null;
   dayStartNetAssetValue: number | null;
   riskFactsAsOf: string | null;
+  riskProfile?: PortfolioDTO["risk_profile"];
   expectedVersion: number;
 }
 
@@ -243,6 +244,7 @@ export function useUpdatePortfolioMutation() {
             peak_net_asset_value: vars.peakNetAssetValue,
             day_start_net_asset_value: vars.dayStartNetAssetValue,
             risk_facts_as_of: vars.riskFactsAsOf,
+            risk_profile: vars.riskProfile,
             expected_version: vars.expectedVersion,
           }),
         )

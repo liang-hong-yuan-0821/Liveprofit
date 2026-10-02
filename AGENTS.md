@@ -27,7 +27,7 @@
 | 所有非 trivial；依赖、环境、Windows脚本操作即使仅一行 | [开发流程](docs/standards/workspace/开发流程.md)，按领域从 [经验索引](docs/experience/index.md) 定位相关主题 |
 | 新建或继续复杂任务 | 开发流程、当前任务 README/plan/tasks、[任务骨架说明](docs/requirements/templates/骨架说明.md)及对应模板 |
 | 初版复杂方案完成；后续修订仅用户明确说“走评审” | [方案评审](docs/standards/workspace/方案评审.md)；修订不自动反复全量重审 |
-| 测试选择/维护/运行、验收划分、复杂任务review及收尾 | [代码验收](docs/standards/workspace/代码验收.md)，[正式测试目录](tests/)；先读具体断言及 fixture，索引不证明执行许可或覆盖充分 |
+| 测试选择/维护/运行、验收划分、复杂任务review及收尾 | [代码验收](docs/standards/workspace/代码验收.md)，[测试运行约定](tests/README.md)；先读具体断言及 fixture，索引不证明执行许可或覆盖充分 |
 | 量化研究/目标/组合/订单/成交/生命周期/账户及相关迁移或测试 | [量化开发约束](docs/standards/backend/量化开发约束.md) |
 | Provider、行情采集/审计/补采/覆盖、market schema/DAO及其研究执行消费方 | [行情与数据源约束](docs/standards/ai/行情与数据源约束.md)；涉及量化同时读量化约束 |
 | AI图、State、提示词、checkpoint/重跑、事件历史检索、批处理 | [AI链路开发约束](docs/standards/ai/AI链路开发约束.md) |

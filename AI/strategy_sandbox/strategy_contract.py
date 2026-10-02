@@ -32,5 +32,9 @@ SCALAR_PATHS = frozenset({
     ("meta", "bars_count"), ("meta", "price_basis"),
     ("meta", "signal_price_basis"), ("meta", "execution_price_basis"),
     ("meta", "adj_factor_version"), ("meta", "data_hash"),
+    ("meta", "arc_neckline_40"),
+    ("meta", "volume_median_20"),
+    ("meta", "boll_low_quartile_10_120"),
+    ("meta", "benchmark_above_ma120"),
     ("position", "shares"), ("position", "average_cost"), ("position", "market_value"),
 })

@@ -1,0 +1,136 @@
+{
+  "generated_at": "2026-09-25T21:15:58.277538+00:00",
+  "through": "2026-09-25",
+  "calendar_source": "Tushare trade_cal(exchange=SSE,is_open=1), yearly request",
+  "scope": "listed stock and broad fund symbol-days; factor gaps include warmup; fund is not ETF classification",
+  "inventory": {
+    "fund": {
+      "count": 2955,
+      "unknown_list_date": 152,
+      "has_delist_date": 626
+    },
+    "stock": {
+      "count": 5907,
+      "unknown_list_date": 0,
+      "has_delist_date": 339
+    }
+  },
+  "etf_catalog": {
+    "observations": 1829,
+    "first": "2026-09-25",
+    "last": "2026-09-25"
+  },
+  "years": [
+    {
+      "year": 2024,
+      "calendar_days": 242,
+      "calendar_sha256": "77326eab6155147e27987adcf28a28d960c78fb789f01ceadbea1efcd58352c9",
+      "expected": 1296743,
+      "trusted_suspension": 0,
+      "unexplained_bar": 3092,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 1289984,
+      "status_gap": 1296743,
+      "factor_row_absent": 891583,
+      "factor_atr_missing": 398401,
+      "status_row_absent": 1296743,
+      "status_row_absent_with_bar": 1293651,
+      "status_row_absent_trusted_pause": 0,
+      "status_row_absent_unexplained_no_bar": 3092,
+      "excluded_bj_before_open": 0,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "000046.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "000657.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "000801.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "002776.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "600290.SH"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "603958.SH"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "688337.SH"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "000046.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "000657.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "000801.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "002776.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "600290.SH"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "603958.SH"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "688337.SH"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "000046.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "000657.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "000801.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "002776.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "600290.SH"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "603958.SH"
+        }
+      ],
+      "suspension_bar_spikes": [],
+      "suspension_scope_conflicts": [],
+      "official_evidence_conflicts": [],
+      "source_suspension_conflicts": [],
+      "broad_fund": {
+        "listed_fund_days": 342371,
+        "daily_gap": 13858,
+        "adj_gap": 123,
+        "factor_gap_including_warmup": 328513
+      }
+    }
+  ]
+}

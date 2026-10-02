@@ -1,0 +1,1355 @@
+{
+  "generated_at": "2026-09-25T22:02:14.129253+00:00",
+  "reports": [
+    {
+      "day": "2016-01-04",
+      "result": "CHECKED",
+      "expected_codes": 2808,
+      "vendor_codes": 3385,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 0,
+      "mismatch_count": 0,
+      "mismatch_examples": [],
+      "vendor_st_count_in_pool": 230
+    },
+    {
+      "day": "2016-08-15",
+      "result": "CHECKED",
+      "expected_codes": 2896,
+      "vendor_codes": 3473,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 2892,
+      "mismatch_count": 293,
+      "mismatch_examples": [
+        {
+          "code": "603959.SH",
+          "tushare_is_st": false,
+          "name": "ST百利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603869.SH",
+          "tushare_is_st": false,
+          "name": "ST智知",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603838.SH",
+          "tushare_is_st": false,
+          "name": "*ST四通",
+          "trading": false,
+          "is_st_name": true
+        },
+        {
+          "code": "603828.SH",
+          "tushare_is_st": false,
+          "name": "*ST利达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603822.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉澳",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603789.SH",
+          "tushare_is_st": false,
+          "name": "ST星农",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603729.SH",
+          "tushare_is_st": false,
+          "name": "ST龙韵",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603718.SH",
+          "tushare_is_st": false,
+          "name": "*ST海利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603398.SH",
+          "tushare_is_st": false,
+          "name": "*ST沐邦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603377.SH",
+          "tushare_is_st": false,
+          "name": "ST东时",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603021.SH",
+          "tushare_is_st": false,
+          "name": "*ST华鹏",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603008.SH",
+          "tushare_is_st": false,
+          "name": "ST喜临门",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "601918.SH",
+          "tushare_is_st": true,
+          "name": "新集能源",
+          "trading": false,
+          "is_st_name": false
+        },
+        {
+          "code": "601010.SH",
+          "tushare_is_st": false,
+          "name": "ST文峰",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600965.SH",
+          "tushare_is_st": false,
+          "name": "*ST福成",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600889.SH",
+          "tushare_is_st": false,
+          "name": "*ST京化",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600866.SH",
+          "tushare_is_st": true,
+          "name": "星湖科技",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600818.SH",
+          "tushare_is_st": false,
+          "name": "ST中路",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600817.SH",
+          "tushare_is_st": true,
+          "name": "宇通重工",
+          "trading": false,
+          "is_st_name": false
+        },
+        {
+          "code": "600793.SH",
+          "tushare_is_st": true,
+          "name": "宜宾纸业",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600760.SH",
+          "tushare_is_st": true,
+          "name": "中航沈飞",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600759.SH",
+          "tushare_is_st": false,
+          "name": "ST洲际",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600753.SH",
+          "tushare_is_st": false,
+          "name": "ST海钦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600745.SH",
+          "tushare_is_st": false,
+          "name": "*ST闻泰",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600735.SH",
+          "tushare_is_st": false,
+          "name": "ST新华锦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600734.SH",
+          "tushare_is_st": false,
+          "name": "*ST实达",
+          "trading": false,
+          "is_st_name": true
+        },
+        {
+          "code": "600730.SH",
+          "tushare_is_st": false,
+          "name": "*ST高科",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600725.SH",
+          "tushare_is_st": true,
+          "name": "云维股份",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600721.SH",
+          "tushare_is_st": true,
+          "name": "百花医药",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600678.SH",
+          "tushare_is_st": false,
+          "name": "ST金顶",
+          "trading": true,
+          "is_st_name": true
+        }
+      ],
+      "vendor_st_count_in_pool": 235
+    },
+    {
+      "day": "2019-04-02",
+      "result": "CHECKED",
+      "expected_codes": 3601,
+      "vendor_codes": 4148,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 3596,
+      "mismatch_count": 314,
+      "mismatch_examples": [
+        {
+          "code": "603959.SH",
+          "tushare_is_st": false,
+          "name": "ST百利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603922.SH",
+          "tushare_is_st": false,
+          "name": "ST金鸿顺",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603869.SH",
+          "tushare_is_st": false,
+          "name": "ST智知",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603843.SH",
+          "tushare_is_st": false,
+          "name": "*ST正平",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603838.SH",
+          "tushare_is_st": false,
+          "name": "*ST四通",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603828.SH",
+          "tushare_is_st": false,
+          "name": "*ST利达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603825.SH",
+          "tushare_is_st": false,
+          "name": "ST华扬",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603822.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉澳",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603789.SH",
+          "tushare_is_st": false,
+          "name": "ST星农",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603729.SH",
+          "tushare_is_st": false,
+          "name": "ST龙韵",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603718.SH",
+          "tushare_is_st": false,
+          "name": "*ST海利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603595.SH",
+          "tushare_is_st": false,
+          "name": "ST东尼",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603557.SH",
+          "tushare_is_st": false,
+          "name": "*ST起步",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603517.SH",
+          "tushare_is_st": false,
+          "name": "ST绝味",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603429.SH",
+          "tushare_is_st": false,
+          "name": "*ST集友",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603398.SH",
+          "tushare_is_st": false,
+          "name": "*ST沐邦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603378.SH",
+          "tushare_is_st": false,
+          "name": "*ST亚士",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603377.SH",
+          "tushare_is_st": false,
+          "name": "ST东时",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603359.SH",
+          "tushare_is_st": false,
+          "name": "*ST东珠",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603189.SH",
+          "tushare_is_st": false,
+          "name": "*ST网达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603021.SH",
+          "tushare_is_st": false,
+          "name": "*ST华鹏",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603008.SH",
+          "tushare_is_st": false,
+          "name": "ST喜临门",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "601798.SH",
+          "tushare_is_st": true,
+          "name": "蓝科高新",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "601010.SH",
+          "tushare_is_st": false,
+          "name": "ST文峰",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600965.SH",
+          "tushare_is_st": false,
+          "name": "*ST福成",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600889.SH",
+          "tushare_is_st": false,
+          "name": "*ST京化",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600877.SH",
+          "tushare_is_st": true,
+          "name": "电科芯片",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600818.SH",
+          "tushare_is_st": false,
+          "name": "ST中路",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "600817.SH",
+          "tushare_is_st": true,
+          "name": "宇通重工",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "600807.SH",
+          "tushare_is_st": true,
+          "name": "济高发展",
+          "trading": true,
+          "is_st_name": false
+        }
+      ],
+      "vendor_st_count_in_pool": 255
+    },
+    {
+      "day": "2020-01-03",
+      "result": "CHECKED",
+      "expected_codes": 3760,
+      "vendor_codes": 4306,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 3751,
+      "mismatch_count": 341,
+      "mismatch_examples": [
+        {
+          "code": "688089.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉必优",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688066.SH",
+          "tushare_is_st": false,
+          "name": "*ST航图",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688033.SH",
+          "tushare_is_st": false,
+          "name": "*ST天宜",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688022.SH",
+          "tushare_is_st": false,
+          "name": "ST瀚川",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603959.SH",
+          "tushare_is_st": false,
+          "name": "ST百利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603922.SH",
+          "tushare_is_st": false,
+          "name": "ST金鸿顺",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603869.SH",
+          "tushare_is_st": false,
+          "name": "ST智知",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603843.SH",
+          "tushare_is_st": false,
+          "name": "*ST正平",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603838.SH",
+          "tushare_is_st": false,
+          "name": "*ST四通",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603828.SH",
+          "tushare_is_st": false,
+          "name": "*ST利达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603825.SH",
+          "tushare_is_st": false,
+          "name": "ST华扬",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603822.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉澳",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603789.SH",
+          "tushare_is_st": false,
+          "name": "ST星农",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603779.SH",
+          "tushare_is_st": true,
+          "name": "威龙股份",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "603729.SH",
+          "tushare_is_st": false,
+          "name": "ST龙韵",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603718.SH",
+          "tushare_is_st": false,
+          "name": "*ST海利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603595.SH",
+          "tushare_is_st": false,
+          "name": "ST东尼",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603557.SH",
+          "tushare_is_st": false,
+          "name": "*ST起步",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603517.SH",
+          "tushare_is_st": false,
+          "name": "ST绝味",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603429.SH",
+          "tushare_is_st": false,
+          "name": "*ST集友",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603398.SH",
+          "tushare_is_st": false,
+          "name": "*ST沐邦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603378.SH",
+          "tushare_is_st": false,
+          "name": "*ST亚士",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603377.SH",
+          "tushare_is_st": false,
+          "name": "ST东时",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603359.SH",
+          "tushare_is_st": false,
+          "name": "*ST东珠",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603189.SH",
+          "tushare_is_st": false,
+          "name": "*ST网达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603188.SH",
+          "tushare_is_st": true,
+          "name": "亚邦股份",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "603021.SH",
+          "tushare_is_st": false,
+          "name": "*ST华鹏",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603008.SH",
+          "tushare_is_st": false,
+          "name": "ST喜临门",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "601798.SH",
+          "tushare_is_st": true,
+          "name": "蓝科高新",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "601113.SH",
+          "tushare_is_st": true,
+          "name": "华鼎股份",
+          "trading": true,
+          "is_st_name": false
+        }
+      ],
+      "vendor_st_count_in_pool": 259
+    },
+    {
+      "day": "2021-01-28",
+      "result": "CHECKED",
+      "expected_codes": 4171,
+      "vendor_codes": 4717,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 4158,
+      "mismatch_count": 380,
+      "mismatch_examples": [
+        {
+          "code": "688189.SH",
+          "tushare_is_st": false,
+          "name": "ST南新",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688089.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉必优",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688066.SH",
+          "tushare_is_st": false,
+          "name": "*ST航图",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688033.SH",
+          "tushare_is_st": false,
+          "name": "*ST天宜",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688022.SH",
+          "tushare_is_st": false,
+          "name": "ST瀚川",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "605336.SH",
+          "tushare_is_st": false,
+          "name": "*ST帅电",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "605199.SH",
+          "tushare_is_st": false,
+          "name": "ST葫芦娃",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603959.SH",
+          "tushare_is_st": false,
+          "name": "ST百利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603922.SH",
+          "tushare_is_st": false,
+          "name": "ST金鸿顺",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603869.SH",
+          "tushare_is_st": false,
+          "name": "ST智知",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603843.SH",
+          "tushare_is_st": false,
+          "name": "*ST正平",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603838.SH",
+          "tushare_is_st": false,
+          "name": "*ST四通",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603828.SH",
+          "tushare_is_st": false,
+          "name": "*ST利达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603825.SH",
+          "tushare_is_st": false,
+          "name": "ST华扬",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603822.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉澳",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603789.SH",
+          "tushare_is_st": false,
+          "name": "ST星农",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603779.SH",
+          "tushare_is_st": true,
+          "name": "威龙股份",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "603729.SH",
+          "tushare_is_st": false,
+          "name": "ST龙韵",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603718.SH",
+          "tushare_is_st": false,
+          "name": "*ST海利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603595.SH",
+          "tushare_is_st": false,
+          "name": "ST东尼",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603557.SH",
+          "tushare_is_st": false,
+          "name": "*ST起步",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603517.SH",
+          "tushare_is_st": false,
+          "name": "ST绝味",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603429.SH",
+          "tushare_is_st": false,
+          "name": "*ST集友",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603398.SH",
+          "tushare_is_st": false,
+          "name": "*ST沐邦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603389.SH",
+          "tushare_is_st": true,
+          "name": "亚振家居",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "603378.SH",
+          "tushare_is_st": false,
+          "name": "*ST亚士",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603377.SH",
+          "tushare_is_st": false,
+          "name": "ST东时",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603359.SH",
+          "tushare_is_st": false,
+          "name": "*ST东珠",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603189.SH",
+          "tushare_is_st": false,
+          "name": "*ST网达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603188.SH",
+          "tushare_is_st": true,
+          "name": "亚邦股份",
+          "trading": true,
+          "is_st_name": false
+        }
+      ],
+      "vendor_st_count_in_pool": 264
+    },
+    {
+      "day": "2022-01-04",
+      "result": "CHECKED",
+      "expected_codes": 4603,
+      "vendor_codes": 5147,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 4601,
+      "mismatch_count": 360,
+      "mismatch_examples": [
+        {
+          "code": "688622.SH",
+          "tushare_is_st": false,
+          "name": "*ST禾信",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688201.SH",
+          "tushare_is_st": false,
+          "name": "ST信安",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688189.SH",
+          "tushare_is_st": false,
+          "name": "ST南新",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688121.SH",
+          "tushare_is_st": false,
+          "name": "*ST卓然",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688089.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉必优",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688076.SH",
+          "tushare_is_st": false,
+          "name": "ST诺泰",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688066.SH",
+          "tushare_is_st": false,
+          "name": "*ST航图",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688033.SH",
+          "tushare_is_st": false,
+          "name": "*ST天宜",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688022.SH",
+          "tushare_is_st": false,
+          "name": "ST瀚川",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "605336.SH",
+          "tushare_is_st": false,
+          "name": "*ST帅电",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "605199.SH",
+          "tushare_is_st": false,
+          "name": "ST葫芦娃",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603959.SH",
+          "tushare_is_st": false,
+          "name": "ST百利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603922.SH",
+          "tushare_is_st": false,
+          "name": "ST金鸿顺",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603869.SH",
+          "tushare_is_st": false,
+          "name": "ST智知",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603863.SH",
+          "tushare_is_st": true,
+          "name": "松炀资源",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "603843.SH",
+          "tushare_is_st": false,
+          "name": "*ST正平",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603838.SH",
+          "tushare_is_st": false,
+          "name": "*ST四通",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603828.SH",
+          "tushare_is_st": false,
+          "name": "*ST利达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603825.SH",
+          "tushare_is_st": false,
+          "name": "ST华扬",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603822.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉澳",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603789.SH",
+          "tushare_is_st": false,
+          "name": "ST星农",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603718.SH",
+          "tushare_is_st": false,
+          "name": "*ST海利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603595.SH",
+          "tushare_is_st": false,
+          "name": "ST东尼",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603517.SH",
+          "tushare_is_st": false,
+          "name": "ST绝味",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603429.SH",
+          "tushare_is_st": false,
+          "name": "*ST集友",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603398.SH",
+          "tushare_is_st": false,
+          "name": "*ST沐邦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603378.SH",
+          "tushare_is_st": false,
+          "name": "*ST亚士",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603377.SH",
+          "tushare_is_st": false,
+          "name": "ST东时",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603359.SH",
+          "tushare_is_st": false,
+          "name": "*ST东珠",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603189.SH",
+          "tushare_is_st": false,
+          "name": "*ST网达",
+          "trading": true,
+          "is_st_name": true
+        }
+      ],
+      "vendor_st_count_in_pool": 265
+    },
+    {
+      "day": "2023-01-03",
+      "result": "CHECKED",
+      "expected_codes": 4905,
+      "vendor_codes": 5447,
+      "missing_vendor_count": 0,
+      "missing_vendor_examples": [],
+      "observed_overlap": 4905,
+      "mismatch_count": 324,
+      "mismatch_examples": [
+        {
+          "code": "688622.SH",
+          "tushare_is_st": false,
+          "name": "*ST禾信",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688496.SH",
+          "tushare_is_st": false,
+          "name": "*ST清越",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688309.SH",
+          "tushare_is_st": true,
+          "name": "恒誉科技",
+          "trading": true,
+          "is_st_name": false
+        },
+        {
+          "code": "688270.SH",
+          "tushare_is_st": false,
+          "name": "ST臻镭",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688201.SH",
+          "tushare_is_st": false,
+          "name": "ST信安",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688189.SH",
+          "tushare_is_st": false,
+          "name": "ST南新",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688184.SH",
+          "tushare_is_st": false,
+          "name": "ST帕瓦",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688121.SH",
+          "tushare_is_st": false,
+          "name": "*ST卓然",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688089.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉必优",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688076.SH",
+          "tushare_is_st": false,
+          "name": "ST诺泰",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688066.SH",
+          "tushare_is_st": false,
+          "name": "*ST航图",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688053.SH",
+          "tushare_is_st": false,
+          "name": "ST思科瑞",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688033.SH",
+          "tushare_is_st": false,
+          "name": "*ST天宜",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "688022.SH",
+          "tushare_is_st": false,
+          "name": "ST瀚川",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "605336.SH",
+          "tushare_is_st": false,
+          "name": "*ST帅电",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "605199.SH",
+          "tushare_is_st": false,
+          "name": "ST葫芦娃",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603959.SH",
+          "tushare_is_st": false,
+          "name": "ST百利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603922.SH",
+          "tushare_is_st": false,
+          "name": "ST金鸿顺",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603869.SH",
+          "tushare_is_st": false,
+          "name": "ST智知",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603843.SH",
+          "tushare_is_st": false,
+          "name": "*ST正平",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603838.SH",
+          "tushare_is_st": false,
+          "name": "*ST四通",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603828.SH",
+          "tushare_is_st": false,
+          "name": "*ST利达",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603825.SH",
+          "tushare_is_st": false,
+          "name": "ST华扬",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603822.SH",
+          "tushare_is_st": false,
+          "name": "ST嘉澳",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603789.SH",
+          "tushare_is_st": false,
+          "name": "ST星农",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603729.SH",
+          "tushare_is_st": false,
+          "name": "ST龙韵",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603718.SH",
+          "tushare_is_st": false,
+          "name": "*ST海利",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603595.SH",
+          "tushare_is_st": false,
+          "name": "ST东尼",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603517.SH",
+          "tushare_is_st": false,
+          "name": "ST绝味",
+          "trading": true,
+          "is_st_name": true
+        },
+        {
+          "code": "603429.SH",
+          "tushare_is_st": false,
+          "name": "*ST集友",
+          "trading": true,
+          "is_st_name": true
+        }
+      ],
+      "vendor_st_count_in_pool": 270
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "counts": {
+    "files": 373,
+    "python_test_files": 276,
+    "python_test_functions": 2309,
+    "assertions": 7914,
+    "frontend_test_files": 50
+  },
+  "errors": []
+}

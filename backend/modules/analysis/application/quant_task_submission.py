@@ -90,175 +90,20 @@ class QuantTaskSubmissionService:
         command: CreateAnalysisTaskCommand,
         idempotency_key: str,
         trace_id: str | None,
+        defer_new_risk: bool = False,
     ) -> TaskCreatedResult:
         session = self._session_factory()
+        input_hash = None
         try:
-            uow = _SessionBoundAnalysisUow(session)
-
-            # 0) 量化提交参数存在性校验（position 未带策略/组合 → 422 TASK_CREATE_INVALID）
-            if (
-                strategy_version_id is None
-                or portfolio_id is None
-                or expected_portfolio_version is None
-            ):
-                from backend.modules.analysis.application.errors import TaskCreateInvalidError
-
-                raise TaskCreateInvalidError(
-                    "position 层必须提供 strategy_version_id/portfolio_id/expected_portfolio_version"
-                )
-
-            # 1) SELECT ... FOR UPDATE 锁定 + 复验（PUBLISHED / 组合 version / 持仓约束）
-            version = session.execute(
-                select(QuantStrategyVersion)
-                .where(QuantStrategyVersion.id == strategy_version_id)
-                .with_for_update()
-            ).scalar_one_or_none()
-            if version is None:
-                raise StrategyNotFoundError(f"策略版本不存在：{strategy_version_id}")
-            if version.status != "PUBLISHED":
-                raise StrategyVersionNotPublishedError(f"策略版本未发布：{strategy_version_id}")
-            strategy = session.get(QuantStrategy, version.strategy_id)
-            portfolio = session.execute(
-                select(Portfolio).where(Portfolio.id == portfolio_id).with_for_update()
-            ).scalar_one_or_none()
-            if portfolio is None:
-                raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
-            positions = list(
-                session.execute(
-                    select(PortfolioPosition)
-                    .where(PortfolioPosition.portfolio_id == portfolio_id)
-                    .order_by(PortfolioPosition.market, PortfolioPosition.symbol)
-                ).scalars()
+            command, portfolio, positions = self._prepare(
+                session, strategy_version_id=strategy_version_id, portfolio_id=portfolio_id,
+                expected_portfolio_version=expected_portfolio_version, command=command,
+                defer_new_risk=defer_new_risk,
             )
-            pending_orders = list(
-                session.execute(
-                    select(SuggestedOrder).where(
-                        SuggestedOrder.portfolio_id == portfolio_id,
-                        SuggestedOrder.status.in_(("PROPOSED", "EXECUTING", "PARTIALLY_FILLED", "RECONCILIATION_REQUIRED")),
-                    ).order_by(SuggestedOrder.created_at, SuggestedOrder.id)
-                ).scalars()
-            )
-
-            # 2) 冻结策略/组合/持仓进 execution_snapshot（不含行情）
-            template = get_template(version.template_id) if version.template_id else None
-            lifecycle_policy = (
-                session.get(LifecyclePolicyVersion, version.lifecycle_policy_version_id)
-                if version.lifecycle_policy_version_id else None
-            )
-            snapshot = {
-                "schema_version": SNAPSHOT_SCHEMA_VERSION,
-                "strategy": {
-                    "strategy_id": str(strategy.id),
-                    "version_id": str(version.id),
-                    "version_no": version.version_no,
-                    "source_code": version.source_code,
-                    "source_hash": version.source_hash,
-                    "name": strategy.name,
-                    "template_id": version.template_id,
-                    "template_params": version.template_params,
-                    "template_renderer_version": version.template_renderer_version,
-                    "required_bars": get_template(version.template_id).required_bars if version.template_id else 250,
-                    "template_contract": freeze_template_contract(template) if template else None,
-                    "lifecycle_policy": ({
-                        "id": str(lifecycle_policy.id),
-                        "policy_key": lifecycle_policy.policy_key,
-                        "version_no": lifecycle_policy.version_no,
-                        "required_fields": lifecycle_policy.required_fields,
-                        "config": lifecycle_policy.config,
-                        "content_hash": lifecycle_policy.content_hash,
-                    } if lifecycle_policy is not None else None),
-                },
-                "portfolio": {
-                    "id": str(portfolio.id),
-                    "name": portfolio.name,
-                    "version": portfolio.version,
-                    "total_assets": format(portfolio.total_assets, "f"),
-                    "available_cash": format(portfolio.available_cash, "f"),
-                    "risk": {
-                        "risk_per_trade_pct": format(portfolio.risk_per_trade_pct, "f"),
-                        "min_risk_reward_ratio": format(portfolio.min_risk_reward_ratio, "f"),
-                        "max_total_position_pct": format(portfolio.max_total_position_pct, "f"),
-                        "max_single_stock_pct": format(portfolio.max_single_stock_pct, "f"),
-                        "max_sector_pct": format(portfolio.max_sector_pct, "f"),
-                        "max_portfolio_open_risk_pct": format(portfolio.max_portfolio_open_risk_pct, "f"),
-                        "max_sector_open_risk_pct": format(portfolio.max_sector_open_risk_pct, "f"),
-                        "max_daily_new_risk_pct": format(portfolio.max_daily_new_risk_pct, "f"),
-                        "max_drawdown_pct": format(portfolio.max_drawdown_pct, "f"),
-                        "max_daily_loss_pct": format(portfolio.max_daily_loss_pct, "f"),
-                        "net_asset_value": format(portfolio.net_asset_value, "f") if portfolio.net_asset_value is not None else None,
-                        "peak_net_asset_value": format(portfolio.peak_net_asset_value, "f") if portfolio.peak_net_asset_value is not None else None,
-                        "day_start_net_asset_value": format(portfolio.day_start_net_asset_value, "f") if portfolio.day_start_net_asset_value is not None else None,
-                        "risk_facts_as_of": portfolio.risk_facts_as_of.isoformat() if portfolio.risk_facts_as_of else None,
-                    },
-                },
-                "positions": [
-                    {
-                        "market": p.market,
-                        "symbol": p.symbol,
-                        "quantity": format(p.quantity, "f"),
-                        "average_cost": format(p.average_cost, "f"),
-                        "active_stop_price": format(p.active_stop_price, "f") if p.active_stop_price is not None else None,
-                    }
-                    for p in positions
-                ],
-                "pending_orders": [
-                    {
-                        "id": str(o.id),
-                        "side": o.side,
-                        "symbol": o.symbol,
-                        "industry_code": o.industry_code,
-                        "remaining_quantity": format(o.quantity - o.filled_quantity, "f"),
-                        "order_entry_price": format(o.limit_price, "f"),
-                        "order_stop_price": format(o.stop_price, "f") if o.stop_price is not None else None,
-                        "reserved_cash": format(
-                            min(o.reserved_cash, (o.quantity - o.filled_quantity) * o.limit_price), ".4f"
-                        ),
-                        "status": o.status,
-                        "revision": o.revision,
-                    }
-                    for o in pending_orders
-                ],
-                "execution_policy": ExecutionPolicy().to_snapshot(),
-            }
-
-            # 3) 完整 canonical envelope + 预计算 input_hash
-            command = replace(
-                command,
-                strategy_version_id=strategy_version_id,
-                portfolio_id=portfolio_id,
-                expected_portfolio_version=expected_portfolio_version,
-                execution_snapshot=snapshot,
-            )
-            TaskService.validate_layers(command)
-            request_params = {"analysis_options": command.analysis_options or {}, "execution_snapshot": snapshot}
             input_hash = hash_canonical_input(canonical_task_input(command))
-
-            # 4) 幂等检查先于版本/持仓数据校验（plan 4.2.3：同键任一快照字段变化 → REUSED）
-            if idempotency_key is not None:
-                existing = uow.tasks.get_by_idempotency_key(idempotency_key)
-                if existing is not None:
-                    if existing.input_hash != input_hash:
-                        raise IdempotencyKeyReusedError("同一 Idempotency-Key 已用于不同输入")
-                    session.commit()
-                    return _replay_result(existing)
-
-            # 5) 组合版本与持仓约束校验（数据级，晚于幂等）
-            if portfolio.version != expected_portfolio_version:
-                raise PortfolioSnapshotConflictError(
-                    f"组合已变更（期望 version={expected_portfolio_version}，实际 {portfolio.version}），请重新拉取"
-                )
-            if len(positions) > MAX_POSITIONS:
-                raise PortfolioPositionLimitExceededError(f"组合持仓超过 {MAX_POSITIONS} 条上限")
-            non_cn = [p for p in positions if p.market != "CN"]
-            if non_cn:
-                raise PortfolioUnsupportedHoldingError(
-                    f"V1 仅支持 CN 持仓：{non_cn[0].market}/{non_cn[0].symbol}"
-                )
-
-            # 6) 暂存 task/outbox
-            task_service = TaskService(uow, clock=self._clock)
-            result = task_service.stage_create_task(
-                command, request_params, input_hash, idempotency_key=idempotency_key, trace_id=trace_id
+            result = self._stage_prepared(
+                session, command, portfolio, positions, input_hash,
+                idempotency_key=idempotency_key, trace_id=trace_id,
             )
 
             # 4) 外层唯一 commit 边界
@@ -267,6 +112,8 @@ class QuantTaskSubmissionService:
         except IntegrityError:
             # 唯一幂等键竞争：先 rollback，再以干净 Session 按键读取既有 task
             session.rollback()
+            if input_hash is None:
+                raise
             with self._session_factory() as clean_session:
                 existing = SqlAlchemyTaskRepository(clean_session).get_by_idempotency_key(idempotency_key)
             if existing is None:  # 非幂等键类 IntegrityError：原样抛出
@@ -279,3 +126,209 @@ class QuantTaskSubmissionService:
             raise
         finally:
             session.close()
+
+    def stage(
+        self, session, *, strategy_version_id: uuid.UUID, portfolio_id: uuid.UUID,
+        expected_portfolio_version: int, command: CreateAnalysisTaskCommand,
+        idempotency_key: str, trace_id: str | None, defer_new_risk: bool = False,
+    ) -> TaskCreatedResult:
+        """Stage task/outbox in the caller's transaction; never commit, rollback or close.
+
+        A multi-member caller must lock the portfolio, then every strategy version
+        in UUID order before staging members. Any error requires caller rollback.
+        """
+        command, portfolio, positions = self._prepare(
+            session, strategy_version_id=strategy_version_id, portfolio_id=portfolio_id,
+            expected_portfolio_version=expected_portfolio_version, command=command,
+            defer_new_risk=defer_new_risk,
+        )
+        return self._stage_prepared(
+            session, command, portfolio, positions,
+            hash_canonical_input(canonical_task_input(command)),
+            idempotency_key=idempotency_key, trace_id=trace_id,
+        )
+
+    def _prepare(
+        self, session, *, strategy_version_id, portfolio_id,
+        expected_portfolio_version, command, defer_new_risk,
+    ):
+        if type(defer_new_risk) is not bool:
+            from backend.modules.analysis.application.errors import TaskCreateInvalidError
+            raise TaskCreateInvalidError("defer_new_risk must be a boolean")
+        # 0) 量化提交参数存在性校验（position 未带策略/组合 → 422 TASK_CREATE_INVALID）
+        if (
+            strategy_version_id is None
+            or portfolio_id is None
+            or expected_portfolio_version is None
+        ):
+            from backend.modules.analysis.application.errors import TaskCreateInvalidError
+
+            raise TaskCreateInvalidError(
+                "position 层必须提供 strategy_version_id/portfolio_id/expected_portfolio_version"
+            )
+
+        # Shared lock order with live planning: account before strategy version.
+        portfolio = session.execute(
+            select(Portfolio).where(Portfolio.id == portfolio_id).with_for_update()
+            .execution_options(populate_existing=True)
+        ).scalar_one_or_none()
+        if portfolio is None:
+            raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
+        # 1) SELECT ... FOR UPDATE 锁定 + 复验（PUBLISHED / 组合 version / 持仓约束）
+        version = session.execute(
+            select(QuantStrategyVersion)
+            .where(QuantStrategyVersion.id == strategy_version_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        ).scalar_one_or_none()
+        if version is None:
+            raise StrategyNotFoundError(f"策略版本不存在：{strategy_version_id}")
+        if version.status != "PUBLISHED":
+            raise StrategyVersionNotPublishedError(f"策略版本未发布：{strategy_version_id}")
+        strategy = session.get(QuantStrategy, version.strategy_id)
+        positions = list(
+            session.execute(
+                select(PortfolioPosition)
+                .where(PortfolioPosition.portfolio_id == portfolio_id)
+                .order_by(PortfolioPosition.market, PortfolioPosition.symbol)
+                .execution_options(populate_existing=True)
+            ).scalars()
+        )
+        pending_orders = list(
+            session.execute(
+                select(SuggestedOrder).where(
+                    SuggestedOrder.portfolio_id == portfolio_id,
+                    SuggestedOrder.status.in_(("PROPOSED", "EXECUTING", "PARTIALLY_FILLED", "RECONCILIATION_REQUIRED")),
+                ).order_by(SuggestedOrder.created_at, SuggestedOrder.id)
+                .execution_options(populate_existing=True)
+            ).scalars()
+        )
+
+        # 2) 冻结策略/组合/持仓进 execution_snapshot（不含行情）
+        template = get_template(version.template_id) if version.template_id else None
+        lifecycle_policy = (
+            session.get(LifecyclePolicyVersion, version.lifecycle_policy_version_id)
+            if version.lifecycle_policy_version_id else None
+        )
+        snapshot = {
+            "schema_version": SNAPSHOT_SCHEMA_VERSION,
+            "strategy": {
+                "strategy_id": str(strategy.id),
+                "version_id": str(version.id),
+                "version_no": version.version_no,
+                "source_code": version.source_code,
+                "source_hash": version.source_hash,
+                "name": strategy.name,
+                "template_id": version.template_id,
+                "template_params": version.template_params,
+                "template_renderer_version": version.template_renderer_version,
+                "required_bars": get_template(version.template_id).required_bars if version.template_id else 250,
+                "template_contract": freeze_template_contract(template) if template else None,
+                "lifecycle_policy": ({
+                    "id": str(lifecycle_policy.id),
+                    "policy_key": lifecycle_policy.policy_key,
+                    "version_no": lifecycle_policy.version_no,
+                    "required_fields": lifecycle_policy.required_fields,
+                    "config": lifecycle_policy.config,
+                    "content_hash": lifecycle_policy.content_hash,
+                } if lifecycle_policy is not None else None),
+            },
+            "portfolio": {
+                "id": str(portfolio.id),
+                "name": portfolio.name,
+                "version": portfolio.version,
+                "total_assets": format(portfolio.total_assets, "f"),
+                "available_cash": format(portfolio.available_cash, "f"),
+                "risk_profile": portfolio.risk_profile,
+                "risk": {
+                    "risk_per_trade_pct": format(portfolio.risk_per_trade_pct, "f"),
+                    "min_risk_reward_ratio": format(portfolio.min_risk_reward_ratio, "f"),
+                    "max_total_position_pct": format(portfolio.max_total_position_pct, "f"),
+                    "max_single_stock_pct": format(portfolio.max_single_stock_pct, "f"),
+                    "max_sector_pct": format(portfolio.max_sector_pct, "f"),
+                    "max_portfolio_open_risk_pct": format(portfolio.max_portfolio_open_risk_pct, "f"),
+                    "max_sector_open_risk_pct": format(portfolio.max_sector_open_risk_pct, "f"),
+                    "max_daily_new_risk_pct": format(portfolio.max_daily_new_risk_pct, "f"),
+                    "max_drawdown_pct": format(portfolio.max_drawdown_pct, "f"),
+                    "max_daily_loss_pct": format(portfolio.max_daily_loss_pct, "f"),
+                    "net_asset_value": format(portfolio.net_asset_value, "f") if portfolio.net_asset_value is not None else None,
+                    "peak_net_asset_value": format(portfolio.peak_net_asset_value, "f") if portfolio.peak_net_asset_value is not None else None,
+                    "day_start_net_asset_value": format(portfolio.day_start_net_asset_value, "f") if portfolio.day_start_net_asset_value is not None else None,
+                    "risk_facts_as_of": portfolio.risk_facts_as_of.isoformat() if portfolio.risk_facts_as_of else None,
+                },
+            },
+            "positions": [
+                {
+                    "market": p.market,
+                    "symbol": p.symbol,
+                    "quantity": format(p.quantity, "f"),
+                    "average_cost": format(p.average_cost, "f"),
+                    "active_stop_price": format(p.active_stop_price, "f") if p.active_stop_price is not None else None,
+                }
+                for p in positions
+            ],
+            "pending_orders": [
+                {
+                    "id": str(o.id),
+                    "side": o.side,
+                    "symbol": o.symbol,
+                    "industry_code": o.industry_code,
+                    "remaining_quantity": format(o.quantity - o.filled_quantity, "f"),
+                    "order_entry_price": format(o.limit_price, "f"),
+                    "order_stop_price": format(o.stop_price, "f") if o.stop_price is not None else None,
+                    "reserved_cash": format(
+                        min(o.reserved_cash, (o.quantity - o.filled_quantity) * o.limit_price), ".4f"
+                    ),
+                    "status": o.status,
+                    "revision": o.revision,
+                }
+                for o in pending_orders
+            ],
+            "execution_policy": ExecutionPolicy().to_snapshot(),
+        }
+
+        if defer_new_risk:
+            snapshot["new_risk_mode"] = "FAMILY_BATCH"
+        command = replace(
+            command, strategy_version_id=strategy_version_id, portfolio_id=portfolio_id,
+            expected_portfolio_version=expected_portfolio_version, execution_snapshot=snapshot,
+        )
+        return command, portfolio, positions
+
+    def _stage_prepared(
+        self, session, command, portfolio, positions, input_hash, *, idempotency_key, trace_id,
+    ):
+        uow = _SessionBoundAnalysisUow(session)
+        TaskService.validate_layers(command)
+        request_params = {
+            "analysis_options": command.analysis_options or {},
+            "execution_snapshot": command.execution_snapshot,
+        }
+        # 4) 幂等检查先于版本/持仓数据校验（plan 4.2.3：同键任一快照字段变化 → REUSED）
+        if idempotency_key is not None:
+            existing = uow.tasks.get_by_idempotency_key(idempotency_key)
+            if existing is not None:
+                if existing.input_hash != input_hash:
+                    raise IdempotencyKeyReusedError("同一 Idempotency-Key 已用于不同输入")
+                return _replay_result(existing)
+
+        # 5) 组合版本与持仓约束校验（数据级，晚于幂等）
+        if portfolio.version != command.expected_portfolio_version:
+            raise PortfolioSnapshotConflictError(
+                f"组合已变更（期望 version={command.expected_portfolio_version}，实际 {portfolio.version}），请重新拉取"
+            )
+        if len(positions) > MAX_POSITIONS:
+            raise PortfolioPositionLimitExceededError(f"组合持仓超过 {MAX_POSITIONS} 条上限")
+        non_cn = [p for p in positions if p.market != "CN"]
+        if non_cn:
+            raise PortfolioUnsupportedHoldingError(
+                f"V1 仅支持 CN 持仓：{non_cn[0].market}/{non_cn[0].symbol}"
+            )
+
+        # 6) 暂存 task/outbox
+        task_service = TaskService(uow, clock=self._clock)
+        result = task_service.stage_create_task(
+            command, request_params, input_hash, idempotency_key=idempotency_key, trace_id=trace_id
+        )
+
+        return result

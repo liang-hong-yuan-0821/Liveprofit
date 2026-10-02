@@ -1,0 +1,315 @@
+{
+  "generated_at": "2026-09-25T17:40:17.407118+00:00",
+  "year": 2016,
+  "calendar": "exchange_calendars XSHG",
+  "calendar_sha256": "7d422a0ee75c7f917ffc347525868556cb2c0686ee9e3a206a2c782b847079f3",
+  "factor_gap_rows": 11581,
+  "within_first60_sessions": 11522,
+  "after_first60_sessions": 59,
+  "local_calendar_mismatch": 1621,
+  "absent_after20_sessions": 2,
+  "ma60_missing_after59_sessions": 65,
+  "atr_missing_after20_sessions": 2,
+  "examples": [
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-04",
+      "listed": "2015-12-30",
+      "local_bars": 1,
+      "market_sessions": 3,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-05",
+      "listed": "2015-12-30",
+      "local_bars": 2,
+      "market_sessions": 4,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-06",
+      "listed": "2015-12-30",
+      "local_bars": 3,
+      "market_sessions": 5,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-07",
+      "listed": "2015-12-30",
+      "local_bars": 4,
+      "market_sessions": 6,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-08",
+      "listed": "2015-12-30",
+      "local_bars": 5,
+      "market_sessions": 7,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-11",
+      "listed": "2015-12-30",
+      "local_bars": 6,
+      "market_sessions": 8,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-12",
+      "listed": "2015-12-30",
+      "local_bars": 7,
+      "market_sessions": 9,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-13",
+      "listed": "2015-12-30",
+      "local_bars": 8,
+      "market_sessions": 10,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-14",
+      "listed": "2015-12-30",
+      "local_bars": 9,
+      "market_sessions": 11,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-15",
+      "listed": "2015-12-30",
+      "local_bars": 10,
+      "market_sessions": 12,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-18",
+      "listed": "2015-12-30",
+      "local_bars": 11,
+      "market_sessions": 13,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-19",
+      "listed": "2015-12-30",
+      "local_bars": 12,
+      "market_sessions": 14,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-20",
+      "listed": "2015-12-30",
+      "local_bars": 13,
+      "market_sessions": 15,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-21",
+      "listed": "2015-12-30",
+      "local_bars": 14,
+      "market_sessions": 16,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-22",
+      "listed": "2015-12-30",
+      "local_bars": 15,
+      "market_sessions": 17,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-25",
+      "listed": "2015-12-30",
+      "local_bars": 16,
+      "market_sessions": 18,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-26",
+      "listed": "2015-12-30",
+      "local_bars": 17,
+      "market_sessions": 19,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-27",
+      "listed": "2015-12-30",
+      "local_bars": 18,
+      "market_sessions": 20,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": true
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-28",
+      "listed": "2015-12-30",
+      "local_bars": 19,
+      "market_sessions": 21,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-01-29",
+      "listed": "2015-12-30",
+      "local_bars": 20,
+      "market_sessions": 22,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-01",
+      "listed": "2015-12-30",
+      "local_bars": 21,
+      "market_sessions": 23,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-02",
+      "listed": "2015-12-30",
+      "local_bars": 22,
+      "market_sessions": 24,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-03",
+      "listed": "2015-12-30",
+      "local_bars": 23,
+      "market_sessions": 25,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-04",
+      "listed": "2015-12-30",
+      "local_bars": 24,
+      "market_sessions": 26,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-05",
+      "listed": "2015-12-30",
+      "local_bars": 25,
+      "market_sessions": 27,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-15",
+      "listed": "2015-12-30",
+      "local_bars": 26,
+      "market_sessions": 28,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-16",
+      "listed": "2015-12-30",
+      "local_bars": 27,
+      "market_sessions": 29,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-17",
+      "listed": "2015-12-30",
+      "local_bars": 28,
+      "market_sessions": 30,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-18",
+      "listed": "2015-12-30",
+      "local_bars": 29,
+      "market_sessions": 31,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    },
+    {
+      "code": "001979.SZ",
+      "day": "2016-02-19",
+      "listed": "2015-12-30",
+      "local_bars": 30,
+      "market_sessions": 32,
+      "factor_absent": false,
+      "ma60_missing": true,
+      "atr_missing": false
+    }
+  ]
+}

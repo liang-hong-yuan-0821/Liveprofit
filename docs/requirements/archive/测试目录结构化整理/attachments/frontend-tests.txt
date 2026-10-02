@@ -1,0 +1,761 @@
+$ node test-runner.mjs vitest run
+
+ RUN  v3.2.7 D:/code/workspace/python/Liveprofit
+
+ ✓ tests/frontend/market/unit/components/conceptTreeOption.test.ts (11 tests) 6ms
+ ✓ tests/frontend/shared/unit/charts/drawings.test.ts (14 tests) 9ms
+ ✓ tests/frontend/analysis/unit/components/topologyChartOption.test.ts (5 tests) 4ms
+ ✓ tests/frontend/market/integration/components/ConceptTreemap.test.tsx (4 tests) 46ms
+stderr | tests/frontend/app/unit/RouteErrorBoundary.test.tsx > RouteErrorBoundary > 404 路由错误显示专用资源不存在态与返回入口，不显示为系统崩溃
+No `HydrateFallback` element provided to render during initial hydration
+
+ ✓ tests/frontend/app/unit/AppErrorBoundary.test.tsx (1 test) 85ms
+ ✓ tests/frontend/app/unit/RouteErrorBoundary.test.tsx (2 tests) 133ms
+ ✓ tests/frontend/api/unit/client.test.ts (10 tests) 9ms
+ ✓ tests/frontend/market/integration/components/MarketRefreshStatus.test.tsx (6 tests) 45ms
+stderr | tests/frontend/shared/unit/charts/CandlestickChart.test.tsx > CandlestickChart > 真 echarts 实例回归锚：viewport 读取 → 覆盖层出图（拆引用裸调 getComponent 会丢 this 抛 TypeError）
+开 series not exists. Legend data should be same with series name or data name.
+高 series not exists. Legend data should be same with series name or data name.
+低 series not exists. Legend data should be same with series name or data name.
+收 series not exists. Legend data should be same with series name or data name.
+
+ ✓ tests/frontend/shared/unit/format/volume.test.ts (3 tests) 3ms
+stderr | tests/frontend/shared/unit/charts/CandlestickChart.test.tsx > CandlestickChart > 真 echarts SSR：参考价扩展主图 y 轴 extent（scale:true + 函数形式 min/max 生效）
+开 series not exists. Legend data should be same with series name or data name.
+高 series not exists. Legend data should be same with series name or data name.
+低 series not exists. Legend data should be same with series name or data name.
+收 series not exists. Legend data should be same with series name or data name.
+
+ ✓ tests/frontend/market/unit/pages/queries.test.ts (6 tests) 406ms
+stderr | tests/frontend/shared/unit/charts/CandlestickChart.test.tsx > CandlestickChart > 真 echarts SSR：双 legend 渲染无异常、图例文字 fill 含系列色（无可见标记图形）
+开 series not exists. Legend data should be same with series name or data name.
+高 series not exists. Legend data should be same with series name or data name.
+低 series not exists. Legend data should be same with series name or data name.
+收 series not exists. Legend data should be same with series name or data name.
+
+ ✓ tests/frontend/shared/unit/charts/CandlestickChart.test.tsx (47 tests) 566ms
+ ✓ tests/frontend/market/integration/pages/HotConceptsPanelClose.test.tsx (1 test) 284ms
+ ✓ tests/frontend/shared/unit/charts/LineChart.test.tsx (7 tests) 6ms
+ ✓ tests/frontend/market/integration/pages/MacroInformationPanel.test.tsx (4 tests) 464ms
+ ✓ tests/frontend/market/integration/pages/refreshQueries.test.tsx (10 tests) 78ms
+ ✓ tests/frontend/shared/unit/stores/uiPreferenceStore.test.ts (4 tests) 4ms
+ ✓ tests/frontend/daily_research/integration/pages/DailyResearchPage.test.tsx (3 tests) 404ms
+ ✓ tests/frontend/market/integration/pages/TrendComparisonPanel.test.tsx (8 tests) 320ms
+ ✓ tests/frontend/shared/unit/ui/markdown.test.tsx (5 tests) 126ms
+ ✓ tests/frontend/shared/unit/ui/uxBehavior.test.tsx (5 tests) 371ms
+   ✓ UX data boundaries > asset keyboard selection submits the code; subsequent edits clear the old selection  322ms
+ ✓ tests/frontend/event_study/integration/pages/PredictionTab.test.tsx (8 tests) 2363ms
+   ✓ PredictionTab > 成功预测：原页展示结果，不跳转任务详情；表单输入保留  410ms
+   ✓ PredictionTab > 503 EVENT_STUDY_BUSY：保留输入，仅手动重试，不自动重试  411ms
+   ✓ PredictionTab > 504 EVENT_STUDY_TIMEOUT：保留输入，提示等待超时，仅手动重试  398ms
+   ✓ PredictionTab > 样本不足/结果为空按 note 正常呈现，不生成前端结论  397ms
+   ✓ PredictionTab > 资产清单接口失败：表单常驻可自由输入并正常提交（契约 §7.2 降级）  391ms
+ ✓ tests/frontend/market/integration/pages/MarketOverviewPage.test.tsx (2 tests) 517ms
+   ✓ MarketOverviewPage > 三个 Panel 并行独立：热点失败仅重试自身，市场与信息区块正常展示  454ms
+ ✓ tests/frontend/market/integration/pages/HotConceptsPanel.test.tsx (7 tests) 675ms
+ ✓ tests/frontend/analysis/integration/components/PromptEditDialog.test.tsx (3 tests) 314ms
+ ✓ tests/frontend/event_study/integration/pages/EventStudyPage.test.tsx (5 tests) 403ms
+ ✓ tests/frontend/analysis/unit/pages/dashboard/queries.test.ts (3 tests) 398ms
+ ✓ tests/frontend/analysis/unit/pages/task-detail/taskEventProtocol.test.ts (14 tests) 7ms
+ ✓ tests/frontend/market/integration/pages/MarketIndicesPanel.test.tsx (11 tests) 1445ms
+   ✓ MarketIndicesPanel > 继续左平移 → 请求 400 天；响应首行未前移 → 到头，后续 onDataZoom 不再产生新请求  355ms
+ ✓ tests/frontend/analysis/integration/pages/agents/AgentTopologyPage.test.tsx (5 tests) 717ms
+   ✓ AgentTopologyPage > 保存后 PUT 成功并 invalidate 拓扑/列表缓存  374ms
+ ✓ tests/frontend/analysis/integration/pages/strategies/QuantStrategiesPage.test.tsx (2 tests) 540ms
+   ✓ QuantStrategiesPage > 新建策略必须输入代码：代码为空时创建按钮禁用并提示  437ms
+ ✓ tests/frontend/analysis/integration/pages/task-detail/useTaskEvents.test.tsx (13 tests) 44ms
+ ❯ tests/frontend/analysis/integration/pages/tasks/AiTasksPage.test.tsx (9 tests | 1 failed) 869ms
+   ✓ AiTasksPage 列表与分页 > 仅渲染 TaskListItemDTO 允许字段，不渲染敏感额外字段 210ms
+   ✓ AiTasksPage 列表与分页 > 加载更多按服务端顺序追加；无 next_cursor 隐藏加载更多 135ms
+   ✓ AiTasksPage 列表与分页 > 下一页失败保留已加载结果，重试后恢复 164ms
+   ✓ AiTasksPage 状态筛选 > URL ?status=active 恢复筛选并以服务端 status 参数请求 34ms
+   ✓ AiTasksPage 状态筛选 > 切换筛选以服务端 status 参数刷新；全部回退 all 并清除 URL status 95ms
+   ✓ AiTasksPage 状态筛选 > 422 INVALID_TASK_FILTER 显示为不可重试筛选错误 41ms
+   ✓ AiTasksPage 边界 > 新建分析入口仅跳转 /ai?create=1，页面无创建表单 9ms
+   ✓ AiTasksPage 边界 > 终态行可删除：确认后调用 DELETE 并刷新列表；非终态行无删除入口 164ms
+   × AiTasksPage 边界 > 任务中心从不创建 EventSource，页面文件无 useTaskEvents/EventSource 引用 14ms
+     → The URL must be of scheme file
+ ✓ tests/frontend/analysis/integration/pages/dashboard/AiDashboardPage.test.tsx (9 tests) 932ms
+ ✓ tests/frontend/analysis/integration/pages/task-detail/ReportContent.test.tsx (6 tests) 343ms
+ ✓ tests/frontend/analysis/integration/pages/dashboard/AnalysisTaskForm.test.tsx (10 tests) 1723ms
+   ✓ AnalysisTaskForm（恒为全市场调研） > 无目标标的输入框；分析层级默认全不勾选且可独立勾选/取消  322ms
+   ✓ AnalysisTaskForm（恒为全市场调研） > 同一意图重试复用幂等键；改变层级（仓位）后生成新键  310ms
+ ❯ tests/frontend/analysis/integration/pages/task-detail/QuantExecutionPanel.test.tsx (4 tests | 1 failed) 1333ms
+   ✓ QuantExecutionPanel > 渲染扫描统计与告警 79ms
+   ✓ QuantExecutionPanel > 买点列表展示全部 BUY（含被风控拒绝的），拒绝码可见 41ms
+   × QuantExecutionPanel > 买点以 K 线卡片网格展示：每卡按信号日窗口请求个股日线并渲染图表 1053ms
+     → expected "spy" to be called with arguments: [ '000001.SZ', 'CN', '1d', …(2) ]
+
+Received: 
+
+  1st spy call:
+
+@@ -2,6 +2,7 @@
+    "000001.SZ",
+    "CN",
+    "1d",
+    "2026-03-20",
+    "2026-09-16",
++   "cache_only",
+  ]
+
+
+Number of calls: 1
+
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"量化执行"[39m
+        [33mclass[39m=[32m"glass-card rounded-2xl border bg-[var(--color-surface)] p-5"[39m
+        [33mstyle[39m=[32m"border-color: var(--color-border);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mb-3 flex items-center justify-between gap-2"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-sm font-semibold flex flex-wrap items-center justify-between gap-2"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m全市场量化买点[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-normal"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m双均线[0m
+              [0m v[0m
+              [0m2[0m
+              [0m · 源码 [0m
+              [0mabcdef123456[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-md border p-2 text-xs"[39m
+            [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+          [36m>[39m
+            [0m组合快照 [0m
+            [0m核心仓[0m
+            [0m（v[0m
+            [0m1[0m
+            [0m）· 总资产 [0m
+            [0m100000.00[0m
+            [0m · 可用现金 [0m
+            [0m35000.00[0m
+            [0m · 估值于 2026/9/16 22:00:00[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 gap-2 text-sm sm:grid-cols-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m扫描标的[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m5300[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m数据完备[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m5200[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m命中买点[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m3[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m失败[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m建议买入[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m2[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m建议卖出[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m⚠ [0m
+              [0mAI 风险门控未接入；组合开放风险与熔断已启用[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 button-primary bg-[var(--color-accent)] text-[var(--color-accent-foreground)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m买点[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m持仓信号[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m建议订单[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"买点列表"[39m
+            [33mclass[39m=[32m"flex flex-col gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-1 gap-3 xl:grid-cols-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col gap-2 rounded-md border p-3"[39m
+                [33mstyle[39m=[32m"border-color: var(--color-border);"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-start justify-between gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-medium"[39m
+                    [36m>[39m
+                      [0m000001.SZ[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs"[39m
+                      [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+                    [36m>[39m
+                      [0m评分 [0m
+                      [0m90.00[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs"[39m
+                      [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+                    [36m>[39m
+                      [0m金叉[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium border-transparent bg-green-900/60 text-green-200"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mtitle[39m=[32m"ELIGIBLE"[39m
+                    [36m>[39m
+                      [0m符合下单条件[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-col gap-0.5 text-xs"[39m
+                [36m>[39m
+                  [36m<span>[39m
+                    [0m策略价（[0m
+                    [0m前复权 qfq[0m
+                    [0m）入场 [0m
+                    [0m10.00[0m
+                    [0m · 止损 [0m
+                    [0m9.00[0m
+                    [0m · 止盈 [0m
+                    [0m12.00[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mdata-testid[39m=[32m"candlestick-chart"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mstyle[39m=[32m"position: relative;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mdata-testid[39m=[32m"echarts"[39m
+                    [36m/>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m已显示 [0m
+              [0m1[0m
+              [0m/[0m
+              [0m3[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<span[39m
+        [33mdata-pathname[39m=[32m"/"[39m
+        [33mdata-search[39m=[32m""[39m
+        [33mdata-testid[39m=[32m"location"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+   ✓ QuantExecutionPanel > 建议订单页标注「需人工确认，未下单」，空订单渲染空态 158ms
+ ✓ tests/frontend/market/unit/pages/mappers/toChartViewModels.test.ts (8 tests) 16ms
+stderr | tests/frontend/analysis/integration/pages/task-detail/GraphTopologyPanel.test.tsx > GraphTopologyPanel > 点击节点打开弹窗并展示实例日志（复用 execution-logs 缓存）
+An update to GraphTopologyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ tests/frontend/market/unit/pages/mappers/toTrendViewModels.test.ts (7 tests) 6ms
+stderr | tests/frontend/analysis/integration/pages/task-detail/GraphTopologyPanel.test.tsx > GraphTopologyPanel > 点击未执行节点 → 弹窗空态
+An update to GraphTopologyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/frontend/analysis/integration/pages/task-detail/GraphTopologyPanel.test.tsx > GraphTopologyPanel > 弹窗内容随轮询数据实时派生（不滞留点击时刻快照）
+An update to GraphTopologyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ tests/frontend/watchlist/integration/pages/WatchlistPage.test.tsx (11 tests) 3314ms
+   ✓ WatchlistPage 自选分组与标的 > 分组创建成功：列表以服务端数据刷新，新建输入清空  338ms
+   ✓ WatchlistPage 自选分组与标的 > WATCHLIST_ITEM_DUPLICATE：不插入本地乐观项，保留输入提示重复  420ms
+   ✓ WatchlistPage 组合与持仓 > 数量必须大于 0：前端先行校验阻止提交  533ms
+   ✓ WatchlistPage 组合与持仓 > INVALID_POSITION 服务端错误映射为字段提示，输入保留  645ms
+   ✓ WatchlistPage 组合与持仓 > 删除按 200 envelope（data={deleted, resource_id}）处理并刷新列表  453ms
+ ✓ tests/frontend/event_study/integration/pages/review/EventDetailDialog.test.tsx (5 tests) 218ms
+ ✓ tests/frontend/analysis/integration/pages/task-detail/GraphTopologyPanel.test.tsx (7 tests) 588ms
+ ✓ tests/frontend/event_study/unit/pages/review/mappers/toPendingEventRowVM.test.ts (10 tests) 6ms
+ ✓ tests/frontend/event_study/unit/pages/review/mappers/toImpactRowVM.test.ts (4 tests) 5ms
+ ✓ tests/frontend/event_study/integration/pages/review/ImpactConfirmTab.test.tsx (6 tests) 804ms
+   ✓ ImpactConfirmTab > 勾选确认：按事件分组逐事件调用 confirm 并汇总 inserted  332ms
+ ✓ tests/frontend/analysis/integration/pages/task-detail/ExecutionLogsPanel.test.tsx (7 tests) 710ms
+ ✓ tests/frontend/watchlist/integration/portfolios/PortfolioDrafts.test.tsx (7 tests) 4258ms
+   ✓ Frozen editing snapshots through real parent query boundaries > cached background error leaves the settings dialog and draft mounted  509ms
+   ✓ Frozen editing snapshots through real parent query boundaries > parent list refresh preserves settings draft and blocks stale save until explicit reload  487ms
+   ✓ Frozen editing snapshots through real parent query boundaries > saving an invalid collapsed field expands its group and focuses the input  505ms
+   ✓ Frozen editing snapshots through real parent query boundaries > settings uses percentages in UI and preserves untouched raw precision  367ms
+   ✓ Frozen editing snapshots through real parent query boundaries > requires selected profile budgets before saving admission scope  1469ms
+   ✓ Frozen editing snapshots through real parent query boundaries > position background revision change retains draft and cannot rebase it silently  485ms
+   ✓ Frozen editing snapshots through real parent query boundaries > 409 keeps the raw quantity and requires explicit reload  434ms
+ ✓ tests/frontend/analysis/unit/components/topologyGeometry.test.ts (5 tests) 63ms
+ ✓ tests/frontend/analysis/integration/pages/task-detail/AiTaskDetailPage.test.tsx (17 tests) 1655ms
+ ✓ tests/frontend/event_study/integration/pages/review/ReviewTab.test.tsx (1 test) 123ms
+ ✓ tests/frontend/event_study/integration/pages/review/PendingEventsTab.test.tsx (20 tests) 4436ms
+   ✓ PendingEventsTab > 路由字段回填：sector 建议回填作用域与目标，提交 payload 含路由字段  303ms
+   ✓ PendingEventsTab > 下层作用域缺目标：阻止提交（不开确认框、不调 batch），提示可回退 market  372ms
+   ✓ PendingEventsTab > 二次确认：取消不提交；确认后提交且跳过行不进 payload  416ms
+   ✓ PendingEventsTab > 分块：12 行非跳过 → 两次调用 10+2，进度文案出现  401ms
+   ✓ PendingEventsTab > 行结果：计算失败显示重试按钮并调用补算  355ms
+   ✓ PendingEventsTab > 强制重填：60 条草稿分两片提交  554ms
+   ✓ PendingEventsTab > 强制重填护栏：片内 prelabeled=0 提前终止  465ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/analysis/integration/pages/tasks/AiTasksPage.test.tsx > AiTasksPage 边界 > 任务中心从不创建 EventSource，页面文件无 useTaskEvents/EventSource 引用
+TypeError: The URL must be of scheme file
+ ❯ tests/frontend/analysis/integration/pages/tasks/AiTasksPage.test.tsx:236:26
+    234|     // 静态断言：任务中心源码不得引用 SSE/useTaskEvents
+    235|     for (const file of ['AiTasksPage.tsx', 'AnalysisTaskList.tsx', 'qu…
+    236|       const sourceRoot = fileURLToPath(new URL('../../../../../../fron…
+       |                          ^
+    237|       const source = readFileSync(join(sourceRoot, 'modules', 'analysi…
+    238|       expect(source).not.toMatch(/EventSource|useTaskEvents/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/frontend/analysis/integration/pages/task-detail/QuantExecutionPanel.test.tsx > QuantExecutionPanel > 买点以 K 线卡片网格展示：每卡按信号日窗口请求个股日线并渲染图表
+AssertionError: expected "spy" to be called with arguments: [ '000001.SZ', 'CN', '1d', …(2) ]
+
+Received: 
+
+  1st spy call:
+
+@@ -2,6 +2,7 @@
+    "000001.SZ",
+    "CN",
+    "1d",
+    "2026-03-20",
+    "2026-09-16",
++   "cache_only",
+  ]
+
+
+Number of calls: 1
+
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div>
+      <div
+        aria-label="量化执行"
+        class="glass-card rounded-2xl border bg-[var(--color-surface)] p-5"
+        style="border-color: var(--color-border);"
+      >
+        <div
+          class="mb-3 flex items-center justify-between gap-2"
+        >
+          <h2
+            class="text-sm font-semibold flex flex-wrap items-center justify-between gap-2"
+          >
+            <span>
+              全市场量化买点
+            </span>
+            <span
+              class="text-xs font-normal"
+              style="color: var(--color-fg-muted);"
+            >
+              双均线
+               v
+              2
+               · 源码 
+              abcdef123456
+            </span>
+          </h2>
+        </div>
+        <div
+          class="flex flex-col gap-3"
+        >
+          <div
+            class="rounded-md border p-2 text-xs"
+            style="color: var(--color-fg-muted);"
+          >
+            组合快照 
+            核心仓
+            （v
+            1
+            ）· 总资产 
+            100000.00
+             · 可用现金 
+            35000.00
+             · 估值于 2026/9/16 22:00:00
+          </div>
+          <div
+            class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4"
+          >
+            <div
+              class="rounded-md border p-2"
+            >
+              <p
+                class="text-xs"
+                style="color: var(--color-fg-muted);"
+              >
+                扫描标的
+              </p>
+              <p
+                class="text-base font-semibold"
+              >
+                5300
+              </p>
+            </div>
+            <div
+              class="rounded-md border p-2"
+            >
+              <p
+                class="text-xs"
+                style="color: var(--color-fg-muted);"
+              >
+                数据完备
+              </p>
+              <p
+                class="text-base font-semibold"
+              >
+                5200
+              </p>
+            </div>
+            <div
+              class="rounded-md border p-2"
+            >
+              <p
+                class="text-xs"
+                style="color: var(--color-fg-muted);"
+              >
+                命中买点
+              </p>
+              <p
+                class="text-base font-semibold"
+              >
+                3
+              </p>
+            </div>
+            <div
+              class="rounded-md border p-2"
+            >
+              <p
+                class="text-xs"
+                style="color: var(--color-fg-muted);"
+              >
+                失败
+              </p>
+              <p
+                class="text-base font-semibold"
+              >
+                1
+              </p>
+            </div>
+            <div
+              class="rounded-md border p-2"
+            >
+              <p
+                class="text-xs"
+                style="color: var(--color-fg-muted);"
+              >
+                建议买入
+              </p>
+              <p
+                class="text-base font-semibold"
+              >
+                2
+              </p>
+            </div>
+            <div
+              class="rounded-md border p-2"
+            >
+              <p
+                class="text-xs"
+                style="color: var(--color-fg-muted);"
+              >
+                建议卖出
+              </p>
+              <p
+                class="text-base font-semibold"
+              >
+                1
+              </p>
+            </div>
+          </div>
+          <div
+            class="flex flex-col gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"
+          >
+            <p
+              class="text-xs"
+              style="color: var(--color-fg-muted);"
+            >
+              ⚠ 
+              AI 风险门控未接入；组合开放风险与熔断已启用
+            </p>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 button-primary bg-[var(--color-accent)] text-[var(--color-accent-foreground)] h-8 rounded-md px-3 text-xs"
+            >
+              买点
+            </button>
+            <button
+              class="ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"
+            >
+              持仓信号
+            </button>
+            <button
+              class="ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"
+            >
+              建议订单
+            </button>
+          </div>
+          <div
+            aria-label="买点列表"
+            class="flex flex-col gap-2"
+          >
+            <div
+              class="grid grid-cols-1 gap-3 xl:grid-cols-2"
+            >
+              <div
+                class="flex flex-col gap-2 rounded-md border p-3"
+                style="border-color: var(--color-border);"
+              >
+                <div
+                  class="flex items-start justify-between gap-2"
+                >
+                  <div
+                    class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
+                  >
+                    <span
+                      class="font-medium"
+                    >
+                      000001.SZ
+                    </span>
+                    <span
+                      class="text-xs"
+                      style="color: var(--color-fg-muted);"
+                    >
+                      评分 
+                      90.00
+                    </span>
+                    <span
+                      class="text-xs"
+                      style="color: var(--color-fg-muted);"
+                    >
+                      金叉
+                    </span>
+                  </div>
+                  <div
+                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium border-transparent bg-green-900/60 text-green-200"
+                  >
+                    <span
+                      title="ELIGIBLE"
+                    >
+                      符合下单条件
+                    </span>
+                  </div>
+                </div>
+                <div
+                  class="flex flex-col gap-0.5 text-xs"
+                >
+                  <span>
+                    策略价（
+                    前复权 qfq
+                    ）入场 
+                    10.00
+                     · 止损 
+                    9.00
+                     · 止盈 
+                    12.00
+                  </span>
+                </div>
+                <div
+                  data-testid="candlestick-chart"
+                >
+                  <div
+                    style="position: relative;"
+                  >
+                    <div
+                      data-testid="echarts"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p
+              class="text-xs"
+              style="color: var(--color-fg-muted);"
+            >
+              已显示 
+              1
+              /
+              3
+            </p>
+          </div>
+        </div>
+      </div>
+      <span
+        data-pathname="/"
+        data-search=""
+        data-testid="location"
+      />
+    </div>
+  </body>
+</html>
+ ❯ tests/frontend/analysis/integration/pages/task-detail/QuantExecutionPanel.test.tsx:137:24
+    135|     // 窗口锚定信号日往前 180 天；卡片滚动入场（jsdom 无 IntersectionObserver → 立即请求）
+    136|     await waitFor(() =>
+    137|       expect(barsMock).toHaveBeenCalledWith('000001.SZ', 'CN', '1d', '…
+       |                        ^
+    138|     );
+    139|     expect(await screen.findByTestId('echarts')).toBeInTheDocument();
+ ❯ runWithExpensiveErrorDiagnosticsDisabled frontend/node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback frontend/node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback frontend/node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 48 passed (50)
+      Tests  2 failed | 380 passed (382)
+   Start at  21:02:23
+   Duration  19.48s (transform 5.35s, setup 30.80s, collect 66.47s, tests 32.20s, environment 69.28s, prepare 9.87s)
+
+[ELIFECYCLE] Test failed. See above for more details.

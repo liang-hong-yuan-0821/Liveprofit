@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-09-25T19:21:04.933918+00:00",
+  "year": 2019,
+  "calendar": "exchange_calendars XSHG",
+  "calendar_sha256": "ba7cb9b1b6f3084f2f416993b38d15a385c6a3a4b184ecb553204ed0a1b85b96",
+  "factor_gap_rows": 10360,
+  "factor_gap_codes": 221,
+  "listed_before_calendar_start": [],
+  "first_bar_not_listing_date": [],
+  "max_local_bar_rank": 59,
+  "untrusted_no_bar_session_count": 0,
+  "untrusted_no_bar_by_year": {
+    "2018": 0,
+    "2019": 0
+  },
+  "untrusted_no_bar_codes": [],
+  "untrusted_no_bar_session_examples": [],
+  "factor_absent_after_bar20_count": 0,
+  "factor_absent_after_bar20_examples": [],
+  "ma60_missing_after_bar59_count": 0,
+  "ma60_missing_after_bar59_examples": [],
+  "atr_missing_after_bar20_count": 0,
+  "atr_missing_after_bar20_examples": []
+}

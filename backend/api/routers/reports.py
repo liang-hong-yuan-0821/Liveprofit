@@ -62,6 +62,7 @@ async def get_report(task_id: uuid.UUID, request: Request, trace_id: str = Depen
             portfolio = payload.get("portfolio_snapshot") or {}
             summary = payload.get("summary") or {}
             return QuantExecutionDTO(
+                admission=payload.get("admission"),
                 strategy=StrategyAuditDTO(
                     name=str(strategy.get("name") or ""),
                     version_no=int(strategy.get("version_no") or 0),
@@ -75,6 +76,7 @@ async def get_report(task_id: uuid.UUID, request: Request, trace_id: str = Depen
                     total_assets=str(portfolio.get("total_assets") or "0"),
                     available_cash=str(portfolio.get("available_cash") or "0"),
                     risk=portfolio.get("risk") or {},
+                    risk_profile=portfolio.get("risk_profile"),
                     snapshot_at=portfolio.get("snapshot_at"),
                 ),
                 matching_buy_preview=[] if previews is None else [

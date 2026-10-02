@@ -11,6 +11,8 @@ from datetime import datetime
 from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
+from backend.modules.investment_workspace.infrastructure.account_models import AccountObservationRow
+from backend.modules.investment_workspace.infrastructure.account_ledger_models import AccountLedgerBaselineRow
 from backend.modules.investment_workspace.infrastructure.models import (
     Portfolio,
     PortfolioPosition,
@@ -105,6 +107,10 @@ class PortfolioRepository:
     def get(self, portfolio_id: uuid.UUID) -> Portfolio | None:
         return self._session.get(Portfolio, portfolio_id)
 
+    def get_locked(self, portfolio_id: uuid.UUID) -> Portfolio | None:
+        return self._session.scalar(select(Portfolio).where(Portfolio.id == portfolio_id)
+                                    .with_for_update().execution_options(populate_existing=True))
+
     def get_by_name(self, name: str) -> Portfolio | None:
         return self._session.execute(select(Portfolio).where(Portfolio.name == name)).scalar_one_or_none()
 
@@ -137,6 +143,16 @@ class PortfolioRepository:
         return self._session.execute(
             select(func.count()).select_from(PortfolioPosition).where(PortfolioPosition.portfolio_id == portfolio_id)
         ).scalar_one()
+
+    def has_account_observations(self, portfolio_id: uuid.UUID) -> bool:
+        return self._session.scalar(select(AccountObservationRow.id).where(
+            AccountObservationRow.portfolio_id == portfolio_id
+        ).limit(1)) is not None
+
+    def has_ledger_baseline(self, portfolio_id: uuid.UUID) -> bool:
+        return self._session.scalar(select(AccountLedgerBaselineRow.id).where(
+            AccountLedgerBaselineRow.portfolio_id == portfolio_id
+        ).limit(1)) is not None
 
 
 class SqlAlchemyWorkspaceUnitOfWork:

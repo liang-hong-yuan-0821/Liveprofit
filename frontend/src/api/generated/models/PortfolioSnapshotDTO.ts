@@ -9,6 +9,7 @@ export type PortfolioSnapshotDTO = {
     total_assets: string;
     available_cash: string;
     risk: Record<string, any>;
+    risk_profile?: (string | null);
     snapshot_at?: (string | null);
 };
 

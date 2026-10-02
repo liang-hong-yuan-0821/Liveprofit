@@ -1,0 +1,1460 @@
+{
+  "days": 242,
+  "written": 1249463,
+  "warmup": 5169,
+  "failed_days": [],
+  "results": [
+    {
+      "day": "2023-01-03",
+      "written": 5018,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-04",
+      "written": 5020,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-05",
+      "written": 5020,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-06",
+      "written": 5022,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-09",
+      "written": 5021,
+      "warmup": 23,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-10",
+      "written": 5027,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-11",
+      "written": 5027,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-12",
+      "written": 5025,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-13",
+      "written": 5028,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-16",
+      "written": 5031,
+      "warmup": 17,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-17",
+      "written": 5029,
+      "warmup": 17,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-18",
+      "written": 5030,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-19",
+      "written": 5031,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-20",
+      "written": 5033,
+      "warmup": 17,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-30",
+      "written": 5034,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-01-31",
+      "written": 5034,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-01",
+      "written": 5037,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-02",
+      "written": 5043,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-03",
+      "written": 5040,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-06",
+      "written": 5045,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-07",
+      "written": 5047,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-08",
+      "written": 5045,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-09",
+      "written": 5047,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-10",
+      "written": 5048,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-13",
+      "written": 5049,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-14",
+      "written": 5048,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-15",
+      "written": 5050,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-16",
+      "written": 5052,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-17",
+      "written": 5053,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-20",
+      "written": 5055,
+      "warmup": 17,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-21",
+      "written": 5055,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-22",
+      "written": 5057,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-23",
+      "written": 5059,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-24",
+      "written": 5058,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-27",
+      "written": 5058,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-02-28",
+      "written": 5061,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-01",
+      "written": 5062,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-02",
+      "written": 5064,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-03",
+      "written": 5063,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-06",
+      "written": 5063,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-07",
+      "written": 5063,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-08",
+      "written": 5065,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-09",
+      "written": 5066,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-10",
+      "written": 5068,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-13",
+      "written": 5071,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-14",
+      "written": 5074,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-15",
+      "written": 5076,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-16",
+      "written": 5078,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-17",
+      "written": 5079,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-20",
+      "written": 5078,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-21",
+      "written": 5080,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-22",
+      "written": 5080,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-23",
+      "written": 5083,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-24",
+      "written": 5084,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-27",
+      "written": 5086,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-28",
+      "written": 5086,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-29",
+      "written": 5088,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-30",
+      "written": 5088,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-03-31",
+      "written": 5089,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-03",
+      "written": 5091,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-04",
+      "written": 5093,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-06",
+      "written": 5094,
+      "warmup": 23,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-07",
+      "written": 5094,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-10",
+      "written": 5095,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-11",
+      "written": 5098,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-12",
+      "written": 5097,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-13",
+      "written": 5100,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-14",
+      "written": 5099,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-17",
+      "written": 5100,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-18",
+      "written": 5105,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-19",
+      "written": 5106,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-20",
+      "written": 5108,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-21",
+      "written": 5106,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-24",
+      "written": 5105,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-25",
+      "written": 5106,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-26",
+      "written": 5099,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-27",
+      "written": 5098,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-04-28",
+      "written": 5085,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-04",
+      "written": 5051,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-05",
+      "written": 5089,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-08",
+      "written": 5093,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-09",
+      "written": 5090,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-10",
+      "written": 5091,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-11",
+      "written": 5103,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-12",
+      "written": 5104,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-15",
+      "written": 5105,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-16",
+      "written": 5108,
+      "warmup": 23,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-17",
+      "written": 5110,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-18",
+      "written": 5113,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-19",
+      "written": 5117,
+      "warmup": 23,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-22",
+      "written": 5117,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-23",
+      "written": 5118,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-24",
+      "written": 5119,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-25",
+      "written": 5121,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-26",
+      "written": 5121,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-29",
+      "written": 5117,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-30",
+      "written": 5118,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-05-31",
+      "written": 5121,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-01",
+      "written": 5121,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-02",
+      "written": 5124,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-05",
+      "written": 5124,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-06",
+      "written": 5124,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-07",
+      "written": 5126,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-08",
+      "written": 5128,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-09",
+      "written": 5130,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-12",
+      "written": 5131,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-13",
+      "written": 5133,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-14",
+      "written": 5131,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-15",
+      "written": 5135,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-16",
+      "written": 5135,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-19",
+      "written": 5141,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-20",
+      "written": 5143,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-21",
+      "written": 5146,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-26",
+      "written": 5147,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-27",
+      "written": 5148,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-28",
+      "written": 5150,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-29",
+      "written": 5151,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2023-06-30",
+      "written": 5153,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-03",
+      "written": 5154,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-04",
+      "written": 5156,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-05",
+      "written": 5158,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-06",
+      "written": 5158,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-07",
+      "written": 5159,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-10",
+      "written": 5159,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-11",
+      "written": 5161,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-12",
+      "written": 5161,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-13",
+      "written": 5159,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-14",
+      "written": 5161,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-17",
+      "written": 5163,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-18",
+      "written": 5164,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-19",
+      "written": 5167,
+      "warmup": 36,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-20",
+      "written": 5170,
+      "warmup": 36,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-21",
+      "written": 5172,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-24",
+      "written": 5171,
+      "warmup": 36,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-25",
+      "written": 5176,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-26",
+      "written": 5180,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-27",
+      "written": 5180,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-28",
+      "written": 5184,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2023-07-31",
+      "written": 5185,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-01",
+      "written": 5185,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-02",
+      "written": 5185,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-03",
+      "written": 5186,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-04",
+      "written": 5188,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-07",
+      "written": 5190,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-08",
+      "written": 5190,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-09",
+      "written": 5195,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-10",
+      "written": 5199,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-11",
+      "written": 5200,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-14",
+      "written": 5201,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-15",
+      "written": 5202,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-16",
+      "written": 5206,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-17",
+      "written": 5208,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-18",
+      "written": 5209,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-21",
+      "written": 5210,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-22",
+      "written": 5212,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-23",
+      "written": 5216,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-24",
+      "written": 5217,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-25",
+      "written": 5218,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-28",
+      "written": 5218,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-29",
+      "written": 5219,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-30",
+      "written": 5220,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2023-08-31",
+      "written": 5222,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-01",
+      "written": 5222,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-04",
+      "written": 5222,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-05",
+      "written": 5226,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-06",
+      "written": 5229,
+      "warmup": 23,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-07",
+      "written": 5231,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-08",
+      "written": 5232,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-11",
+      "written": 5231,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-12",
+      "written": 5234,
+      "warmup": 22,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-13",
+      "written": 5237,
+      "warmup": 19,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-14",
+      "written": 5239,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-15",
+      "written": 5241,
+      "warmup": 17,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-18",
+      "written": 5243,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-19",
+      "written": 5244,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-20",
+      "written": 5248,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-21",
+      "written": 5248,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-22",
+      "written": 5250,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-25",
+      "written": 5250,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-26",
+      "written": 5250,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-27",
+      "written": 5251,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-09-28",
+      "written": 5249,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-09",
+      "written": 5250,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-10",
+      "written": 5252,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-11",
+      "written": 5251,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-12",
+      "written": 5254,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-13",
+      "written": 5255,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-16",
+      "written": 5256,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-17",
+      "written": 5258,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-18",
+      "written": 5257,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-19",
+      "written": 5259,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-20",
+      "written": 5261,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-23",
+      "written": 5262,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-24",
+      "written": 5260,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-25",
+      "written": 5262,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-26",
+      "written": 5264,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-27",
+      "written": 5265,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-30",
+      "written": 5264,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-10-31",
+      "written": 5268,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-01",
+      "written": 5270,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-02",
+      "written": 5270,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-03",
+      "written": 5273,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-06",
+      "written": 5267,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-07",
+      "written": 5270,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-08",
+      "written": 5274,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-09",
+      "written": 5272,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-10",
+      "written": 5272,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-13",
+      "written": 5273,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-14",
+      "written": 5275,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-15",
+      "written": 5274,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-16",
+      "written": 5274,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-17",
+      "written": 5274,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-20",
+      "written": 5278,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-21",
+      "written": 5281,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-22",
+      "written": 5280,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-23",
+      "written": 5281,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-24",
+      "written": 5282,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-27",
+      "written": 5285,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-28",
+      "written": 5283,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-29",
+      "written": 5285,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-11-30",
+      "written": 5285,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-01",
+      "written": 5288,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-04",
+      "written": 5286,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-05",
+      "written": 5287,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-06",
+      "written": 5287,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-07",
+      "written": 5286,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-08",
+      "written": 5289,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-11",
+      "written": 5291,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-12",
+      "written": 5290,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-13",
+      "written": 5291,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-14",
+      "written": 5294,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-15",
+      "written": 5294,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-18",
+      "written": 5293,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-19",
+      "written": 5291,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-20",
+      "written": 5294,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-21",
+      "written": 5294,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-22",
+      "written": 5293,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-25",
+      "written": 5293,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-26",
+      "written": 5295,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-27",
+      "written": 5296,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-28",
+      "written": 5292,
+      "warmup": 17,
+      "unresolved": []
+    },
+    {
+      "day": "2023-12-29",
+      "written": 5295,
+      "warmup": 17,
+      "unresolved": []
+    }
+  ]
+}

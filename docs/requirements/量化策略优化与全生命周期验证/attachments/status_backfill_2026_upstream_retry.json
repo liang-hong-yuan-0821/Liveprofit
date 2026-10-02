@@ -1,0 +1,102 @@
+{
+  "start": "2026-01-01",
+  "end": "2026-09-24",
+  "calendar_days": 178,
+  "pending_before": 9,
+  "attempted": [
+    {
+      "trade_date": "20260113",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "605028.SH"
+      ]
+    },
+    {
+      "trade_date": "20260112",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "603056.SH"
+      ]
+    },
+    {
+      "trade_date": "20260109",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "603056.SH"
+      ]
+    },
+    {
+      "trade_date": "20260115",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "688005.SH"
+      ]
+    },
+    {
+      "trade_date": "20260116",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "688005.SH"
+      ]
+    },
+    {
+      "trade_date": "20260122",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "603616.SH"
+      ]
+    },
+    {
+      "trade_date": "20260706",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "002731.SZ"
+      ]
+    },
+    {
+      "trade_date": "20260616",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "603159.SH"
+      ]
+    },
+    {
+      "trade_date": "20260915",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "601238.SH"
+      ]
+    }
+  ],
+  "pending_after": 9,
+  "next_dates": [
+    "2026-01-13",
+    "2026-01-12",
+    "2026-01-09",
+    "2026-01-15",
+    "2026-01-16",
+    "2026-01-22",
+    "2026-07-06",
+    "2026-06-16",
+    "2026-09-15"
+  ],
+  "generated_at": "2026-09-26T04:24:37.540147+00:00"
+}

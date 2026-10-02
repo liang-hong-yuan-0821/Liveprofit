@@ -1,0 +1,467 @@
+# test-catalog-begin
+# {
+#   "purpose": "单元测试：统一每日增量（db.instrument.ingest.incremental，",
+#   "keywords": [
+#     "数据采集",
+#     "K线",
+#     "交易日历",
+#     "每日",
+#     "复权因子",
+#     "指数",
+#     "持仓生命周期",
+#     "行情刷新",
+#     "来源证据",
+#     "状态",
+#     "个股分析",
+#     "incremental",
+#     "bars",
+#     "calendar",
+#     "daily",
+#     "factor",
+#     "index",
+#     "lifecycle",
+#     "refresh",
+#     "source",
+#     "status",
+#     "stock"
+#   ],
+#   "covers": [
+#     "AI/dataflows/providers/base_provider.py",
+#     "db/instrument/db.py",
+#     "db/instrument/ingest/frames.py",
+#     "db/instrument/ingest/incremental.py",
+#     "db/instrument/ingest/industries.py"
+#   ],
+#   "environment": [
+#     "db"
+#   ]
+# }
+# test-catalog-end
+
+"""
+单元测试：统一每日增量（db.instrument.ingest.incremental，
+迁移自 tests/dataflows/store/test_incremental）
+
+- 最近 3 交易日窗口（trade_cal 末 3 位）
+- DO UPDATE 路径（bulk_upsert_daily / bulk_upsert_factor 以 update=True 调用）
+- 基本信息刷新拆两路（instrument + stock_info / fund_info）
+- 指数采集：自举前置 + 双源兜底 + source 写实际成功源 + 缺段拒绝
+- 库内最新日期不能证明三日窗口行情与复权齐全 → 重拉窗口并接受修正
+- 板块周刷：refresh_sectors 三种取值（None=按周一自动 / True / False）
+- 单日拉取失败仅跳过该日，不阻断其他日
+- 兜底源拉取异常只跳过该码 bars（与 backfill 对称修复回归）
+- 非 CN 目标（US 3 + KS11）不请求因子（idx_factor_pro 为 CN 端点）
+"""
+
+from datetime import date, datetime
+from unittest.mock import MagicMock
+
+import pandas as pd
+import pytest
+
+from AI.dataflows.providers.base_provider import ProviderNetworkAccessDenied
+from db.instrument.ingest import incremental as inc
+from db.instrument.ingest.frames import StoreFetchError
+
+
+class _FakeDateTime(datetime):
+    """固定 now() 的 datetime 替身（板块周刷"周一"判定用）。"""
+    _now = datetime(2026, 8, 31, 8, 0)   # 2026-08-31 = 周一
+
+    @classmethod
+    def now(cls, tz=None):
+        return cls._now
+
+
+def test_older_fund_adj_gap_is_selected_for_incremental_repair(clean_market_state):
+    from db.instrument.db import get_connection
+    with get_connection() as conn:
+        assert conn.info.dbname == "liveprofit_instrument_test"
+        conn.execute("INSERT INTO market.instrument (ts_code,name,instrument_type,list_date) "
+                     "VALUES ('510300.SH','fund','fund','2012-05-28')")
+        conn.execute("INSERT INTO market.instrument_daily (ts_code,trade_date,close,source) "
+                     "VALUES ('510300.SH','2026-09-15',4,'tushare')")
+        assert inc._unreconciled_stock_days(conn, ["20260915"]) == ["20260915"]
+        conn.execute("INSERT INTO market.adj_factor (ts_code,trade_date,adj_factor) "
+                     "VALUES ('510300.SH','2026-09-15',1)")
+        assert inc._unreconciled_stock_days(conn, ["20260915"]) == []
+        conn.execute("INSERT INTO market.instrument (ts_code,name,instrument_type,list_date) "
+                     "VALUES ('920001.BJ','legacy','stock','2010-01-01')")
+        conn.execute("INSERT INTO market.instrument_daily (ts_code,trade_date,close,source) "
+                     "VALUES ('920001.BJ','2016-01-04',4,'tushare')")
+        assert inc._active_stock_codes(conn, "20160104") == []
+        assert inc._unreconciled_stock_days(conn, ["20160104"]) == ["20160104"]  # fund day absent
+        conn.execute("INSERT INTO market.instrument_daily (ts_code,trade_date,close,source) "
+                     "VALUES ('510300.SH','2016-01-04',4,'tushare')")
+        conn.execute("INSERT INTO market.adj_factor (ts_code,trade_date,adj_factor) "
+                     "VALUES ('510300.SH','2016-01-04',1)")
+        assert inc._unreconciled_stock_days(conn, ["20160104"]) == []
+        assert inc._stock_day_quality_gaps(conn, ["20160104"]) == []
+
+
+def _mock_provider(days=None):
+    prov = MagicMock()
+    prov.connected = True
+    prov.get_trade_cal.return_value = pd.DataFrame({
+        "trade_date": pd.to_datetime(
+            days or ["2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31"]),
+        "is_open": 1,
+    })
+    prov.get_stock_basic_df.return_value = pd.DataFrame({
+        "ts_code": ["000001.SZ"], "name": ["平安银行"],
+        "list_status": ["L"], "list_date": ["19910403"],
+        "delist_date": [None], "exchange": ["SZSE"],
+        "market": ["主板"], "area": ["深圳"],
+    })
+    prov.get_fund_basic_df.return_value = pd.DataFrame({
+        "ts_code": ["510300.SH"], "name": ["沪深300ETF"],
+        "list_date": ["20120528"], "delist_date": [None],
+    })
+    # 指数接口默认无数据（指数采集单独测试）
+    prov.get_index_data_df = MagicMock(return_value=None)
+    prov.get_index_factor_df = MagicMock(return_value=None)
+    return prov
+
+
+def test_calendar_network_access_denial_is_not_reported_as_unavailable():
+    provider = _mock_provider()
+    provider.get_trade_cal.return_value = None
+    provider._network_access_error = ProviderNetworkAccessDenied("blocked by local policy")
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        inc._last_trade_days(provider)
+
+
+def test_directory_network_access_denial_stops_incremental_refresh():
+    provider = _mock_provider()
+    provider.get_stock_basic_df.return_value = None
+    provider._network_access_error = ProviderNetworkAccessDenied("blocked by local policy")
+
+    with pytest.raises(ProviderNetworkAccessDenied):
+        inc._refresh_basics(MagicMock(), provider)
+
+    provider.get_fund_basic_df.assert_not_called()
+
+
+_FRAMES = {"daily": pd.DataFrame({"ts_code": ["000001.SZ"]}),
+           "factor": pd.DataFrame({"ts_code": ["000001.SZ"]})}
+
+
+@pytest.fixture
+def env(monkeypatch):
+    """monkeypatch collect_incremental 的环境，返回 (conn, provider, 记录 dict)。"""
+    conn = MagicMock()
+    prov = _mock_provider()
+    monkeypatch.setattr(inc, "bulk_upsert_daily", MagicMock(return_value=2))
+    monkeypatch.setattr(inc, "bulk_upsert_factor", MagicMock(return_value=2))
+    monkeypatch.setattr(inc, "bulk_upsert_factor_daily", MagicMock(return_value=2))
+    monkeypatch.setattr(inc, "_bootstrap_instruments", MagicMock())
+    monkeypatch.setattr(inc.instrument_dao, "upsert_instrument", MagicMock(return_value=1))
+    monkeypatch.setattr(inc.stock_info, "upsert_stock_info", MagicMock(return_value=1))
+    monkeypatch.setattr(inc.fund_info, "upsert_fund_info", MagicMock(return_value=1))
+    monkeypatch.setattr(inc, "fetch_day_frames", MagicMock(return_value=_FRAMES))
+    monkeypatch.setattr(inc, "_unreconciled_stock_days", MagicMock(return_value=[]))
+    monkeypatch.setattr(inc, "collect_sectors", MagicMock())
+    # 行业成员周刷在 incremental 内懒加载，mock 掉避免真实 DB 调用（见 test_industries_ingest.py）
+    monkeypatch.setattr(
+        "db.instrument.ingest.industries.collect_industries", MagicMock(return_value={"status": "MOCKED"})
+    )
+    monkeypatch.setattr(inc, "datetime", _FakeDateTime)
+    return conn, prov
+
+
+def _run(conn, prov, **kw):
+    return inc.collect_incremental(conn, lambda: prov, **kw)
+
+
+def test_collects_last_3_days_with_do_update(env):
+    conn, prov = env
+    result = _run(conn, prov, refresh_sectors=False)
+
+    fetched = [c.args[1] for c in inc.fetch_day_frames.call_args_list]
+    assert fetched == ["20260827", "20260828", "20260831"]   # 最近 3 交易日
+    assert set(result["daily"]) == {"20260827", "20260828", "20260831"}
+    assert result["daily"]["20260827"] == {"daily": 2, "factor": 2}
+
+    # DO UPDATE 入库（覆盖 tushare 日终修正）
+    for call in inc.bulk_upsert_daily.call_args_list:
+        assert call.kwargs == {"update": True}
+    for call in inc.bulk_upsert_factor.call_args_list:
+        assert call.kwargs == {"update": True}
+    # 提交 = 股票/基金基础各 1 + 基础步骤结束 1 + 指数 2 + 日线 3
+    assert conn.commit.call_count == 8
+
+
+def test_basics_refreshed_split_two_ways(env):
+    conn, prov = env
+    _run(conn, prov, refresh_sectors=False)
+    prov.get_stock_basic_df.assert_called_once()
+    prov.get_fund_basic_df.assert_called_once()
+    # stock 拆两路：instrument 通用列（instrument_type='stock'）+ stock_info 三列
+    inst_df = inc.instrument_dao.upsert_instrument.call_args_list[0].args[1]
+    assert inst_df["instrument_type"].iloc[0] == "stock"
+    assert inst_df["data_source"].iloc[0] == "tushare"
+    inc.stock_info.upsert_stock_info.assert_called_once()
+    inc.fund_info.upsert_fund_info.assert_called_once()
+    # fund 行 list_status 恒 NULL（fund_basic 无此列）
+    fund_df = [c.args[1] for c in inc.instrument_dao.upsert_instrument.call_args_list][1]
+    assert fund_df["list_status"].iloc[0] is None
+
+
+def test_stock_basic_lifecycle_status_normalization_fits_existing_char_column():
+    source = pd.DataFrame({
+        "ts_code": ["920201.BJ", "301716.SZ", "600000.SH"],
+        "name": ["未上市", "过会未交易", "上市"],
+        "list_status": ["UN", "G", "L"],
+        "list_date": [None, "20260930", "20000101"],
+    })
+    normalized = inc._basic_to_instrument(source, "stock")
+    assert normalized["list_status"].tolist() == ["U", "G", "L"]
+
+
+def test_stock_basic_unknown_multichar_status_fails_closed():
+    source = pd.DataFrame({
+        "ts_code": ["000001.SZ"], "name": ["股票"], "list_status": ["NEW"],
+    })
+    with pytest.raises(ValueError, match="unsupported multi-character stock list_status"):
+        inc._basic_to_instrument(source, "stock")
+
+
+def test_index_rows_do_not_cover_daily_window(env):
+    """指数先写入最新日期，也不能让个股/基金三日窗口跳过。"""
+    conn, prov = env
+    _run(conn, prov, refresh_sectors=False)
+    fetched = [c.args[1] for c in inc.fetch_day_frames.call_args_list]
+    assert fetched == ["20260827", "20260828", "20260831"]
+
+
+def test_index_fallback_exception_skips_bars_only(env):
+    """兜底源拉取异常只跳过该码 bars、不中断其余目标（与 backfill 对称的
+    修复回归：新浪网络异常时兜底源抛异常不应吞掉整个步骤 3）。"""
+    conn, prov = env
+    fallback = MagicMock()
+    fallback.name = "AKShare"
+    fallback.get_index_data_df = MagicMock(side_effect=RuntimeError("新浪网络异常"))
+    result = inc.collect_incremental(
+        conn, lambda: prov, lambda: fallback, refresh_sectors=False)
+    assert result["index"] == {"bars": 0, "factors": 0}
+    # 异常被隔离在单码：全部 15 目标都走完兜底（各抛一次），而非首个异常中断
+    # 整个步骤 3（修复前会在首个码 000001.SH 就 abort，call_count 只有 1）
+    assert fallback.get_index_data_df.call_count == len(inc.INDEX_TARGETS)
+    fetched = [c.args[1] for c in inc.fetch_day_frames.call_args_list]
+    assert fetched == ["20260827", "20260828", "20260831"]
+
+
+def test_non_cn_codes_skip_factor_fetch(env):
+    """非 CN 目标（US 3 + KS11）不请求因子（idx_factor_pro 为 tushare CN 端点）。"""
+    conn, prov = env
+    _run(conn, prov, refresh_sectors=False)
+    codes = {c.args[0] for c in prov.get_index_factor_df.call_args_list}
+    assert codes == {c for c in inc.INDEX_TARGETS if inc._is_cn_index_code(c)}
+    assert ".INX" not in codes and "KS11" not in codes
+
+
+def test_rechecks_window_even_when_latest_daily_exists(env):
+    conn, prov = env
+    result = _run(conn, prov, refresh_sectors=False)
+    assert set(result["daily"]) == {"20260827", "20260828", "20260831"}
+    assert inc.fetch_day_frames.call_count == 3
+    inc.instrument_dao.upsert_instrument.assert_called()
+
+
+def test_replays_old_adj_gap_outside_three_day_window(env):
+    conn, prov = env
+    inc._unreconciled_stock_days.return_value = ["20260826"]
+
+    result = _run(conn, prov, refresh_sectors=False)
+
+    assert result["repair_days"] == ["20260826"]
+    assert [c.args[1] for c in inc.fetch_day_frames.call_args_list] == [
+        "20260826", "20260827", "20260828", "20260831",
+    ]
+    assert "error" not in result
+
+
+def test_repair_uses_historical_active_stock_universe():
+    conn = MagicMock()
+    conn.execute.return_value.fetchall.return_value = [("000001.SZ",), ("600000.SH",)]
+
+    assert inc._active_stock_codes(conn, "20260826") == ["000001.SZ", "600000.SH"]
+    query, params = conn.execute.call_args.args
+    assert "list_date <=" in query and "delist_date >" in query
+    assert params == ("20260826", "20260826", "20260826")
+
+
+def test_adj_gap_scan_returns_bounded_old_dates():
+    conn = MagicMock()
+    conn.execute.return_value.fetchall.return_value = [(date(2026, 8, 26),)]
+
+    assert inc._unreconciled_stock_days(conn, ["20260826", "20260831"], limit=2) == [
+        "20260826",
+    ]
+    query, params = conn.execute.call_args.args
+    assert "LEFT JOIN market.adj_factor" in query
+    assert "EXISTS" in query
+    assert "d.ts_code IS NULL" in query
+    assert "s.is_suspended IS TRUE AND s.suspension_scope='full_day'" in query
+    assert "s.source IN ('tushare','tushare+baostock')" in query
+    assert params[0] == [date(2026, 8, 26), date(2026, 8, 31)]
+    assert params[1] == 2
+
+
+def test_persisted_stock_day_quality_reports_component_counts():
+    conn = MagicMock()
+    conn.execute.return_value.fetchall.return_value = [
+        (date(2026, 8, 26), 1, 0, 2),
+        (date(2026, 8, 27), 0, 0, 0),
+    ]
+
+    assert inc._stock_day_quality_gaps(conn, ["20260826", "20260827"]) == [{
+        "trade_date": "20260826", "daily_missing": 1,
+        "adj_missing": 0, "status_missing": 2,
+    }]
+
+
+def test_fund_day_quality_rejects_empty_day_and_unadjusted_bars():
+    conn = MagicMock()
+    conn.execute.return_value.fetchall.return_value = [
+        (date(2026, 8, 26), True, 0),
+        (date(2026, 8, 27), False, 2),
+        (date(2026, 8, 28), False, 0),
+    ]
+    assert inc._fund_day_quality_gaps(conn, ["20260826", "20260827", "20260828"]) == [
+        {"trade_date": "20260826", "daily_missing": True, "adj_missing": 0},
+        {"trade_date": "20260827", "daily_missing": False, "adj_missing": 2},
+    ]
+    assert "i.instrument_type='fund'" in conn.execute.call_args.args[0]
+
+
+def test_single_day_failure_does_not_block_others(env, monkeypatch):
+    conn, prov = env
+
+    def flaky(p, d, stock_codes=None, fund_codes=None):
+        if d == "20260828":
+            raise RuntimeError("接口失败")
+        return _FRAMES
+
+    monkeypatch.setattr(inc, "fetch_day_frames", flaky)
+    result = _run(conn, prov, refresh_sectors=False)
+    assert set(result["daily"]) == {"20260827", "20260831"}
+    assert result["daily_failed_days"] == ["20260828"]
+    assert result["error"] == "INCREMENTAL_INCOMPLETE"
+    assert conn.commit.call_count == 7   # 2 日单日提交 + 基础 3 次 + 指数 2 次
+
+
+def test_trade_cal_unavailable_skips(env):
+    conn, prov = env
+    prov.get_trade_cal.return_value = None
+    assert _run(conn, prov, refresh_sectors=False) == {"error": "交易日历不可用"}
+    inc.fetch_day_frames.assert_not_called()
+
+
+def test_provider_unsupported_methods_return_none(env, monkeypatch):
+    conn, prov = env
+    # akshare 环境下结构化方法返回 None → fetch_day_frames 抛 StoreFetchError
+    # → 逐日 warning 跳过，不阻断（结果为空 dict）
+
+    def unsupported(p, d, stock_codes=None, fund_codes=None):
+        raise StoreFetchError("数据源不支持采集")
+
+    monkeypatch.setattr(inc, "fetch_day_frames", unsupported)
+    result = _run(conn, prov, refresh_sectors=False)
+    assert result["daily"] == {}
+
+
+def test_sectors_weekly_none_on_monday(env):
+    conn, prov = env
+    # 默认 _FakeDateTime._now = 2026-08-31（周一）→ None 自动周刷
+    _run(conn, prov, refresh_sectors=None)
+    inc.collect_sectors.assert_called_once()
+
+
+def test_sectors_weekly_false_on_monday(env):
+    conn, prov = env
+    _run(conn, prov, refresh_sectors=False)
+    inc.collect_sectors.assert_not_called()
+
+
+def test_sectors_weekly_true_not_monday(env, monkeypatch):
+    conn, prov = env
+    friday = type("_Fri", (_FakeDateTime,), {})
+    friday._now = datetime(2026, 8, 28, 8, 0)   # 周五
+    monkeypatch.setattr(inc, "datetime", friday)
+    _run(conn, prov, refresh_sectors=True)   # 显式 True 强制
+    inc.collect_sectors.assert_called_once()
+
+
+def test_sectors_weekly_none_not_monday(env, monkeypatch):
+    conn, prov = env
+    friday = type("_Fri", (_FakeDateTime,), {})
+    friday._now = datetime(2026, 8, 28, 8, 0)   # 周五
+    monkeypatch.setattr(inc, "datetime", friday)
+    _run(conn, prov, refresh_sectors=None)   # 非周一自动不刷
+    inc.collect_sectors.assert_not_called()
+
+
+# ==================== 指数采集：自举 + 兜底 + source 标签 ====================
+
+def _index_df(code="000001.SH"):
+    return pd.DataFrame({
+        "trade_date": ["2026-08-31"],
+        "open": [1.0], "high": [1.1], "low": [0.9], "close": [1.05],
+        "pre_close": [1.0], "change": [0.05], "pct_chg": [5.0],
+        "vol": [100.0], "amount": [100.0],
+    })
+
+
+def test_index_bars_fallback_writes_actual_source(env):
+    conn, prov = env
+    fallback = MagicMock()
+    fallback.name = "AKShare"  # _provider_source 用 provider.name（CR M1）
+    prov.name = "Tushare"
+    prov.get_index_data_df = MagicMock(return_value=None)   # 主源无数据
+    fallback.get_index_data_df = MagicMock(return_value=_index_df())
+    prov.get_index_factor_df = MagicMock(return_value=pd.DataFrame(
+        {"trade_date": ["2026-08-31"]}))
+
+    _run2 = inc.collect_incremental(conn, lambda: prov, lambda: fallback,
+                                    refresh_sectors=False)
+    assert _run2 is not None
+    written = inc.bulk_upsert_daily.call_args_list[0].args[1]
+    # 兜底源成功 → source 写实际成功源标签（决策 3.4.1：不照搬 data_source）
+    assert written["source"].iloc[0] == "akshare"
+    inc._bootstrap_instruments.assert_called_once()
+
+
+def test_index_factor_missing_chunks_rejected(env):
+    conn, prov = env
+    prov.get_index_data_df = MagicMock(return_value=_index_df())
+    factor_df = pd.DataFrame({"trade_date": ["2026-08-31"]})
+    factor_df.attrs["missing_chunks"] = ["2026-01-01 ~ 2026-02-01"]
+    prov.get_index_factor_df = MagicMock(return_value=factor_df)
+
+    inc.collect_incremental(conn, lambda: prov, refresh_sectors=False)
+    inc.bulk_upsert_factor_daily.assert_not_called()   # 缺段拒绝部分入库
+
+
+def test_refresh_industries_wiring(env):
+    """refresh_industries 三态接线（plan 4.3.1 周刷）：True 强制 / False 跳过 / 异常不破坏 summary。"""
+    from db.instrument.ingest import industries as industries_mod
+
+    conn, prov = env
+    industries_mod.collect_industries.reset_mock()
+    result = _run(conn, prov, refresh_industries=True)
+    assert industries_mod.collect_industries.called
+    assert result["industries"] == {"status": "MOCKED"}
+    assert "daily" in result
+
+    industries_mod.collect_industries.reset_mock()
+    _run(conn, prov, refresh_industries=False)
+    assert not industries_mod.collect_industries.called
+
+    # 行业步骤异常不阻断增量主流程（不破坏 summary）
+    industries_mod.collect_industries.side_effect = RuntimeError("行业接口炸了")
+    result = _run(conn, prov, refresh_industries=True)
+    assert "daily" in result
+    assert "industries" not in result  # 失败不写入 summary，仅告警日志
+    industries_mod.collect_industries.side_effect = None

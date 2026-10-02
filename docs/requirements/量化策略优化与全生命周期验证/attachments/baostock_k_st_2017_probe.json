@@ -1,0 +1,42 @@
+{
+  "year": 2017,
+  "generated_at": "2026-09-25T22:42:49.352247+00:00",
+  "source": "baostock.query_history_k_data_plus.daily.unadjusted",
+  "calendar_days": 244,
+  "instrument_codes": 3472,
+  "expected_stock_days": 799064,
+  "observed_stock_days": 799064,
+  "failed_codes": [],
+  "missing_count": 0,
+  "missing_examples": [],
+  "extra_count": 5,
+  "extra_examples": [
+    [
+      "000033.SZ",
+      "2017-07-07"
+    ],
+    [
+      "000748.SZ",
+      "2017-01-18"
+    ],
+    [
+      "000916.SZ",
+      "2017-12-25"
+    ],
+    [
+      "300372.SZ",
+      "2017-08-28"
+    ],
+    [
+      "600005.SH",
+      "2017-02-14"
+    ]
+  ],
+  "known_st_overlap": 791295,
+  "st_conflict_count": 0,
+  "st_conflict_examples": [],
+  "bar_presence_conflict_count": 0,
+  "bar_presence_conflict_examples": [],
+  "raw_parquet": "logs\\quant_history\\baostock_k_st_2017.parquet",
+  "raw_parquet_sha256": "66fbeee04ce3abfc6087a50c8901865bcb25995373b055357fb982f01bae431f"
+}

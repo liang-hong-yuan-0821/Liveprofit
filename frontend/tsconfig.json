@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
@@ -15,7 +19,54 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client", "vitest/globals"]
+    "types": [
+      "vite/client",
+      "vitest/globals"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "react/jsx-runtime": [
+        "node_modules/@types/react/jsx-runtime.d.ts"
+      ],
+      "react/jsx-dev-runtime": [
+        "node_modules/@types/react/jsx-dev-runtime.d.ts"
+      ],
+      "@testing-library/react": [
+        "node_modules/@testing-library/react/types/index.d.ts"
+      ],
+      "@testing-library/user-event": [
+        "node_modules/@testing-library/user-event/dist/types/index.d.ts"
+      ],
+      "vitest": [
+        "node_modules/vitest/dist/index.d.ts"
+      ],
+      "echarts-for-react": [
+        "node_modules/echarts-for-react/lib/index.d.ts"
+      ],
+      "echarts": [
+        "node_modules/echarts/types/dist/all.d.ts"
+      ],
+      "node": [
+        "node_modules/@types/node/index.d.ts"
+      ],
+      "react-router": [
+        "node_modules/react-router/dist/development/index.d.mts"
+      ],
+      "react": [
+        "node_modules/@types/react/index.d.ts"
+      ],
+      "@tanstack/react-query": [
+        "node_modules/@tanstack/react-query/build/modern/index.d.ts"
+      ],
+      "@testing-library/jest-dom/vitest": [
+        "node_modules/@testing-library/jest-dom/types/vitest.d.ts"
+      ]
+    }
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../tests/frontend",
+    "../tests/support/frontend"
+  ],
+  "compileOnSave": false
 }

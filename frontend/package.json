@@ -8,10 +8,10 @@
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "node test-runner.mjs vitest run",
+    "test:watch": "node test-runner.mjs vitest",
     "generate:api": "openapi --input ../backend/openapi/openapi.v1.json --output src/api/generated --client fetch",
-    "e2e": "playwright test"
+    "e2e": "node test-runner.mjs playwright test"
   },
   "dependencies": {
     "@codemirror/lang-python": "^6.2.1",

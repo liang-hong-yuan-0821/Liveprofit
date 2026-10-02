@@ -1,0 +1,50 @@
+{
+  "days": 7,
+  "written": 172,
+  "warmup": 96,
+  "failed_days": [],
+  "results": [
+    {
+      "day": "2016-07-01",
+      "written": 21,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2016-07-04",
+      "written": 22,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2016-07-05",
+      "written": 24,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2016-07-06",
+      "written": 25,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2016-07-07",
+      "written": 26,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2016-07-08",
+      "written": 27,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2016-07-11",
+      "written": 27,
+      "warmup": 14,
+      "unresolved": []
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "tests.backend.analysis.contract.api.test_analysis_tasks": "tests.backend.analysis.support.analysis_tasks",
+  "tests.backend.analysis.unit.test_task_service": "tests.backend.analysis.support.task_service",
+  "tests.backend.investment_workspace.integration.test_fill_posting_stage": "tests.backend.investment_workspace.support.fill_posting_stage",
+  "tests.backend.investment_workspace.integration.test_lifecycle_persisted_diagnosis": "tests.backend.investment_workspace.support.lifecycle_persisted_diagnosis",
+  "tests.backend.investment_workspace.integration.test_lifecycle_persisted_resolved_accounting": "tests.backend.investment_workspace.support.lifecycle_persisted_resolved_accounting",
+  "tests.backend.investment_workspace.integration.test_lifecycle_revision_impact_surface": "tests.backend.investment_workspace.support.lifecycle_revision_impact_surface",
+  "tests.backend.market_data.contract.api.test_market_data": "tests.backend.market_data.support.market_data",
+  "tests.backend.market_data.integration.test_market_flow": "tests.backend.market_data.support.market_flow",
+  "tests.backend.quant_research.unit.test_fund_representative_readiness": "tests.backend.quant_research.support.fund_representative_readiness",
+  "tests.backend.quant_strategy.integration.test_entry_batch": "tests.backend.quant_strategy.support.entry_batch",
+  "tests.backend.quant_strategy.integration.test_family_batch": "tests.backend.quant_strategy.support.family_batch",
+  "tests.backend.quant_strategy.integration.test_instrument_rule_certificates": "tests.backend.quant_strategy.support.instrument_rule_certificates",
+  "tests.backend.quant_strategy.integration.test_lifecycle_operation_schema": "tests.backend.quant_strategy.support.lifecycle_operation_schema",
+  "tests.backend.quant_strategy.integration.test_lifecycle_service": "tests.backend.quant_strategy.support.lifecycle_service",
+  "tests.backend.quant_strategy.integration.test_lifecycle_unbound_command": "tests.backend.quant_strategy.support.lifecycle_unbound_command"
+}

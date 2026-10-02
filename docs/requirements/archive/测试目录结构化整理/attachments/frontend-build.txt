@@ -1,0 +1,58 @@
+$ tsc --noEmit -p tsconfig.json && vite build
+vite v7.3.6 building client environment for production...
+transforming...
+node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/util.js (330:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/regexes.js (70:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+✓ 2868 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                  0.99 kB │ gzip:   0.55 kB
+dist/assets/index-t8P9LJWh.css                  56.30 kB │ gzip:  10.46 kB
+dist/assets/label-CQC6Dp0P.js                    0.16 kB │ gzip:   0.15 kB
+dist/assets/checkbox-Cx1wN5Vf.js                 0.25 kB │ gzip:   0.21 kB
+dist/assets/analysisLayers-AGhaKztL.js           0.30 kB │ gzip:   0.27 kB
+dist/assets/EmptyState-C3s_Liff.js               0.36 kB │ gzip:   0.24 kB
+dist/assets/dateTime-DtDf2fJe.js                 0.38 kB │ gzip:   0.28 kB
+dist/assets/input-DS7rM5oX.js                    0.44 kB │ gzip:   0.31 kB
+dist/assets/SectionTabs-Bc5dHLAi.js              0.47 kB │ gzip:   0.32 kB
+dist/assets/card-DO7dXjR-.js                     0.57 kB │ gzip:   0.29 kB
+dist/assets/ConfirmDialog-DlaxSunO.js            0.68 kB │ gzip:   0.47 kB
+dist/assets/badge-DMuMn5ux.js                    0.71 kB │ gzip:   0.38 kB
+dist/assets/useInfiniteQuery-BvUdu2lG.js         1.15 kB │ gzip:   0.49 kB
+dist/assets/MarketDataService-Bf6wy4Ga.js        2.03 kB │ gzip:   0.55 kB
+dist/assets/queries-BpDRJC_9.js                  2.28 kB │ gzip:   0.81 kB
+dist/assets/taskStatus-CD8dRgFA.js               2.29 kB │ gzip:   0.77 kB
+dist/assets/queries-DtzREg9e.js                  3.33 kB │ gzip:   1.05 kB
+dist/assets/queries-D60_XxSp.js                  4.71 kB │ gzip:   1.09 kB
+dist/assets/AiTasksPage-C6SL3X5Q.js              4.95 kB │ gzip:   2.23 kB
+dist/assets/refreshQueries-BHjowypj.js           6.80 kB │ gzip:   2.93 kB
+dist/assets/PromptEditDialog-DWpJziZF.js         7.43 kB │ gzip:   3.42 kB
+dist/assets/queries-Covo47uo.js                  8.41 kB │ gzip:   1.74 kB
+dist/assets/DailyResearchPage-DskFc_6T.js       21.59 kB │ gzip:   6.89 kB
+dist/assets/toChartViewModels-tUjwUoBT.js       24.29 kB │ gzip:   8.96 kB
+dist/assets/MarketOverviewPage-Dv_kaNEa.js      26.00 kB │ gzip:   9.08 kB
+dist/assets/button-B72Br9T3.js                  27.43 kB │ gzip:   9.35 kB
+dist/assets/WatchlistPage-DWn_HvFk.js           29.24 kB │ gzip:   8.59 kB
+dist/assets/AiTaskDetailPage-BkVPeSYE.js        40.62 kB │ gzip:  13.50 kB
+dist/assets/EventStudyPage--orr0urI.js          41.55 kB │ gzip:  12.89 kB
+dist/assets/AiDashboardPage-DKyD-15k.js        135.70 kB │ gzip:  41.88 kB
+dist/assets/markdown-CgZ-KozX.js               157.77 kB │ gzip:  47.95 kB
+dist/assets/index-Di6_HkYH.js                  398.47 kB │ gzip: 128.69 kB
+dist/assets/QuantStrategiesPage-Bng4dtST.js    479.96 kB │ gzip: 161.24 kB
+dist/assets/index-DRyjYjax.js                1,145.08 kB │ gzip: 385.13 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.35s

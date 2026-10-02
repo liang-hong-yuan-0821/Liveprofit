@@ -1,0 +1,36 @@
+{
+  "start": "2021-01-01",
+  "end": "2021-12-31",
+  "calendar_days": 243,
+  "pending_before": 3,
+  "attempted": [
+    {
+      "trade_date": "20210201",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20210528",
+      "status": "SUCCESS",
+      "rows": 10,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20210622",
+      "status": "PARTIAL",
+      "rows": 0,
+      "source": null,
+      "ambiguous_codes": [
+        "002529.SZ"
+      ]
+    }
+  ],
+  "pending_after": 1,
+  "next_dates": [
+    "2021-06-22"
+  ],
+  "generated_at": "2026-09-26T04:22:48.568558+00:00"
+}

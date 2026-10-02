@@ -288,23 +288,31 @@ class QuantStrategyService:
                 raise StrategyNotFoundError(f"生命周期策略版本不存在：{lifecycle_policy_version_id}")
             if policy.status != "PUBLISHED":
                 raise StrategyVersionInvalidStateError("只能绑定已发布的生命周期策略版本")
-            policy_template_id = (policy.config or {}).get("template_id")
-            if not isinstance(policy_template_id, str):
-                raise StrategyVersionInvalidStateError("生命周期策略必须显式声明 template_id")
-            try:
-                get_template(policy_template_id)
-            except TemplateValidationError:
-                raise StrategyVersionInvalidStateError("生命周期策略 template_id 不在七模板合同内") from None
-            if version.template_id is not None and version.template_id != policy_template_id:
-                raise StrategyVersionInvalidStateError("生命周期策略与参考模板不兼容")
-            try:
-                reward = Decimal(str((policy.config or {}).get("reward_multiple")))
-            except (InvalidOperation, TypeError):
-                raise StrategyVersionInvalidStateError("生命周期策略缺少有效 reward_multiple") from None
-            if not reward.is_finite() or reward <= 0:
-                raise StrategyVersionInvalidStateError("生命周期策略 reward_multiple 必须大于 0")
-            if str((policy.config or {}).get("initial_exposure_pct", "0.50")) != "0.50":
-                raise StrategyVersionInvalidStateError("生命周期首仓比例固定为 0.50")
+            if "management_policy" in (policy.config or {}):
+                from .lifecycle_service import LifecyclePolicyService
+                from .errors import FillValidationError
+                try:
+                    LifecyclePolicyService.read_family(policy, version.template_id)
+                except FillValidationError as exc:
+                    raise StrategyVersionInvalidStateError(str(exc)) from exc
+            else:
+                policy_template_id = (policy.config or {}).get("template_id")
+                if not isinstance(policy_template_id, str):
+                    raise StrategyVersionInvalidStateError("生命周期策略必须显式声明 template_id")
+                try:
+                    get_template(policy_template_id)
+                except TemplateValidationError:
+                    raise StrategyVersionInvalidStateError("生命周期策略 template_id 不在七模板合同内") from None
+                if version.template_id is not None and version.template_id != policy_template_id:
+                    raise StrategyVersionInvalidStateError("生命周期策略与参考模板不兼容")
+                try:
+                    reward = Decimal(str((policy.config or {}).get("reward_multiple")))
+                except (InvalidOperation, TypeError):
+                    raise StrategyVersionInvalidStateError("生命周期策略缺少有效 reward_multiple") from None
+                if not reward.is_finite() or reward <= 0:
+                    raise StrategyVersionInvalidStateError("生命周期策略 reward_multiple 必须大于 0")
+                if str((policy.config or {}).get("initial_exposure_pct", "0.50")) != "0.50":
+                    raise StrategyVersionInvalidStateError("生命周期首仓比例固定为 0.50")
         if not self._versions.conditional_update_version(
             version.id, expected_version,
             {

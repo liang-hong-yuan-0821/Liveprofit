@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-09-26T03:32:56.206178+00:00",
+  "results": [
+    {
+      "code": "510300.SH",
+      "rows": 2430,
+      "local_rows": 2430,
+      "missing_dates": [],
+      "extra_dates": [],
+      "price_mismatches": 0,
+      "null_required_rows": 0
+    },
+    {
+      "code": "511010.SH",
+      "rows": 2430,
+      "local_rows": 2430,
+      "missing_dates": [],
+      "extra_dates": [],
+      "price_mismatches": 0,
+      "null_required_rows": 0
+    },
+    {
+      "code": "518880.SH",
+      "rows": 2430,
+      "local_rows": 2430,
+      "missing_dates": [],
+      "extra_dates": [],
+      "price_mismatches": 0,
+      "null_required_rows": 0
+    }
+  ]
+}

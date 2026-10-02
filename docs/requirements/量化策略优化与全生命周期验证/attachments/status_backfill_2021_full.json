@@ -1,0 +1,3458 @@
+{
+  "start": "2021-01-01",
+  "end": "2021-12-31",
+  "calendar_days": 243,
+  "pending_before": 243,
+  "attempted": [
+    {
+      "trade_date": "20211231",
+      "status": "PARTIAL",
+      "rows": 4683,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211230",
+      "status": "PARTIAL",
+      "rows": 4682,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211229",
+      "status": "PARTIAL",
+      "rows": 4679,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211228",
+      "status": "PARTIAL",
+      "rows": 4679,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211227",
+      "status": "PARTIAL",
+      "rows": 4675,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211224",
+      "status": "PARTIAL",
+      "rows": 4674,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211223",
+      "status": "PARTIAL",
+      "rows": 4670,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211222",
+      "status": "PARTIAL",
+      "rows": 4667,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211221",
+      "status": "PARTIAL",
+      "rows": 4663,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211220",
+      "status": "PARTIAL",
+      "rows": 4663,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211217",
+      "status": "PARTIAL",
+      "rows": 4661,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211216",
+      "status": "PARTIAL",
+      "rows": 4660,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211215",
+      "status": "PARTIAL",
+      "rows": 4658,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211214",
+      "status": "PARTIAL",
+      "rows": 4654,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211213",
+      "status": "PARTIAL",
+      "rows": 4653,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211210",
+      "status": "PARTIAL",
+      "rows": 4653,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211209",
+      "status": "PARTIAL",
+      "rows": 4650,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211208",
+      "status": "PARTIAL",
+      "rows": 4649,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211207",
+      "status": "PARTIAL",
+      "rows": 4648,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211206",
+      "status": "PARTIAL",
+      "rows": 4645,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211203",
+      "status": "PARTIAL",
+      "rows": 4642,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211202",
+      "status": "PARTIAL",
+      "rows": 4641,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211201",
+      "status": "PARTIAL",
+      "rows": 4640,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211130",
+      "status": "PARTIAL",
+      "rows": 4638,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211129",
+      "status": "PARTIAL",
+      "rows": 4637,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211126",
+      "status": "PARTIAL",
+      "rows": 4636,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211125",
+      "status": "PARTIAL",
+      "rows": 4633,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211124",
+      "status": "PARTIAL",
+      "rows": 4633,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211123",
+      "status": "PARTIAL",
+      "rows": 4631,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211122",
+      "status": "PARTIAL",
+      "rows": 4631,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211119",
+      "status": "PARTIAL",
+      "rows": 4628,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211118",
+      "status": "PARTIAL",
+      "rows": 4627,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211117",
+      "status": "PARTIAL",
+      "rows": 4624,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211116",
+      "status": "PARTIAL",
+      "rows": 4622,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211115",
+      "status": "PARTIAL",
+      "rows": 4609,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ",
+        "920092.BJ",
+        "920145.BJ",
+        "920171.BJ",
+        "920260.BJ",
+        "920436.BJ",
+        "920454.BJ",
+        "920680.BJ",
+        "920873.BJ",
+        "920932.BJ",
+        "920981.BJ"
+      ]
+    },
+    {
+      "trade_date": "20211112",
+      "status": "PARTIAL",
+      "rows": 4536,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211111",
+      "status": "PARTIAL",
+      "rows": 4533,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211110",
+      "status": "PARTIAL",
+      "rows": 4531,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211109",
+      "status": "PARTIAL",
+      "rows": 4528,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211108",
+      "status": "PARTIAL",
+      "rows": 4528,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211105",
+      "status": "PARTIAL",
+      "rows": 4528,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211104",
+      "status": "PARTIAL",
+      "rows": 4528,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211103",
+      "status": "PARTIAL",
+      "rows": 4528,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211102",
+      "status": "PARTIAL",
+      "rows": 4527,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211101",
+      "status": "PARTIAL",
+      "rows": 4525,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211029",
+      "status": "PARTIAL",
+      "rows": 4523,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211028",
+      "status": "PARTIAL",
+      "rows": 4522,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211027",
+      "status": "PARTIAL",
+      "rows": 4520,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211026",
+      "status": "PARTIAL",
+      "rows": 4515,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211025",
+      "status": "PARTIAL",
+      "rows": 4512,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211022",
+      "status": "PARTIAL",
+      "rows": 4509,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211021",
+      "status": "PARTIAL",
+      "rows": 4509,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211020",
+      "status": "PARTIAL",
+      "rows": 4506,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211019",
+      "status": "PARTIAL",
+      "rows": 4503,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211018",
+      "status": "PARTIAL",
+      "rows": 4500,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211015",
+      "status": "PARTIAL",
+      "rows": 4497,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211014",
+      "status": "PARTIAL",
+      "rows": 4495,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211013",
+      "status": "PARTIAL",
+      "rows": 4494,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211012",
+      "status": "PARTIAL",
+      "rows": 4493,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211011",
+      "status": "PARTIAL",
+      "rows": 4493,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20211008",
+      "status": "PARTIAL",
+      "rows": 4492,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210930",
+      "status": "PARTIAL",
+      "rows": 4492,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210929",
+      "status": "PARTIAL",
+      "rows": 4490,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210928",
+      "status": "PARTIAL",
+      "rows": 4487,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210927",
+      "status": "PARTIAL",
+      "rows": 4485,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210924",
+      "status": "PARTIAL",
+      "rows": 4484,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210923",
+      "status": "PARTIAL",
+      "rows": 4482,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210922",
+      "status": "PARTIAL",
+      "rows": 4481,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210917",
+      "status": "PARTIAL",
+      "rows": 4479,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210916",
+      "status": "PARTIAL",
+      "rows": 4477,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210915",
+      "status": "PARTIAL",
+      "rows": 4474,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210914",
+      "status": "PARTIAL",
+      "rows": 4473,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210913",
+      "status": "PARTIAL",
+      "rows": 4470,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210910",
+      "status": "PARTIAL",
+      "rows": 4467,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210909",
+      "status": "PARTIAL",
+      "rows": 4466,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210908",
+      "status": "PARTIAL",
+      "rows": 4462,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210907",
+      "status": "PARTIAL",
+      "rows": 4460,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210906",
+      "status": "PARTIAL",
+      "rows": 4458,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210903",
+      "status": "PARTIAL",
+      "rows": 4455,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210902",
+      "status": "PARTIAL",
+      "rows": 4455,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210901",
+      "status": "PARTIAL",
+      "rows": 4455,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210831",
+      "status": "PARTIAL",
+      "rows": 4453,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210830",
+      "status": "PARTIAL",
+      "rows": 4452,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210827",
+      "status": "PARTIAL",
+      "rows": 4452,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210826",
+      "status": "PARTIAL",
+      "rows": 4451,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210825",
+      "status": "PARTIAL",
+      "rows": 4450,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210824",
+      "status": "PARTIAL",
+      "rows": 4450,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210823",
+      "status": "PARTIAL",
+      "rows": 4447,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210820",
+      "status": "PARTIAL",
+      "rows": 4445,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210819",
+      "status": "PARTIAL",
+      "rows": 4444,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210818",
+      "status": "PARTIAL",
+      "rows": 4442,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210817",
+      "status": "PARTIAL",
+      "rows": 4440,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210816",
+      "status": "PARTIAL",
+      "rows": 4438,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210813",
+      "status": "PARTIAL",
+      "rows": 4435,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210812",
+      "status": "PARTIAL",
+      "rows": 4432,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210811",
+      "status": "PARTIAL",
+      "rows": 4429,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210810",
+      "status": "PARTIAL",
+      "rows": 4426,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210809",
+      "status": "PARTIAL",
+      "rows": 4424,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210806",
+      "status": "PARTIAL",
+      "rows": 4424,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210805",
+      "status": "PARTIAL",
+      "rows": 4423,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210804",
+      "status": "PARTIAL",
+      "rows": 4419,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210803",
+      "status": "PARTIAL",
+      "rows": 4416,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210802",
+      "status": "PARTIAL",
+      "rows": 4415,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210730",
+      "status": "PARTIAL",
+      "rows": 4413,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210729",
+      "status": "PARTIAL",
+      "rows": 4410,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210728",
+      "status": "PARTIAL",
+      "rows": 4407,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210727",
+      "status": "PARTIAL",
+      "rows": 4404,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210726",
+      "status": "PARTIAL",
+      "rows": 4403,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210723",
+      "status": "PARTIAL",
+      "rows": 4400,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210722",
+      "status": "PARTIAL",
+      "rows": 4399,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210721",
+      "status": "PARTIAL",
+      "rows": 4395,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210720",
+      "status": "PARTIAL",
+      "rows": 4397,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210719",
+      "status": "PARTIAL",
+      "rows": 4394,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210716",
+      "status": "PARTIAL",
+      "rows": 4392,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210715",
+      "status": "PARTIAL",
+      "rows": 4390,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210714",
+      "status": "PARTIAL",
+      "rows": 4388,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210713",
+      "status": "PARTIAL",
+      "rows": 4388,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210712",
+      "status": "PARTIAL",
+      "rows": 4386,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210709",
+      "status": "PARTIAL",
+      "rows": 4385,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210708",
+      "status": "PARTIAL",
+      "rows": 4382,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210707",
+      "status": "PARTIAL",
+      "rows": 4380,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210706",
+      "status": "PARTIAL",
+      "rows": 4376,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210705",
+      "status": "PARTIAL",
+      "rows": 4373,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210702",
+      "status": "PARTIAL",
+      "rows": 4371,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210701",
+      "status": "PARTIAL",
+      "rows": 4370,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210630",
+      "status": "PARTIAL",
+      "rows": 4369,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210629",
+      "status": "PARTIAL",
+      "rows": 4364,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210628",
+      "status": "PARTIAL",
+      "rows": 4363,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210625",
+      "status": "PARTIAL",
+      "rows": 4360,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210624",
+      "status": "PARTIAL",
+      "rows": 4357,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210623",
+      "status": "PARTIAL",
+      "rows": 4356,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210622",
+      "status": "PARTIAL",
+      "rows": 4353,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210621",
+      "status": "PARTIAL",
+      "rows": 4351,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210618",
+      "status": "PARTIAL",
+      "rows": 4350,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210617",
+      "status": "PARTIAL",
+      "rows": 4346,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210616",
+      "status": "PARTIAL",
+      "rows": 4343,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210615",
+      "status": "PARTIAL",
+      "rows": 4340,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210611",
+      "status": "PARTIAL",
+      "rows": 4337,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210610",
+      "status": "PARTIAL",
+      "rows": 4335,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210609",
+      "status": "PARTIAL",
+      "rows": 4332,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210608",
+      "status": "PARTIAL",
+      "rows": 4330,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210607",
+      "status": "PARTIAL",
+      "rows": 4328,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210604",
+      "status": "PARTIAL",
+      "rows": 4324,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210603",
+      "status": "PARTIAL",
+      "rows": 4324,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210602",
+      "status": "PARTIAL",
+      "rows": 4322,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "300362.SZ"
+      ]
+    },
+    {
+      "trade_date": "20210601",
+      "status": "PARTIAL",
+      "rows": 4317,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210531",
+      "status": "PARTIAL",
+      "rows": 4315,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210528",
+      "status": "PARTIAL",
+      "rows": 4315,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210527",
+      "status": "PARTIAL",
+      "rows": 4310,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210526",
+      "status": "PARTIAL",
+      "rows": 4309,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210525",
+      "status": "PARTIAL",
+      "rows": 4307,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210524",
+      "status": "PARTIAL",
+      "rows": 4303,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210521",
+      "status": "PARTIAL",
+      "rows": 4302,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210520",
+      "status": "PARTIAL",
+      "rows": 4300,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210519",
+      "status": "PARTIAL",
+      "rows": 4298,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210518",
+      "status": "PARTIAL",
+      "rows": 4297,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210517",
+      "status": "PARTIAL",
+      "rows": 4294,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210514",
+      "status": "PARTIAL",
+      "rows": 4292,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210513",
+      "status": "PARTIAL",
+      "rows": 4292,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210512",
+      "status": "PARTIAL",
+      "rows": 4288,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210511",
+      "status": "PARTIAL",
+      "rows": 4285,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210510",
+      "status": "PARTIAL",
+      "rows": 4282,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210507",
+      "status": "PARTIAL",
+      "rows": 4281,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210506",
+      "status": "PARTIAL",
+      "rows": 4280,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210430",
+      "status": "PARTIAL",
+      "rows": 4277,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210429",
+      "status": "PARTIAL",
+      "rows": 4275,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210428",
+      "status": "PARTIAL",
+      "rows": 4272,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210427",
+      "status": "PARTIAL",
+      "rows": 4269,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210426",
+      "status": "PARTIAL",
+      "rows": 4266,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210423",
+      "status": "PARTIAL",
+      "rows": 4263,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210422",
+      "status": "PARTIAL",
+      "rows": 4263,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210421",
+      "status": "PARTIAL",
+      "rows": 4262,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210420",
+      "status": "PARTIAL",
+      "rows": 4257,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210419",
+      "status": "PARTIAL",
+      "rows": 4253,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210416",
+      "status": "PARTIAL",
+      "rows": 4250,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210415",
+      "status": "PARTIAL",
+      "rows": 4249,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210414",
+      "status": "PARTIAL",
+      "rows": 4245,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210413",
+      "status": "PARTIAL",
+      "rows": 4244,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210412",
+      "status": "PARTIAL",
+      "rows": 4241,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210409",
+      "status": "PARTIAL",
+      "rows": 4237,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210408",
+      "status": "PARTIAL",
+      "rows": 4233,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210407",
+      "status": "PARTIAL",
+      "rows": 4231,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210406",
+      "status": "PARTIAL",
+      "rows": 4230,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210402",
+      "status": "PARTIAL",
+      "rows": 4226,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210401",
+      "status": "PARTIAL",
+      "rows": 4225,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210331",
+      "status": "PARTIAL",
+      "rows": 4223,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210330",
+      "status": "PARTIAL",
+      "rows": 4221,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210329",
+      "status": "PARTIAL",
+      "rows": 4219,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210326",
+      "status": "PARTIAL",
+      "rows": 4215,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210325",
+      "status": "PARTIAL",
+      "rows": 4212,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210324",
+      "status": "PARTIAL",
+      "rows": 4210,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210323",
+      "status": "PARTIAL",
+      "rows": 4208,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210322",
+      "status": "PARTIAL",
+      "rows": 4207,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210319",
+      "status": "PARTIAL",
+      "rows": 4205,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210318",
+      "status": "PARTIAL",
+      "rows": 4204,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH"
+      ]
+    },
+    {
+      "trade_date": "20210317",
+      "status": "PARTIAL",
+      "rows": 4202,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH"
+      ]
+    },
+    {
+      "trade_date": "20210316",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20210315",
+      "status": "PARTIAL",
+      "rows": 4201,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH"
+      ]
+    },
+    {
+      "trade_date": "20210312",
+      "status": "PARTIAL",
+      "rows": 4200,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210311",
+      "status": "PARTIAL",
+      "rows": 4199,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210310",
+      "status": "PARTIAL",
+      "rows": 4197,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210309",
+      "status": "PARTIAL",
+      "rows": 4196,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210308",
+      "status": "PARTIAL",
+      "rows": 4194,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210305",
+      "status": "PARTIAL",
+      "rows": 4192,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210304",
+      "status": "PARTIAL",
+      "rows": 4192,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210303",
+      "status": "PARTIAL",
+      "rows": 4192,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210302",
+      "status": "PARTIAL",
+      "rows": 4191,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210301",
+      "status": "PARTIAL",
+      "rows": 4190,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210226",
+      "status": "PARTIAL",
+      "rows": 4187,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210225",
+      "status": "PARTIAL",
+      "rows": 4184,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210224",
+      "status": "PARTIAL",
+      "rows": 4182,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210223",
+      "status": "PARTIAL",
+      "rows": 4180,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210222",
+      "status": "PARTIAL",
+      "rows": 4179,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210219",
+      "status": "PARTIAL",
+      "rows": 4179,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210218",
+      "status": "PARTIAL",
+      "rows": 4179,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210210",
+      "status": "PARTIAL",
+      "rows": 4179,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210209",
+      "status": "PARTIAL",
+      "rows": 4174,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210208",
+      "status": "PARTIAL",
+      "rows": 4169,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210205",
+      "status": "PARTIAL",
+      "rows": 4165,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210204",
+      "status": "PARTIAL",
+      "rows": 4163,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210203",
+      "status": "PARTIAL",
+      "rows": 4162,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210202",
+      "status": "PARTIAL",
+      "rows": 4161,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210201",
+      "status": "PARTIAL",
+      "rows": 4160,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH",
+        "688607.SH"
+      ]
+    },
+    {
+      "trade_date": "20210129",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20210128",
+      "status": "PARTIAL",
+      "rows": 4158,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210127",
+      "status": "PARTIAL",
+      "rows": 4155,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210126",
+      "status": "PARTIAL",
+      "rows": 4152,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210125",
+      "status": "PARTIAL",
+      "rows": 4151,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210122",
+      "status": "PARTIAL",
+      "rows": 4150,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210121",
+      "status": "PARTIAL",
+      "rows": 4147,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210120",
+      "status": "PARTIAL",
+      "rows": 4144,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210119",
+      "status": "PARTIAL",
+      "rows": 4141,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210118",
+      "status": "PARTIAL",
+      "rows": 4139,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210115",
+      "status": "PARTIAL",
+      "rows": 4137,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210114",
+      "status": "PARTIAL",
+      "rows": 4137,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210113",
+      "status": "PARTIAL",
+      "rows": 4137,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210112",
+      "status": "PARTIAL",
+      "rows": 4136,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210111",
+      "status": "PARTIAL",
+      "rows": 4135,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210108",
+      "status": "PARTIAL",
+      "rows": 4134,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210107",
+      "status": "PARTIAL",
+      "rows": 4134,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210106",
+      "status": "PARTIAL",
+      "rows": 4131,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210105",
+      "status": "PARTIAL",
+      "rows": 4128,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    },
+    {
+      "trade_date": "20210104",
+      "status": "PARTIAL",
+      "rows": 4128,
+      "ambiguous_codes": [
+        "000670.SZ",
+        "000760.SZ",
+        "000792.SZ",
+        "002260.SZ",
+        "002359.SZ",
+        "002450.SZ",
+        "002711.SZ",
+        "300362.SZ",
+        "600485.SH",
+        "600614.SH",
+        "600634.SH",
+        "600677.SH",
+        "600701.SH"
+      ]
+    }
+  ],
+  "pending_after": 243,
+  "next_dates": [
+    "2021-03-16",
+    "2021-01-29",
+    "2021-01-05",
+    "2021-01-04",
+    "2021-01-06",
+    "2021-01-08",
+    "2021-01-07",
+    "2021-01-11",
+    "2021-01-12",
+    "2021-01-15",
+    "2021-01-14",
+    "2021-01-13",
+    "2021-01-18",
+    "2021-01-19",
+    "2021-01-20",
+    "2021-01-21",
+    "2021-01-22",
+    "2021-01-25",
+    "2021-01-26",
+    "2021-01-27",
+    "2021-01-28",
+    "2021-02-01",
+    "2021-02-02",
+    "2021-02-03",
+    "2021-02-04",
+    "2021-02-05",
+    "2021-02-08",
+    "2021-02-09",
+    "2021-02-22",
+    "2021-02-19",
+    "2021-02-18",
+    "2021-02-10",
+    "2021-02-23",
+    "2021-02-24",
+    "2021-02-25",
+    "2021-02-26",
+    "2021-03-01",
+    "2021-03-02",
+    "2021-03-05",
+    "2021-03-04",
+    "2021-03-03",
+    "2021-03-08",
+    "2021-03-09",
+    "2021-03-10",
+    "2021-03-11",
+    "2021-03-12",
+    "2021-03-15",
+    "2021-03-17",
+    "2021-03-18",
+    "2021-03-19",
+    "2021-03-22",
+    "2021-03-23",
+    "2021-03-24",
+    "2021-03-25",
+    "2021-03-26",
+    "2021-03-29",
+    "2021-03-30",
+    "2021-03-31",
+    "2021-04-01",
+    "2021-04-02",
+    "2021-04-06",
+    "2021-04-07",
+    "2021-04-08",
+    "2021-04-09",
+    "2021-04-12",
+    "2021-04-13",
+    "2021-04-14",
+    "2021-04-15",
+    "2021-04-16",
+    "2021-04-19",
+    "2021-04-20",
+    "2021-04-21",
+    "2021-04-23",
+    "2021-04-22",
+    "2021-04-26",
+    "2021-04-27",
+    "2021-04-28",
+    "2021-04-29",
+    "2021-04-30",
+    "2021-05-06",
+    "2021-05-07",
+    "2021-05-10",
+    "2021-05-11",
+    "2021-05-12",
+    "2021-05-14",
+    "2021-05-13",
+    "2021-05-17",
+    "2021-05-18",
+    "2021-05-19",
+    "2021-05-20",
+    "2021-05-21",
+    "2021-05-24",
+    "2021-05-25",
+    "2021-05-26",
+    "2021-05-27",
+    "2021-05-31",
+    "2021-05-28",
+    "2021-06-01",
+    "2021-06-02",
+    "2021-06-04",
+    "2021-06-03",
+    "2021-06-07",
+    "2021-06-08",
+    "2021-06-09",
+    "2021-06-10",
+    "2021-06-11",
+    "2021-06-15",
+    "2021-06-16",
+    "2021-06-17",
+    "2021-06-18",
+    "2021-06-21",
+    "2021-06-22",
+    "2021-06-23",
+    "2021-06-24",
+    "2021-06-25",
+    "2021-06-28",
+    "2021-06-29",
+    "2021-06-30",
+    "2021-07-01",
+    "2021-07-02",
+    "2021-07-05",
+    "2021-07-06",
+    "2021-07-07",
+    "2021-07-08",
+    "2021-07-09",
+    "2021-07-12",
+    "2021-07-14",
+    "2021-07-13",
+    "2021-07-15",
+    "2021-07-16",
+    "2021-07-19",
+    "2021-07-21",
+    "2021-07-20",
+    "2021-07-22",
+    "2021-07-23",
+    "2021-07-26",
+    "2021-07-27",
+    "2021-07-28",
+    "2021-07-29",
+    "2021-07-30",
+    "2021-08-02",
+    "2021-08-03",
+    "2021-08-04",
+    "2021-08-05",
+    "2021-08-09",
+    "2021-08-06",
+    "2021-08-10",
+    "2021-08-11",
+    "2021-08-12",
+    "2021-08-13",
+    "2021-08-16",
+    "2021-08-17",
+    "2021-08-18",
+    "2021-08-19",
+    "2021-08-20",
+    "2021-08-23",
+    "2021-08-25",
+    "2021-08-24",
+    "2021-08-26",
+    "2021-08-30",
+    "2021-08-27",
+    "2021-08-31",
+    "2021-09-03",
+    "2021-09-02",
+    "2021-09-01",
+    "2021-09-06",
+    "2021-09-07",
+    "2021-09-08",
+    "2021-09-09",
+    "2021-09-10",
+    "2021-09-13",
+    "2021-09-14",
+    "2021-09-15",
+    "2021-09-16",
+    "2021-09-17",
+    "2021-09-22",
+    "2021-09-23",
+    "2021-09-24",
+    "2021-09-27",
+    "2021-09-28",
+    "2021-09-29",
+    "2021-10-08",
+    "2021-09-30",
+    "2021-10-12",
+    "2021-10-11",
+    "2021-10-13",
+    "2021-10-14",
+    "2021-10-15",
+    "2021-10-18",
+    "2021-10-19",
+    "2021-10-20",
+    "2021-10-22",
+    "2021-10-21",
+    "2021-10-25",
+    "2021-10-26",
+    "2021-10-27",
+    "2021-10-28",
+    "2021-10-29",
+    "2021-11-01",
+    "2021-11-02",
+    "2021-11-09",
+    "2021-11-08",
+    "2021-11-05",
+    "2021-11-04",
+    "2021-11-03",
+    "2021-11-10",
+    "2021-11-11",
+    "2021-11-12",
+    "2021-11-15",
+    "2021-11-16",
+    "2021-11-17",
+    "2021-11-18",
+    "2021-11-19",
+    "2021-11-23",
+    "2021-11-22",
+    "2021-11-25",
+    "2021-11-24",
+    "2021-11-26",
+    "2021-11-29",
+    "2021-11-30",
+    "2021-12-01",
+    "2021-12-02",
+    "2021-12-03",
+    "2021-12-06",
+    "2021-12-07",
+    "2021-12-08",
+    "2021-12-09",
+    "2021-12-13",
+    "2021-12-10",
+    "2021-12-14",
+    "2021-12-15",
+    "2021-12-16",
+    "2021-12-17",
+    "2021-12-21",
+    "2021-12-20",
+    "2021-12-22",
+    "2021-12-23",
+    "2021-12-24",
+    "2021-12-27",
+    "2021-12-29",
+    "2021-12-28",
+    "2021-12-30",
+    "2021-12-31"
+  ],
+  "generated_at": "2026-09-25T20:15:32.006730+00:00"
+}

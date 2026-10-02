@@ -1,0 +1,32 @@
+{
+  "start": "2020-01-01",
+  "end": "2020-12-31",
+  "calendar_days": 243,
+  "pending_before": 2,
+  "attempted": [
+    {
+      "trade_date": "20200429",
+      "status": "PARTIAL",
+      "rows": 9,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "002496.SZ"
+      ]
+    },
+    {
+      "trade_date": "20200630",
+      "status": "PARTIAL",
+      "rows": 12,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "600090.SH"
+      ]
+    }
+  ],
+  "pending_after": 2,
+  "next_dates": [
+    "2020-04-29",
+    "2020-06-30"
+  ],
+  "generated_at": "2026-09-26T03:15:49.953359+00:00"
+}

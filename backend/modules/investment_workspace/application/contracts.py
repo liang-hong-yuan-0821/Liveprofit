@@ -59,6 +59,7 @@ class PortfolioDTO:
     risk_facts_as_of: date | None
     created_at: datetime
     updated_at: datetime
+    risk_profile: str | None = None
 
 
 @dataclass(frozen=True)

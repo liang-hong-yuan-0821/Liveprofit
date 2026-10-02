@@ -1,0 +1,92 @@
+
+SETUP    S event_loop_policy
+    SETUP    M predict_db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_assessment_candidates_freeze_history_and_keep_disputes_from_hiding_acceptance (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        tests/ai/event_study/integration/test_predictor.py::test_schema_upgrade_preserves_existing_event_and_impact_rows (fixtures used: db, event_loop_policy, predict_db)
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_as_of_excludes_future_and_includes_boundary (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_as_of_applies_to_vector_channel (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_exclude_event_id_removes_self_from_both_channels (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_scope_isolation_sector_route (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_scope_isolation_stock_route_and_missing_coverage (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_empty_scope_refs_is_empty_route_real_db (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_real_db_contamination_metadata (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_legacy_rows_visible_only_to_market_route (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+        SETUP    F db (fixtures used: predict_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_predictor.py::test_scope_isolation_vector_channel (fixtures used: db, event_loop_policy, monkeypatch, predict_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F db
+    TEARDOWN M predict_db
+    SETUP    M routing_db
+        tests/ai/event_study/integration/test_event_routing.py::test_init_schema_idempotent_and_route_columns (fixtures used: event_loop_policy, routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_migration_normalizes_legacy_rows (fixtures used: event_loop_policy, routing_db)
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_route_query_scope_isolation (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_route_query_bare_codes_and_isolation_by_code (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_route_query_multi_target_is_union (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_route_query_excludes_ignored_and_future (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_route_query_limit_and_order (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_route_query_returns_normalized_fields (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_insert_event_persists_normalized_route_fields (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        tests/ai/event_study/integration/test_event_routing.py::test_check_scope_fields_against_real_store_tables (fixtures used: conn, event_loop_policy, routing_db)
+        TEARDOWN F conn
+        SETUP    F conn (fixtures used: routing_db)
+        SETUP    F monkeypatch
+        tests/ai/event_study/integration/test_event_routing.py::test_approve_event_validates_scope_and_persists (fixtures used: conn, event_loop_policy, monkeypatch, routing_db)
+        TEARDOWN F monkeypatch
+        TEARDOWN F conn
+    TEARDOWN M routing_db
+TEARDOWN S event_loop_policy
+no tests ran in 0.15s

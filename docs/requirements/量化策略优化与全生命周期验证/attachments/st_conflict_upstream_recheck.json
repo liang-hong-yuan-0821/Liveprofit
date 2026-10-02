@@ -1,0 +1,26 @@
+[
+  {
+    "ts_code": "002496.SZ",
+    "trade_date": "2020-04-29",
+    "incumbent_is_st": false,
+    "baostock_is_st": true,
+    "fresh_tushare_is_st": false,
+    "fresh_rows": 158
+  },
+  {
+    "ts_code": "600090.SH",
+    "trade_date": "2020-06-30",
+    "incumbent_is_st": false,
+    "baostock_is_st": true,
+    "fresh_tushare_is_st": false,
+    "fresh_rows": 207
+  },
+  {
+    "ts_code": "002529.SZ",
+    "trade_date": "2021-06-22",
+    "incumbent_is_st": true,
+    "baostock_is_st": false,
+    "fresh_tushare_is_st": true,
+    "fresh_rows": 188
+  }
+]

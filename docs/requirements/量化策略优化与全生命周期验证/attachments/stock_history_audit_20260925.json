@@ -1,0 +1,3503 @@
+{
+  "generated_at": "2026-09-25T11:14:23.107959+00:00",
+  "through": "2026-09-24",
+  "calendar_source": "Tushare trade_cal(exchange=SSE,is_open=1), yearly request",
+  "scope": "listed stock symbol-days; factor gap includes IPO warmup; fund/ETF rules unresolved",
+  "inventory": {
+    "fund": {
+      "count": 2955,
+      "unknown_list_date": 152,
+      "has_delist_date": 626
+    },
+    "stock": {
+      "count": 5907,
+      "unknown_list_date": 0,
+      "has_delist_date": 339
+    }
+  },
+  "etf_catalog": {
+    "observations": 0,
+    "first": null,
+    "last": null
+  },
+  "years": [
+    {
+      "year": 1990,
+      "calendar_days": 9,
+      "calendar_sha256": "172fdc5aba26e4bc2a352e2bd0225a4e9f18a4a0b5c9740b8947c4e2bbebba2a",
+      "expected": 81,
+      "trusted_suspension": 0,
+      "unexplained_bar": 81,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 81,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600601.SH"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600602.SH"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600651.SH"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600652.SH"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600653.SH"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600654.SH"
+        },
+        {
+          "trade_date": "1990-12-19",
+          "ts_code": "600656.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600601.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600602.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600651.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600652.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600653.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600654.SH"
+        },
+        {
+          "trade_date": "1990-12-20",
+          "ts_code": "600656.SH"
+        },
+        {
+          "trade_date": "1990-12-21",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1990-12-21",
+          "ts_code": "000005.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1991,
+      "calendar_days": 255,
+      "calendar_sha256": "0cafdb372ef21a69fd652eba9e0953c088568f116e5c3f8cef61f3a33db13d61",
+      "expected": 2985,
+      "trusted_suspension": 0,
+      "unexplained_bar": 2985,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 2985,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600601.SH"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600602.SH"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600651.SH"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600652.SH"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600653.SH"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600654.SH"
+        },
+        {
+          "trade_date": "1991-01-02",
+          "ts_code": "600656.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600601.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600602.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600651.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600652.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600653.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600654.SH"
+        },
+        {
+          "trade_date": "1991-01-03",
+          "ts_code": "600656.SH"
+        },
+        {
+          "trade_date": "1991-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1991-01-04",
+          "ts_code": "000005.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1992,
+      "calendar_days": 255,
+      "calendar_sha256": "d45371faea3a2c9b441f4bafe44a7672243f51d50055e622fafc5c8e4ca666e1",
+      "expected": 7878,
+      "trusted_suspension": 0,
+      "unexplained_bar": 7878,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 7878,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600601.SH"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600602.SH"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600651.SH"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600652.SH"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600653.SH"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600654.SH"
+        },
+        {
+          "trade_date": "1992-01-02",
+          "ts_code": "600656.SH"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1992-01-03",
+          "ts_code": "600601.SH"
+        }
+      ]
+    },
+    {
+      "year": 1993,
+      "calendar_days": 257,
+      "calendar_sha256": "422e53cc6ce12551ad9e049d83d1981a251b1ace46fd9bd014237e150c882563",
+      "expected": 26232,
+      "trusted_suspension": 0,
+      "unexplained_bar": 26232,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 26232,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "1993-01-04",
+          "ts_code": "000501.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1994,
+      "calendar_days": 252,
+      "calendar_sha256": "a7b065717df25427d00f6893c8300cf7c7247508aceb800e7704feb78ab78812",
+      "expected": 65765,
+      "trusted_suspension": 0,
+      "unexplained_bar": 65765,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 65765,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "1994-01-03",
+          "ts_code": "000023.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1995,
+      "calendar_days": 251,
+      "calendar_sha256": "eb638483025b4ff17dd0c3be35d9cd1a6a17a716838d71e2dff9c7c553d95e15",
+      "expected": 74403,
+      "trusted_suspension": 0,
+      "unexplained_bar": 74403,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 74403,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "1995-01-03",
+          "ts_code": "000021.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1996,
+      "calendar_days": 247,
+      "calendar_sha256": "1a7d9877738f2245171f7581e9f8406a9829fd410fe09671f900d8981d341e96",
+      "expected": 95053,
+      "trusted_suspension": 0,
+      "unexplained_bar": 95053,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 95053,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1996-01-02",
+          "ts_code": "000020.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1997,
+      "calendar_days": 243,
+      "calendar_sha256": "59bafce50c91512f48bd900c53146d7225d04dfba4fbca05cd11ea01144999e3",
+      "expected": 154325,
+      "trusted_suspension": 0,
+      "unexplained_bar": 154325,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 154325,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1997-01-02",
+          "ts_code": "000020.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1998,
+      "calendar_days": 246,
+      "calendar_sha256": "7a558b27c5595300546a985a8f7531b65a99707828aff4ab36969882d67c2983",
+      "expected": 191015,
+      "trusted_suspension": 0,
+      "unexplained_bar": 191015,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 191015,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1998-01-05",
+          "ts_code": "000020.SZ"
+        }
+      ]
+    },
+    {
+      "year": 1999,
+      "calendar_days": 239,
+      "calendar_sha256": "e9817566c26c22ad8fa9695dbb1bf67f6cea9ac7753c38b48efaedd7ae067a0d",
+      "expected": 208907,
+      "trusted_suspension": 0,
+      "unexplained_bar": 208907,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 208907,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "1999-01-04",
+          "ts_code": "000020.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2000,
+      "calendar_days": 239,
+      "calendar_sha256": "e0b97969c9d0f05c08809f1ec7476a1f4e496dbbc0b1e08837801df6ecb90e96",
+      "expected": 233888,
+      "trusted_suspension": 0,
+      "unexplained_bar": 233888,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 233888,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2000-01-04",
+          "ts_code": "000020.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2001,
+      "calendar_days": 240,
+      "calendar_sha256": "30f9c62c2ea0397fbf55af7b3edaedaf2b7f19460f224071e14d305de1254e6f",
+      "expected": 266200,
+      "trusted_suspension": 0,
+      "unexplained_bar": 266200,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 266200,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000015.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2001-01-02",
+          "ts_code": "000020.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2002,
+      "calendar_days": 237,
+      "calendar_sha256": "6301e006b584851b1d440f83cca481381b76f7bf183cffa23d5086765fd86dc4",
+      "expected": 276665,
+      "trusted_suspension": 0,
+      "unexplained_bar": 276665,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 276665,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000003.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2002-01-04",
+          "ts_code": "000021.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2003,
+      "calendar_days": 241,
+      "calendar_sha256": "81288d28bb11a72993487a438f4d7185c2dddb757375ed07244a06b62d14a55a",
+      "expected": 296731,
+      "trusted_suspension": 0,
+      "unexplained_bar": 296731,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 296731,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2003-01-02",
+          "ts_code": "000023.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2004,
+      "calendar_days": 243,
+      "calendar_sha256": "b24ade0c6ec2a6f2bd26988754a03226394dc31a30be646644b42c0ab77ff9b5",
+      "expected": 320350,
+      "trusted_suspension": 0,
+      "unexplained_bar": 320350,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 320350,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000013.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2004-01-02",
+          "ts_code": "000023.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2005,
+      "calendar_days": 242,
+      "calendar_sha256": "0ad6535c7107e20191b2ad778985e40ad9b538fc8a40c2bef094defd6ed966ca",
+      "expected": 329048,
+      "trusted_suspension": 0,
+      "unexplained_bar": 329048,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 329048,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2005-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2006,
+      "calendar_days": 241,
+      "calendar_sha256": "070e9ddabec151e88801eb1fb5723ff882a375ee367b00b0b8659fb457a62a26",
+      "expected": 328813,
+      "trusted_suspension": 0,
+      "unexplained_bar": 328813,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 328813,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2006-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2007,
+      "calendar_days": 242,
+      "calendar_sha256": "64c0a8cd6cdf51f9933ff9f66cdaec441a680ee856599ff43452ccec99b48b3c",
+      "expected": 354216,
+      "trusted_suspension": 0,
+      "unexplained_bar": 354216,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 354216,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2007-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2008,
+      "calendar_days": 246,
+      "calendar_sha256": "1ad7363dc8454a2f4fd9dd03b5ec8a84789dfe922fc3ba08ec9ae554632b2698",
+      "expected": 387436,
+      "trusted_suspension": 0,
+      "unexplained_bar": 387436,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 387436,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2008-01-02",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2009,
+      "calendar_days": 244,
+      "calendar_sha256": "d73c1af668e1412dbb5dbd69f7e0ea89ae29568f6d71746d7d46e65819c702ca",
+      "expected": 394995,
+      "trusted_suspension": 0,
+      "unexplained_bar": 394995,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 394995,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2009-01-05",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2010,
+      "calendar_days": 242,
+      "calendar_sha256": "7e1b93838324eb61d6e84cf791e2dabd78a614b138cc843a4bfd92492fad947e",
+      "expected": 452708,
+      "trusted_suspension": 0,
+      "unexplained_bar": 452708,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 452708,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2010-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2011,
+      "calendar_days": 244,
+      "calendar_sha256": "0117e7404aa6e1ae978b4bf6cb5a4fae9982253686b8b4050bca81b1771d84c3",
+      "expected": 536603,
+      "trusted_suspension": 0,
+      "unexplained_bar": 536603,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 536603,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2011-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2012,
+      "calendar_days": 243,
+      "calendar_sha256": "e8548b9432b30455256ab84189b6c3c0a7d4d5cc5a16bb2c5a32dedff6780ced",
+      "expected": 586709,
+      "trusted_suspension": 0,
+      "unexplained_bar": 586709,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 586709,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2012-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2013,
+      "calendar_days": 238,
+      "calendar_sha256": "c07fde6b003062d714f561b75593f964986f05e1620617088ad4e237cb66fc78",
+      "expected": 587574,
+      "trusted_suspension": 0,
+      "unexplained_bar": 587574,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 587574,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2013-01-04",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2014,
+      "calendar_days": 245,
+      "calendar_sha256": "8ec5032158559b4bc8d273ad0577a69b227694a2d8e57c1494aa51a69c88c3a9",
+      "expected": 620067,
+      "trusted_suspension": 0,
+      "unexplained_bar": 620067,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 620067,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2014-01-02",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2015,
+      "calendar_days": 244,
+      "calendar_sha256": "ace71bd56acb6fc0b38ae582f56270d91be28d173d95b28209d4f47bb0d09103",
+      "expected": 665178,
+      "trusted_suspension": 0,
+      "unexplained_bar": 665178,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 0,
+      "status_gap": 665178,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000001.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000004.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000005.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000008.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000009.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000010.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000011.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000012.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000014.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000017.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000018.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000020.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000021.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2015-01-05",
+          "ts_code": "000024.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2016,
+      "calendar_days": 244,
+      "calendar_sha256": "1eb6874f3b807aa87e20a021433d876405c6e9aa7cb3e66fea0181e2203b91df",
+      "expected": 704145,
+      "trusted_suspension": 0,
+      "unexplained_bar": 62599,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 641546,
+      "status_gap": 704145,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000028.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000033.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000034.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000035.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000038.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000058.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000065.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000066.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000153.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000426.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000430.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000534.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000553.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000585.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000586.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000599.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000626.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2017,
+      "calendar_days": 244,
+      "calendar_sha256": "85444890d8fa513fadcaf063f3ac84cd52ea6e4e59bc4fb9f66ac361834df6f7",
+      "expected": 799064,
+      "trusted_suspension": 0,
+      "unexplained_bar": 55825,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 743239,
+      "status_gap": 799064,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000029.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000033.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000042.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000048.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000050.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000155.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000166.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000411.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000516.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000520.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000531.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000533.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000558.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000560.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000563.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000584.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000585.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000595.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000611.SZ"
+        },
+        {
+          "trade_date": "2017-01-03",
+          "ts_code": "000670.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2018,
+      "calendar_days": 243,
+      "calendar_sha256": "cc66b6a48f1c4c347ca151271e8054621f1955f5b802783ac7a12e7fc3db023a",
+      "expected": 856800,
+      "trusted_suspension": 0,
+      "unexplained_bar": 39812,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 816988,
+      "status_gap": 856800,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000006.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000019.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000029.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000031.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000032.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000034.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000035.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000056.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000156.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000401.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000509.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000511.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000516.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000526.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000540.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000547.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000557.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000564.SZ"
+        },
+        {
+          "trade_date": "2018-01-02",
+          "ts_code": "000566.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2019,
+      "calendar_days": 244,
+      "calendar_sha256": "383d2518a737edc373b5aa69c5d4cdb80de1e77221c7761a7f09259c3d7f1bf4",
+      "expected": 890251,
+      "trusted_suspension": 0,
+      "unexplained_bar": 5384,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 884867,
+      "status_gap": 890251,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "000029.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "000693.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "000708.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "000987.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "002070.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "002323.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "002680.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "300028.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "300080.SZ"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "600030.SH"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "600145.SH"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "600401.SH"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "600485.SH"
+        },
+        {
+          "trade_date": "2019-01-02",
+          "ts_code": "600680.SH"
+        },
+        {
+          "trade_date": "2019-01-03",
+          "ts_code": "000029.SZ"
+        },
+        {
+          "trade_date": "2019-01-03",
+          "ts_code": "000693.SZ"
+        },
+        {
+          "trade_date": "2019-01-03",
+          "ts_code": "000987.SZ"
+        },
+        {
+          "trade_date": "2019-01-03",
+          "ts_code": "002070.SZ"
+        },
+        {
+          "trade_date": "2019-01-03",
+          "ts_code": "002323.SZ"
+        },
+        {
+          "trade_date": "2019-01-03",
+          "ts_code": "002680.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2020,
+      "calendar_days": 243,
+      "calendar_sha256": "9bdc5811911b5500b49815fa6cd867ee69d143556fa8ff48f27b76884372b87e",
+      "expected": 955604,
+      "trusted_suspension": 0,
+      "unexplained_bar": 6024,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 949580,
+      "status_gap": 955604,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "000029.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "000939.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "000995.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "002115.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "002260.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "002450.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "002552.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "002604.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "300028.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "300104.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "300216.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "300269.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "300391.SZ"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "600074.SH"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "600145.SH"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "600215.SH"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "600319.SH"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "600538.SH"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "600610.SH"
+        },
+        {
+          "trade_date": "2020-01-02",
+          "ts_code": "603960.SH"
+        }
+      ]
+    },
+    {
+      "year": 2021,
+      "calendar_days": 243,
+      "calendar_sha256": "267d1f23efc802434b6ab3e62bdf13208e9e5764c869c9a952b8c193ded1a9d2",
+      "expected": 1076806,
+      "trusted_suspension": 0,
+      "unexplained_bar": 3656,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 1073150,
+      "status_gap": 1076806,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "000670.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "000760.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "000780.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "000792.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "002115.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "002260.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "002359.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "002450.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "002711.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "300182.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "300362.SZ"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600086.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600485.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600614.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600634.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600677.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600687.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600701.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600796.SH"
+        },
+        {
+          "trade_date": "2021-01-04",
+          "ts_code": "600841.SH"
+        }
+      ]
+    },
+    {
+      "year": 2022,
+      "calendar_days": 242,
+      "calendar_sha256": "e4b9816ba88fd430115bf37930e3c9866c5546274ea8817117110742b4341cc0",
+      "expected": 1174346,
+      "trusted_suspension": 0,
+      "unexplained_bar": 3308,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 1171038,
+      "status_gap": 1174346,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "000670.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "000780.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "002260.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "002323.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "002722.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "300261.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "300461.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "300534.SZ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "600072.SH"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "603227.SH"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "605090.SH"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "832317.BJ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "833874.BJ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "833994.BJ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "920263.BJ"
+        },
+        {
+          "trade_date": "2022-01-04",
+          "ts_code": "920415.BJ"
+        },
+        {
+          "trade_date": "2022-01-05",
+          "ts_code": "000670.SZ"
+        },
+        {
+          "trade_date": "2022-01-05",
+          "ts_code": "000780.SZ"
+        },
+        {
+          "trade_date": "2022-01-05",
+          "ts_code": "002260.SZ"
+        },
+        {
+          "trade_date": "2022-01-05",
+          "ts_code": "002323.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2023,
+      "calendar_days": 242,
+      "calendar_sha256": "c57705f8f7f3f64097cfe4bebc28e7d596332e638baf98d4d4cbfec0c1f3d476",
+      "expected": 1260984,
+      "trusted_suspension": 0,
+      "unexplained_bar": 2482,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 1258502,
+      "status_gap": 1260984,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2023-01-03",
+          "ts_code": "000153.SZ"
+        },
+        {
+          "trade_date": "2023-01-03",
+          "ts_code": "002186.SZ"
+        },
+        {
+          "trade_date": "2023-01-03",
+          "ts_code": "300084.SZ"
+        },
+        {
+          "trade_date": "2023-01-03",
+          "ts_code": "300330.SZ"
+        },
+        {
+          "trade_date": "2023-01-03",
+          "ts_code": "300850.SZ"
+        },
+        {
+          "trade_date": "2023-01-03",
+          "ts_code": "600038.SH"
+        },
+        {
+          "trade_date": "2023-01-04",
+          "ts_code": "002186.SZ"
+        },
+        {
+          "trade_date": "2023-01-04",
+          "ts_code": "300330.SZ"
+        },
+        {
+          "trade_date": "2023-01-04",
+          "ts_code": "300850.SZ"
+        },
+        {
+          "trade_date": "2023-01-04",
+          "ts_code": "600038.SH"
+        },
+        {
+          "trade_date": "2023-01-05",
+          "ts_code": "002186.SZ"
+        },
+        {
+          "trade_date": "2023-01-05",
+          "ts_code": "300330.SZ"
+        },
+        {
+          "trade_date": "2023-01-05",
+          "ts_code": "300850.SZ"
+        },
+        {
+          "trade_date": "2023-01-05",
+          "ts_code": "600038.SH"
+        },
+        {
+          "trade_date": "2023-01-06",
+          "ts_code": "002186.SZ"
+        },
+        {
+          "trade_date": "2023-01-06",
+          "ts_code": "300330.SZ"
+        },
+        {
+          "trade_date": "2023-01-06",
+          "ts_code": "300850.SZ"
+        },
+        {
+          "trade_date": "2023-01-06",
+          "ts_code": "600038.SH"
+        },
+        {
+          "trade_date": "2023-01-06",
+          "ts_code": "600358.SH"
+        },
+        {
+          "trade_date": "2023-01-09",
+          "ts_code": "002122.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2024,
+      "calendar_days": 242,
+      "calendar_sha256": "77326eab6155147e27987adcf28a28d960c78fb789f01ceadbea1efcd58352c9",
+      "expected": 1296743,
+      "trusted_suspension": 0,
+      "unexplained_bar": 3092,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 1293651,
+      "status_gap": 1296743,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "000046.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "000657.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "000801.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "002776.SZ"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "600290.SH"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "603958.SH"
+        },
+        {
+          "trade_date": "2024-01-02",
+          "ts_code": "688337.SH"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "000046.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "000657.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "000801.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "002776.SZ"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "600290.SH"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "603958.SH"
+        },
+        {
+          "trade_date": "2024-01-03",
+          "ts_code": "688337.SH"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "000046.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "000657.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "000801.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "002776.SZ"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "600290.SH"
+        },
+        {
+          "trade_date": "2024-01-04",
+          "ts_code": "603958.SH"
+        }
+      ]
+    },
+    {
+      "year": 2025,
+      "calendar_days": 243,
+      "calendar_sha256": "08d75aacfd77a8485c23bdb8b5c3f70811f9f65346a61cf01f51e14fb72e0a93",
+      "expected": 1317313,
+      "trusted_suspension": 0,
+      "unexplained_bar": 3441,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 1313872,
+      "status_gap": 1317313,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "000421.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "000777.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002123.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002252.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002309.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002379.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002494.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002647.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "002656.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "300807.SZ"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "600225.SH"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "600289.SH"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "603001.SH"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "688139.SH"
+        },
+        {
+          "trade_date": "2025-01-02",
+          "ts_code": "688567.SH"
+        },
+        {
+          "trade_date": "2025-01-03",
+          "ts_code": "000016.SZ"
+        },
+        {
+          "trade_date": "2025-01-03",
+          "ts_code": "000421.SZ"
+        },
+        {
+          "trade_date": "2025-01-03",
+          "ts_code": "000777.SZ"
+        },
+        {
+          "trade_date": "2025-01-03",
+          "ts_code": "002123.SZ"
+        }
+      ]
+    },
+    {
+      "year": 2026,
+      "calendar_days": 178,
+      "calendar_sha256": "75220c2dfc4818ecabfb656ec05e540dec3bcd520176d136ec3002e377b712c2",
+      "expected": 981659,
+      "trusted_suspension": 83,
+      "unexplained_bar": 2030,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 957511,
+      "status_gap": 931610,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "001331.SZ"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "002049.SZ"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "002055.SZ"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "300091.SZ"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "300658.SZ"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "301213.SZ"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "600058.SH"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "600721.SH"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "603508.SH"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "603828.SH"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "605255.SH"
+        },
+        {
+          "trade_date": "2026-01-05",
+          "ts_code": "920641.BJ"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "000670.SZ"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "002049.SZ"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "300087.SZ"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "300658.SZ"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "301213.SZ"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "600058.SH"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "600721.SH"
+        },
+        {
+          "trade_date": "2026-01-06",
+          "ts_code": "603508.SH"
+        }
+      ]
+    }
+  ]
+}

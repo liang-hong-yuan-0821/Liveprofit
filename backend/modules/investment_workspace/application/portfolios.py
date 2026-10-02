@@ -13,6 +13,7 @@ from backend.modules.investment_workspace.application.contracts import (
 from backend.modules.investment_workspace.application.errors import (
     InvalidPositionError,
     PortfolioAccountInvalidError,
+    PortfolioLedgerRequiredError,
     PortfolioNameConflictError,
     PortfolioNotEmptyError,
     PortfolioNotFoundError,
@@ -29,6 +30,9 @@ from backend.modules.investment_workspace.infrastructure.repositories import (
 )
 from backend.shared.clock import Clock, SystemClock
 from backend.shared.ids import new_uuid
+
+
+_UNSET = object()
 
 
 class PortfolioService:
@@ -60,6 +64,7 @@ class PortfolioService:
         peak_net_asset_value: float | None = None,
         day_start_net_asset_value: float | None = None,
         risk_facts_as_of: date | None = None,
+        risk_profile: str | None = None,
     ) -> PortfolioDTO:
         if self._repo.get_by_name(name) is not None:
             raise PortfolioNameConflictError(f"组合名已存在：{name}")
@@ -81,6 +86,7 @@ class PortfolioService:
             peak_net_asset_value=peak_net_asset_value,
             day_start_net_asset_value=day_start_net_asset_value,
             risk_facts_as_of=risk_facts_as_of,
+            risk_profile=risk_profile,
         )
         now = self._clock.now()
         portfolio = Portfolio(id=new_uuid(), name=name, version=1, created_at=now, updated_at=now, **account)
@@ -113,10 +119,11 @@ class PortfolioService:
         peak_net_asset_value: float | None,
         day_start_net_asset_value: float | None,
         risk_facts_as_of: date | None,
+        risk_profile=_UNSET,
         expected_version: int,
     ) -> PortfolioDTO:
         """PATCH 原子更新名称与全部账户字段（plan 4.2.1：一次条件更新、成功仅 version+1）。"""
-        portfolio = self._repo.get(portfolio_id)
+        portfolio = self._repo.get_locked(portfolio_id)
         if portfolio is None:
             raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
         if self._repo.get_by_name(name) is not None and name != portfolio.name:
@@ -138,7 +145,13 @@ class PortfolioService:
             peak_net_asset_value=peak_net_asset_value,
             day_start_net_asset_value=day_start_net_asset_value,
             risk_facts_as_of=risk_facts_as_of,
+            risk_profile=portfolio.risk_profile if risk_profile is _UNSET else risk_profile,
         )
+        if self._repo.has_ledger_baseline(portfolio_id) and (
+            account["total_assets"] != portfolio.total_assets
+            or account["available_cash"] != portfolio.available_cash
+        ):
+            raise PortfolioLedgerRequiredError("账本基线已建立，现金与总资产须经账户流水或对账调整")
         now = self._clock.now()
         if not self._repo.conditional_update_version(
             portfolio_id,
@@ -172,6 +185,7 @@ class PortfolioService:
         peak_net_asset_value: float | None,
         day_start_net_asset_value: float | None,
         risk_facts_as_of: date | None,
+        risk_profile=_UNSET,
     ) -> dict:
         """账户字段校验（Decimal 精度）：0<=cash<=assets、各比例 (0,1]、single<=total、sector<=total、rr>0。
 
@@ -183,9 +197,15 @@ class PortfolioService:
             if value is None:
                 return None
             try:
-                return Decimal(str(value))
-            except InvalidOperation:
+                result = Decimal(str(value))
+            except (InvalidOperation, TypeError, ValueError):
                 raise PortfolioAccountInvalidError(f"账户字段不是有效数值：{value}") from None
+            if not result.is_finite():
+                raise PortfolioAccountInvalidError(f"账户字段不是有限数值：{value}")
+            return result
+
+        if risk_profile is not _UNSET and risk_profile not in (None, "CONSERVATIVE", "BALANCED", "AGGRESSIVE"):
+            raise PortfolioAccountInvalidError("risk_profile 必须是明确风险档位或空值")
 
         assets = to_decimal(total_assets)
         cash = to_decimal(available_cash)
@@ -242,7 +262,7 @@ class PortfolioService:
         check(all(value is None for value in facts) or all(value is not None for value in facts), "净值风险事实必须四项同时填写或同时留空")
         if nav is not None:
             check(peak_nav >= nav, "peak_net_asset_value 必须 >= net_asset_value")
-        return {
+        values = {
             "total_assets": assets,
             "available_cash": cash,
             "risk_per_trade_pct": risk,
@@ -259,7 +279,21 @@ class PortfolioService:
             "peak_net_asset_value": peak_nav,
             "day_start_net_asset_value": day_start_nav,
             "risk_facts_as_of": risk_facts_as_of,
+            **({} if risk_profile is _UNSET else {"risk_profile": risk_profile}),
         }
+        if risk_profile is not _UNSET and risk_profile is not None:
+            from backend.modules.investment_workspace.domain.risk_profiles import (
+                PROFILES, profile_budget_violations,
+            )
+            # CREATE may omit numeric fields. A selected tier supplies its
+            # frozen ceilings instead of incompatible legacy DB defaults.
+            for field, cap in PROFILES[risk_profile].account_caps().items():
+                if values[field] is None:
+                    values[field] = cap
+            excess = profile_budget_violations(risk_profile, values)
+            if excess:
+                raise PortfolioAccountInvalidError("风险档预算超限或缺失：" + ",".join(excess))
+        return values
 
     def list(self, *, limit: int, before: tuple[datetime, uuid.UUID] | None = None) -> tuple[list[PortfolioDTO], tuple[datetime, uuid.UUID] | None]:
         rows = self._repo.list_ordered(limit=limit + 1, before=before)
@@ -297,11 +331,15 @@ class PortfolioService:
     def delete(self, portfolio_id: uuid.UUID, expected_version: int) -> None:
         if self._repo.get(portfolio_id) is None:
             raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
-        if self._repo.count_positions(portfolio_id) > 0:
-            raise PortfolioNotEmptyError("仅允许删除空组合")
-        if not self._repo.conditional_delete(portfolio_id, expected_version):
-            raise RevisionConflictError("组合已变更，请重新拉取")
-        self._uow.commit()
+        if self._repo.count_positions(portfolio_id) > 0 or self._repo.has_account_observations(portfolio_id):
+            raise PortfolioNotEmptyError("有持仓或账户观察历史的组合不可删除")
+        try:
+            if not self._repo.conditional_delete(portfolio_id, expected_version):
+                raise RevisionConflictError("组合已变更，请重新拉取")
+            self._uow.commit()
+        except IntegrityError:
+            self._uow.rollback()
+            raise PortfolioNotEmptyError("有关联历史的组合不可删除") from None
 
     # ---- 持仓 ----
 
@@ -323,9 +361,11 @@ class PortfolioService:
     ) -> PortfolioPositionMutationResult:
         self._validate_position(quantity, average_cost, active_stop_price)
         self._validate_instrument(instrument)
-        portfolio = self._repo.get(portfolio_id)
+        portfolio = self._repo.get_locked(portfolio_id)
         if portfolio is None:
             raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
+        if self._repo.has_ledger_baseline(portfolio_id):
+            raise PortfolioLedgerRequiredError("账本基线已建立，持仓须经成交、公司行为或对账调整")
         now = self._clock.now()
         if not self._repo.conditional_update_version(
             portfolio_id, expected_revision, {"version": expected_revision + 1, "updated_at": now}
@@ -362,9 +402,11 @@ class PortfolioService:
 
     def remove_position(self, portfolio_id: uuid.UUID, instrument: InstrumentRef, expected_revision: int) -> None:
         self._validate_instrument(instrument)
-        portfolio = self._repo.get(portfolio_id)
+        portfolio = self._repo.get_locked(portfolio_id)
         if portfolio is None:
             raise PortfolioNotFoundError(f"组合不存在：{portfolio_id}")
+        if self._repo.has_ledger_baseline(portfolio_id):
+            raise PortfolioLedgerRequiredError("账本基线已建立，持仓须经成交、公司行为或对账调整")
         now = self._clock.now()
         if not self._repo.conditional_update_version(
             portfolio_id, expected_revision, {"version": expected_revision + 1, "updated_at": now}
@@ -414,6 +456,7 @@ class PortfolioService:
             peak_net_asset_value=float(portfolio.peak_net_asset_value) if portfolio.peak_net_asset_value is not None else None,
             day_start_net_asset_value=float(portfolio.day_start_net_asset_value) if portfolio.day_start_net_asset_value is not None else None,
             risk_facts_as_of=portfolio.risk_facts_as_of,
+            risk_profile=portfolio.risk_profile,
             created_at=portfolio.created_at,
             updated_at=portfolio.updated_at,
         )

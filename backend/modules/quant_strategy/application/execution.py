@@ -24,6 +24,7 @@ import hashlib
 import logging
 import re
 import uuid
+from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -37,21 +38,36 @@ from backend.modules.analysis.infrastructure.execution_control import ExecutionC
 from backend.modules.analysis.infrastructure.quant_execution_market_data import (
     AllMarketUniverseBuilder,
     MarketContextBatchLoader,
+    benchmark_above_ma120,
+)
+from backend.modules.investment_workspace.infrastructure.models import (
+    Portfolio,
+    PortfolioPosition,
+)
+from backend.modules.quant_strategy.application.data_readiness import (
+    DataReadinessError,
+    DataReadinessGate,
+    DataReadinessSnapshot,
+)
+from backend.modules.quant_strategy.application.position_lifecycle_manager import (
+    PositionLifecycleManager,
 )
 from backend.modules.quant_strategy.application.position_planner import PositionPlanner
-from backend.modules.quant_strategy.application.position_lifecycle_manager import PositionLifecycleManager
-from backend.modules.quant_strategy.application.data_readiness import DataReadinessGate
+from backend.modules.quant_strategy.application.management_runtime import resolve_management_snapshot, adapt_management_output
 from backend.modules.quant_strategy.domain.templates import (
     get_template,
+    required_host_scalars,
     validate_frozen_template_context,
     validate_template_context,
+)
+from backend.modules.quant_strategy.infrastructure.lifecycle_models import (
+    PositionLifecycleState,
+    SuggestedOrder,
 )
 from backend.modules.quant_strategy.infrastructure.signals import (
     QuantExecutionSignal,
     QuantExecutionSignalRepository,
 )
-from backend.modules.quant_strategy.infrastructure.lifecycle_models import PositionLifecycleState, SuggestedOrder
-from backend.modules.investment_workspace.infrastructure.models import Portfolio, PortfolioPosition
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +101,11 @@ def _normalize_holding_symbol(symbol: str, suffix_map: dict[str, list[str]]) -> 
     return None, "INVALID_INSTRUMENT_CODE"
 
 
+def _raw_price_level(value, ratio: Decimal) -> Decimal | None:
+    """Map a price-valued adjusted indicator to today's raw execution basis."""
+    return Decimal(str(value)) * ratio if value is not None else None
+
+
 class QuantExecutionService:
     def __init__(
         self,
@@ -98,6 +119,8 @@ class QuantExecutionService:
         effective_trade_date: date,
         on_progress=None,
         scan_only: bool = False,
+        defer_new_risk: bool = False,
+        protection_only: bool = False,
         batch_size: int = BATCH_SIZE,
         max_workers: int = MAX_WORKERS,
         sandbox_timeout: float = 0.3,
@@ -111,6 +134,13 @@ class QuantExecutionService:
         self._effective_trade_date = effective_trade_date
         self._on_progress = on_progress or (lambda stage, done, total: None)
         self._scan_only = bool(scan_only)
+        # Retry workers receive the same frozen snapshot. A caller cannot turn
+        # a batch scan back into an independent BUY planner by omitting a flag.
+        mode = snapshot.get("new_risk_mode", "DIRECT")
+        if mode not in ("DIRECT", "FAMILY_BATCH"):
+            raise StrategySnapshotInvalidError("Unknown frozen new_risk_mode")
+        self._defer_new_risk = bool(defer_new_risk) or mode == "FAMILY_BATCH"
+        self._protection_only = bool(protection_only)
         self._batch_size = batch_size
         self._max_workers = max_workers
         self._sandbox_timeout = sandbox_timeout
@@ -127,6 +157,10 @@ class QuantExecutionService:
     def _run(self) -> dict:
         """执行全市场扫描 + 订单规划，返回 quant_execution 摘要（无源码/无全量信号）。"""
         strategy = self._snapshot["strategy"]
+        try:
+            management_policy = resolve_management_snapshot(strategy)
+        except (ValueError, TypeError) as exc:
+            raise StrategySnapshotInvalidError(str(exc)) from exc
         strategy_version_id = (
             uuid.UUID(str(strategy["version_id"])) if strategy.get("version_id") else None
         )
@@ -137,6 +171,13 @@ class QuantExecutionService:
             get_template(strategy["template_id"])
             if strategy.get("template_id") and not frozen_template_contract
             else None
+        )
+        benchmark_required = (
+            strategy.get("template_id") == "ma_trend_cross_v1"
+            and (strategy.get("template_params") or {}).get("benchmark_filter") == 1
+        )
+        host_scalars = required_host_scalars(
+            strategy.get("template_id"), strategy.get("template_params"),
         )
         # 已发布快照校验：AST + 散列（不符 → 不可重试任务失败）
         issues = validate_strategy_source(source_code)
@@ -149,9 +190,26 @@ class QuantExecutionService:
         if actual_hash != strategy["source_hash"]:
             raise StrategySnapshotInvalidError("策略快照源码散列不符")
 
-        readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+        global_ready = not self._protection_only
+        readiness_warning = "量化补采尚未通过覆盖复核" if self._protection_only else None
+        try:
+            readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+            if self._protection_only and not self._snapshot.get("positions"):
+                raise DataReadinessError("量化补采尚未通过覆盖复核")
+        except DataReadinessError as exc:
+            if self._scan_only or not self._snapshot.get("positions"):
+                raise
+            global_ready = False
+            readiness_warning = str(exc)
+            requested = self._effective_trade_date
+            readiness = DataReadinessSnapshot(
+                requested_trade_date=requested, market_as_of_trade_date=requested,
+                daily_trade_date=requested, factor_trade_date=requested,
+                adj_factor_trade_date=requested, trade_status_trade_date=requested,
+                coverage_digest="", universe_digest="",
+            )
         effective_date = readiness.market_as_of_trade_date
-        universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn)
+        universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn) if global_ready else []
         universe_total = len(universe)
 
         # 持仓归一：无后缀经 instrument 唯一六位前缀反查（恰一行才转真实 ts_code）
@@ -176,18 +234,20 @@ class QuantExecutionService:
         for h in holdings:
             target_set.add(h["symbol"])
         scan_targets = sorted(target_set)
+        stock_symbols = {code for codes in suffix_map.values() for code in codes}
         portfolio_snapshot_for_lifecycle = self._snapshot.get("portfolio")
         active_lifecycles = {}
+        lifecycle_versions = {}
         if portfolio_snapshot_for_lifecycle and portfolio_snapshot_for_lifecycle.get("id"):
             portfolio_id = uuid.UUID(str(portfolio_snapshot_for_lifecycle["id"]))
-            active_lifecycles = {
-                row.symbol: row.id for row in self._session.scalars(
+            lifecycle_rows = list(self._session.scalars(
                     select(PositionLifecycleState).where(
                         PositionLifecycleState.portfolio_id == portfolio_id,
                         PositionLifecycleState.closed_at.is_(None),
                     )
-                )
-            }
+                ))
+            active_lifecycles = {row.symbol: row.id for row in lifecycle_rows}
+            lifecycle_versions = {row.symbol: row.strategy_version_id for row in lifecycle_rows}
         lifecycle_managed_symbols = set(active_lifecycles)
         lifecycle_pending_orders: list[dict] = []
         lifecycle_order_counts = {"BUY": 0, "SELL": 0}
@@ -196,6 +256,13 @@ class QuantExecutionService:
             lifecycle_id = active_lifecycles.get(ts_code)
             if lifecycle_id is None:
                 return
+            if self._defer_new_risk and lifecycle_versions.get(ts_code) != strategy_version_id:
+                # In a registered family batch each owner has its own frozen
+                # scan/window. Foreign scans must not advance that owner's day.
+                return
+            from .ownership import owned_script_output
+            output = owned_script_output(output, owner_version_id=lifecycle_versions.get(ts_code),
+                                         scanner_version_id=strategy_version_id)
             if ctx is None or execution_market is None:
                 fact = {"close": None, "high": None, "data_error": "MARKET_CONTEXT_UNAVAILABLE"}
             else:
@@ -214,12 +281,16 @@ class QuantExecutionService:
                 def last(name, offset=-1):
                     values = indicators.get(name, [])
                     return values[offset] if len(values) >= abs(offset) else None
+                def raw_level(name, offset=-1):
+                    return _raw_price_level(last(name, offset), ratio)
                 fact = {
                     "close": raw_close, "high": Decimal(str(ohlcv["high"][-1])) * ratio,
-                    "ma5": last("ma_qfq_5"), "prev_ma5": last("ma_qfq_5", -2),
-                    "ma20": last("ma_qfq_20"), "prev_ma20": last("ma_qfq_20", -2),
-                    "ma60": last("ma_qfq_60"), "boll_lower": last("boll_lower_qfq"),
-                    "boll_mid": last("boll_mid_qfq"), "boll_upper": last("boll_upper_qfq"),
+                    "atr": _raw_price_level(execution_market.get("atr_qfq"), ratio),
+                    "is_suspended": execution_market.get("is_suspended"),
+                    "ma5": raw_level("ma_qfq_5"), "prev_ma5": raw_level("ma_qfq_5", -2),
+                    "ma20": raw_level("ma_qfq_20"), "prev_ma20": raw_level("ma_qfq_20", -2),
+                    "ma60": raw_level("ma_qfq_60"), "boll_lower": raw_level("boll_lower_qfq"),
+                    "boll_mid": raw_level("boll_mid_qfq"), "boll_upper": raw_level("boll_upper_qfq"),
                     "macd": last("macd_qfq"), "prev_macd": last("macd_qfq", -2),
                     "dif": last("macd_dif_qfq"), "prev_dif": last("macd_dif_qfq", -2),
                     "dea": last("macd_dea_qfq"), "prev_dea": last("macd_dea_qfq", -2),
@@ -227,11 +298,25 @@ class QuantExecutionService:
                     "volume": volumes[-1] if volumes else None,
                     "volume_base": max(v for v in volumes[-6:-1] if v is not None) if any(v is not None for v in volumes[-6:-1]) else None,
                     "script_target_shares": script_target,
+                    "new_risk_allowed": global_ready,
+                    "execution_market": execution_market,
+                    "execution_policy": self._snapshot.get("execution_policy"),
+                    # Position balance does not establish broker sellability.
+                    "available_sell_quantity": positions_by_code[ts_code].get("available_quantity"),
                     "source_task_id": str(self._task_id),
                 }
+            if self._defer_new_risk:
+                # Preserve the scanner's instrument classification across the
+                # deferral boundary; a batch label cannot certify an ETF/unknown.
+                fact["asset_scope"] = "CN_STOCK" if ts_code in stock_symbols else None
             _daily, _intent, order, _decision = PositionLifecycleManager(self._session).process_day(
                 lifecycle_id, trade_date=effective_date, fact=fact,
                 data_as_of=datetime.now(timezone.utc), price_basis="raw", commit=False,
+                defer_buy=self._defer_new_risk,
+                buy_context={"valuation_date": effective_date,
+                             "asset_scope": "CN_STOCK" if ts_code in stock_symbols else None,
+                             "closes": self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date),
+                             "industry_map": industry_map, "industry_bucket_available": industry_available},
             )
             if order is not None:
                 lifecycle_order_counts[order.side] += 1
@@ -257,6 +342,10 @@ class QuantExecutionService:
         industry_available, _ = ingest_state_dao.is_industry_bucket_available(self._market_conn)
 
         loader = MarketContextBatchLoader(lookback=int(strategy.get("required_bars", 250)))
+        benchmark_state = (
+            benchmark_above_ma120(self._market_conn, effective_date)
+            if benchmark_required and global_ready else None
+        )
         summary_counts = {
             "data_complete": 0,
             "scanned": 0,
@@ -296,6 +385,11 @@ class QuantExecutionService:
                     signal.adj_factor_version = execution_market.get("adj_factor_version")
                     signal.execution_market = {
                         **execution_market,
+                        "batch_context": {
+                            "industry": industry_map.get(ts_code),
+                            "industry_bucket_available": industry_available,
+                            "new_risk_allowed": global_ready,
+                        },
                         **({"lifecycle_seed": lifecycle_seed} if lifecycle_seed else {}),
                     }
             self._signals.add(signal)
@@ -313,19 +407,28 @@ class QuantExecutionService:
                 )
             )
 
-        total_batches = (len(scan_targets) + self._batch_size - 1) // self._batch_size
         for batch_index in range(0, len(scan_targets), self._batch_size):
             self._control.raise_if_inactive()
             batch = scan_targets[batch_index : batch_index + self._batch_size]
             contexts = loader.load_batch(
                 self._market_conn, batch, effective_date, positions_by_code=positions_by_code,
                 requested_trade_date=readiness.requested_trade_date,
+                benchmark_above_ma120=benchmark_state,
             )
             pending: list = []
             with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
                 for item in contexts:
                     self._control.raise_if_inactive()
                     ts = item["ts_code"]
+                    if (item["status"] == "OK" and host_scalars
+                            and not (item["context"]["position"].get("shares") or 0)):
+                        absent = [field for field in host_scalars
+                                  if item["context"].get("meta", {}).get(field) is None]
+                        if absent:
+                            item = {**item, "status": (
+                                "BENCHMARK_UNAVAILABLE" if "benchmark_above_ma120" in absent
+                                else "INDICATOR_UNAVAILABLE"
+                            ), "context": None}
                     if item["status"] == "OK" and frozen_template_contract is not None:
                         guard_error = validate_frozen_template_context(frozen_template_contract, item["context"])
                         if guard_error is not None:
@@ -363,12 +466,17 @@ class QuantExecutionService:
                                 _ctx,
                                 has_position=_has_position,
                                 timeout=self._sandbox_timeout,
+                                allow_null_take_profit=management_policy is not None,
                                 on_process=lambda popen: (proc_holder.update(p=popen), self._control.register_process(popen)),
                             )
                         finally:
                             popen = proc_holder.get("p")
                             if popen is not None:
                                 self._control.unregister_process(popen)
+                        if result.ok and management_policy is not None:
+                            result = replace(result, output=adapt_management_output(
+                                result.output, management_policy, _ctx, _execution_market,
+                            ))
                         return _ts, result, _has_position, _execution_market, _ctx
 
                     pending.append(pool.submit(_execute, ctx, ts, has_position, execution_market))
@@ -392,6 +500,11 @@ class QuantExecutionService:
                             _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
                         continue
                     action = result.output["action"]
+                    if action == "BUY" and not global_ready:
+                        _persist_data_error(ts, "NEW_RISK_BLOCKED_DATA_READINESS")
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
                     if action == "HOLD" and not has_position:
                         continue  # 非持仓正常 HOLD 不落表
                     if action == "BUY":
@@ -460,7 +573,36 @@ class QuantExecutionService:
 
         # 全量信号落库后：全局排序规划订单
         portfolio_snapshot = self._snapshot["portfolio"]
-        closes = self._load_holding_closes([p["symbol"] for p in holdings])
+        from .planning_account import lock_portfolio, planning_account
+        current_portfolio = lock_portfolio(self._session, uuid.UUID(str(portfolio_snapshot["id"])))
+        pending_for_plan = [*self._snapshot.get("pending_orders", []), *lifecycle_pending_orders]
+        owner_versions = None
+        if current_portfolio is not None:
+            from .portfolio_drawdown_actions import PortfolioDrawdownActions
+            PortfolioDrawdownActions(self._session).pause_for_planning(
+                current_portfolio.id, valuation_date=readiness.market_as_of_trade_date)
+            current = planning_account(self._session, current_portfolio)
+            owner_versions = current["owner_versions"]
+            lifecycle_managed_symbols = set(self._session.scalars(select(PositionLifecycleState.symbol).where(
+                PositionLifecycleState.portfolio_id == current_portfolio.id,
+                PositionLifecycleState.market == "CN", PositionLifecycleState.closed_at.is_(None),
+            )))
+            portfolio_snapshot, holdings, pending_for_plan = (
+                current["portfolio_snapshot"], current["positions"], current["pending_orders"])
+        closes = self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date)
+        from .strategy_admission import StrategyAdmissionService
+        admission = StrategyAdmissionService(self._session).gate_new_risk(
+            strategy_version_id, asset_scope="CN_STOCK",
+            risk_profile=portfolio_snapshot.get("risk_profile"),
+        )
+        from .certified_instrument_rules import live_authorizations
+        rule_authorizations = live_authorizations(
+            self._session,
+            symbols=set(self._session.scalars(select(QuantExecutionSignal.ts_code).where(
+                QuantExecutionSignal.task_id == self._task_id,
+                QuantExecutionSignal.attempt_no == self._attempt_no,
+                QuantExecutionSignal.signal_kind == "BUY",
+            ))), decision_date=readiness.market_as_of_trade_date)
         summary = PositionPlanner(self._signals).plan(
             task_id=self._task_id,
             attempt_no=self._attempt_no,
@@ -471,23 +613,36 @@ class QuantExecutionService:
             industry_bucket_available=industry_available,
             risk_gate=None,
             execution_policy_snapshot=self._snapshot.get("execution_policy"),
-            pending_orders=[*self._snapshot.get("pending_orders", []), *lifecycle_pending_orders],
+            pending_orders=pending_for_plan,
             valuation_date=readiness.market_as_of_trade_date,
             lifecycle_managed_symbols=lifecycle_managed_symbols,
+            owner_versions=owner_versions, strategy_version_id=strategy_version_id,
+            admission_block_code=("AWAITING_FAMILY_BATCH" if self._defer_new_risk
+                                  else None if admission["allowed"] else admission["code"]),
+            instrument_rules={symbol: authorization.rule
+                              for symbol, authorization in rule_authorizations.items()},
         )
         self._control.raise_if_inactive()
         self._session.flush()
-        self._persist_suggested_orders(portfolio_snapshot, positions=holdings, industry_map=industry_map)
+        materialization_rejections = self._persist_suggested_orders(
+            portfolio_snapshot, positions=holdings, industry_map=industry_map,
+            rule_authorizations=rule_authorizations)
+        for code, count in materialization_rejections.items():
+            summary.suggested_buy_orders -= count
+            summary.buy_rejections[code] = summary.buy_rejections.get(code, 0) + count
         self._session.commit()
         summary.suggested_buy_orders += lifecycle_order_counts["BUY"]
         summary.suggested_sell_orders += lifecycle_order_counts["SELL"]
 
         warnings = list(summary.warnings)
+        if readiness_warning is not None:
+            warnings.append(f"全市场新仓数据未就绪，已仅处理持仓保护：{readiness_warning}")
         if not industry_available:
             warnings.append("行业风控桶不可用：INDUSTRY_BUCKET_UNAVAILABLE（行业相关 BUY 已拒绝）")
         if error_samples:
             warnings.append(f"扫描错误：{dict(error_counts)}（样本见 signals 表）")
         return {
+            "admission": admission,
             "strategy": {
                 "name": self._snapshot["strategy"].get("name", ""),
                 "version_no": self._snapshot["strategy"]["version_no"],
@@ -501,7 +656,8 @@ class QuantExecutionService:
                 "total_assets": portfolio_snapshot["total_assets"],
                 "available_cash": portfolio_snapshot["available_cash"],
                 "risk": portfolio_snapshot["risk"],
-                "snapshot_at": self._snapshot.get("as_of"),
+                "risk_profile": portfolio_snapshot.get("risk_profile"),
+                "snapshot_at": portfolio_snapshot.get("snapshot_at", self._snapshot.get("as_of")),
             },
             "summary": {
                 "universe_total": universe_total,
@@ -513,21 +669,27 @@ class QuantExecutionService:
                 "failed_count": summary_counts["failed"],
                 "portfolio_open_risk": format(summary.portfolio_open_risk, "f"),
                 "daily_new_risk": format(summary.daily_new_risk, "f"),
+                "full_drawdown_exit_required": summary.full_drawdown_exit_required,
             },
             "buy_rejections": summary.buy_rejections,
             "warnings": warnings,
+            "global_data_ready": global_ready,
             "valued_at": summary.valued_at.isoformat(),
             "requested_trade_date": readiness.requested_trade_date.isoformat(),
-            "market_as_of_trade_date": readiness.market_as_of_trade_date.isoformat(),
+            "market_as_of_trade_date": (
+                readiness.market_as_of_trade_date.isoformat() if global_ready else None
+            ),
         }
 
-    def _persist_suggested_orders(self, portfolio_snapshot: dict, *, positions: list[dict], industry_map: dict) -> None:
+    def _persist_suggested_orders(self, portfolio_snapshot: dict, *, positions: list[dict],
+                                  industry_map: dict, rule_authorizations: dict | None = None) -> dict[str, int]:
         """Materialize ELIGIBLE signal projections once; retries reuse source-signal uniqueness."""
         portfolio_id = uuid.UUID(str(portfolio_snapshot["id"]))
         # Some isolated execution tests intentionally provide a snapshot without
         # the workspace aggregate. Production submissions always retain it.
         if self._session.get(Portfolio, portfolio_id) is None:
-            return
+            return {}
+        rule_authorizations = rule_authorizations or {}
         rows = list(self._session.scalars(
             select(QuantExecutionSignal).where(
                 QuantExecutionSignal.task_id == self._task_id,
@@ -536,56 +698,19 @@ class QuantExecutionService:
                 QuantExecutionSignal.shares.isnot(None),
             ).order_by(QuantExecutionSignal.id)
         ))
-        existing = set(self._session.scalars(
-            select(SuggestedOrder.source_signal_id).where(
-                SuggestedOrder.source_signal_id.in_([r.id for r in rows])
-            )
-        )) if rows else set()
-        position_ids = {
-            p.symbol: p.id for p in self._session.scalars(
-                select(PortfolioPosition).where(PortfolioPosition.portfolio_id == portfolio_id)
-            )
-        }
-        for signal in rows:
-            if signal.id in existing:
-                continue
-            shares = Decimal(str(signal.shares))
-            side = "BUY" if signal.signal_kind == "BUY" else "SELL"
-            lifecycle_policy = self._snapshot.get("strategy", {}).get("lifecycle_policy")
-            if side == "BUY" and lifecycle_policy is not None:
-                initial_exposure = Decimal(str(
-                    lifecycle_policy.get("config", {}).get("initial_exposure_pct", "0.50")
-                ))
-                if initial_exposure not in {Decimal("0.50")}:
-                    raise StrategySnapshotInvalidError("生命周期首仓比例必须为 0.50")
-                shares = (shares * initial_exposure / Decimal(100)).to_integral_value(
-                    rounding="ROUND_FLOOR"
-                ) * Decimal(100)
-            price = signal.order_cost_price or signal.order_entry_price or signal.valuation_price
-            if price is None or shares <= 0:
-                continue
-            price = Decimal(str(price))
-            stop = Decimal(str(signal.order_stop_price)) if signal.order_stop_price is not None else None
-            fees = Decimal(str(signal.estimated_fees or 0))
-            reserved_cash = (shares * price + fees) if side == "BUY" else Decimal(0)
-            reserved_risk = (
-                max(Decimal(0), price - stop) * shares if side == "BUY" and stop is not None else Decimal(0)
-            )
-            bucket = industry_map.get(signal.ts_code) or {}
-            self._session.add(SuggestedOrder(
-                id=uuid.uuid4(), portfolio_id=portfolio_id,
-                position_id=uuid.UUID(str(position_ids[signal.ts_code])) if position_ids.get(signal.ts_code) else None,
-                source_signal_id=signal.id, market="CN", symbol=signal.ts_code,
-                industry_code=bucket.get("industry_code"), side=side, quantity=shares,
-                filled_quantity=Decimal(0), limit_price=price, stop_price=stop,
-                reserved_cash=reserved_cash, reserved_risk=reserved_risk,
-                reason_code=(signal.reason or signal.action or "QUANT_SIGNAL")[:64],
-                status="PROPOSED", revision=1,
-                earliest_execution_trade_date=signal.earliest_execution_trade_date,
-            ))
+        from .order_materialization import materialize_signal_orders
+        materialize_signal_orders(self._session, portfolio_id=portfolio_id, rows=rows,
+            strategy_snapshots={str(row.strategy_version_id): self._snapshot.get("strategy", {}) for row in rows},
+            industry_map=industry_map,
+            instrument_rules={symbol: authorization.rule
+                              for symbol, authorization in rule_authorizations.items()},
+            rule_authorizations=rule_authorizations)
+        from collections import Counter
+        return dict(Counter(row.order_status for row in rows
+                            if row.signal_kind == "BUY" and row.order_status != "ELIGIBLE"))
 
-    def _load_holding_closes(self, symbols: list[str]) -> dict:
-        """持仓估值收盘价：以 effective_trade_date 为上界取各票最新 close（无前视）。"""
+    def _load_holding_closes(self, symbols: list[str], *, valuation_date: date) -> dict:
+        """Only same-session closes certify new BUY valuation; missing values block."""
         from decimal import Decimal
 
         closes: dict[str, Decimal] = {}
@@ -593,8 +718,8 @@ class QuantExecutionService:
             return closes
         rows = self._market_conn.execute(
             "SELECT DISTINCT ON (ts_code) ts_code, close FROM market.instrument_daily "
-            "WHERE ts_code = ANY(%s) AND trade_date <= %s ORDER BY ts_code, trade_date DESC",
-            (symbols, self._effective_trade_date.isoformat()),
+            "WHERE ts_code = ANY(%s) AND trade_date = %s ORDER BY ts_code, trade_date DESC",
+            (symbols, valuation_date.isoformat()),
         ).fetchall()
         for r in rows:
             closes[r[0]] = Decimal(str(r[1]))

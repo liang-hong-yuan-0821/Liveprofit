@@ -1,7 +1,7 @@
 -- ============================================================
 -- 证券市场数据库（market schema）——证券市场数据库统一方案 2.2
 --
--- 单一事实来源：12 表 DDL + 31 行申万行业字典幂等种子。
+-- 单一事实来源：market 表 DDL + 31 行申万行业字典幂等种子。
 -- 全部语句 IF NOT EXISTS / ON CONFLICT DO NOTHING，可重复执行；
 -- 全部 SQL 显式 market. 前缀（不依赖 search_path——过渡窗口内
 -- public 与 market 的 adj_factor 同名，裸表名写入会静默落到旧表）。
@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS market.factor_daily (
     rsi_bfq_6       DOUBLE PRECISION,           -- 个股因子列，指数行 NULL
     rsi_bfq_12      DOUBLE PRECISION,           -- 个股因子列，指数行 NULL
     rsi_bfq_24      DOUBLE PRECISION,           -- 个股因子列，指数行 NULL
+    atr_bfq         DOUBLE PRECISION,           -- 基金原价 ATR20；与未复权基金 OHLC 同基准
     updated_at      TIMESTAMPTZ,                -- 行最后写入时间
     PRIMARY KEY (ts_code, trade_date)
 );
@@ -91,11 +92,15 @@ ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS macd_dif_qfq DOUBLE PRE
 ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS macd_dea_qfq DOUBLE PRECISION;
 ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS macd_qfq DOUBLE PRECISION;
 ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS rsi_qfq_6 DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS atr_qfq DOUBLE PRECISION;
+ALTER TABLE market.factor_daily ADD COLUMN IF NOT EXISTS atr_bfq DOUBLE PRECISION;
 
 CREATE TABLE IF NOT EXISTS market.trade_status_daily (
     ts_code       VARCHAR(16) NOT NULL,
     trade_date    DATE NOT NULL,
     is_suspended  BOOLEAN NOT NULL DEFAULT FALSE,
+    suspension_scope VARCHAR(16), -- none / full_day / intraday / unknown; NULL = legacy unknown
+    suspend_timing TEXT,
     is_st         BOOLEAN NOT NULL DEFAULT FALSE,
     market_board  VARCHAR(32),
     up_limit      DOUBLE PRECISION,
@@ -104,10 +109,127 @@ CREATE TABLE IF NOT EXISTS market.trade_status_daily (
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (ts_code, trade_date)
 );
+ALTER TABLE market.trade_status_daily ADD COLUMN IF NOT EXISTS suspension_scope VARCHAR(16);
+ALTER TABLE market.trade_status_daily ADD COLUMN IF NOT EXISTS suspend_timing TEXT;
 CREATE INDEX IF NOT EXISTS idx_trade_status_daily_date
     ON market.trade_status_daily (trade_date, ts_code);
 
+-- Company/exchange notices are independent, immutable suspension evidence.
+-- Source publication date and verification time are distinct from trade date.
+CREATE TABLE IF NOT EXISTS market.suspension_evidence (
+    ts_code       VARCHAR(16) NOT NULL,
+    trade_date    DATE NOT NULL,
+    scope         VARCHAR(16) NOT NULL CHECK (scope IN ('full_day', 'intraday')),
+    suspend_timing TEXT,
+    source_url    TEXT NOT NULL,
+    evidence_note TEXT,
+    published_on  DATE NOT NULL,
+    verified_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (ts_code, trade_date, source_url)
+);
+CREATE INDEX IF NOT EXISTS idx_suspension_evidence_day
+    ON market.suspension_evidence (trade_date, ts_code);
+
+-- Vendor S event cross-checked with an independently fetched empty daily bar.
+-- This is usable when historical ST membership is unavailable, without
+-- fabricating a complete trade_status_daily row.
+CREATE TABLE IF NOT EXISTS market.suspension_source_daily (
+    ts_code      VARCHAR(16) NOT NULL REFERENCES market.instrument(ts_code),
+    trade_date   DATE NOT NULL,
+    scope        VARCHAR(16) NOT NULL CHECK (scope = 'full_day'),
+    source       VARCHAR(32) NOT NULL CHECK (source = 'tushare_suspend_d'),
+    evidence_hash CHAR(64) NOT NULL,
+    verified_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (ts_code, trade_date, source)
+);
+CREATE INDEX IF NOT EXISTS idx_suspension_source_daily_day
+    ON market.suspension_source_daily (trade_date, ts_code);
+
+-- Historical ST is a separate sourced fact. Keep each complete source extraction
+-- immutable; do not silently overwrite the first observed history on a rerun.
+CREATE TABLE IF NOT EXISTS market.stock_st_source_batch (
+    id             UUID PRIMARY KEY,
+    source         VARCHAR(32) NOT NULL CHECK (source = 'baostock_kline'),
+    source_year    INTEGER NOT NULL CHECK (source_year BETWEEN 1990 AND 2100),
+    observed_at    TIMESTAMPTZ NOT NULL,
+    raw_sha256     CHAR(64) NOT NULL UNIQUE,
+    expected_days  INTEGER NOT NULL CHECK (expected_days >= 0),
+    observed_days  INTEGER NOT NULL CHECK (observed_days >= 0),
+    status         VARCHAR(16) NOT NULL CHECK (status IN ('LOADING', 'VERIFIED')),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (observed_days <= expected_days)
+);
+CREATE TABLE IF NOT EXISTS market.stock_st_source_observation (
+    batch_id         UUID NOT NULL REFERENCES market.stock_st_source_batch(id),
+    ts_code          VARCHAR(16) NOT NULL REFERENCES market.instrument(ts_code),
+    trade_date       DATE NOT NULL,
+    is_st            BOOLEAN NOT NULL,
+    reported_trading BOOLEAN NOT NULL,
+    reported_close   NUMERIC(20,6),
+    PRIMARY KEY (batch_id, ts_code, trade_date)
+);
+ALTER TABLE market.stock_st_source_batch ADD COLUMN IF NOT EXISTS scope_codes TEXT[];
+-- NULL denotes the complete SH/SZ annual universe; an explicit list is a
+-- bounded extraction and must never replace a full-market membership input.
+CREATE INDEX IF NOT EXISTS idx_stock_st_source_observation_day
+    ON market.stock_st_source_observation (trade_date, ts_code);
+
+-- Vendor disagreements remain immutable source facts but are excluded from
+-- verified daily ST inputs until an independent adjudication is available.
+CREATE TABLE IF NOT EXISTS market.stock_st_source_conflict (
+    batch_id         UUID NOT NULL REFERENCES market.stock_st_source_batch(id),
+    ts_code          VARCHAR(16) NOT NULL REFERENCES market.instrument(ts_code),
+    trade_date       DATE NOT NULL,
+    incumbent_is_st  BOOLEAN NOT NULL,
+    vendor_is_st     BOOLEAN NOT NULL,
+    PRIMARY KEY (batch_id, ts_code, trade_date),
+    CHECK (incumbent_is_st <> vendor_is_st)
+);
+CREATE INDEX IF NOT EXISTS idx_stock_st_source_conflict_day
+    ON market.stock_st_source_conflict (trade_date, ts_code);
+
+-- Operational reads share the same quarantine, including incumbent vendor rows.
+-- Keep original facts in trade_status_daily for source comparison and audit.
+CREATE OR REPLACE VIEW market.trade_status_effective AS
+SELECT s.* FROM market.trade_status_daily s
+WHERE NOT EXISTS (
+    SELECT 1 FROM market.stock_st_source_conflict c
+    WHERE c.ts_code=s.ts_code AND c.trade_date=s.trade_date
+);
+
+-- A source disagreement is resolved only by an independently reviewed
+-- company/exchange notice. Preserve both vendor claims and the chosen fact.
+CREATE TABLE IF NOT EXISTS market.stock_st_adjudication (
+    ts_code          VARCHAR(16) NOT NULL REFERENCES market.instrument(ts_code),
+    trade_date       DATE NOT NULL,
+    previous_is_st   BOOLEAN NOT NULL,
+    vendor_is_st     BOOLEAN NOT NULL,
+    corrected_is_st  BOOLEAN NOT NULL,
+    source_url       TEXT NOT NULL,
+    published_on     DATE NOT NULL,
+    evidence_note    TEXT NOT NULL,
+    verified_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (ts_code, trade_date),
+    CHECK (previous_is_st <> vendor_is_st)
+);
+
 -- 基金信息表（fund_basic 差异列；场内基金恒 market='E' 过滤拉取）
+-- etf_basic 是当前目录快照，不能把今日分类伪装成过去已经可知的分类。
+CREATE TABLE IF NOT EXISTS market.etf_catalog_observation (
+    ts_code       VARCHAR(16) NOT NULL,
+    observed_date DATE NOT NULL,
+    available_at  TIMESTAMPTZ NOT NULL,
+    index_code    VARCHAR(32),
+    exchange      VARCHAR(16),
+    etf_type      VARCHAR(64),
+    list_date     DATE,
+    list_status   CHAR(1) NOT NULL CHECK (list_status IN ('L', 'D', 'P')),
+    source        VARCHAR(16) NOT NULL,
+    PRIMARY KEY (ts_code, observed_date)
+);
+CREATE INDEX IF NOT EXISTS idx_etf_catalog_observation_available
+    ON market.etf_catalog_observation (available_at, ts_code);
+
 CREATE TABLE IF NOT EXISTS market.fund_info (
     ts_code         VARCHAR(16) PRIMARY KEY,    -- 基金代码：158013.SZ（易方达国证航天航空行业ETF）
     management      VARCHAR(64),                -- 基金管理人
@@ -267,3 +389,103 @@ CREATE TABLE IF NOT EXISTS market.ingest_state (
     observed_at    TIMESTAMPTZ,            -- 最近观测时刻
     PRIMARY KEY (resource, source)
 );
+
+-- 四张量化事实表的本地修订轨迹。observed_at 是本库写入时刻，绝非上游发布时间；
+-- 建表前的存量事实没有历史轨迹，回填旧交易日也不能倒填 observed_at。
+CREATE TABLE IF NOT EXISTS market.fact_revision (
+    id          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    fact_table  VARCHAR(32) NOT NULL,
+    ts_code     VARCHAR(16) NOT NULL,
+    trade_date  DATE NOT NULL,
+    operation   VARCHAR(6) NOT NULL,
+    observed_at TIMESTAMPTZ NOT NULL,
+    payload     JSONB NOT NULL,
+    CONSTRAINT ck_fact_revision_table CHECK (fact_table IN
+        ('instrument_daily', 'adj_factor', 'factor_daily', 'trade_status_daily')),
+    CONSTRAINT ck_fact_revision_operation CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE'))
+);
+CREATE INDEX IF NOT EXISTS idx_fact_revision_asof
+    ON market.fact_revision (fact_table, ts_code, trade_date, observed_at DESC, id DESC);
+
+CREATE OR REPLACE FUNCTION market.capture_fact_revision() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE business_payload JSONB;
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        business_payload := to_jsonb(OLD) - 'updated_at';
+        INSERT INTO market.fact_revision
+            (fact_table, ts_code, trade_date, operation, observed_at, payload)
+        VALUES (TG_TABLE_NAME, OLD.ts_code, OLD.trade_date, TG_OP,
+                clock_timestamp(), business_payload);
+        RETURN OLD;
+    END IF;
+    business_payload := to_jsonb(NEW) - 'updated_at';
+    IF TG_OP = 'UPDATE' AND (OLD.ts_code, OLD.trade_date) IS DISTINCT FROM
+            (NEW.ts_code, NEW.trade_date) THEN
+        RAISE EXCEPTION 'market fact identity is immutable; delete and insert explicitly';
+    END IF;
+    IF TG_OP = 'UPDATE' AND business_payload = to_jsonb(OLD) - 'updated_at' THEN
+        RETURN NEW;
+    END IF;
+    INSERT INTO market.fact_revision
+        (fact_table, ts_code, trade_date, operation, observed_at, payload)
+    VALUES (TG_TABLE_NAME, NEW.ts_code, NEW.trade_date, TG_OP,
+            clock_timestamp(), business_payload);
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION market.reject_fact_revision_mutation() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    RAISE EXCEPTION 'market fact revision history is immutable';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION market.reject_fact_truncate() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    RAISE EXCEPTION 'market fact history cannot be truncated';
+END;
+$$;
+
+DO $$
+DECLARE source_table TEXT;
+BEGIN
+    FOREACH source_table IN ARRAY ARRAY[
+        'instrument_daily', 'adj_factor', 'factor_daily', 'trade_status_daily',
+        'fact_revision'
+    ] LOOP
+        IF source_table <> 'fact_revision' AND NOT EXISTS (
+            SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
+            JOIN pg_namespace n ON n.oid=c.relnamespace
+            WHERE n.nspname='market' AND c.relname=source_table
+              AND t.tgname='capture_fact_revision'
+        ) THEN
+            EXECUTE format('CREATE TRIGGER capture_fact_revision AFTER INSERT OR UPDATE OR DELETE '
+                           'ON market.%I FOR EACH ROW EXECUTE FUNCTION market.capture_fact_revision()',
+                           source_table);
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
+            JOIN pg_namespace n ON n.oid=c.relnamespace
+            WHERE n.nspname='market' AND c.relname=source_table
+              AND t.tgname='fact_history_no_truncate'
+        ) THEN
+            EXECUTE format('CREATE TRIGGER fact_history_no_truncate BEFORE TRUNCATE '
+                           'ON market.%I FOR EACH STATEMENT EXECUTE FUNCTION market.reject_fact_truncate()',
+                           source_table);
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
+        JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname='market' AND c.relname='fact_revision'
+          AND t.tgname='fact_revision_immutable'
+    ) THEN
+        CREATE TRIGGER fact_revision_immutable BEFORE UPDATE OR DELETE
+            ON market.fact_revision FOR EACH ROW
+            EXECUTE FUNCTION market.reject_fact_revision_mutation();
+    END IF;
+END;
+$$;

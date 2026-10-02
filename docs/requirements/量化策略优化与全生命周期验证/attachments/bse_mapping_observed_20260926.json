@@ -1,0 +1,1247 @@
+{
+  "observed_at": "2026-09-26T01:01:18.305969+08:00",
+  "source": "tushare:bse_mapping",
+  "official_reference": "https://www.bse.cn/service/code_mapping.html",
+  "rows": [
+    {
+      "o_code": "832000.BJ",
+      "n_code": "920000.BJ",
+      "list_date": "20201223"
+    },
+    {
+      "o_code": "873001.BJ",
+      "n_code": "920001.BJ",
+      "list_date": "20221227"
+    },
+    {
+      "o_code": "837006.BJ",
+      "n_code": "920006.BJ",
+      "list_date": "20230518"
+    },
+    {
+      "o_code": "831010.BJ",
+      "n_code": "920010.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "834014.BJ",
+      "n_code": "920014.BJ",
+      "list_date": "20221213"
+    },
+    {
+      "o_code": "430017.BJ",
+      "n_code": "920017.BJ",
+      "list_date": "20230531"
+    },
+    {
+      "o_code": "834021.BJ",
+      "n_code": "920021.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "832023.BJ",
+      "n_code": "920023.BJ",
+      "list_date": "20230202"
+    },
+    {
+      "o_code": "873726.BJ",
+      "n_code": "920026.BJ",
+      "list_date": "20231019"
+    },
+    {
+      "o_code": "838030.BJ",
+      "n_code": "920030.BJ",
+      "list_date": "20201127"
+    },
+    {
+      "o_code": "834033.BJ",
+      "n_code": "920033.BJ",
+      "list_date": "20221221"
+    },
+    {
+      "o_code": "831039.BJ",
+      "n_code": "920039.BJ",
+      "list_date": "20210818"
+    },
+    {
+      "o_code": "837046.BJ",
+      "n_code": "920046.BJ",
+      "list_date": "20221013"
+    },
+    {
+      "o_code": "430047.BJ",
+      "n_code": "920047.BJ",
+      "list_date": "20201124"
+    },
+    {
+      "o_code": "835857.BJ",
+      "n_code": "920057.BJ",
+      "list_date": "20230314"
+    },
+    {
+      "o_code": "834058.BJ",
+      "n_code": "920058.BJ",
+      "list_date": "20230810"
+    },
+    {
+      "o_code": "836961.BJ",
+      "n_code": "920061.BJ",
+      "list_date": "20231221"
+    },
+    {
+      "o_code": "834062.BJ",
+      "n_code": "920062.BJ",
+      "list_date": "20220713"
+    },
+    {
+      "o_code": "833075.BJ",
+      "n_code": "920075.BJ",
+      "list_date": "20221214"
+    },
+    {
+      "o_code": "836077.BJ",
+      "n_code": "920077.BJ",
+      "list_date": "20210831"
+    },
+    {
+      "o_code": "831087.BJ",
+      "n_code": "920087.BJ",
+      "list_date": "20221207"
+    },
+    {
+      "o_code": "832089.BJ",
+      "n_code": "920089.BJ",
+      "list_date": "20211109"
+    },
+    {
+      "o_code": "430090.BJ",
+      "n_code": "920090.BJ",
+      "list_date": "20210809"
+    },
+    {
+      "o_code": "837092.BJ",
+      "n_code": "920092.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "832110.BJ",
+      "n_code": "920110.BJ",
+      "list_date": "20221206"
+    },
+    {
+      "o_code": "873122.BJ",
+      "n_code": "920122.BJ",
+      "list_date": "20220927"
+    },
+    {
+      "o_code": "837023.BJ",
+      "n_code": "920123.BJ",
+      "list_date": "20240329"
+    },
+    {
+      "o_code": "833030.BJ",
+      "n_code": "920130.BJ",
+      "list_date": "20231102"
+    },
+    {
+      "o_code": "873132.BJ",
+      "n_code": "920132.BJ",
+      "list_date": "20231116"
+    },
+    {
+      "o_code": "430139.BJ",
+      "n_code": "920139.BJ",
+      "list_date": "20221028"
+    },
+    {
+      "o_code": "832145.BJ",
+      "n_code": "920145.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "839946.BJ",
+      "n_code": "920146.BJ",
+      "list_date": "20210720"
+    },
+    {
+      "o_code": "836149.BJ",
+      "n_code": "920149.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "831152.BJ",
+      "n_code": "920152.BJ",
+      "list_date": "20220901"
+    },
+    {
+      "o_code": "838163.BJ",
+      "n_code": "920163.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "839167.BJ",
+      "n_code": "920167.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "873169.BJ",
+      "n_code": "920169.BJ",
+      "list_date": "20220415"
+    },
+    {
+      "o_code": "832171.BJ",
+      "n_code": "920171.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "835174.BJ",
+      "n_code": "920174.BJ",
+      "list_date": "20210820"
+    },
+    {
+      "o_code": "832175.BJ",
+      "n_code": "920175.BJ",
+      "list_date": "20230630"
+    },
+    {
+      "o_code": "835179.BJ",
+      "n_code": "920179.BJ",
+      "list_date": "20220304"
+    },
+    {
+      "o_code": "835184.BJ",
+      "n_code": "920184.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "835185.BJ",
+      "n_code": "920185.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "872190.BJ",
+      "n_code": "920190.BJ",
+      "list_date": "20221223"
+    },
+    {
+      "o_code": "831195.BJ",
+      "n_code": "920195.BJ",
+      "list_date": "20221230"
+    },
+    {
+      "o_code": "430198.BJ",
+      "n_code": "920198.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "870199.BJ",
+      "n_code": "920199.BJ",
+      "list_date": "20221201"
+    },
+    {
+      "o_code": "870204.BJ",
+      "n_code": "920204.BJ",
+      "list_date": "20220118"
+    },
+    {
+      "o_code": "835207.BJ",
+      "n_code": "920207.BJ",
+      "list_date": "20220923"
+    },
+    {
+      "o_code": "836208.BJ",
+      "n_code": "920208.BJ",
+      "list_date": "20230629"
+    },
+    {
+      "o_code": "837212.BJ",
+      "n_code": "920212.BJ",
+      "list_date": "20210608"
+    },
+    {
+      "o_code": "836221.BJ",
+      "n_code": "920221.BJ",
+      "list_date": "20230608"
+    },
+    {
+      "o_code": "873223.BJ",
+      "n_code": "920223.BJ",
+      "list_date": "20220609"
+    },
+    {
+      "o_code": "832225.BJ",
+      "n_code": "920225.BJ",
+      "list_date": "20210225"
+    },
+    {
+      "o_code": "838227.BJ",
+      "n_code": "920227.BJ",
+      "list_date": "20221228"
+    },
+    {
+      "o_code": "833230.BJ",
+      "n_code": "920230.BJ",
+      "list_date": "20221209"
+    },
+    {
+      "o_code": "835237.BJ",
+      "n_code": "920237.BJ",
+      "list_date": "20221125"
+    },
+    {
+      "o_code": "836239.BJ",
+      "n_code": "920239.BJ",
+      "list_date": "20210209"
+    },
+    {
+      "o_code": "837242.BJ",
+      "n_code": "920242.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "871245.BJ",
+      "n_code": "920245.BJ",
+      "list_date": "20220106"
+    },
+    {
+      "o_code": "836247.BJ",
+      "n_code": "920247.BJ",
+      "list_date": "20221223"
+    },
+    {
+      "o_code": "832149.BJ",
+      "n_code": "920249.BJ",
+      "list_date": "20230217"
+    },
+    {
+      "o_code": "873152.BJ",
+      "n_code": "920252.BJ",
+      "list_date": "20230119"
+    },
+    {
+      "o_code": "836260.BJ",
+      "n_code": "920260.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "834261.BJ",
+      "n_code": "920261.BJ",
+      "list_date": "20230403"
+    },
+    {
+      "o_code": "838262.BJ",
+      "n_code": "920262.BJ",
+      "list_date": "20221230"
+    },
+    {
+      "o_code": "836263.BJ",
+      "n_code": "920263.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "833266.BJ",
+      "n_code": "920266.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "831167.BJ",
+      "n_code": "920267.BJ",
+      "list_date": "20220527"
+    },
+    {
+      "o_code": "836270.BJ",
+      "n_code": "920270.BJ",
+      "list_date": "20220902"
+    },
+    {
+      "o_code": "838171.BJ",
+      "n_code": "920271.BJ",
+      "list_date": "20220602"
+    },
+    {
+      "o_code": "839273.BJ",
+      "n_code": "920273.BJ",
+      "list_date": "20230221"
+    },
+    {
+      "o_code": "837174.BJ",
+      "n_code": "920274.BJ",
+      "list_date": "20230818"
+    },
+    {
+      "o_code": "838275.BJ",
+      "n_code": "920275.BJ",
+      "list_date": "20210125"
+    },
+    {
+      "o_code": "832278.BJ",
+      "n_code": "920278.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "833284.BJ",
+      "n_code": "920284.BJ",
+      "list_date": "20231219"
+    },
+    {
+      "o_code": "870299.BJ",
+      "n_code": "920299.BJ",
+      "list_date": "20220610"
+    },
+    {
+      "o_code": "430300.BJ",
+      "n_code": "920300.BJ",
+      "list_date": "20221207"
+    },
+    {
+      "o_code": "831304.BJ",
+      "n_code": "920304.BJ",
+      "list_date": "20230418"
+    },
+    {
+      "o_code": "835305.BJ",
+      "n_code": "920305.BJ",
+      "list_date": "20210826"
+    },
+    {
+      "o_code": "873339.BJ",
+      "n_code": "920339.BJ",
+      "list_date": "20221117"
+    },
+    {
+      "o_code": "837344.BJ",
+      "n_code": "920344.BJ",
+      "list_date": "20210108"
+    },
+    {
+      "o_code": "833346.BJ",
+      "n_code": "920346.BJ",
+      "list_date": "20220223"
+    },
+    {
+      "o_code": "872351.BJ",
+      "n_code": "920351.BJ",
+      "list_date": "20221229"
+    },
+    {
+      "o_code": "870357.BJ",
+      "n_code": "920357.BJ",
+      "list_date": "20221118"
+    },
+    {
+      "o_code": "871263.BJ",
+      "n_code": "920363.BJ",
+      "list_date": "20231228"
+    },
+    {
+      "o_code": "873167.BJ",
+      "n_code": "920367.BJ",
+      "list_date": "20230209"
+    },
+    {
+      "o_code": "835368.BJ",
+      "n_code": "920368.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "831370.BJ",
+      "n_code": "920370.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "839371.BJ",
+      "n_code": "920371.BJ",
+      "list_date": "20230118"
+    },
+    {
+      "o_code": "872374.BJ",
+      "n_code": "920374.BJ",
+      "list_date": "20221129"
+    },
+    {
+      "o_code": "831175.BJ",
+      "n_code": "920375.BJ",
+      "list_date": "20231214"
+    },
+    {
+      "o_code": "831278.BJ",
+      "n_code": "920378.BJ",
+      "list_date": "20220620"
+    },
+    {
+      "o_code": "872392.BJ",
+      "n_code": "920392.BJ",
+      "list_date": "20221230"
+    },
+    {
+      "o_code": "833394.BJ",
+      "n_code": "920394.BJ",
+      "list_date": "20230425"
+    },
+    {
+      "o_code": "836395.BJ",
+      "n_code": "920395.BJ",
+      "list_date": "20220901"
+    },
+    {
+      "o_code": "871396.BJ",
+      "n_code": "920396.BJ",
+      "list_date": "20201118"
+    },
+    {
+      "o_code": "838402.BJ",
+      "n_code": "920402.BJ",
+      "list_date": "20220928"
+    },
+    {
+      "o_code": "837403.BJ",
+      "n_code": "920403.BJ",
+      "list_date": "20240118"
+    },
+    {
+      "o_code": "831305.BJ",
+      "n_code": "920405.BJ",
+      "list_date": "20211105"
+    },
+    {
+      "o_code": "834407.BJ",
+      "n_code": "920407.BJ",
+      "list_date": "20230216"
+    },
+    {
+      "o_code": "836414.BJ",
+      "n_code": "920414.BJ",
+      "list_date": "20221212"
+    },
+    {
+      "o_code": "834415.BJ",
+      "n_code": "920415.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "430418.BJ",
+      "n_code": "920418.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "832419.BJ",
+      "n_code": "920419.BJ",
+      "list_date": "20220311"
+    },
+    {
+      "o_code": "836422.BJ",
+      "n_code": "920422.BJ",
+      "list_date": "20230301"
+    },
+    {
+      "o_code": "430425.BJ",
+      "n_code": "920425.BJ",
+      "list_date": "20230130"
+    },
+    {
+      "o_code": "833427.BJ",
+      "n_code": "920427.BJ",
+      "list_date": "20210205"
+    },
+    {
+      "o_code": "833429.BJ",
+      "n_code": "920429.BJ",
+      "list_date": "20221215"
+    },
+    {
+      "o_code": "836433.BJ",
+      "n_code": "920433.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "870436.BJ",
+      "n_code": "920436.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "835438.BJ",
+      "n_code": "920438.BJ",
+      "list_date": "20240325"
+    },
+    {
+      "o_code": "831445.BJ",
+      "n_code": "920445.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "833454.BJ",
+      "n_code": "920454.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "833455.BJ",
+      "n_code": "920455.BJ",
+      "list_date": "20230621"
+    },
+    {
+      "o_code": "832469.BJ",
+      "n_code": "920469.BJ",
+      "list_date": "20230918"
+    },
+    {
+      "o_code": "832471.BJ",
+      "n_code": "920471.BJ",
+      "list_date": "20230525"
+    },
+    {
+      "o_code": "834475.BJ",
+      "n_code": "920475.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "430476.BJ",
+      "n_code": "920476.BJ",
+      "list_date": "20221014"
+    },
+    {
+      "o_code": "430478.BJ",
+      "n_code": "920478.BJ",
+      "list_date": "20230223"
+    },
+    {
+      "o_code": "430489.BJ",
+      "n_code": "920489.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "832491.BJ",
+      "n_code": "920491.BJ",
+      "list_date": "20220614"
+    },
+    {
+      "o_code": "839493.BJ",
+      "n_code": "920493.BJ",
+      "list_date": "20231101"
+    },
+    {
+      "o_code": "831396.BJ",
+      "n_code": "920496.BJ",
+      "list_date": "20240126"
+    },
+    {
+      "o_code": "836504.BJ",
+      "n_code": "920504.BJ",
+      "list_date": "20230817"
+    },
+    {
+      "o_code": "873305.BJ",
+      "n_code": "920505.BJ",
+      "list_date": "20221221"
+    },
+    {
+      "o_code": "835508.BJ",
+      "n_code": "920508.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "833509.BJ",
+      "n_code": "920509.BJ",
+      "list_date": "20210111"
+    },
+    {
+      "o_code": "430510.BJ",
+      "n_code": "920510.BJ",
+      "list_date": "20201228"
+    },
+    {
+      "o_code": "836419.BJ",
+      "n_code": "920519.BJ",
+      "list_date": "20230915"
+    },
+    {
+      "o_code": "832522.BJ",
+      "n_code": "920522.BJ",
+      "list_date": "20231116"
+    },
+    {
+      "o_code": "833523.BJ",
+      "n_code": "920523.BJ",
+      "list_date": "20210603"
+    },
+    {
+      "o_code": "831526.BJ",
+      "n_code": "920526.BJ",
+      "list_date": "20221222"
+    },
+    {
+      "o_code": "873527.BJ",
+      "n_code": "920527.BJ",
+      "list_date": "20221027"
+    },
+    {
+      "o_code": "833533.BJ",
+      "n_code": "920533.BJ",
+      "list_date": "20220524"
+    },
+    {
+      "o_code": "872541.BJ",
+      "n_code": "920541.BJ",
+      "list_date": "20230310"
+    },
+    {
+      "o_code": "836547.BJ",
+      "n_code": "920547.BJ",
+      "list_date": "20231212"
+    },
+    {
+      "o_code": "871553.BJ",
+      "n_code": "920553.BJ",
+      "list_date": "20210806"
+    },
+    {
+      "o_code": "430556.BJ",
+      "n_code": "920556.BJ",
+      "list_date": "20230317"
+    },
+    {
+      "o_code": "430564.BJ",
+      "n_code": "920564.BJ",
+      "list_date": "20220617"
+    },
+    {
+      "o_code": "832566.BJ",
+      "n_code": "920566.BJ",
+      "list_date": "20210813"
+    },
+    {
+      "o_code": "873570.BJ",
+      "n_code": "920570.BJ",
+      "list_date": "20231123"
+    },
+    {
+      "o_code": "833171.BJ",
+      "n_code": "920571.BJ",
+      "list_date": "20221215"
+    },
+    {
+      "o_code": "833575.BJ",
+      "n_code": "920575.BJ",
+      "list_date": "20230315"
+    },
+    {
+      "o_code": "873576.BJ",
+      "n_code": "920576.BJ",
+      "list_date": "20230712"
+    },
+    {
+      "o_code": "871478.BJ",
+      "n_code": "920578.BJ",
+      "list_date": "20230512"
+    },
+    {
+      "o_code": "835579.BJ",
+      "n_code": "920579.BJ",
+      "list_date": "20231130"
+    },
+    {
+      "o_code": "833580.BJ",
+      "n_code": "920580.BJ",
+      "list_date": "20220513"
+    },
+    {
+      "o_code": "837592.BJ",
+      "n_code": "920592.BJ",
+      "list_date": "20230710"
+    },
+    {
+      "o_code": "873593.BJ",
+      "n_code": "920593.BJ",
+      "list_date": "20230413"
+    },
+    {
+      "o_code": "834599.BJ",
+      "n_code": "920599.BJ",
+      "list_date": "20210222"
+    },
+    {
+      "o_code": "870508.BJ",
+      "n_code": "920608.BJ",
+      "list_date": "20221216"
+    },
+    {
+      "o_code": "831627.BJ",
+      "n_code": "920627.BJ",
+      "list_date": "20230907"
+    },
+    {
+      "o_code": "871634.BJ",
+      "n_code": "920634.BJ",
+      "list_date": "20221124"
+    },
+    {
+      "o_code": "834639.BJ",
+      "n_code": "920639.BJ",
+      "list_date": "20220712"
+    },
+    {
+      "o_code": "835640.BJ",
+      "n_code": "920640.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "831641.BJ",
+      "n_code": "920641.BJ",
+      "list_date": "20221202"
+    },
+    {
+      "o_code": "871642.BJ",
+      "n_code": "920642.BJ",
+      "list_date": "20210816"
+    },
+    {
+      "o_code": "832651.BJ",
+      "n_code": "920651.BJ",
+      "list_date": "20230627"
+    },
+    {
+      "o_code": "870656.BJ",
+      "n_code": "920656.BJ",
+      "list_date": "20240202"
+    },
+    {
+      "o_code": "832662.BJ",
+      "n_code": "920662.BJ",
+      "list_date": "20221128"
+    },
+    {
+      "o_code": "837663.BJ",
+      "n_code": "920663.BJ",
+      "list_date": "20230315"
+    },
+    {
+      "o_code": "873665.BJ",
+      "n_code": "920665.BJ",
+      "list_date": "20230926"
+    },
+    {
+      "o_code": "835670.BJ",
+      "n_code": "920670.BJ",
+      "list_date": "20201208"
+    },
+    {
+      "o_code": "836675.BJ",
+      "n_code": "920675.BJ",
+      "list_date": "20201228"
+    },
+    {
+      "o_code": "873679.BJ",
+      "n_code": "920679.BJ",
+      "list_date": "20231110"
+    },
+    {
+      "o_code": "839680.BJ",
+      "n_code": "920680.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "834682.BJ",
+      "n_code": "920682.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "430685.BJ",
+      "n_code": "920685.BJ",
+      "list_date": "20221010"
+    },
+    {
+      "o_code": "831689.BJ",
+      "n_code": "920689.BJ",
+      "list_date": "20220321"
+    },
+    {
+      "o_code": "873690.BJ",
+      "n_code": "920690.BJ",
+      "list_date": "20240105"
+    },
+    {
+      "o_code": "873693.BJ",
+      "n_code": "920693.BJ",
+      "list_date": "20231027"
+    },
+    {
+      "o_code": "871694.BJ",
+      "n_code": "920694.BJ",
+      "list_date": "20230424"
+    },
+    {
+      "o_code": "836699.BJ",
+      "n_code": "920699.BJ",
+      "list_date": "20230509"
+    },
+    {
+      "o_code": "838701.BJ",
+      "n_code": "920701.BJ",
+      "list_date": "20230719"
+    },
+    {
+      "o_code": "873703.BJ",
+      "n_code": "920703.BJ",
+      "list_date": "20231205"
+    },
+    {
+      "o_code": "873706.BJ",
+      "n_code": "920706.BJ",
+      "list_date": "20240308"
+    },
+    {
+      "o_code": "836717.BJ",
+      "n_code": "920717.BJ",
+      "list_date": "20230703"
+    },
+    {
+      "o_code": "430718.BJ",
+      "n_code": "920718.BJ",
+      "list_date": "20221222"
+    },
+    {
+      "o_code": "839719.BJ",
+      "n_code": "920719.BJ",
+      "list_date": "20230526"
+    },
+    {
+      "o_code": "836720.BJ",
+      "n_code": "920720.BJ",
+      "list_date": "20211124"
+    },
+    {
+      "o_code": "839725.BJ",
+      "n_code": "920725.BJ",
+      "list_date": "20220718"
+    },
+    {
+      "o_code": "831726.BJ",
+      "n_code": "920726.BJ",
+      "list_date": "20210527"
+    },
+    {
+      "o_code": "839729.BJ",
+      "n_code": "920729.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "832735.BJ",
+      "n_code": "920735.BJ",
+      "list_date": "20210219"
+    },
+    {
+      "o_code": "837748.BJ",
+      "n_code": "920748.BJ",
+      "list_date": "20230816"
+    },
+    {
+      "o_code": "833751.BJ",
+      "n_code": "920751.BJ",
+      "list_date": "20230717"
+    },
+    {
+      "o_code": "871753.BJ",
+      "n_code": "920753.BJ",
+      "list_date": "20221031"
+    },
+    {
+      "o_code": "834765.BJ",
+      "n_code": "920765.BJ",
+      "list_date": "20210705"
+    },
+    {
+      "o_code": "831768.BJ",
+      "n_code": "920768.BJ",
+      "list_date": "20210628"
+    },
+    {
+      "o_code": "834770.BJ",
+      "n_code": "920770.BJ",
+      "list_date": "20230228"
+    },
+    {
+      "o_code": "830779.BJ",
+      "n_code": "920779.BJ",
+      "list_date": "20230601"
+    },
+    {
+      "o_code": "833781.BJ",
+      "n_code": "920781.BJ",
+      "list_date": "20221226"
+    },
+    {
+      "o_code": "832786.BJ",
+      "n_code": "920786.BJ",
+      "list_date": "20231013"
+    },
+    {
+      "o_code": "839790.BJ",
+      "n_code": "920790.BJ",
+      "list_date": "20220902"
+    },
+    {
+      "o_code": "839792.BJ",
+      "n_code": "920792.BJ",
+      "list_date": "20230330"
+    },
+    {
+      "o_code": "830799.BJ",
+      "n_code": "920799.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "832802.BJ",
+      "n_code": "920802.BJ",
+      "list_date": "20230206"
+    },
+    {
+      "o_code": "873806.BJ",
+      "n_code": "920806.BJ",
+      "list_date": "20240111"
+    },
+    {
+      "o_code": "836807.BJ",
+      "n_code": "920807.BJ",
+      "list_date": "20221220"
+    },
+    {
+      "o_code": "872808.BJ",
+      "n_code": "920808.BJ",
+      "list_date": "20221118"
+    },
+    {
+      "o_code": "830809.BJ",
+      "n_code": "920809.BJ",
+      "list_date": "20230323"
+    },
+    {
+      "o_code": "838810.BJ",
+      "n_code": "920810.BJ",
+      "list_date": "20221216"
+    },
+    {
+      "o_code": "833819.BJ",
+      "n_code": "920819.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "837821.BJ",
+      "n_code": "920821.BJ",
+      "list_date": "20220706"
+    },
+    {
+      "o_code": "836826.BJ",
+      "n_code": "920826.BJ",
+      "list_date": "20210112"
+    },
+    {
+      "o_code": "830832.BJ",
+      "n_code": "920832.BJ",
+      "list_date": "20210223"
+    },
+    {
+      "o_code": "873833.BJ",
+      "n_code": "920833.BJ",
+      "list_date": "20231108"
+    },
+    {
+      "o_code": "831834.BJ",
+      "n_code": "920834.BJ",
+      "list_date": "20220822"
+    },
+    {
+      "o_code": "838837.BJ",
+      "n_code": "920837.BJ",
+      "list_date": "20230515"
+    },
+    {
+      "o_code": "830839.BJ",
+      "n_code": "920839.BJ",
+      "list_date": "20201109"
+    },
+    {
+      "o_code": "831855.BJ",
+      "n_code": "920855.BJ",
+      "list_date": "20221229"
+    },
+    {
+      "o_code": "831856.BJ",
+      "n_code": "920856.BJ",
+      "list_date": "20201225"
+    },
+    {
+      "o_code": "871857.BJ",
+      "n_code": "920857.BJ",
+      "list_date": "20220228"
+    },
+    {
+      "o_code": "870866.BJ",
+      "n_code": "920866.BJ",
+      "list_date": "20221209"
+    },
+    {
+      "o_code": "838670.BJ",
+      "n_code": "920870.BJ",
+      "list_date": "20220705"
+    },
+    {
+      "o_code": "836871.BJ",
+      "n_code": "920871.BJ",
+      "list_date": "20220722"
+    },
+    {
+      "o_code": "833873.BJ",
+      "n_code": "920873.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "832876.BJ",
+      "n_code": "920876.BJ",
+      "list_date": "20221109"
+    },
+    {
+      "o_code": "830879.BJ",
+      "n_code": "920879.BJ",
+      "list_date": "20221220"
+    },
+    {
+      "o_code": "832885.BJ",
+      "n_code": "920885.BJ",
+      "list_date": "20210708"
+    },
+    {
+      "o_code": "836892.BJ",
+      "n_code": "920892.BJ",
+      "list_date": "20211028"
+    },
+    {
+      "o_code": "872895.BJ",
+      "n_code": "920895.BJ",
+      "list_date": "20230406"
+    },
+    {
+      "o_code": "830896.BJ",
+      "n_code": "920896.BJ",
+      "list_date": "20230419"
+    },
+    {
+      "o_code": "831906.BJ",
+      "n_code": "920906.BJ",
+      "list_date": "20230222"
+    },
+    {
+      "o_code": "833914.BJ",
+      "n_code": "920914.BJ",
+      "list_date": "20221111"
+    },
+    {
+      "o_code": "838924.BJ",
+      "n_code": "920924.BJ",
+      "list_date": "20211103"
+    },
+    {
+      "o_code": "872925.BJ",
+      "n_code": "920925.BJ",
+      "list_date": "20211025"
+    },
+    {
+      "o_code": "870726.BJ",
+      "n_code": "920926.BJ",
+      "list_date": "20230808"
+    },
+    {
+      "o_code": "872931.BJ",
+      "n_code": "920931.BJ",
+      "list_date": "20240408"
+    },
+    {
+      "o_code": "831832.BJ",
+      "n_code": "920932.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "836942.BJ",
+      "n_code": "920942.BJ",
+      "list_date": "20221208"
+    },
+    {
+      "o_code": "833943.BJ",
+      "n_code": "920943.BJ",
+      "list_date": "20220624"
+    },
+    {
+      "o_code": "830946.BJ",
+      "n_code": "920946.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "834950.BJ",
+      "n_code": "920950.BJ",
+      "list_date": "20230111"
+    },
+    {
+      "o_code": "872953.BJ",
+      "n_code": "920953.BJ",
+      "list_date": "20230823"
+    },
+    {
+      "o_code": "836957.BJ",
+      "n_code": "920957.BJ",
+      "list_date": "20221214"
+    },
+    {
+      "o_code": "831961.BJ",
+      "n_code": "920961.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "830964.BJ",
+      "n_code": "920964.BJ",
+      "list_date": "20200727"
+    },
+    {
+      "o_code": "871970.BJ",
+      "n_code": "920970.BJ",
+      "list_date": "20220518"
+    },
+    {
+      "o_code": "838971.BJ",
+      "n_code": "920971.BJ",
+      "list_date": "20220927"
+    },
+    {
+      "o_code": "830974.BJ",
+      "n_code": "920974.BJ",
+      "list_date": "20230308"
+    },
+    {
+      "o_code": "870976.BJ",
+      "n_code": "920976.BJ",
+      "list_date": "20230901"
+    },
+    {
+      "o_code": "832978.BJ",
+      "n_code": "920978.BJ",
+      "list_date": "20230928"
+    },
+    {
+      "o_code": "871981.BJ",
+      "n_code": "920981.BJ",
+      "list_date": "20211115"
+    },
+    {
+      "o_code": "832982.BJ",
+      "n_code": "920982.BJ",
+      "list_date": "20230720"
+    },
+    {
+      "o_code": "835985.BJ",
+      "n_code": "920985.BJ",
+      "list_date": "20220808"
+    },
+    {
+      "o_code": "835892.BJ",
+      "n_code": "920992.BJ",
+      "list_date": "20221018"
+    }
+  ]
+}

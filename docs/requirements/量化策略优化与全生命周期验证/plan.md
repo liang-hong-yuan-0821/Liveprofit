@@ -1,8 +1,12 @@
 # 量化策略优化与全生命周期验证
 
-> **状态**：任务分解（2026-09-24；方案已获用户确认，本轮仅生成文档）
+> **状态**：实现中（2026-09-26；已获实施授权，按最新用户决定主线优先、问题集中治理）
 > **关联文档**：[README.md](README.md)｜[tasks.md](tasks.md)｜[decisions.md](decisions.md)｜[issues.md](issues.md)｜[原量化策略与实操层方案](../量化策略与实操层/plan.md)
-> **证据边界**：会话草稿已完成 R1 全量评审与 R2 修复核验；本文件按仓库模板整理落盘，未另行启动全量评审。业务代码、回测、独立留出集和影子观察均未在本任务中完成。
+> **证据边界**：会话草稿已完成 R1 全量评审与 R2 修复核验；本文件按仓库模板整理落盘，未另行启动全量评审。业务代码已有阶段实现与定向验证，整体验收、回测、独立留出集和影子观察仍未完成。
+
+## 实施顺序补充（2026-09-26 用户决定）
+
+主线切回T2策略契约与76候选，再按T3–T8依赖推进。T1余项以[统一问题台账](issues.md)为唯一问题入口，按来源/身份、领域事实、覆盖口径、运行治理、整链路验证分组集中分析；不再对单个历史症状无限扩展补采。任务依赖区分软件接口与真实证据：固定夹具可支持不依赖真实历史认证的开发验收；真实研究、执行资格与整体交付仍必须满足数据和证据门禁。当前只处理实际阻塞本阶段验收或破坏一致性的问题。此次是用户已授权的实施顺序调整，不另开方案全量评审。
 
 ## 一、背景与动机
 
@@ -204,6 +208,19 @@ Tushare优先的数据源、交易规则、公司行为、历史证券状态
 7. 基金池仅纳入符合本方案类别的境内ETF，排除LOF、REITs及跨境产品。ETF因子、涨跌停、交易日及规则需独立核验，不能默认股票接口全覆盖。
 8. 快照固定数据范围、内容hash、来源、采集批次、基准和质量结果，未来重新采集不覆盖原研究快照。公告/分类/规则等具有信息发布时间的数据按历史可用时点过滤。
 
+**停复牌补充设计（2026-09-25实施中）**：Tushare `suspend_d(trade_date)` 显式请求 `suspend_type/suspend_timing`，另以同日独立`daily(trade_date)`源响应交叉核验空时段S，不以本库缺日线作为全天停牌证据。有时段的S是日内停牌，即使同日有R，仍保留交易日与日线；无时段的S/R双记录保持未知，直到公司或交易所公告、真实日线交叉核验。`trade_status_daily` 保留旧 `is_suspended` 的“出现S事件”语义，新增 `suspension_scope`（none/full_day/intraday/unknown，NULL代表旧记录待核）及原始 `suspend_timing`，供研究快照和次日人工建议读取。公告是独立可审计事实，后续以单独持久表保存证券、适用日、结论、公告URL与核验时间；不能将公告结论伪称Tushare来源。日线覆盖只豁免已证实的全天无交易，因子覆盖对有日线的日内停牌照常要求，执行层在有日线的盘中停牌日可生成次日建议，未知或全天停牌仍保守阻断。每日源日期/行数/类型/时段验证后入库，全历史反向扫描检查“full_day有日线 / intraday无日线 / 旧scope为空却有日线”，异常非零退出。
+
+**独立停牌源观察补充（2026-09-26）**：2016年初`stock_st`空时，`trade_status_daily`不能写完整状态，但2016-06-30的601611.SH经逐日S事件且同日上游`daily`空可独立证实全天停牌。新增`market.suspension_source_daily`仅持久化这种经S/R唯一性、时段、日期、当日独立日线和北交所代码身份校验的全天停牌事实；保留来源与核验时刻，同日重采按源覆盖/撤销旧观察，不能填造ST、板块或限价。年度事后审计可用其解释无日线；历史研究快照仍须另有当日可得时间证据，不能把2026年才核验的源观察冒充2016年的当日信息，ST未知继续阻止收益认证。复合状态表继续承担多字段完整状态，独立源事实不替代它。
+
+**暂停上市区间补充（2026-09-26）**：2016年逐日停牌源全覆盖后，000033.SZ等6只股票仍有891个无行情日，均落在公司/交易所公告的暂停上市期间。逐日公告证据沿用`market.suspension_evidence`的来源URL、发布日期与证券日约束，导入时核对本地无日线，审计用于追溯行情完整性；晚于证券日发表的回顾公告在研究快照中受`published_on<=as_of`限制，不得提前使用。暂停上市不补造ST、板块或复合状态字段。
+
+**独立历史ST源补充（2026-09-26）**：当前代理`stock_st`在2016年前段及2019/2020/2021零星日期为空，不能由当前名称或空响应推断阴性。BaoStock逐票未复权历史日线`isST`在2016年3,035只沪深股票的704,145个有效证券日全覆盖，并与本库262,739条已知Tushare ST布尔值零冲突。独立事实使用`market.stock_st_source_batch`（源、年、原始文件哈希、采集时刻及完整性状态）和`market.stock_st_source_observation`（逐票逐日ST及原始交易标记/收盘价）；批次须全覆盖且冲突清单与主库逐项一致才标VERIFIED，源分歧另存`market.stock_st_source_conflict`，完整逐日ST输入携带逐证券`st_conflict`，仅含分歧的证券日隔离为未知，不能用Bao覆盖Tushare；`trade_status_effective`统一排除冲突证券日，补采/覆盖/审计/研究/执行全链路读取视图，原表保留来源比对；后续同年源修订仍不得与旧VERIFIED批次静默冲突。BaoStock`query_all_stock(day)`名称会投射当前名，禁止用于历史ST；历史K线`tradestatus`对600656.SH 2016-05-12与Tushare可信全天停牌冲突，保存以便审计但不用于覆盖停牌。复合状态只有在ST独立源在其覆盖的沪深证券池完整（北交所另取有效Tushare历史ST源，源空仅该市场保持未知）、其他交易状态字段也被逐日核实后才能合成，来源标识必须显示混合来源，不能把单独ST事实当完整状态。历史可得时点与2026采集时刻分开记；研究使用按证券日当时公开事实的规则评估，源修订不得改写冻结快照。
+
+**定向源批次补充（2026-09-26）**：2022状态余230条集中000670.SZ与002260.SZ；Bao逐票2022原始响应覆盖两票349个有效证券日，与已有119条ST零分歧，230个目标日均明确报未交易。复用同一批次/观察模型并新增`stock_st_source_batch.scope_codes TEXT[]`：NULL代表全沪深年度池，显式非空唯一代码清单代表定向年度池，仍按独立日历与每票上市/退市边界验全。定向批次不得进入全市场ST输入选择；仅其明确未交易事实可作为`no_trade_observations`传给状态Provider，仍须当日Tushare ST源有效、独立日线无行、没有复牌或未定S/R冲突，才补完整状态。复合来源保留`tushare+baostock`，既有ST冲突仍由有效视图隔离；新批次ST或交易标志不得静默修改旧VERIFIED事实。该方案复用生命周期一致的独立源事实表，不另建重复观察表。
+
+
+**独立全天无交易交叉确认（2026-09-26）**：2016年BaoStock的`reported_trading=false`有62,598个证券日，Tushare已核`daily`均无日线；其`reported_trading=true`但Tushare无日线仅1条，说明不能把Bao正值当做有行情。复合状态采集对同日Tushare`daily`完整响应内无该代码、Bao历史K线报未交易、且无R或S/R未定时冲突的证券，允许认定全天无交易；若Bao报未交易但Tushare有日线、R冲突或来源覆盖不完整则保留未知。合成行标`source=tushare+baostock`；Bao原始值和批次可追溯。公司/交易所事后公告只用于追溯核对，按发布时间阻止研究as-of提前读取。
+
 调研时的只读库截面表明：当前退市目录中部分证券没有日线，退市qfq覆盖也存在缺口；交易状态仅有近期少数交易日。三只ETF `510300.SH/511010.SH/518880.SH` 各有2,605行日线及复权因子，但当时技术因子为0行。这是调研截面，不是长期固定事实，T1必须重新生成覆盖报告。
 
 **缺口处理**：按证券/日期补采 → 重新校验 → 生成新快照版本；仍缺历史关键事实则标 `INSUFFICIENT_EVIDENCE`，不假设完整、不从今天向过去填充。采集复用公共PG session锁、分批写入和提交后coverage失效通知。
@@ -216,6 +233,8 @@ Tushare优先的数据源、交易规则、公司行为、历史证券状态
 | [fund_factor_pro](https://tushare.pro/document/2?doc_id=359) | 文档含bfq指标及 `atr_bfq`，不能误写为无ATR | 所需复权指标及历史覆盖待实测；确有缺口后本地确定性计算 |
 | [复权说明](https://tushare.pro/document/2?doc_id=146) | 动态复权口径有官方说明 | 固定研究基准，核验除权前后比例映射和回填版本 |
 | [ETF涨跌停](https://tushare.pro/document/2?doc_id=491) | 官方存在ETF专用能力 | 权限及历史深度待实测，缺关键规则时阻止新风险 |
+| [每日停复牌 `suspend_d`](https://tushare.pro/document/2?doc_id=214) | 官方含 `suspend_timing`；本项目代理已实测11笔同日S/R有时段、7笔无日线S/R无时段 | 代理可能漏个别时段（603056.SH 2026-01-09），须结合公告和日线；不能仅凭空时段推全天停牌 |
+| [BaoStock历史日线](https://pypi.org/project/baostock/) | 本环境已点测并完成2016年逐票全量只读核验：`isST`覆盖704,145/704,145证券日，与已知Tushare ST 262,739/262,739一致 | 当前名称接口不能回溯；`tradestatus`有1条与可信停牌冲突，只采独立ST事实并留源批次，后续年份仍需各自覆盖与冲突报告 |
 | [PyArrow/Parquet](https://arrow.apache.org/docs/python/parquet.html) | 支持列式文件读写与批量扫描 | 在 `pyproject.toml` 声明经环境验证的版本；单独验证原子发布、读取和备份恢复 |
 
 此前三次股票/基金因子请求均为ConnectionError，未取得数据；不据此作接口不支持的结论。新增结构化Provider接口先在基类声明，默认不支持返回None；优先Tushare，只有其能力/权限无法覆盖且AKShare确有对应能力时再增加备选。
@@ -233,6 +252,7 @@ Tushare优先的数据源、交易规则、公司行为、历史证券状态
 | 路径 | 说明 |
 |------|------|
 | `db/instrument/ingest/fund_factors.py` | 基金因子采集与覆盖 |
+| `db/instrument/ingest/suspension_source_backfill.py` | 全天停牌源观察的逐日采集、撤销旧观察与有界补采 |
 | `db/instrument/dao/corporate_actions.py` | 公司行为历史读取与写入；表命名遵循market schema单数规范 |
 | `backend/modules/quant_research/application/dataset_builder.py` | 数据集冻结和质量报告 |
 | `backend/modules/quant_research/infrastructure/dataset_store.py` | 不可变文件和manifest管理 |
@@ -371,6 +391,10 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 | `backend/modules/quant_strategy/infrastructure/instrument_rule_models.py` | 规则来源、有效期和冻结版本持久化 |
 | `backend/migrations/versions/` 新递增迁移 | 规则版本约束及查询索引；编号实施前确定 |
 
+**T3规则来源持久化细化（2026-09-29，既有方案增量）**：`quant_instrument_rule_sources`保存来源URL、媒体类型、原文字节、SHA256、来源声明发布日期与本地记录时间；`quant_instrument_rule_observations`按证券、执行生效区间、类别、tick、买入最小/递增/最大量及回转日保存从该原件解释的规则，并保存规范化内容hash。两表追加不可修改；同来源同证券同起日重放内容相同可幂等，漂移拒绝。不同来源冲突记录同时保留，读取时要求唯一生效规则，冲突保持未知。来源日期和本地写入时间均不是独立历史可得证书；诊断读取不会授予生产BUY。
+
+存储比较：原文和解释是需长期审计的独立事实，放通用任务/报告JSON无法可靠按证券/日期查询或约束，Redis仅适合可重建缓存。采用两张PG表可共享一份原文、对解释列建立约束与索引，并在同事务写入；代价是新迁移与原文字节存储。暂不做范围排斥约束，以保留互相矛盾的上游原件并由读取门禁拒绝，后续认证须另有明确裁决事实，不能按插入先后自动选赢家。
+
 **修改文件**：
 
 | 路径 | 改动说明 |
@@ -382,6 +406,36 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 
 **删除文件**：无。
 
+#### T3-BUY-01 分步实施边界（2026-09-27）
+
+- **01a 共用规划**：在 `position_planner.py` 增加 raw 目标买入适配器，直接调用原 `PositionPlanner`；最大买入数量作为容量上限参与费用计算。未成交 BUY 剩余毛额计入总/单票/行业额度，显式空预留集合不回退到旧快照。`portfolio_risk.py` 对缺失、非有限或不足额现金预留阻止新增风险。维护 `tests/backend/quant_strategy/unit/test_buy_target_planner.py`，连同既有规划器和风险测试验收。
+- **01b 事务接线**：生命周期与执行宿主使用上述入口；同时核实账户最新资金/估值、跨来源订单预留、锁顺序、拒绝原因持久化与同日幂等。01a 通过不能代表此步骤完成。
+- **01b落点**：新增 `application/planning_account.py`，组合行锁覆盖读最新账户、规划及订单落库；`execution.py`、`position_lifecycle_manager.py`、`lifecycle_service.py`统一锁顺序并刷新ORM对象。`PositionDailyFact.planning_result`（可空JSONB，迁移0016）记录该日BUY账户/行情上下文、通过或拒绝投影及order_id，输入哈希仍仅对应原规则事实。结果依附同一生命周期日事实，适合扩展该业务表；不另造任务报告表或独立生命周期的审计实体。旧日事实保持NULL；旧软件回滚须先保留/导出规划审计，不能无损downgrade此列。新增隔离PG并发/预留/拒绝回放/旧ORM回归及共同日估值单测。
+- **保留门禁**：无固定止盈的政策不得虚构目标满足账户 RR；需在后续规则政策准入完成后放行。现有股票费用/100股单位尚不能代表 ETF 历史执行规格。
+
+#### T3-ALLOC-01 家族仲裁分步落点（2026-09-27）
+
+- **01a 内核与额度接口**：新增`domain/family_allocation.py`，消费已有`PortfolioTargetIntent`与可信资格/归属输入。获准家族等分资本预算；首开冲突按决策前已完成验证的净期望下界、稳定策略ID排序；研究冷启动显式采用预注册顺序，禁止把未来证据用于过去。未知导入持仓与未成交首仓均占用归属，保留已有版本直到清仓。保护目标只允许降低，缺家族输入保留持仓，显式现金目标才生成退出。已持仓与未成交BUY占用家族和全账户金额，拟卖出不预释放额度；冲突/不足不膨胀剩余权重。
+- **规划消费**：`position_planner.py::plan_buy_target(max_notional=...)`消费仲裁输出的`max_add_notional`；基于实际规范化买价计算整手上限，不能先按信号价算股数后因滑点越过家族预算。金额上限与已有账户风险/费用容量取最小值。
+- **01a验收**：维护`tests/backend/quant_strategy/unit/test_family_allocation.py`及目标BUY测试；覆盖输入全排列、时间穿越、旧owner/版本保留、未知导入、部分成交预留、最低保护、拟卖出不释放资金、现金/缺输入区别及规范化买价限量。内核不自行授予策略资格、不写owner、不取消现存订单。
+- **01b 生产共同决策批次**：由账户事实/活跃订单收集冻结归属，读取真实已验证准入，汇齐家族意图后在组合锁内仲裁并提交规划。需解决首仓未成交时的归属约束、家族版本资格与仲裁审计、现有跨策略脚本影响持仓和数据依赖窗口；不允许用扫描先后冒充收益排序。现有数据库尚无完整资格事实，01a通过不宣称此步骤完成。
+
+#### T3-ALLOC-01b 生产归属门禁落点（2026-09-27）
+
+新增`application/ownership.py`：组合锁内从活动生命周期读取冻结版本，非零持仓无生命周期时标未知；活跃BUY未成交余量从生命周期/信号版本/历史任务快照交叉取证，版本或证券矛盾时标未知。复用生命周期与订单已有的独立业务事实，不新增一张容易失同步的owner投影表；未来显式接管事件仍属T4账本模型。未成交首仓的claim只表示当前预留，不能代替尚未接入的共同批次排名。
+
+`planning_account.py`返回owner_versions；`position_planner.py`在BUY侧要求冻结版本完全一致，并拒绝普通扫描对managed持仓再次加仓；`position_lifecycle_manager.py`传自身冻结版本。`execution.py`过滤非owner脚本输出，最终规划在组合锁内重新读取managed符号，避免扫描期间首笔成交后归属变化。SELL保护不经过BUY owner门禁。
+
+验收扩展`test_buy_target_planner.py`与隔离库`test_lifecycle_service.py`：冻结版本/无归属/跨版本拒绝，普通managed重复加仓拒绝，外部未知BUY拒绝并保存原因，历史首仓快照claim与撤单释放，关闭owner不能自动认领余仓，来源版本/证券/格式冲突拒绝。实际成交的跨来源偏离对账、冻结owner独立数据窗口、真实资格持久化和共同批次仍未完成，不从当前单策略扫描推导家族排序。
+
+#### T3资格历史前置落点（2026-09-27）
+
+- 新增`strategy_admission_events`（`infrastructure/admission_models.py`、迁移0017）。资格与代码发布的生命周期、范围和审计不同，采用独立业务事件表；不扩充`QuantStrategyVersion.status`，不把资格历史塞进任务报告。主键事件UUID；业务范围为版本/资产范围/风险档，范围内revision和request_key各自唯一。所有状态变更追加，DB触发器拒绝UPDATE/DELETE。
+- 资产范围暂列CN_STOCK/CN_ETF，风险档CONSERVATIVE/BALANCED/AGGRESSIVE；缺明确范围不推断。state支持方案六状态，正资格要求证据引用/hash/完成时间；ADVISORY另要求有效期与正净期望下界。正状态DB约束用于防缺字段，不替代研究统计和影子验收。
+- 新增`application/strategy_admission.py`：版本行锁串行追加，revision冲突拒绝，相同幂等请求复用、改内容拒绝，家族跨范围冻结，退役不可重开。当前写入口仅允许EXPERIMENTAL/SUSPENDED/RETIRED，不提供手动授予VALIDATED/SHADOW/ADVISORY的入口，未来由可信研究/影子产出器追加。
+- 读取严格按同范围、`recorded_at < decision_at`的最大revision；时间均带时区，ADVISORY检查证据时间与有效期，最新暂停或过期不能回退旧许可。没有资格事实时明确拒绝；当前尚未接入生产首仓/加仓门禁或共同批次。
+- 验收文件`tests/backend/quant_strategy/integration/test_admission_service.py`：PUBLISHED不授予资格、同范围历史读取、未来记录不可见、过期/暂停、跨范围隔离、禁止手动正状态、退役/家族约束、追加不可变、双会话revision竞争。正资格行仅作为隔离测试夹具直接写入，不代表任何实际策略已经验证。
+
 ### 4.4 账户账本与生命周期
 
 #### 4.4.1 模块设计
@@ -391,7 +445,44 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 - 首次导入建立账户基线；之后旧API的持仓upsert、删除和资金修改同步转为快照对账或带原因的调整，不能继续直接覆盖。受管持仓差异提示对账；不把导入差异伪造成成交。
 - 每日以新快照或无变化确认保证账户时效，并合入成交。未解决差异阻止新增风险；仍允许有可靠数量依据的持仓减仓和保护，不凭不可信余额假造交易。
 - 保存实际费用、成交时间和来源，超建议数量或价格的真实成交照实记录并产生偏离；重算风险，未处理偏离前不新增风险。
+- **T4成交事实与投影边界（2026-09-30现状核实）**：现有`LifecycleOrderService.confirm_fill`在追加`OrderFillEvent`前先核订单剩余量并调用`_apply_delta`，该函数在现金或持仓会变负时拒绝；`suggested_orders`数据库约束也要求`filled_quantity <= quantity`，所以超建议或超本地基线的报告成交不能强行塞入现有订单投影。`OrderFillEvent`既无实际费用字段，API中的`source="BROKER"`又仅是调用方文字，不能代表券商认证。推荐先将原始报告成交（数量、价格、费用已知/未知、交易日与采集时刻、来源引用/原件hash、关联订单、报告人）独立不可变持久化；接受/拒绝/待对账的判定和更正以追加事件留痕。核验后的可投影部分与`OrderFillEvent`、显式费用账本、现金/持仓及订单状态在组合锁内同事务提交；超建议或本地负余额的报告原件保留，订单/账户转待对账且保留预留，不把超量写进`filled_quantity`。未认证来源或费用未知时不伪造零费用或生产可卖量，仍能保留报告事实并显示缺证。真实券商或人工核验身份、报告→成交唯一绑定及迟报/撤销重放需独立验收。此段是原“超范围照实记录”在现有数据库约束下的实现落点，不改变T3已确认的订单数量约束。
+- **T4报告到双账身份绑定（2026-09-30增量方案）**：0034报告、0013旧`OrderFillEvent`和0033诊断流水生命周期不同，扩展任一旧表加可空双引用会让历史旧成交与新报告混用，也难以在数据库约束“一份报告只对应一组事件”。采用独立`account_fill_postings`，同组合复合外键指向三种事实，每个报告/成交事件/TRADE流水各唯一；费用继续在报告和账本事实中保留，绑定写入时核两者一致。绑定不单独开放外部API，不能由其存在推断券商认证；后续只有核验服务在组合锁内先核来源原件、订单方向/数量和明确费用，再在同一事务写`OrderFillEvent`、账本、生产账户投影及绑定，失败整体回滚。历史旧成交与独立诊断流水无绑定仍可读取，不能事后自动补链冒充已核验。此模型比把身份塞进通用任务JSON更能由联合外键/唯一约束保护，又避免给每条历史旧成交新增含义不明的nullable列；代价是一次绑定join和一张业务表。
+- **T4人工来源复核增量（2026-09-30）**：人工导入可作为第一阶段入口，但报告的`source_type`、`evidence_sha256`和`reporter_claim`均由提交者自报。新增独立不可变复核事实，绑定组合、报告ID、报告内容摘要、原件摘要、复核引用、审核人、理由及HMAC签名；要求报告已有原件摘要/URI，逐审核人独立的环境密钥验证规范payload并拒空配置/重复密钥。审核只表明持钥人员对指定报告原件作了声明，不自动证明券商账户归属、原件字节真实或结算可卖量。报告后续更正/撤销会使该审核对生产接受失效；原审核历史保留。复核事实先独立验收，再接真实接受服务；任何未配置密钥或缺原件场景继续拒生产投影。
+- **T4人工原件字节保全增量（2026-09-30）**：报告的`evidence_sha256`若无原始字节，审核人只能对提交者自报摘要签名。新增按组合保留的不可变原件表，接收有界二进制原文、媒体类型及导入引用；服务计算SHA256，按组合+来源引用和组合+内容摘要双唯一幂等，读回重新核字节摘要。人工复核写入及当前重验必须找到同组合同摘要的原件。原文最多8 MiB直接存PG BYTEA，便于事务一致和审计；相较外部对象存储增加DB容量，但当前没有不可变对象存储及一致提交基础。原件保全只证明本库收到这些字节，不证明字节来自券商、账户归属或历史发布时间。
+- **T4旧成交事务拆分增量（2026-09-30）**：现有`LifecycleOrderService.confirm_fill`同时校验、修改组合/订单/持仓/生命周期并`commit()`，无法与报告、含费账本和绑定在同一调用方事务提交。将订单已锁后的成交增量提取为不提交的内部stage，并让旧入口继续核旧门禁后调用stage和原有commit/回滚；`_apply_delta`增加显式费用参数（旧入口默认0），新报告接线后费用与现金在同一计算中扣除。stage不是生产API，不接来源核验前不得由外部调用；隔离库验证旧确认回归与新含费stage的事务未提交/回滚边界。相比复制另一套订单/生命周期投影逻辑，共享stage可减少两条路径漂移，但须严格保留组合→订单→持仓锁序和旧入口返回/异常契约。
+- **T4原子编排软件增量（2026-09-30，生产入口关闭）**：在调用方事务内，先锁组合并重验报告、库内原件与当前人工签名，再锁订单核身份、方向、交易日、revision和剩余量；同一Session用账本`append_trade`、生命周期内部stage及`account_fill_postings`连接三事实，任一步失败由调用方整体rollback。入口仅为内部stage，不注册路由、任务消费者或生产调用者，并且硬性只允许pytest进程连接`liveprofit_workspace_test`运行；人工签名仍缺券商账户归属证据，依据用户决定生产现金/持仓写入口保持关闭。超建议、费用未知、基线/生产投影不一致或负余额的原件留在报告表，内部stage拒投影并保持新增风险门禁。隔离PG用固定人工原件/密钥验证费后现金、三事实一对一与事务回滚，不将夹具签名当真实券商认证；未来生产启用需移除测试门禁并另行验收可信授权，而非改环境变量绕过。
+- **T4诊断账本成交撤销语义（2026-09-30）**：`replay_account_balance`现只允许同kind替代，TRADE不能被零金额事件撤销；用反向TRADE加负费用则违反费用非负和真实成交语义。新增显式`VOID`事件，仅可单链替代同组合TRADE，effective_at须与原成交相同，金额/持仓/费用均为零并有原因；原TRADE和其费用历史保留，记录时刻之后的当前重放剔除其余额影响。持久层限制VOID形状和被替代种类，账本store在组合锁内追加、同源幂等；只影响诊断重放，不改订单或生产现金/持仓。后续隔离事务编排再把VOID与旧成交反转及生产投影同事务连接。
+- **T4报告撤销认证衔接（2026-09-30）**：0036撤销声明的`source_type`和`evidence_sha256`可由提交者自报，不能直接触发已经绑定成交的生产冲销。先复用0039原件字节保全，在独立不可变审核事实中绑定撤销声明ID、其规范摘要、原件摘要、审核人、引用及原因，使用与原成交审核不同的签名purpose防跨用途重放；写入和当前读取均重新核原件字节、声明内容与当前审核密钥。该事实只证明持钥人审核声明，不能证明券商账户或原件真实性；隔离软件冲销仍受pytest+专用测试库双门禁，生产入口关闭。
+- **T4已绑定成交隔离撤销编排（2026-09-30）**：新增不可变撤销绑定行，唯一连接0036 VOID声明、0037原入账绑定、旧订单VOID事件及0040账本VOID，DB触发器核同组合/同报告、旧成交反转关系与账本替代。内部stage沿用pytest进程+`liveprofit_workspace_test`硬门禁，组合→订单锁内重验0041签名、原入账事实、无后续账本运动及账本/生产投影一致；同一Session先追加账本VOID，再以原费用反向应用旧成交并插入旧VOID事件及撤销绑定，caller统一提交/回滚。不能安全反转的迟报/超本地余额/后续运动只保留原报告和声明，不强行修改生产余额；真实券商来源和账户归属认证前生产入口关闭。
+- **T4已绑定成交隔离更正编排（2026-09-30）**：0043不可变更正绑定行连接CORRECT声明、原入账、旧VOID成交/账本及替代0037入账，同一组合/订单和同一事务内先撤原成交再按替代报告重验签名、费用、剩余数量并重记含费TRADE与生产投影；caller统一提交或回滚。原成交若已进入持仓生命周期，旧首笔风险锚点/止损高水位/目标不能靠现金持仓反算，当前隔离stage显式拒绝，留完整生命周期重放门禁。费用未知、后续运动、超本地余额等偏离保留两份报告和声明，不强行投影；生产入口仍关闭。
+- **T4单位化估值纯内核（2026-09-30）**：账户估值须由同一时点现金、逐持仓数量和逐证券正价格完整配对计算，不从总资产旧投影推断；负现金/持仓、畸形数量/现金/价格、缺价格或非正净资产返回明确未知。外部资金流发生时，要求入金/出金前同一生效时刻的账户估值、账本外部流累计量及期间完整有效流事件ID有序清单（当前账本重放从有效事件集产出），按流前单位净值增减份额；只核净流量会漏掉互相抵消的入出金，同刻调换顺序也不得通过清单核验。同一时刻连续流还须核上一笔后的现金/持仓/价格连续性。缺完整清单、流时点估值或累计流不一致保持未知，不以每日收盘价格倒填盘中资金流。此阶段仅纯诊断内核，清单与市场价格来源/历史可得性、券商账户事实须独立认证，不接生产风险或收益晋级。
+- **T3在途状态流系统审查修复（2026-09-30）**：旧`confirm_fill/correct_fill/void_fill`的全局幂等键重放须核操作、订单/原成交、数量、价格、交易日、来源及备注，初查和并发唯一冲突回滚重读同一规则。已发生成交的订单即使修订后累计为零也保持`RECONCILIATION_REQUIRED`，通用状态不能把它当未报出`PROPOSED`取消；旧意图已完成而后继活动意图存在时，修订仍同事务改数量/现金，但保留旧意图历史终态并隔离后继意图及其活动订单，直到可信券商终态和账户对账。该规则覆盖旧入口及T4隔离原子stage，不把软件状态隔离当作券商认证。
+- **T3/T4首笔成交锚点保护（2026-09-30）**：旧`correct_fill/void_fill`与T4隔离stage对`PositionLifecycleState.initial_fill_id`引用的原成交均须在任何账户/订单/账本投影变更前拒局部反转；旧入口不具备冻结初始止损、风险容量及后续日事实的重放能力。真实修订先保留不可变报告/声明，完整事件重放落地后再设计安全投影，不能靠旧余额逆算。
 - 更正/撤销采用追加事件和引用关系，重放现金、成本、初始止损、阶段和持仓锚点。未执行建议失效；已向外部报出的订单在确认取消前保留预留，不能单方视为已撤。
+- **T4账本双时点重放增量（2026-09-30）**：`replay_account_balance(as_of=有效时点, recorded_as_of=登记截止)`只把两者都满足的不可变事件纳入，更正/撤销可在登记后重算原成交日余额；省略`recorded_as_of`保持旧的同截止语义。`AccountLedgerStore.replay_at`以相同双截止只读持久流水，并拒基线生效前或本地登记前的查询。登记时刻只是本地事件字段，不能证明事务提交时刻、上游报告可见性或历史研究可得性；账户来源认证和生命周期重放另列门禁。
+- **T4生命周期重放实施次序（2026-09-30）**：先以`application/lifecycle_replay_inventory.py`在组合锁内只读汇集明确归属和同证券模糊归属成交、已绑定报告、含费账本、初始成本字段、冻结政策和逐日原始输入，对执行时刻/同日顺序/费用/成本、报告修订及日事实版本逐项出具带身份的缺证结果；脏Session查询前拒绝。再建立不可变日事实修订链与单一current读取，统一迁移`position_lifecycle_manager`、`lifecycle_batch`、`joint_lifecycle`及测试消费方；随后用纯状态机从首笔有效成交和逐日事实按日期重建期望、跟踪止损、目标与成本，并在隔离事务中比较当前投影。仅在差异为可解释且无未认证在途订单时，才允许更正投影；其余保留报告并将相关订单/意图隔离待对账。`OrderFillEvent.fill_trade_date`与本地`created_at`不能证明同日真实执行顺序，`PortfolioPosition.average_cost`也不能作为历史成本基线；二者缺证时不得进入可写重放。
+- **T4日事实修订链实施细化（2026-09-30）**：2a保留`position_daily_facts`的`(lifecycle_id,trade_date)`唯一current及稳定`id`，用0044表与DB触发器捕获实际current写入；原读者继续读同一current行，触发器审计覆盖manager、batch与joint查询消费，无需更换其外键/ID。旧行只回填`MIGRATED`未知基线，`recorded_at`仅本库触发时刻。2b为原始输入纠正加入有来源和原因的受控提案，必须等待离线重放及统一投影切换；普通同日异内容重试保持冲突，避免直接改写已执行状态。0044降级有修订数据时要求绝对导出路径，迁移先写JSONL头部行数/SHA256、逐行历史并回读相等，之后才删除表。
+- **2b提案存储细化（2026-09-30）**：0045独立不可变`position_daily_fact_input_proposals`绑定日事实及其最新修订，保存请求键、原始输入提案、声明的来源引用/SHA与原因；同一基修订只收一个提案，幂等键字段漂移拒绝。组合→生命周期→日事实锁固定顺序，DB触发器在直写时复核基修订/当前行和声明UTF8字节、JSONB语义及SHA；服务从Python规范JSON重算并在回读核验。提案不改`position_daily_facts`、状态、意图或订单；库存清单标待处理、过期及来源未认证。0045降级先锁提案表再锁父表，导出并核验JSONL。后续重放在来源认证、状态差异及券商终态均成立后才考虑原子切换。
+- **3a–3i离线计算边界（2026-09-30）**：按真实执行时刻的有效成交集合算每笔后数量/成本/盈亏，并在同一已核基线上投声明日历的逐日股数；只有本地绑定、账本及修订链一致的持久成交/日事实可作`LOCAL_CANDIDATE`。首日即停牌无已知阶段、同日两个完成意图超过现有`DailyPolicyFrame`单项契约，以及任何缺来源或事实冲突均保持UNKNOWN/PROVISIONAL，不切换当前投影。下一增量需为`PositionIntent`目标/原因与订单绑定建立可审计历史定义及事件时点；仅有当前可变`status`、目标和订单归属不得用来证明过去的完成时刻。定义史就绪后再将事件级完成与逐日股数/日事实联接，并显式设计同日多完成的政策消费或拒绝规则。
+- **3j本地意图定义修订史（2026-09-30）**：以独立不可变`position_intent_revisions`记录`PositionIntent`每次真实INSERT/UPDATE的目标、原因、状态、版本、交易日与本地登记时刻；老行仅标迁移基线，不能伪作创建时证据。DB父表触发器维护连续前驱，直接写子表与修改旧修订拒绝；读时同时核修订链、首个LIVE定义和当前行一致，并对任何目标/原因/日期后续变更标UNKNOWN。成交关联订单的历史intent归属仍须单独固定；本表只解决意图定义/状态的本地未来轨迹，`recorded_at`不证明真实成交时点或上游可见性。降级前锁父子表并导出核验不可变历史，避免并发丢失。
+- **3k成交时订单意图绑定（2026-09-30）**：在`OrderFillEvent`插入时由DB读取同一订单并冻结当时`lifecycle_id`和`intent_id`及`binding_origin=LIVE`；0047前旧成交标`MIGRATED`，不能用当前订单归属冒充旧成交时归属。新成交行的绑定字段不可由调用方指定，事件行后续更新/删除拒绝；读时与订单、意图定义、报告和账本分别核对。迁移降级会抹掉绑定字段，须锁成交表并导出含行数与SHA的原件。此本地绑定仍不证明券商账户与执行时刻；旧成交及订单绑定为NULL的历史意图完成继续UNKNOWN。
+- **3l本地报告与成交集合核对（2026-09-30）**：只读清单对组合/证券下每条已登记成交报告逐条检查订单归属和posting，未入账、无订单或落在库存外的报告均带ID标UNKNOWN；候选成交查询同时纳入冻结生命周期ID，防当前订单字段重绑让旧成交从清单消失。结果只证明本库当前事务可见集合的相互一致；漏报券商成交、上游账户归属、真实时间顺序和存量MIGRATED归属仍须外证。
+- **3m本地意图完成只读桥接（2026-09-30）**：同一事务先锁读意图定义史，再锁读含冻结身份的成交/日事实库存；只容明确等于生命周期首笔ID的无意图BUY作为会计起点，后续每笔成交必须冻结绑定已定义意图，才以调用方显式声明的基线调用3a会计与3i完成时点纯内核。结果即使计算成功也只能PROVISIONAL并明列基线与券商成交全集未认证；任一活动意图未完成、其他无意图成交或缺绑定整组UNKNOWN，不把本地一致性提升为生产授权。
+- **3n逐日政策帧只读拼装（2026-09-30）**：仅把3e逐日日事实候选、3f声明日历下的股数轨迹及3m完成意图候选按完全相同交易日一一合成3b输入帧；同日多项完成、日历错位、零持仓终态及任一上游UNKNOWN整组拒绝，不用规划目标推断实际股数。复制输入事实，输出仍PROVISIONAL并保留所有来源未知；政策状态计算及差异比较在后续独立验收。
+- **3o政策重放与限定字段差异纯联接（2026-09-30）**：仅对3n已拼装的完整帧及同一3a会计终值，核日期/末日股数后调用3b，再用3c对当前投影快照逐字段诊断；任何未知或日历外成交不输出匹配结论。`PROVISIONAL_MATCH/DIFFERENCE`携来源未认证问题，既不读取生产表，也不授予投影写入；DB同事务读取与全字段/终态差异另行验收。
+- **3p同事务本地诊断接线（2026-09-30）**：只读入口在调用方事务中先锁当前投影组合/生命周期/持仓/止损/期望，再取意图定义、成交/报告库存和逐日current；任一事实未知即整组UNKNOWN。完整候选用3m会计及完成意图、3f逐日股数、3n帧和3o政策差异联接；基线、政策种子、日历和公司行动仍由调用方声明，诊断匹配不作认证或生产写入。锁序与并发直写安全、正常完整持久样本及独立来源属于后续门禁。
+- **3ah首笔成交锚点持久身份（2026-10-01）**：3ag只读查重不能阻挡不遵循组合锁的并发SQL把同一`order_fill_events.id`指向另一条已关闭生命周期。0049先锁`position_lifecycle_states`再查非空`initial_fill_id`重复；有重复则拒升级并保留原行，由业务归属核实后重试；无重复才建立全局UNIQUE，NULL表示尚无首笔锚点并允许多行。ORM同步约束，降级只去约束。唯一性只固定本库生命周期身份，不认证券商来源、订单执行事实或可写重放。
+- **3ai真实平仓成交终态事件（2026-10-01）**：`process_day`关闭前只能写正仓日事实，SELL归零后不再写日事实；把平仓成交塞进3n日帧会伪造修订ID和政策版本推进。只读终态分支保留`calendar_dates`为真实日事实全集，另声明最后一次开市成交日，要求冻结退出意图的首次LIVE`state_version`等于其决策日日事实after、该日纯政策为同理由零目标/`EXIT_PENDING`，延期日保留原冻结理由。末次SELL完成事件须为唯一尾部成交，其本地因果步从最后真实日版本N到N+1，当前版本同N+1；3t另核当前零仓、无活动意图/订单和CLOSED/closed_at。终态与逐日字段只作本地`PROVISIONAL`差异诊断，不生成零仓日事实或推定closed_at为券商时间；零仓时持仓行保留的旧平均成本不参与当前单位成本比较。同日决策成交、末日后多笔部分SELL、修订后有效成交集合变化和外部来源缺证仍UNKNOWN。
+- **3aj同一终态开市日多笔部分SELL（2026-10-01）**：延续3ai真实日事实前缀，把最后真实日之后的完整成交后缀单独核验；每笔须同一冻结零目标退出意图、SELL、同一声明开市日且执行时点严格递增，会计剩余量逐笔下降并仅末笔首次归零。0048本地因果版本步从最后真实日N逐笔N→N+1→…→当前版，最后一笔绑定唯一退出完成事件；后缀不产生政策日版本或日事实。第一笔仍未完成时整组UNKNOWN，末笔完成后才比较当前终态；不同开市日且无中间真实政策日、其他意图/方向、缺版本步或修订改变有效集合仍UNKNOWN。结果继续只读PROVISIONAL，不作券商终态或可卖量认证。
+- **3ak有效成交集合纯会计候选（2026-10-01）**：先在纯函数内重算3ab完整线性修订图，再要求每个已入账报告与唯一`ReplayFill`载荷按报告ID及新成交事件ID一一对应；CORRECT只选链末端新事件，VOID从会计集合剔除，全部VOID仅保留显式基线。按真实执行时间计算数量、成本和已实现盈亏，输出`PROVISIONAL_ACCOUNTING`及会计顺序的有效事件ID、被替代事件ID；图不完整、载荷缺/多/错配、同刻歧义或超持仓SELL整组UNKNOWN且不输出部分余额。本模块不更改原0048版本步、冻结意图或日政策，不向3p或生产投影接线。调用方后续须在同一组合事务中核报告/声明/原件、账本双流和载荷经济字段；修订影响清单须按每条报告路径映射，不能把含VOID路径的`report_paths`与有效ID元组按位置配对。已关联生命周期的后续成交VOID/CORRECT继续在写入口拒绝，避免局部反转改写真实投影。
+- **3al修订路径归属与影响纯分类（2026-10-01）**：给定完整已入账报告/新成交身份与0047冻结订单、生命周期和意图归属，以及旧生命周期原始成交全集/唯一初始锚点，纯函数重算3ab图并逐条`report_paths`解析根报告、CORRECT/VOID声明、末端有效报告；不得按下标配对`report_paths`与有效成交ID。根节点须与原始成交全集一一对应、初始锚点恰为其中一根，替代事件不得同时充当另一旧根；非首笔替代必须与根冻结同一订单/生命周期/意图，迁移或错绑整组UNKNOWN。首笔替代/撤销单列`INITIAL_ANCHOR_CORRECT|VOID`，后续变更单列`LATER_FILL_CORRECT|VOID`；最早影响时点取变更路径所有原/中/末报告实际执行时刻之最早值，改期提前也不能漏。输出仅`LOCAL_IMPACT`或无修订`NO_REVISION`的只读范围，缺完整图/身份整组UNKNOWN且不吐部分路径；无新种子、版本/政策推断。下一步持久适配须复用3ad同事务核签、原件和双流，再把影响路径映射至日事实、意图与0048原始步骤；这一步不接3p、不开放生命周期修订或生产投影。
+- **3am已核本地修订路径持久适配（2026-10-01）**：新增独立只读入口，调用方清洁事务内按组合→生命周期→同证券订单锁序先取3a库存，再调用3ad核本地报告/原件/签名、posting与VOID/CORRECT订单/账本双流及同订单事件全集。只在3ad通过后，从其每条`report_paths`按报告ID回读报告、posting和0047冻结成交，要求查询集合与路径全集一一相等，并显式复核CORRECT原/替代同订单。独立从已核订单全集的所有CONFIRM减已核CORRECT替代事件得到旧原始成交ID，核0049唯一初始锚，再交3al分类；不能把旧库存（含VOID/替代）或图根原样自喂作原始集合。旧库存仅把已有3ad核过的修订提示视为预期，错归属、未入账、账本不合及未核报告仍UNKNOWN且无部分路径。输出仅本库`LOCAL_IMPACT|NO_REVISION|UNKNOWN`、路径和最早时点；不读取/重写日事实、意图或0048版本步，不接3p。隔离PG用真实签名、先更正后关联旧首笔锚的本地历史样本证明路径可读，用生命周期关联修订未应用样本证明UNKNOWN；两者都不等于真实生命周期修订写服务端到端成功，生产门禁维持关闭。
+- **3an修订影响真实事实范围只读索引（2026-10-01）**：在同一干净事务先调用3am，只有`LOCAL_IMPACT`才保守列潜在受影响事实；`NO_REVISION`返回空索引，任一链不完整则整组UNKNOWN且全部列表清空。最早影响时刻按上海时区转日期，列该日及之后的全部真实current日事实ID与其最新0044修订ID；先核全生命周期日事实当前/修订链及待决输入提案，不能从本库现存日期反推独立交易日历全集。锁本生命周期全部意图current行并核0046首个LIVE定义及当前链，**所有意图**都列为潜在影响，不能因决策日早于修订执行日而漏掉后续完成。0048只列已核原始根CONFIRM对应的本地因果步骤与版本界（首笔无步合法），不把替代成交/VOID或旧步改写成修订后反事实链。每组显式区分`PRESENT`与本事务锁下`LOCAL_EMPTY`，并始终标全局日历与历史可见性未认证；`recorded_at`不得作上游发布时间或研究as-of证明。隔离库需分别覆盖：已核历史首笔更正而无日事实/意图/旧步的本地空集合；真实或触发器生成的日报/意图/版本证据被保守圈入；坏0044/0046链、待提案或缺0048步整组UNKNOWN。仅只读索引，不接3p、3ak会计或生产投影。
+- **3ao已核本地经济字段到有效成交会计只读适配（2026-10-01）**：干净事务先由3am核组合/生命周期/订单锁、本地全报告原件与签名、posting、声明和订单/账本双流；UNKNOWN即整组空结果。再同锁下读3ad全报告路径及报告、posting、CONFIRM事件与订单，要求路径/集合与3am一致，逐报告核方向、执行时刻、交易日、数量、价格和费用与已核入账事实一致；所有报告（含被替代者）都给3ak完整载荷，CORRECT只取末端有效成交、VOID从会计集合剔除，不能将报告路径与有效成交ID按下标配对。成本基线由调用方显式提供时间、数量、总成本及来源，且必须严格早于**全部已过账报告**（包含较早被替代或VOID者），不能从旧首笔锚或可变现持仓推导，也不能在旧报告与迟到更正之间截取以重复计入；3ak只给`PROVISIONAL_ACCOUNTING`和会计顺序有效ID。待处理/坏签声明、额外/未入账报告、载荷错配、同刻有效成交或不合法基线整组UNKNOWN，不输出部分余额。隔离PG覆盖先更正后挂旧首笔锚历史正向、未修订、已VOID正向与拒绝路径；不可把历史夹具视作已关联生命周期修订写服务可达。仍不计算0048/政策反事实、不接3p或生产投影，券商账户归属、外部报告全集、基线/公司行动及历史可见性须另认证。
+- **3ap修订后重放工作清单（2026-10-01）**：纯函数逐3an原始根ID建唯一映射：3am变更路径按根ID取终端有效事件或VOID，未变更根仍映自身；旧0048因果步只按旧根ID附属，不能与有效ID列表按位置配对。非VOID终端集合须与3ao会计有效事件ID及会计执行顺序精确相等；3an最早影响日与日报/全意图清单仅作为后续需重算范围。凡根缺/多、末端重复/丢失、原步骤错归、3am/3an/3ao任一UNKNOWN均整组UNKNOWN且清空工作清单。首笔锚被VOID、首笔有效事件非BUY或执行顺序并非首个、首笔被更正需重建政策种子，均显式列`REPLAY_BLOCKED`原因；后续旧0048步也只标需重新归因，绝不生成修订后版本号、日报、意图完成或当前投影差异。同事务只读薄适配顺序读取3am、3an、3ao，核结果交叉一致后调用纯函数；独立纯测试覆盖CORRECT与VOID错位、替代改期重排、缺/多/重复末端和错归步。隔离PG历史先更正后挂旧锚仅可证明映射可读且旧SELL锚不能作为BUY政策种子，未应用修订UNKNOWN；仍不接3p、stage写门禁或生产。成本基线、券商账户/成交全集、日历及公司行动保持外部认证门禁。
+- **3aq首笔BUY政策种子纯重算（2026-10-01）**：先独立计算，不读取当前可变生命周期/订单/信号/任务行充作历史输入。输入显式、类型化的创建时冻结原值：模板ID与已解析管理政策、初始订单数量/止损、信号计划股数有无、风险快照总资产与单笔风险比的原值及字段存在性、暴露比例、旧模板奖励倍数、跟踪止损参数、圆弧底颈线、MA5确认标记与观察窗口（模板原值允许整数0/1与布尔）；另由调用方提供有效首笔BUY事件ID、价、量和交易日，并核事件ID等于3ap初始根所映末端（3ap本身不携价量）。按`LifecycleOrderService._initialize_lifecycle_from_first_fill`当前公式计算计划容量、`min(计划容量,风险预算/(新成交价-止损))`分支、100股向下取整、目标和相位、止盈、跟踪初值与期望初值；明确拒VOID、非BUY、非首位、价不高于止损、缺必需字段、无效数值或目标为零，结果只名`PROVISIONAL_INITIAL_SEED/UNCERTIFIED`。零目标是本次重放的保守门禁，旧创建服务未显式拒绝。单测覆盖计划量约束/风险预算约束、改价/改量/改日、ATR与旧跟踪配置、期望创建与各种拒绝；对照既有初始化事实核公式，代码审查后逐项验收。不接持久读取、3p、修订写入口或生产；纯构造输入不证明历史创建时原值存在或成交经济字段已由持久报告认证。
+
+- **3as有效成交与真实日事实纯时序清单（2026-10-01）**：仅组合3ap已核根→末端映射、3ao同一有效会计事件序列和3e显式完整日历下的真实current日事实；首笔必须仍是原锚BUY，按上海日期和每条日事实`data_as_of`行情截止将有效成交定位于日报前缀，末日日报后的成交保留显式尾部槽；输出原始身份、时刻与修订ID的`LOCAL_ORDER`槽位。`data_as_of`不证明政策实际处理或事务提交时点。逐一核根/终端/事件顺序、受影响日后缀修订ID与全量日事实相符；缺日、日期错位、同刻歧义、成交晚于当日日事实截止、初锚更正/撤销或任一上游UNKNOWN均整组UNKNOWN且无部分槽位。旧0044版本界、旧0048成交步及旧日政策推进绝不推作修订后版本/意图/持仓；结果只供后续因果回放排程，成本基线、独立交易日历、券商时点与来源仍未认证。定向纯测先覆盖正常后续成交更正/撤销及失败边界；真实已关联修订的持久正例受stage写门禁限制，不能由历史先更正后关联样本替代端到端验收。
 - 成交推进实际数量、成本和已成交阶段；有效行情推进观察天数、高水位、保护价和意图。两类事实不可混用；建议订单不是成交。
 - 公司行为作为可靠事实调整现金、数量及原始价格锚点，防止除权造成虚假退出。估值使用净值单位化处理外部资金流，不把入金视为盈利。
 - 已有持仓按冻结策略与政策管理；准入只限制首仓和加仓等新增风险。SUSPENDED/RETIRED仍可保护、减仓、退出和对账；显式接管事件才能换规则。
@@ -400,7 +491,166 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 - 业务hash包含行情、规则、账户和成交版本，不含source_task_id。同业务输入复用成功修订；失败留审计但不占用成功结果。同日更正保留旧版，在账户锁内原子切换事实、投影和未执行建议。
 - 有效观察日按去重交易日计数，更正不重复累计。补跑可重放真实历史事实，不补造历史人工成交；今日输出只展示当前仍可执行建议。
 
-迁移复用既有 `lifecycle_policy_versions/position_lifecycle_states/position_intents/suggested_orders/order_fill_events/position_daily_facts/position_expectations/position_trailing_stops` 八表，不创建一套平行生命周期。存量真实账户建立可解释基线，旧成交费用未知时标未知来源，不伪称精确历史收益。
+既有 `lifecycle_policy_versions/position_lifecycle_states/position_intents/suggested_orders/order_fill_events/position_daily_facts/position_expectations/position_trailing_stops` 仍承担各自业务职责；`position_lifecycle_states`作为当前投影。3ar按下述增量增加不可变操作历史，不建立第二套可变生命周期。存量真实账户建立可解释基线，旧成交费用未知时标未知来源，不伪称精确历史收益。
+
+##### 3ar 生命周期完整操作流水与创建输入方案（2026-10-01设计修订delta PASS；既有修复保留，六表待实施）
+
+**2026-10-02实施检查点**：用户再次要求继续主线，本轮交付`lifecycle_portfolio_selection.py`的全组合回撤scope契约（`PORTFOLIO_DRAWDOWN` / `portfolio-drawdown:v1`）。原请求冻结组合、估值日及请求键，独立选择全部未闭仓生命周期、闭仓未完成BUY owner及每个未绑定待完成BUY；每生命周期预分配恰一步`INTENT_OR_ORDER_CHANGED`，未绑定单各列允许结果。空组合或只有非受管账户持仓不声称具有LIVE历史参与者。为防旧写者在选择后把已排除成员重新激活，组合内全部已有生命周期/订单及其子行排序加锁并保持至caller结束，冻结精确UTC/ISO SQL原文。READ COMMITTED、无先写/先锁与最终XID检查、完整库存/归属重查均由selector执行；范围只为scope，未来DB协调入口必须独立生成并核验，不能信任客户端manifest。定向及关联检查/独立复核见[result](result.md#checkpoint-3ar2-portfolio-scope-20261002)，3ar-2多步骤封口未通过；锁全集的成本留3ar-6容量实测，不放行旧生产writer。
+
+**验收执行调整（2026-10-01）**：用户要求优化过细验收；后续按tasks中的业务闭环/稳定契约/独立迁移风险聚合收尾，辅助实现检查点不各自启动完整验收。定向检查后集中运行受影响调用链回归，review修复只复验修改点及交互；有效旧证据可引用，共享机制/依赖/fixture/环境变化使证据失效时重验。完整证据只写result，其他文件按职责摘要引用。已有3ar设计、软件验收、初版方案评审及部署/认证门槛均保留；本调整不增加业务范围、不放行生产。详见[验收任务安排](tasks.md)。
+
+**2026-10-02 DB窄实现检查点**：0054沿用原始`PORTFOLIO_DRAWDOWN`请求，但独立selector为`portfolio-unbound-drawdown:v1`，只接受没有生命周期行且任何订单均无lifecycle/intent绑定的组合。组合与全部订单锁后读取已持久化最新PAUSE，事实日不得晚于估值日；不新造暂停、净值或来源认证。DB冻结全部未完成BUY的原revision及允许结果；未成交PROPOSED变SUPERSEDED，其余在途状态变RECONCILIATION_REQUIRED，已待对账保存NO_STATE_CHANGE。真实触发变化按命令全局排序，每订单结果恰一，共享暂停原件恰一；封口核原像、变化链、逐结果和全集摘要，拒同事务其他业务写入及旧context跨事务追加。caller控制提交/回滚，driver AUTOCOMMIT及先写事务拒绝；降级恢复0053保护并保留原件。全组合生命周期多步骤仍不支持，空全集拒绝，不把多笔未绑定单当作生命周期闭环。检查证据见[result](result.md#checkpoint-3ar2-portfolio-unbound-db-20261002)。
+
+**恢复实施授权（2026-10-01）**：用户本轮明确“继续实施 量化策略优化与全生命周期验证”，据已完成设计修订和tasks依赖顺序恢复3ar-1至6。下文“本轮只调整文档/当前不启动”保留为前次范围记录，已由本次授权解除；生产部署仍依3ar-6另行核验，不运行主库迁移。0051先建独立历史结构并冻结UNKNOWN_PRIOR旧基线，LIVE命令在协调/封口机制完成前拒写，避免半成品流水被当作完整历史；旧业务写者暂不强制接入，基线只表示迁移瞬间本地状态，不证明后续连续性。
+
+**已落地范围（2026-10-01）**：3ar-1六表、旧流可空复合关联、全部旧生命周期/未绑定订单的UNKNOWN_PRIOR基线与只读摘要核验已在隔离库验收，0051未部署主库。物理行像以精确`__raw_row_json__`保存，旁边的Decimal字符串只作解释视图；降级JSONL以精确`row_json`原文导出全部六表并验数量/SHA/readback。3ar-2先交付单订单状态命令的修改前原始请求及独立scope选择器：普通预读允许，已有写入/行锁（包括已flush和原始SQL）须回滚后重选；锁后刷新并核归属、证券和revision。选择结果只给参与者承诺，不写命令或授执行权限。全组合/首填/删源选择、自动变化/封口及全写者迁移仍按后续任务实施。
+
+**3ar-2重放读端子增量（2026-10-01）**：`infrastructure/lifecycle_command_replay.py`在selector前按组合/请求键只读查询，先比较原始规范字节，同键异请求明确冲突；仅接受`order-state:v1`单未绑定订单的结果内容，不接执行入口。结果来源固定`ORDER_STATUS_RESULT/UNBOUND_ORDER_RESULT/COMMAND`，schema 1快照恰含`schema_version/outcome/reason_code/before_row/after_row/missing_sources/change_count/changes_sha256`并核结果列一致；物理列全集冻结为0051订单schema 1，精确原文及解释视图按类型敏感规范字节逐行互验，变化按全命令序号核连续链和终态，每步revision加1且只允许status/revision/updated_at改变，摘要涵盖全部变化列，`captured_at`统一UTC、六位微秒。NO_STATE_CHANGE在此窄状态命令契约要求零变化且已为请求状态；APPLIED要求实际变化、revision增长、终态为请求状态且无缺证；BLOCKED保留原因、缺证及可能的隔离变化。命令前驱核同组合、连续序号及清单摘要；其他操作/创建输入、空清单、多结果或已绑定变化均拒绝。不读当前订单、不写/锁/提交、不根据当前账户重建结果。三个权限/认证字段恒为False：`database_sealing_verified/continuous_history_known/execution_authorized`。隔离测试由随机库owner临时绕过0051拒写触发器构造历史，不能据此验收LIVE写入或DB封口。已绑定命令和其他来源矩阵待后续读端；该增量不修改六表或开启旧写者捕获。
+
+**3ar-2未绑定状态命令DB协调子增量（2026-10-01，继续授权范围）**：新增0052迁移及`application/lifecycle_unbound_command.py`，只支持原始`ORDER_STATUS_CHANGED`单未绑定订单（lifecycle/intent均NULL）。数据库受控函数先校原请求规范字节，锁组合及订单后独立生成唯一未绑定清单和前驱；不接收客户端清单/结果/行像/事务ID。SQL触发器保存每次真实变化，结果来源最后插入形成此窄命令封口，提交按命令一次递延再核完整请求/全集/来源/每步行像、允许变化字段及当前终态；提前约束校验和上下文清空后也拒绝同一事务任何额外订单INSERT/UPDATE/DELETE，后续独立事务旧写者仍不捕获。结果重放只核原历史，不用当前订单重新判定。GUC只关联，审计写入须在表所有者受控函数内，changes另须受管触发器嵌套；函数固定search_path、UTC/ISO时间环境并REVOKE PUBLIC执行；迁移须由审计表owner安装并先锁组合、再锁订单，隔离应用角色仅显式获入口EXECUTE，不获审计DML。新增部分索引`ix_lc_unbound_command_transaction`供当前事务封口查询，ORM同步，0051冻结迁移不改。旧写者无上下文仍保持旧行为，不因此声称连续历史。BUY EXECUTING和在途终态改写只存BLOCKED缺证，合法无变化存NO_STATE_CHANGE，其他允许的本地状态改变APPLIED；无真实券商终态释放例外。应用stage不提交，返回已存内容但认证字段仍False，真实接线及生产EXECUTE授权留3ar-4/6。0052降级只撤受控能力并恢复0051拒INSERT，保留全部事实。验收文件`test_lifecycle_unbound_command.py`复用随机隔离库，核真实捕获/多变化、三结果/旧revision/同键漂移/回滚/同跨事务封口/提前约束后追加及普通角色GUC伪造；不关闭捕获触发器制造通过证据。已绑定及多生命周期操作头仍拒写，完整3ar-2不勾选。
+
+**3ar-2已绑定状态命令DB协调子增量**：新增0053及bound stage/内容读端/随机隔离验收。原请求继续冻结六字段，DB在组合→策略/政策→生命周期/订单锁后独立生成恰一操作清单；前驱必须存在；先核立即前驱完整原像/schema与管理状态关系，0051基线按当时活动状态过滤重建，0053前驱按固定成员重建，再核真实当前managed_state与其固定成员集合一致，未知旧写变化拒绝而不追补。原closed_at/rule_authorized_at/decision_at在管理投影比较中统一UTC六位微秒，旧原文和摘要不改。固定止损/观察/意图及同证券账户观察行锁保持至caller提交，防最终校验后旧写者并发改变子行。前驱活动订单成员成为终态后仍保留，新增活动成员或目标不在前驱成员内拒绝；本窄入口不执行意图、账户或生命周期变更，业务state_version保持，操作序号追加。真实订单触发捕获LIFECYCLE/BOTH行像，来源恰一修改前ORDER，操作头最后封口绑定快照/来源/变化及规范载荷；插入即核、提交再核，全部其他受管表与订单同事务额外写入拒绝。固定UTC/ISO，GUC只关联，函数默认撤PUBLIC执行，caller负责提交/回滚；旧生产API未接，创建输入与已关联成交修订仍关闭。新增before/after证据完整物理行像与明确命令结果，连续性只按managed_state，不将同证券账户观察当生命周期余额。独立隔离测试覆盖三种结果、真实A→B→A、前驱/成员漂移、封口后追加/提前约束、异常回滚、并发幂等、普通角色及降级保留事实；未实现多步骤/全组合/删源或生产ACL。
+
+
+**3ar-2删源修改前全集选择子增量**：先新增独立`lifecycle_source_selection.py`和随机隔离测试，只给scope，不接TaskService.delete_task、不删任务/信号或修改任何业务/历史行。原请求只含schema/命令种类/task_id/request_key，动态引用、revision与预分配operation ID不进入请求幂等字节。参考当前delete_task三种可删终态，发现任务全部信号及所有订单/意图活引用（含已关闭生命周期和终态订单）；先初读引用组合，全部组合按UUID取锁并重查，随后全局策略→政策→生命周期→订单→意图→任务/信号取锁并刷新。同类行排序，冻结每组合恰一生命周期清理步骤与逐未绑定订单结果；一个生命周期有多条引用只出现一步。任务/信号FOR UPDATE锁阻止新信号和新FK引用，最后重查完整引用身份；发现任何未预锁组合、成员新增/归属改变或来源漂移须caller整事务重试，不能漏项继续。无引用任务返回零组合scope，明确只允许未来原直接删除路径另行消费，不写空命令冒充组合治理。READ COMMITTED下已有XID/脏Session拒绝；来源取锁后再核XID已分配，driver AUTOCOMMIT逐语句释放锁时拒绝，不返回无锁scope；source行原SQL文本及全部引用before行保留在选择结果，caller保持全部锁并负责回滚/提交，`scope_only=True`、无执行权限或连续认证。验收覆盖跨两组合/闭仓与终态/多条同生命周期/意图独有引用/未绑定单/无引用、真实全局锁序与普通FK阻断、初读后新组合/同组合新引用/改绑、旧ORM刷新、已flush/rawSQL拒绝及终态任务变化。生产删源写者、冻结输入消费与多命令原子封口依3ar-3/4/5继续。
+
+**本轮范围与最新用户要求**：用户明确“已有的改动不用撤回，你就再改下方案和tasks就好，并在tasks中标注哪些已完成”。因此保留已完成的0050迁移、首仓状态修复及对应测试；接下来仅整理方案和任务状态，不继续新增实现或部署。A01–A04/A07–A08已完成设计修订；A05/A06已有代码及隔离验证。六张完整历史表、全入口接线、查询与容量验收仍待实施，详见tasks。独立设计delta PASS与局部代码验收不能合并成完整3ar交付。
+
+**已完成并保留的两项修复**：0050保留0048/0049历史迁移，先检查既有版本步形状及成交/生命周期归属，发现无法解释的旧数据拒绝升级并报告，不能静默补造。LOCAL_CAUSAL强制两版本非空且递增1，UNATTRIBUTED只允许两版本均空；版本步只能由受控父表变更产生，父成交后插入的现有顺序以递延验证闭合，禁止TRUNCATE；降级不删除任何版本步事实。首仓完成只在原首笔订单的后续真实确认成交满足冻结首仓目标且不存在待对账/后继目标冲突时将ENTRY_PENDING推进INITIALIZED；不能借其他订单成交、当前聚合账户数量或状态修订误判首仓完成。原首仓续填允许沿用已归档政策，但须匹配未修订首CONFIRM订单及冻结策略/政策身份，新首填和其他订单不能使用此例外。已有验收为14项隔离迁移、27项专用首仓和5项既有链路回归通过，代码独立R2 PASS；主库未执行0050。
+
+**背景与口径**：用户要求表内保留完整操作过程。现有`position_lifecycle_states`只存当前状态；0044日事实修订、0046意图修订、0048成交版本步分别记局部事实，不能按一次业务操作还原主行、移动止损、观察状态、订单、实际持仓一起变化的前后状态。例如`lifecycle_service.py::_stage_confirm_fill_locked`先执行`_apply_delta`改账户/订单，再插成交并创建生命周期；`position_lifecycle_manager.py::process_day`可在无有效数据时仅插日事实而不推进`state_version`；`lifecycle_batch.py::materialize`后来会改`planning_result`和订单而不改主行版本。此前拟建的创建输入专表只能补第一步，不能解决这些中间步骤。**本方案替换此前“只建seed表”的3ar建议，尚未实施。**持仓生命周期的业务起点定义为首笔确认BUY；此前的建议单/申请属于订单历史，首笔操作须冻结并引用其原始来源，不倒造此前的持仓状态。
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 操作主线与当前投影 | `position_lifecycle_states.state_version`不会随无状态日报、批次规划或单独订单状态变化而必然推进；无数据日报增加证据却不改变受管状态 | 操作保存三部分版本化快照；仅受管状态用于NO_STATE_CHANGE判等；主行继续供当前查询 |
+| 跨表变化与事务一致性 | 相同`business_command_id`无法证明没有漏掉L2，禁止UPDATE不能阻止向旧OP追加子行；回撤还会改变未绑定订单 | 命令头先冻结预期全集，操作头最后封口；统一来源/变化表兼记命令级未绑定订单，递延校验全命令 |
+| 创建输入、历史迁移与更正 | 建单后合法删除成功任务会使信号消失，首填才取输入已太晚；容量min不能反推原值 | 订单物化时保存独立不可变输入，首填专表绑定该输入与实际成交；旧行仅建未知基线；更正代次保留边界 |
+
+###### 操作主线与当前投影
+
+新增`position_lifecycle_operations`，每个生命周期实际执行步骤一行；一个命令可以影响多个生命周期或包含多步。命令由独立`lifecycle_business_commands`持久保存原始请求和预期清单，操作以复合FK绑定命令及组合。`operation_seq`在生命周期内连续且独立于`state_version`；无数据日报或延期拒绝也占一步。操作类型固定为`INITIALIZE/FILL_APPLIED/DAILY_EVALUATED/BATCH_MATERIALIZED/INTENT_OR_ORDER_CHANGED/SOURCE_REFERENCE_CLEARED/RECONCILIATION/MIGRATED_BASELINE`；`CORRECTION_APPLIED`保留定义但本版写入口拒绝。`outcome=APPLIED/NO_STATE_CHANGE/BLOCKED`，每步均有原因及触发事实。`(business_command_id,command_step_no)`全命令唯一，前驱须属于同一生命周期且序号正好小1，只有序号1可无前驱；首步必须是INITIALIZE或迁移基线。
+
+请求键归命令所有，`UNIQUE(portfolio_id,request_key)`；重放先逐字段及规范字节核原始请求，匹配后返回已提交完整结果，不能把历史重放当实时执行授权，也不能用变化后的账户重新生成预期清单判作同一请求。`quant_execution_operation_sources`保存多来源，`quant_execution_operation_changes`保存数据库自动行像；两表有必填命令ID及可空操作ID。操作ID为空只用于命令预期清单内的未绑定订单及命令公共证据；受管生命周期、子行和已绑定订单变化必须有操作ID。各层均核组合、来源版本、清单数量及摘要；本地登记/捕获时间不证明事务提交可见时间或上游发布时间。
+
+每行的`before_snapshot/after_snapshot`按同一schema保存三部分：①`managed_state`包含生命周期业务字段（含state_version/last_processed_trade_date）、止损/观察、当前活动意图及受管活动订单的身份/状态/目标/累计成交/revision/资金与风险预留；②`account_observations`保存同组合证券数量/成本及观察锚点，标`ACCOUNT_OBSERVED`；③`evidence`保存日事实、成交、账本和输入证据清单及未知原因。技术捕获/更新时间、可删除来源的活引用、来源版本目录不进入managed_state判等；订单业务revision和生命周期state_version必须进入。业务数值以规范Decimal字符串无损编码，原始物理行完整保存于changes，schema版本定义上述字段边界并拒绝未知键/版本。
+
+受管对象集合采用同一schema下与当前步骤无关的确定谓词：同生命周期意图状态为ACTIVE/EXECUTING/RECONCILIATION_REQUIRED，订单状态为PROPOSED/EXECUTING/PARTIALLY_FILLED/RECONCILIATION_REQUIRED；按实体ID排序，不能追加“本步触碰的终态行”。终态实体完整行像由changes保留、证据引用供查询。before/after分别在步骤修改前后用同一谓词读取，谓词成员变化也是受管状态变化；由完整changes重演并在每个边界重算集合，再核对前驱after与后继before。例：OP1完成I1，I1仅在OP1前态集合，后态已移出；OP2处理I2，其前态同样无I1，链连续。终态订单下一步不活跃、被隔离重新进入活动集合及终态行单独清理来源都须验；仅终态行修改可为NO_STATE_CHANGE，但仍有行像/修订及原因，不能漏掉历史。
+
+`NO_STATE_CHANGE`只要求前后managed_state相等，仍可新增日报和证据、产生真实行变化；只改订单状态/预留或推进生命周期版本必须为APPLIED。BLOCKED说明执行结论，仍允许有受控隔离状态变化，不能与NO_STATE_CHANGE混用。INITIALIZE前态为三部分完整结构且managed_state.lifecycle=null；只有迁移基线允许SQL NULL前态。逐步连续性比较受管状态与操作链；历史账户观察不与现在余额判等。末端投影校验只核该生命周期负责的当前行；旧生命周期关闭后同证券开新仓，不会改写旧观察。外部成交、现金/持仓账本、公司行为及原件仍独立保存，操作只引用和交叉核对。
+
+选型：保留生命周期操作、来源、变化、首填绑定的四种职责，增加订单输入和命令头，共六张新表。订单输入与可变订单状态生命周期不同，独立表优于在订单行堆入全部原始参数；首填绑定引用订单输入，不重复复制整套原值。现有AllocationBatch是分配投影、Execution/Outcome是批次入场回执，无法覆盖普通成交/日管理/状态命令，继续作为命令来源而不扩成通用命令。sources/changes共用命令归属可覆盖未绑定订单，无需重复建设第二套捕获机制；任务调度重试仍复用现有系统。与主行JSON历史数组或全主表版本化相比，本方案增加索引和事务校验成本，但保持当前查询身份并提供逐步审计约束。
+
+**六表字段级修订（尚未建表；UUID为PostgreSQL `uuid`；0050已用于既有缺陷修复，六表迁移拟从0051起，实施时复核最新编号）：**
+
+| `lifecycle_business_commands` 字段 | 类型 | 业务含义与约束 |
+|---|---|---|
+| `id`、`portfolio_id`、`request_key` | UUID、UUID、VARCHAR(128) | 命令PK、组合FK；UNIQUE(portfolio_id,request_key)，UNIQUE(id,portfolio_id)供复合FK |
+| `command_seq`、`previous_command_id`、`previous_manifest_hash` | BIGINT、UUID NULL、VARCHAR(64) NULL | 组合锁下分配连续命令序号，UNIQUE(portfolio_id,command_seq)，前驱同组合；未绑定订单依此序号及命令内change_seq还原，不能以本地时间/UUID排序 |
+| `command_kind`、`request_schema_version`、`canonical_request`、`request_hash` | VARCHAR(40)、INT、BYTEA、VARCHAR(64) | 原始请求及规范摘要；同键异内容拒绝，不把本次账户值混入请求幂等比较 |
+| `selector_version`、`expected_steps`、`expected_unbound_orders`、`manifest_hash` | VARCHAR(64)、JSONB、JSONB、VARCHAR(64) | 受schema约束的预期清单：每步预分配operation_id/lifecycle_id/全命令step_no/kind，每个未绑定订单列ID、原revision与允许结果；由组合锁后独立selector在业务修改前生成，禁止从已写操作反推 |
+| `expected_step_count`、`expected_unbound_order_count` | INT | 非负且与清单去重后长度一致；是否允许零项按command_kind固定，不能空清单冒充全组合执行 |
+| `captured_transaction_id`、`actor_type`、`actor_ref`、`recorded_at` | TEXT、VARCHAR(16)、VARCHAR(128)、TIMESTAMPTZ | 事务ID由DB强制以pg_current_xact_id()生成，应用不可指定；所有后续关联写入须在该事务，已提交命令禁止新增子项。命令结果由完整操作和逐订单结果证据派生，并与实际变化核对，不回写命令头 |
+
+| `position_lifecycle_operations` 字段 | 类型 | 业务含义与约束 |
+|---|---|---|
+| `id`、`lifecycle_id`、`portfolio_id` | UUID | 操作PK；生命周期/组合FK，组合身份须与生命周期一致 |
+| `operation_seq`、`previous_operation_id` | BIGINT、UUID NULL | 每个生命周期从1连续递增；前驱自FK；`UNIQUE(lifecycle_id,operation_seq)`与`UNIQUE(previous_operation_id)`防重复与分叉 |
+| `business_command_id`、`command_step_no` | UUID、INT | 命令/组合复合FK；UNIQUE(business_command_id,command_step_no)，内容须精确匹配命令预期步骤；请求键从命令读取 |
+| `operation_kind`、`outcome`、`reason_code` | VARCHAR(32)、VARCHAR(24)、VARCHAR(64) | 受CHECK约束的操作类型、`APPLIED/NO_STATE_CHANGE/BLOCKED`和业务原因；迁移基线单列`MIGRATED_BASELINE`，不当实际交易 |
+| `actor_type`、`actor_ref` | VARCHAR(16)、VARCHAR(128) | 发起人/任务的本地身份；需认证的权限不由此字符串证明 |
+| `effective_at`、`effective_trade_date`、`recorded_at` | TIMESTAMPTZ NULL、DATE NULL、TIMESTAMPTZ | 业务生效时点/交易日与数据库登记时点分列；后者默认`clock_timestamp()`但不代表提交可见时点 |
+| `policy_version_id`、`policy_content_hash`、`formula_version`、`snapshot_schema_version` | UUID、VARCHAR(64)、VARCHAR(64)、INT | 冻结政策及快照解释版本；政策ID FK、hash格式CHECK |
+| `before_snapshot`、`after_snapshot`、`state_version_before`、`state_version_after` | JSONB NULL、JSONB、INT NULL、INT NULL | 三部分快照与可查询版本；版本列同快照核一致；INITIALIZE为NULL→1，迁移基线未知前态，不用operation_seq替代state_version |
+| `source_count`、`change_count`、`sources_sha256`、`changes_sha256`、`initial_input_hash` | INT、INT、VARCHAR(64)、VARCHAR(64)、VARCHAR(64) NULL | 来源及有序变化的全集、数量与摘要，INITIALIZE恰有初始输入hash，其他操作无；不是仅保存最终行值 |
+| `previous_hash`、`before_hash`、`after_hash`、`canonical_payload`、`operation_hash` | VARCHAR(64) NULL、VARCHAR(64)、VARCHAR(64)、BYTEA、VARCHAR(64) | 整条操作的规范载荷包含身份、命令步骤、版本、前后快照、来源/变化数量及摘要和首填输入摘要；读取时从业务字段重算 |
+
+| `quant_execution_operation_sources` 字段 | 类型 | 业务含义与约束 |
+|---|---|---|
+| `id`、`business_command_id`、`operation_id`、`source_role`、`source_ordinal`、`source_type` | UUID、UUID、UUID NULL、VARCHAR(32)、INT、VARCHAR(32) | 命令FK；操作/命令复合递延FK；operation_id为空仅表示命令公共证据或未绑定订单证据。操作内角色/序号唯一，命令级空操作部分唯一索引按命令/角色/序号；角色/身份另核去重 |
+| `scope` | VARCHAR(16) | COMMAND要求operation_id为空，LIFECYCLE要求非空；CHECK配合事务/身份验证，不允许空操作绕过受管行要求 |
+| `fill_event_id`、`report_id`、`resolution_id`、`posting_id`、`ledger_movement_id` | UUID NULL | 按来源类型分别FK到`order_fill_events`、`account_fill_reports`、`account_fill_report_resolutions`、`account_fill_postings`、`account_ledger_movements` |
+| `daily_revision_id`、`intent_revision_id`、`order_id`、`allocation_batch_id` | UUID NULL | 分别FK到0044日报修订、0046意图修订、`suggested_orders`、`quant_allocation_batches` |
+| `order_initial_input_id`、`risk_event_id`、`admission_event_id`、`rule_certificate_id` | UUID NULL | 类型化FK到订单输入、风险暂停事件、准入事件和品种规则证书；允许的间接引用须按后文证据矩阵递归核原件/版本/归属，不能只存可变ID |
+| `task_id_snapshot`、`signal_id_snapshot`、`source_ref_snapshot`、`source_content_hash` | UUID NULL、BIGINT NULL、TEXT NULL、VARCHAR(64) | 可删除任务/信号或外部原件只冻结当时身份/必填摘要，不加破坏既有删除语义的RESTRICT FK；CHECK按`source_type`只计恰一种主身份列，其他身份列须为NULL并核来源所属组合 |
+| `source_revision`、`source_snapshot` | INT NULL、JSONB NULL | 对可变`ORDER`来源必须冻结当时订单`revision`与完整行像并重算`source_content_hash`；若本操作改订单，还要与对应变化明细的行像核一致；其他来源仅存必要的版本化副本 |
+| `result_outcome`、`result_reason_code`、`result_schema_version` | VARCHAR(24) NULL、VARCHAR(64) NULL、INT NULL | 仅source_type=UNBOUND_ORDER_RESULT且scope=COMMAND时必填，其他来源必须为空；主身份为order_id。每个预期未绑定订单恰一结果，以部分UNIQUE(business_command_id,order_id)保证至多一，递延全集校验保证不漏；outcome为APPLIED/NO_STATE_CHANGE/BLOCKED，source_snapshot冻结实际终态、前后revision/状态/绑定及missing_sources，包含在source_content_hash中 |
+
+| `quant_execution_operation_changes` 字段 | 类型 | 业务含义与约束 |
+|---|---|---|
+| `id`、`business_command_id`、`operation_id`、`change_seq` | UUID、UUID、UUID NULL、BIGINT | DB触发器生成；命令内全局change_seq唯一且连续；操作/命令复合递延FK。空operation仅允许预期未绑定订单，OLD和NEW均无生命周期；绑定/解绑必须纳入对应生命周期步骤 |
+| `scope` | VARCHAR(16) | COMMAND/LIFECYCLE同来源表；COMMAND只能记录预期清单内订单，所有存在的本次行像均无生命周期，不能用命令结束时的绑定状态倒判较早行像 |
+| `entity_type`、`row_id`、`change_kind`、`binding_side` | VARCHAR(32)、UUID、VARCHAR(8)、VARCHAR(8) | 受控表类型/行ID，`INSERT/UPDATE/DELETE`，订单跨生命周期时区分原关联与新关联 |
+| `before_row`、`after_row`、`captured_at` | JSONB NULL、JSONB NULL、TIMESTAMPTZ | 完整行像与本地捕获时刻；INSERT前空、DELETE后空、UPDATE双像；覆盖主行、止损、观察、日报、意图、订单及受管持仓。同一行多次变化各占一行，不合并A→B→A |
+
+| `suggested_order_initial_inputs` 字段 | 类型 | 业务含义与约束 |
+|---|---|---|
+| `order_id`、`business_command_id`、`source_kind` | UUID、UUID、VARCHAR(32) | order_id为PK/订单FK，建单命令FK；SIGNAL_ENTRY/LIFECYCLE_INTENT/MANUAL_PROTECTION，组合目标另行准入前不得冒充已有种类。与订单插入同事务且只有一份，创建种类决定必填字段 |
+| `portfolio_id`、`market`、`symbol`、`strategy_version_id`、`policy_version_id`、`policy_content_hash` | UUID、VARCHAR(8)、VARCHAR(32)、UUID NULL、UUID NULL、VARCHAR(64) NULL | 建单时冻结身份；策略首仓字段必有，已有生命周期订单引用冻结owner政策；手工保护不虚构策略。组合/订单身份与数量等跨表核一致 |
+| `source_signal_id_snapshot`、`source_task_id_snapshot`、`source_lifecycle_id` | BIGINT NULL、UUID NULL、UUID NULL | SIGNAL_ENTRY须有信号/任务快照；LIFECYCLE_INTENT须有生命周期FK；来源种类CHECK，删除任务不删除冻结证据 |
+| `template_id`、`management_policy_snapshot`、`order_quantity`、`initial_stop_price`、`initial_exposure` | VARCHAR(64) NULL、JSONB NULL、NUMERIC、NUMERIC NULL、NUMERIC NULL | 创建计算的模板、管理政策和订单原值；order_quantity必有且正数，其余按source_kind核必需形状；NUMERIC保留原精度 |
+| `signal_planned_shares`、`total_assets`、`risk_per_trade_pct`、`config_reward_multiple`、`template_reward_multiple`、`arc_neckline_price` | NUMERIC NULL | 3aq需要的原值；每列配同名`*_presence`（`ABSENT/NULL/VALUE`），不能以空值代替缺键 |
+| `legacy_trailing_b`、`legacy_trailing_a`、`legacy_trailing_d`、`legacy_trailing_presence`、`trailing_atr_multiple` | NUMERIC NULL（前三列）、VARCHAR(8)、NUMERIC NULL | 旧b/a/d与ATR两类跟踪参数及来源存在性，配置互斥条件按模板核验 |
+| `ma5_confirmed_cross_raw`、`ma5_confirmed_cross_presence`、`confirmation_window_trading_days`及其`*_presence` | JSONB NULL、VARCHAR(8)、INT NULL、VARCHAR(8) | 保留原始布尔或整数0/1和值是否存在，避免类型/缺失误判 |
+| `policy_config_snapshot`、`template_params_snapshot`、`required_fields_snapshot` | JSONB | 仅保存受schema校验的冻结参数副本；核心数值仍在类型列 |
+| `input_schema_version`、`formula_version`、`canonical_payload`、`input_hash`、`captured_at` | INT、VARCHAR(64)、BYTEA、VARCHAR(64)、TIMESTAMPTZ | 建单时输入版本及原始规范字节；从类型字段重算hash，包含来源身份、字段presence及冻结参数；不因重读已变化任务/信号而重新生成 |
+
+订单输入shape按source_kind执行：SIGNAL_ENTRY必有模板、策略/政策及hash、正初始止损、(0,1]初仓比例和信号/任务冻结证据，其他计算原值按模板所需字段及presence检查；LIFECYCLE_INTENT必有source_lifecycle_id、冻结owner策略/政策及hash，模板从冻结政策取得，止损/初仓比例仅实际参与本次计算时必有，不从首仓填造保护SELL参数；MANUAL_PROTECTION只允许SELL，策略/政策/template/初仓比例可空且不得声称策略首仓来源，止损如原订单为空则保留NULL。三种来源的参数对象以合法空对象表示不适用，presence保留实际缺键/空值，不用0或虚构配置满足非空。所有种类都须真实订单数量、组合/证券及相应授权/可卖量证据；新增风险BUY仍走既有认证门禁。
+
+| `position_lifecycle_initial_inputs` 字段 | 类型 | 业务含义与约束 |
+|---|---|---|
+| `operation_id`、`business_command_id`、`lifecycle_id` | UUID | 操作PK及操作/命令复合递延FK；生命周期唯一；仅INITIALIZE可有，其他操作禁止 |
+| `initial_fill_id`、`order_id`、`order_initial_input_id`、`order_input_hash` | UUID、UUID、UUID、VARCHAR(64) | 首笔成交唯一；订单/输入复合身份核一致，input_id对应输入表order_id；必须是SIGNAL_ENTRY等已支持的首仓种类。首填实际价/量/日期来自不可变成交，不能取更新后订单 |
+| `input_schema_version`、`formula_version`、`canonical_payload`、`input_hash`、`captured_at` | INT、VARCHAR(64)、BYTEA、VARCHAR(64)、TIMESTAMPTZ | 规范载荷绑定实际成交身份/规范内容摘要、订单输入摘要及初始化公式；原值通过冻结输入表与成交表读取，避免再次复制同一套计划输入；3aq适配据此join并核全部hash |
+
+上述六表只追加；子表还受事务归属和操作封口限制。0044/0046/0048新增operation_id及命令复合关联，切换后必有，旧行标LEGACY_UNLINKED。命令公共来源和未绑定订单按命令查询；生命周期步骤按lifecycle_id/operation_seq查询。关联账户原件与历史可见性认证仍须独立证据。
+
+###### 跨表变化与事务一致性
+
+`quant_execution_operation_changes`由受管表触发器记录每次真实INSERT/UPDATE/DELETE。同一命令可同时有生命周期步骤和COMMAND级未绑定订单变化；命令级变化也具有完整OLD/NEW与来源，不塞入任务/报告JSON。首次NULL→生命周期绑定归INITIALIZE，解绑归原生命周期，跨生命周期改绑须双边步骤或拒绝。现有0044/0046/0048保留自身事实职责并关联本次步骤；订单状态/数量/预留、日报planning_result、意图终态、仅新增无数据日报也须归属。`PortfolioService.upsert_position/remove_position`对受管持仓迁为受控调整，否则DB拒绝无命令操作上下文的修改；position_id不得经级联删除悄悄变空。事务失败整体回滚不产生已执行历史，独立受理拒绝仍复用既有提案事实。
+
+锁序为组合→策略版本/政策→生命周期/订单→具体可变来源，同类多行按UUID排序，锁后ORM显式刷新；调用者进入命令前先取得完整组合范围。命令头先插不可变请求和预期集合，集合由受控selector从原请求及锁后状态生成（例如回撤选全部受影响持仓和未绑定BUY），DB核selector版本/范围，不接受客户端手写缺项清单。新生命周期/operation ID预分配。按预期步骤逐项设关联上下文、修改、flush、写入来源及创建输入，最后INSERT操作头。来源、变化、首填绑定的操作FK递延，操作头插入即核清单并封口；已有操作头后同事务也拒绝追加子行。ORM不能在某步骤上下文自动flush其他生命周期的脏行。
+
+首笔BUY在任何_apply_delta前读取并核建单时冻结的订单输入、当前执行授权及实际成交；首仓公式输入与当前执行准入分别验证，不以旧输入替代实时门禁。先插预分配initial_fill_id且position_id可空的生命周期并绑定订单，再走首填专用账户/订单变化、插成交并回填position_id。初始成交FK改为递延；首填专用路径保持版本1，0047冻结新生命周期绑定，0048及0050相关验证器显式支持新的INITIALIZE(NULL→1)并随迁读端，旧首填空关联仍按旧事实解释。命令、成交、posting/账本、投影、输入绑定和全部审计行同事务回滚。
+
+**合法删除来源**：保留订单/意图source_signal_id的活引用及SET NULL语义，冻结输入无任务/信号RESTRICT FK。TaskLifecycleService.delete_task改为同事务受控清理：锁后确定全部引用，按组合排序取锁并重查，阻止并发新引用；若发现未预锁组合则整体重试。逐组合SOURCE_REFERENCE_CLEARED命令将相关订单/意图活引用显式清空，推进对应业务revision并记录行像/0046修订，flush封存后再删除任务。已关闭生命周期也记录新清理事实，数量/目标/状态/预留不得因此改变。源信号锁与建单遵守同一锁序，清理中任何失败整事务回滚；无引用任务仍可直接删除，直接SQL无上下文级联受管行拒绝。首填、ownership.collect_owner_versions、授权及展示的全部来源消费改读冻结输入；活引用只作导航，不能在清理后将原owner误判未知。旧单无冻结证据仍保持未知，不从当前源回填冒充建单原件。
+
+所有子表INSERT核命令captured_transaction_id为当前DB事务，scope/组合/预期步骤匹配，操作头未封口；changes仅受管表触发器可生成。操作头绑定before/after、来源和变化有序全集的数量/摘要及首填input_hash，A→B→A的两步均计入摘要。提交递延校验逐步行像连续、操作全集精确等于expected_steps、命令级订单变化符合预期参与者及每个结果、首笔恰有一个INIT/input、所有已修改受管行均被捕获、末端受管状态等于当前投影。每个expected_unbound_orders成员必须恰有一个UNBOUND_ORDER_RESULT，结果与允许结果、完整行像链和末端实际行一致；无行变化也保存NO_STATE_CHANGE/BLOCKED及原因/缺证，不能因没有changes推断成功或漏结果。若本命令随后绑定生命周期，结果必须指明关联步骤并联核其changes，不能将较早COMMAND行像改归属。不能以实际已写集合反证预期完整，也不能只核订单ID而不核结果。SET CONSTRAINTS提前校验后再写子行必须重新触发完整校验，不能缓存一次通过后绕过。
+
+命令头只保存不可变请求与预期承诺，最终结果从已封存操作和不可变逐订单结果证据读取，并与实际变化核对；无状态结果也有独立持久行，不回写可变结果。命令提交后事务ID不再相等，拒绝任何追加来源、变化、操作或订单输入；四类审计行及两类输入均拒UPDATE/DELETE/TRUNCATE。无状态步骤仅比较managed_state，变化和证据照常校验。一个事务同生命周期多步必须逐步flush封存；无法验证中间态的入口明确拒绝该调用形态。应用角色仅可通过受控入口，禁止直接写审计明细/关闭触发器；安全函数固定search_path，应用/迁移所有者角色分离并在部署验收核ACL。GUC仅关联不授权；摘要和DB事务身份只证明本地一致性。
+
+###### 创建输入、历史迁移与更正
+
+订单输入在order_materialization及position_lifecycle_manager等所有建单者的同一事务产生；先锁住真实来源再物化订单和输入，提交检查新单按source_kind的必需原值齐全且与初始订单一致。原计划数量、风险资产/比例、模板参数保留Decimal类型及ABSENT/NULL/VALUE。首填position_lifecycle_initial_inputs只冻结订单输入与实际成交的绑定、公式/schema和摘要；3aq读取两份不可变事实组装纯输入并从字段重算摘要。后续部分成交使用同一订单输入，旧输入不随新策略版本变化。已建单后源删除不丢输入；缺证旧单不能临时复制今日值，首填仍保留独立报告事实并按未知门禁处理。
+
+升级在停写核验下锁住范围，为旧生命周期写UNKNOWN_PRIOR迁移基线；旧订单只留迁移时行像，原始建单输入仍未知，不伪造订单输入。新LIVE首填必须有真实冻结输入与INIT；0044/0046/0048旧行保留LEGACY_UNLINKED，不强挂新操作。先迁全部建单、首填、日管理、批次、回撤、持仓编辑、任务删除及授权/owner/展示消费，验证零未归属变更再启拒写，旧应用不得同时写。新六表降级遇LIVE事实默认拒绝；停写后导出命令、操作、来源、变化、订单输入和首填绑定全集并核数量/摘要/回读才能显式降级。0050自身只增加既有表保护，回退不删除事实，与此新表导出门禁分开。
+
+成交更正/撤销保留旧实际操作；候选重放代次与受控切换不属3ar首版拟交付范围。将来须独立重算政策、日报、意图及账户影响，通过来源/完整集合/结算及对账门禁后追加CORRECTION_APPLIED再切换投影；候选步骤不能冒充过去实际操作。本轮不解除已关联成交修订在账本前拒绝、3p有效集合变化UNKNOWN及生产成交关闭门禁。
+
+###### 实施文件、验证及验收边界
+
+必需来源矩阵由(source_type,role,scope)及基数执行；下表“拒绝/缺证结论”允许保存明确的missing_sources，但原请求/触发事实和已发生结果事实始终必有，不能省掉执行准入证据却标成功。
+
+| 操作/命令 | 必需来源与核验 | 缺证处理 |
+|---|---|---|
+| 建单/INITIALIZE | 建单命令及真实来源原值；首填恰一订单输入、恰一实际首填、原订单版本、策略/政策身份和hash | 新首仓无冻结输入拒绝状态初始化，真实报告仍按独立事实保留；旧单标未知 |
+| FILL_APPLIED | 成交、当步订单行像、版本步；有意图就有修订。账本入账路径必须有报告/裁决（若存在）/posting/账本一对一映射 | 成交事实与投影授权分开；缺账户认证不更新生产投影 |
+| DAILY_EVALUATED | 日报修订、冻结政策；涉及BUY时核账户、风险事件/档位、准入和品种证书，SELL核可卖量及执行日证据 | 缺行情可NO_STATE_CHANGE；缺执行证据保留目标/阻塞原因，不伪造订单 |
+| BATCH_MATERIALIZED/回撤 | 批次与消费回执或风险事件；预期每个生命周期步骤及未绑定订单结果 | 少参与者/漏步骤/同键异请求拒绝整命令提交 |
+| INTENT_OR_ORDER_CHANGED/RECONCILIATION | 订单对应revision行像、意图修订及触发命令；涉及券商终态时须可信回执 | 内部状态字符串不替代外部终态，不释放未核预留 |
+| SOURCE_REFERENCE_CLEARED | 原任务/信号身份摘要、受影响订单/意图的实际前后像；新单必有冻结输入。仅迁移前旧单允许缺输入，以迁移基线/原行像及missing_sources说明无法取得建单原值 | 新单缺输入拒绝；旧单保留UNKNOWN_PRIOR，不补造输入、不提升owner/执行授权；清理失败连任务删除一起回滚 |
+| BLOCKED/NO_STATE_CHANGE | 完整原请求、存在的输入来源、精确缺失项和原因；真实改变的行仍须被捕获 | NO_STATE_CHANGE仅managed_state相等；不能用缺证标签绕过已发生事实或行像核验 |
+
+允许通过不可变日报修订或订单输入间接取得风险/资格证据，但必须递归核证据ID、版本、内容摘要与组合/证券归属；原件缺失或版本未知返回UNKNOWN。对需跨操作直接查询的证据保留类型化FK，不因嵌套JSON能容纳而取消关系约束。
+
+索引与容量验收：命令(portfolio_id,command_seq)、请求唯一键；操作(lifecycle_id,operation_seq)、命令/step唯一键；来源操作/角色/序号及命令级NULL部分唯一索引、常用fill/order反查；变化(business_command_id,change_seq)、(operation_id,change_seq)、(entity_type,row_id,business_command_id,change_seq)；订单输入order_id主键。生命周期和实体历史均用序号游标分页，每页默认100并限制上限，禁止加载整段历史后内存分页。完整快照不累加历史数组，订单输入只存一份；规范字节用于确定性验真，不能不明口径地重复整段历史。
+
+封存校验以受影响操作和命令为单位集中执行，不能为每条变化重新扫描整条生命周期；每次新写入均置待核标记，提前SET CONSTRAINTS也不免除后续校验。隔离基准覆盖1/100/1000生命周期、每步1/20变化与多步命令，保存实际行数/pg_total_relation_size、单操作字节、5次提交与首/跨页查询的p50/p95和EXPLAIN计划。可执行结构门槛为：游标分页结果完整且无重复、查询不以总历史长度物化全表、校验次数按受影响操作/命令计而非每行全链扫描；性能数值预算由部署环境基准冻结，未取得预算及实测时性能验收保持未通过，不能以设计修订替代实测。
+
+后续待实施范围：0051起六表及关联字段；order_materialization、position_lifecycle_manager、entry_batch/lifecycle_batch、首填stage、状态/对账、portfolio_drawdown_actions、PortfolioService、TaskLifecycleService.delete_task的stage化与受控清理；ownership及所有信号/任务原值消费者同步。0047/0048/0050验证器与读端适配首填INIT语义，3aq改读冻结输入；只读历史查询、隔离PG/纯测和容量基准一并交付。验收除原有首填/多步/并发/回滚/旧基线外，新增：删源后首填和owner仍可重建、跨组合/闭仓删源及并发新引用、旧操作封口后同事务/跨事务追加、A→B→A、漏参与者/空清单伪完整、COMMAND伪装受管变化、同单先未绑定后绑定、提前约束核验后新增行、NO_STATE_CHANGE及单独订单变化、归档政策后的分批首仓完成。当前不启动这些工作；后续所有写库测试先读函数/fixture核隔离，DDL只随机库，固定业务库串行，不运行真实LLM。
+
+本轮文档完成要求：八项审核问题都有设计落点，tasks列明依赖、涉及文件及可执行验收，明确勾选已有代码及已通过的局部验收。六表与全链路实施项保持未勾选，部署/性能/生产认证单列待验收；文档完成后停在本轮范围，不自动继续实施。
+
+**本轮决策与后续门禁**：2026-10-01按用户最新要求保留已有改动，后续仅优化plan与tasks。A05/A06标代码及隔离验收已完成；A01–A04/A07–A08标设计已完成、实现待开始。主库部署、全生命周期历史及生产门禁保持独立，不因46项局部回归或文档评审通过而放行。
 
 #### 4.4.2 三方依赖能力评估
 
@@ -485,7 +735,7 @@ context增加市场/行业状态、相对强弱、ATR20、波动率、通道和�
 | `backend/modules/quant_research/infrastructure/models.py` | 研究、trial、模拟事实及评价存储 |
 | `backend/modules/quant_research/domain/` | 评估规格、确定性规则与准入对象 |
 | `backend/api/routers/quant_research.py`、`backend/api/schemas/quant_research.py` | 研究提交与读取 |
-| `backend/tests/unit/quant_research/`、`backend/tests/integration/quant_research/` | 研究与持久层测试 |
+| `tests/backend/quant_research/unit/`、`tests/backend/quant_research/integration/` | 研究与持久层测试；存量扩展，独立增量才新增 |
 
 **修改文件**：
 
@@ -535,7 +785,7 @@ E2E覆盖账户基线→确认行情持仓→建议→部分成交→下一日�
 | `backend/api/routers/portfolio_daily.py`、`backend/api/schemas/portfolio_daily.py` | 每日运行和账户操作契约 |
 | `frontend/src/modules/analysis/pages/strategies/StrategyResearchPanel.tsx`、`StrategyLifecyclePanel.tsx` | 策略证据和规则 |
 | `frontend/src/modules/watchlist/portfolios/PortfolioDailyPanel.tsx`、`AccountReconciliationDialog.tsx`、`OrderFillDialog.tsx` | 账户、对账及成交操作 |
-| `frontend/e2e/portfolio-lifecycle.spec.ts` | 完整操作链验证 |
+| `tests/e2e/portfolio_lifecycle/ui/portfolio-lifecycle.spec.ts` | 拟新增完整操作链验证，交付时登记模块及发现范围 |
 
 **修改文件**：
 
@@ -574,6 +824,310 @@ E2E覆盖账户基线→确认行情持仓→建议→部分成交→下一日�
 
 本轮文档验收：文件齐全、五章模板完整、4.0逐行匹配模块、各模块依赖/风险/文件清单齐全、相对链接有效、状态及任务数一致、无虚假验证完成记录。只新增本任务目录，保护已有并发改动。
 
-实施自测先运行 `rg -l 'real_llm|real_toolkit' tests backend/tests` 检查真实依赖，再仅运行相关无真实LLM测试；涉及AI目录统一排除integration用例，不能仅靠名字过滤。PG/Redis测试必须先核验隔离fixture。拟新增用例在tasks中注明，不将未来命令误写成已经执行。
+测试组织和运行统一遵循[tests/README.md](../../../tests/README.md)：领域→业务模块→层级→功能文件，先按代码/需求查静态索引，再读实际断言和fixture；存量功能修改已有脚本，独立新增能力才新增文件。默认真实依赖门禁不能由目录、名称或`-k`替代；PG/Redis须核验显式隔离连接，真实LLM/toolkit及外部源仅用户手动启用。拟新增用例在tasks中注明，不将未来命令误写成已经执行；历史证据保留实际执行时路径。
 
 完成业务实现后执行独立Code Review，按方案文件清单核对接口、字段、边界和事实链；修复通过后整合长期架构到knowledge，填写软件阶段结果。长周期研究与影子观察结果单独披露，软件完成不等于已取得盈利资格；持续观察未有真实结论时整个任务保持未完成，不提前归档，全部交付收尾后再完善result/retrospective并归档、按明确路径提交。本轮不归档、不提交、不把尚未发生的架构写成知识库现状。
+
+### T2 实施文件补充（2026-09-26）
+
+- `backend/modules/quant_strategy/domain/family_management.py`：冻结的 TREND_3ATR/MACD_MEAN_REVERSION 政策及无副作用的状态转换。
+- `backend/modules/quant_strategy/application/position_lifecycle_manager.py`：显式政策输入适配；默认仍走原政策。
+- `tests/backend/quant_strategy/unit/test_family_management.py`：规则、缺数据、风险限制与适配回归。
+- 本增量不等同于 T2 验收：策略绑定、成交初始化、ATR事实注入、实际成交加仓标记、MA5预期窗口及统一规划器接通后方能启用真实执行。
+
+### T2 冻结政策消费链路文件补充（2026-09-26）
+
+- `application/management_runtime.py`：快照摘要/族匹配核验、宿主七键输出适配、入场即满足退出条件拒绝。
+- `application/service.py`、`lifecycle_service.py`：绑定兼容、首填首仓比例、无固定止盈、ATR状态、成交完成与关闭原因。
+- `application/position_lifecycle_manager.py`：冻结政策消费、有效观察日、跨日意图复用；`application/execution.py`：沙箱授权及宿主ATR事实。
+- `analysis/infrastructure/quant_execution_market_data.py`：同日ATR读到宿主execution_market；`application/position_planner.py`：T3规则政策准入未实现前，空目标明确拒绝，不抛异常或伪造RR。
+- 定向验证：`test_management_runtime.py`、`test_family_management.py`、`test_lifecycle_service.py`、`test_template_loader_runner.py`。生命周期DB测试仅指向liveprofit_quant_strategy_test。
+
+### T2 候选执行适配文件补充（2026-09-26）
+
+- `backend/modules/quant_research/application/trial_executor.py`：将预注册trial ID编译为含源码、冻结模板合同、管理参数与SHA256定义摘要的PreparedTrial；模板由沙箱执行，组合策略由宿主分发；组合输入显式提供冻结月度ETF名单与已核验交易历标志。
+- `tests/backend/quant_research/unit/test_trial_executor.py`：逐一执行76候选，检查谱系、变体缺数据、周/月调仓和每日只减风险。
+- 本层不申请交易准入、不写订单或研究队列；T3统一规划、T4持仓管理、T5队列接入保留原验收要求。
+
+候选适配审查修复补充：`stock_short_reversion.py`与对应测试补个股MA120门槛；`execute_single_trial`仅用于空仓入场，已持仓必须交给冻结生命周期重放，不能把模板旧SELL当作新政策退出。组合入口仍是目标计算，日常生命周期执行不在本增量内。
+
+### T2 新族持仓规则增量（2026-09-26）
+
+- `backend/modules/quant_strategy/domain/portfolio_management.py`：四族冻结持仓政策/状态、实际成交初始保护与每日只减风险转换；中期动量首笔保护按成交价90%设置，与后续最高收盘10%回撤保护取更严格值。短期按已冻结σ20和H计算3%–10%距离；ETF按成交基准3ATR。
+- `backend/modules/quant_research/application/trial_executor.py`：候选参数解析到持仓政策，初始化及评估时保留并核验trial_id/definition_hash/价格基准。
+- `tests/backend/quant_research/unit/test_trial_holdings.py`：48候选初始化、H/G/L参数差异、停止计时/保护更新、停牌、退出优先及价格基准边界。
+- 状态转换仍须T4持久化与实际成交消费；can_execute仅表示该减仓结论数据可执行，不替代T3账户/市场准入。冷却5日只返回退出成交后的要求，不从意图日期开始计时。公司行为换基须先调整状态，本层拒绝混基。
+
+### T3 共享减仓检查与交易日历增量（2026-09-26）
+
+- `application/execution_constraints.py`：复用MarketCalendarAdapter，从已核验支持范围选下一交易日；日历不可用/超界拒绝，禁止周一至周五猜测。
+- `application/position_planner.py`：plan_reduction复用已有价格/费用/停牌/跌停/T+1检查，普通SELL进入同一gate；同批接受的SELL同步预留。
+- `application/position_lifecycle_manager.py`：生命周期SELL调用共享gate，另锁查账户+市场+证券全部活跃SELL，涵盖人工与其他来源；受阻保留意图，不新建无约束订单。
+- `application/execution.py`：冻结执行市场/政策与可卖量。当前为CN股票次交易日建议；缺可信逐持仓可卖量时保留SELL意图、拒绝落单，不从当前持仓总量推断结算可卖量。ETF跨证券交收规则仍待独立规则模型。
+- 测试：`tests/backend/quant_strategy/unit/test_reduction_planner.py`、`test_execution_constraints.py`、`test_position_planner.py`、`test_execution_cancellation.py`及`tests/backend/quant_strategy/integration/test_lifecycle_service.py`。
+- 本增量不是T3整体验收：生命周期BUY、ETF有效期费率/数量规则、家族预算/owner与统一风险门槛仍待接。
+
+
+### T3生产资格门禁实施补充（2026-09-27）
+
+账户自定义风险值不能唯一推导资格档位，0018新增可空risk_profile和ORM CHECK；PATCH省略保留/null清空，不猜历史值。涉及workspace models/contracts/portfolios、API portfolios/workspace、analysis quant_task_submission、frontend watchlist queries/PortfolioSettingsDialog与生成模型。
+
+strategy_admission.gate_new_risk在组合锁内锁版本FOR SHARE，以数据库clock_timestamp取当前资格；限制写入FOR UPDATE互斥。execution普通BUY和position_lifecycle_manager加仓接入，position_planner拒绝码不影响SELL。生命周期资产范围按宿主股票目录确认，未知拒绝。planning_account保存当前账户/时间；API reports/quant_execution及报告JSON保留资格ID/修订/时间。独立历史仍在业务表中。复用PostgreSQL行锁，无新外部依赖。
+
+验证：缺档/跨档/暂停拒绝而止损可执行、并发限制写入串行、PATCH省略/清空、任务快照和UI选择；独立review后验收。共同批次、三档数值风控、真实证据授予仍保持后续门禁。
+
+
+### T3共同批次事务与审计落点（2026-09-27）
+
+单策略execution每200票提交，生命周期BUY在扫描中生成，因此不能把多个独立扫描顺序当共同仲裁。本增量先落共同批次应用服务：调用方必须交齐预定家族的完整PortfolioTargetIntent（含cash_only），服务锁组合、按UUID序锁全部版本，以一个数据库时点检查相同账户档位/资产范围资格；任何成员不合格则整批不分配，不能删掉该家族后放大家族预算。
+
+批次有独立幂等和审计生命周期，新增quant_allocation_batches与quant_allocation_members（0019）：前者保存组合/请求身份、输入摘要、账户/估值/归属/仲裁投影；后者以FK绑定版本和实际资格事件，保存完整目标。相较通用任务JSON，该模型可独立追溯成员与版本依赖；相较新增调度任务系统，继续复用既有任务能力。增加两表与迁移成本换取业务事实边界，不用Redis存唯一事实。
+
+输入仅接受宿主同日原价估值，不猜缺价；当前持仓与全部活跃BUY剩余金额消费账户容量，未知owner保留占用，已退资格owner也保留冻结身份。equal family预算基于当前total_assets×max_total_position_pct，冲突落空预算留现金。批次投影不是资金预留，也不是执行许可；后续订单消费必须在同一事务使用最新资格/账户并接共享planner。此增量不启用独立扫描的自动合批，不宣称订单生成接通。
+
+新增application/family_batch.py、infrastructure/allocation_models.py、migration0019、隔离PG test_family_batch.py；quant_task_submission统一组合先于版本锁，避免与当前规划路径反向等待。验收：完整成员、跨档/暂停阻断、未知owner、未成交占用、同票排序、输入顺序不影响幂等、同键变化拒绝、并发唯一批次、数据库约束、提交锁序。依赖仅现有PostgreSQL行锁/JSONB与纯仲裁内核。
+
+
+### T3共同批次生命周期订单消费（2026-09-27）
+
+现状`PositionLifecycleManager.process_day`一旦规则目标高于持仓就建BUY，会抢先消耗共同批次预算。新增显式defer_buy：保存日事实与规则状态，planning_result标AWAITING_BATCH并保存完整决策，允许持久化/协调目标意图及缩减旧单，不创建新增BUY订单；SELL按原路径及时规划。execution提供defer_new_risk，在共同扫描模式下同时延后首仓BUY与生命周期加仓，默认单策略行为保持原约定。
+
+新增application/lifecycle_batch.py消费已完整投影的批次：组合→生命周期→日事实锁；同日原价/版本归属、日事实状态版本和当前目标仍有效才允许继续。根据批次冻结成员/意图重新建立本次账户与资格仲裁（独立消费审计键），不把原PROJECTED当执行许可；拒绝/成功都写日规划终态，重复调用按order_id返回。执行前检查原价估值与日事实一致；买量由目标减已成交/全来源BUY预留，金额再裁剪到本次家族max_add_notional并复用plan_buy_target。事务由调用者提交，批次消费与订单/规划审计原子落库。
+
+验证隔离PG：等待期间无BUY，SELL不延后；等待后资格暂停拒绝；目标/状态改变拒绝；批次预算限制实际notional；重复消费唯一订单；拒绝重试不复活；失败回滚不留部分审计/订单。此单元不替代尚待接入的完整扫描清单收集与首仓订单消费。
+
+消费补充：TargetLeg可选entry_lower/entry_upper明确为宿主归一的原价区间，入场边界交共享planner对含滑点/tick的实际order_cost_price检查，不能只检查信号收盘价。
+
+
+### T3普通首仓共同订单消费（2026-09-27）
+
+普通首仓必须保留source_signal_id→task.execution_snapshot.strategy，首次真实fill从这里初始化冻结生命周期。新增application/entry_batch.py：组合锁内要求scan_attempts完整清单与全部AllocationMember一致（包含cash_only），每家族唯一task/attempt；按task UUID排序共享锁，检查SUCCEEDED/当前attempt/估值日期/组合/版本后自动读取目标信号，验证信号版本/证券与冻结来源，不允许混入其他账户或旧attempt；重新读取当前资格及占用后仲裁，按家族净期望下界排序（族内继续score），将max_add_notional和原价区间交共享PositionPlanner。已持仓由生命周期负责，不在首仓入口另行加仓。
+
+复用普通订单持久化：抽取application/order_materialization.py，原execution与批次消费者共用，保留source_signal_id和冻结首仓比例；初始比例整手裁剪后为0要明确拒绝，不留ELIGIBLE空订单。新增0020 quant_allocation_executions业务收据，一批一次终态，独立记录输入身份/实时仲裁ID/每信号投影及订单ID，避免同批重试或撤单后重新买入；与订单在同事务落库，不重复建设调度器。
+
+完整扫描清单生产者尚待后续：此消费服务只接受已完成家族目标，无法用部分扫描信号冒充完整输入；生产自动调度仍需接入冻结成员清单和完成屏障。验证真实PG跨家族冲突、当前暂停、账户/attempt来源错误、缺信号、首仓比例与fill初始化、幂等/回滚/并发以及原执行回归。
+
+首仓消费当前显式限定CN_STOCK，ETF在证券规则接通前拒绝；同批执行政策一致、源信号不能已有批外订单。收据输入身份包括完整scan_attempts、估值、行业桶与可用性；历史收据重放不产生订单。完成状态指来源任务SUCCEEDED，RUNNING/FAILED/CANCELLED不能拼入共同建单。
+
+
+#### T3-ALLOC-01b 清单注册前置（2026-09-27）
+
+既有 `QuantTaskSubmissionService.submit` 每次自行提交，无法与全族清单原子写入；worker 仅有运行时延期参数，重试无法从任务恢复该语义。新增调用方事务内的 stage 入口，复用现有 task/outbox，并冻结 FAMILY_BATCH 模式到 canonical snapshot。普通模式省略该键，保持已有幂等散列。
+
+新增 `quant_allocation_scans` 独立关系事实表：以(batch_id,strategy_version_id)外键绑定既有成员，task_id唯一外键绑定analysis_tasks；append-only，不重复保存任务状态或attempt。相比JSON清单，此表可由数据库保证成员及任务身份关系；无需额外调度系统或单独清单头表，既有allocation batch就是清单身份。注册服务在组合锁后按UUID预锁全部版本，以同一事务stage全量任务，失败全部回滚，重放返回原任务。仅CN_STOCK且PROJECTED批次可注册，日期冻结为valuation_date。
+
+变更文件：quant_task_submission.py、execution.py、allocation_models.py、新增scan_manifest.py、0021_allocation_scans.py及对应隔离PG/worker测试。验证：事务可见性/回滚、并发注册/幂等、不同组合版本拒绝、数据库不可变约束、任务重试恢复延期、错误模式拒绝。第三方仅使用已验证SQLAlchemy行锁/PG外键/现有task-outbox；无需新增外部接口。完成触发、失败整批收敛和首仓/加仓联合调度另在当前01b后续闭环，注册本身不产生买单。
+
+
+#### T3-ALLOC-01b 自动收敛与首仓触发（2026-09-27）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 完成触发 | worker complete_task提交后退出会漏掉共同建单 | worker finally触发，dispatcher既有恢复周期补查，消费同一组合锁事务 |
+| 终态事实 | 当前清单只有task关系，失败/取消无法记录整批结论 | 新增append-only quant_allocation_outcomes；成功关联原entry receipt，失败保留原因和任务attempt/status快照 |
+| 输入冻结 | entry消费者所需行业桶当前只在扫描进程内存 | 持久信号execution_market附带扫描行业桶及可用性，自动消费者核对同票跨成员一致，估值使用已有batch冻结closes |
+| 边界收敛 | RETRYING可能被当失败；跨CN日期旧目标不能再建单 | 非终态等待，FAILED/CANCELLED/CANCEL_REQUESTED阻断；decision_at的CN日过期阻断，DB时钟判断 |
+
+worker完成或失败后以独立Session按task_id查询清单，尝试收敛；触发异常仅记录日志，不能覆盖已提交扫描状态。dispatcher在恢复租约后补查“有失败/取消、全部成功或CN决策日已过期”且没有outcome的批次，限制单轮数量，待运行批次不占候选名额。不另建任务调度或外部行情请求。组合锁→task UUID共享锁，终态outcome与entry订单/receipt同事务提交；值校验错误在savepoint回滚后记阻断，基础设施异常整体回滚保留补查机会。
+
+本增量自动消费普通首仓。发现待批次生命周期加仓或存在不完整的生命周期协调输入，必须整批阻断，不能抢先把现金给首仓；首仓/加仓联合顺序及owner独立行情仍为01b后续子项。保护减仓仍由原扫描路径执行。所有模式都无真实ADVISORY产出，本次不部署主库。
+
+变更清单：allocation_models、migration0022、新增batch_completion服务、execution信号上下文、analysis_executor触发、dispatcher补查、隔离PG终态/幂等/并发/回滚/恢复测试及worker测试。复用SQLAlchemy savepoint/PG行锁/现有恢复周期，能力已有代码及隔离实测依据，无新三方API。
+
+
+#### T3-ALLOC-01b 首仓与加仓联合消费（2026-09-27）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| owner扫描来源 | execution._process_lifecycle目前跨家族都处理同一持仓日，source_task_id不同会冲突 | FAMILY_BATCH模式仅冻结owner版本处理其生命周期；注册要求全部active owner在清单中，普通独立扫描保护行为保留 |
+| 日事实覆盖 | completion对任何active lifecycle一律阻断 | 以组合锁下当前持仓生命周期逐项验证当日日事实、owner任务、政策hash、当前attempt的持仓行情证据（HOLDING或BUY行）；缺失/外来源仍整批阻断 |
+| 同账户联合排序 | 首仓planner先把所有信号规划完，无法插入加仓 | 按共同资格下界/稳定策略ID排序家族；每族先按symbol/id处理延期持仓，再按原score规划首仓，逐族落单后刷新账户预留 |
+| 事务审计 | 原receipt只含entry信号，无法解释联合加仓 | 在同一不可变receipt.result补充生命周期日ID/订单/结论与处理顺序；不新增表，savepoint保证任一输入失败撤销两类订单 |
+
+使用现有LifecycleBatchService实时预算/资格重算及EntryBatchService收据；共同组合锁覆盖全过程，保护SELL不计作可用现金。冻结owner以完整任务内版本窗口独立运行；失去资格仍拒绝新增BUY，保护扫描不受本次资格门禁控制。source_task_id不加入attempt号以保持完全相同日事实重试幂等，消费时额外要求当前成功attempt确有owner持仓信号（HOLDING或BUY行）且执行行情与日事实一致；worker该owner路径仍必须process_day校验完整日事实hash。已消费同日其他batch禁止重复加仓。
+
+文件：execution.py、scan_manifest.py、entry_batch.py、batch_completion.py、新增joint_lifecycle.py及测试。三方仅既有SQLAlchemy锁/savepoint和生命周期服务，不调用外部新数据源。验收覆盖混合首仓/加仓、跨族排序不被“加仓优先”覆盖、资金不足/旧预留/回滚/并发/取消重放、owner窗口隔离、缺失/旧attempt/外源/政策不符阻断；既有直接生命周期消费回归不变。
+
+联合消费补充：延期日事实持久化真实stock_symbols分类，消费要求asset_scope与批次相符，缺失/未知则拒绝；所有成员（包括仅加仓与cash_only）的执行政策统一比较。当前worker集成验收使用受控行情与sandbox输出，队列领取/真实上游/主库部署另行验收。
+
+
+#### T3-ALLOC-01b 可信目标生产前置：数据截至日防未来（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 决策日/数据日 | `build_medium_momentum_target`与`build_short_reversion_target`用`decision_date`检查行情最后一天，而FamilyBatchService要求`valuation_date == intent.evaluation_as_of`；2026-09-28决策使用9月24日已确认行情将被错误拒绝，若传9月28日行情则在早盘越前 | 候选/基准行情只允许截至`evaluation_as_of`，调仓及有效期仍用`decision_date` |
+| 品种候选门禁 | `StockCandidate.eligible`及`FundCandidate.eligible`将停牌/ST/ADV与行情日绑定到同一个`decision_date`；跨日生产会混淆截至日证据 | 增加明确行情截至日参数并保留独立决策日用于冷却等规则；组合构造函数传前者 |
+| 组合试验入口 | `PortfolioTrialInput`允许`evaluation_as_of < decision_date`，测试却传最后行情日为后者；未拒绝未来候选/基准 | 入口先验证候选与基准的最后行情日不晚于截至日，覆盖未来资料拒绝与T+1数据。无完整候选全集证明时仍不得自动生产真实目标 |
+
+这一增量只修数据时点一致性与单元验收，不发布目标、资格或任务；没有新表/三方依赖。涉及stock_inputs、stock_medium_momentum、stock_short_reversion、etf_dual_momentum、etf_defensive_allocation、trial_executor及对应纯单测。保持同日历史调用默认行为，前一交易日行情由显式`evaluation_as_of`传入。测试需覆盖2026-09-24行情/2026-09-28决策可构造、9月28日未来行情拒绝、周/月调仓和停牌/冷却分离；原策略数值公式不改。后续生产接入口必须先证明候选全集、版本/试验绑定及市场日历，不能把`None`解释为清仓。
+
+
+#### T3-ALLOC-01b 冻结试验与策略版本绑定（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 身份审计 | `QuantStrategyVersion`只有sandbox源码/模板字段，`PortfolioTrialResult`仅返回trial_id/hash；同名family的12个中期动量格子参数各异，凭family_id无法恢复曾采用哪一格 | 新增一版本一条不可变`quant_target_trial_bindings`，保存trial_id、定义hash、family、scope及扫描源码hash；这是部署绑定事实，不是资格授权 |
+| 注册一致性 | 发布版本可与研究trial无关，重放若悄然换trial将改变生产定义 | 同事务锁版本→检查PUBLISHED及源码hash→`prepare_trial`实时重算预注册定义→首次插入/同内容重放，异内容拒绝；归档后的历史绑定仍可审计但不可新注册 |
+| 执行门禁 | 仅有绑定仍不能证明候选全集、生命周期政策与scanner组合一致 | 本增量不接订单/正资格；后续目标生产必须同时验证绑定、覆盖证据与真实资格并解决组合规则和单票sandbox交互 |
+
+选择独立业务表而非`QuantStrategyVersion.template_params`或任务JSON：绑定一经建立应保留历史、以版本唯一约束和FK保护；与草稿模板元数据及易过期任务生命周期不同。表单独记录首次绑定时间及不可变内容，不重复建设任务、重试或调度。只对`source_code is None`的预注册组合trial开放，资产范围由试验family明确映射；`scanner_source_hash`只证明绑定时发布源码未变，**不**证明scanner与组合目标政策等价。注册拒绝源码hash不符、版本非PUBLISHED、未知/单票trial或不同内容重绑；同内容重放保留原行。迁移0023仅隔离测试库执行。涉及新ORM/服务、Alembic0023、PG集成测试与知识库结构说明；既有无绑定版本仍正常运行旧路径，不因此获得自动组合目标。
+
+
+#### T3-ALLOC-01b 股票候选全集对账（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 快照内部全集 | `PortfolioTrialInput.stocks`只是一个元组，现有研究builder可列截至日全部已上市股票，但没有逐码比较；少传一票会改变前10名且看起来像正常选股 | 新增只读对账，按快照instrument上市/退市区间生成全部股票代码，逐项比较候选代码，报告缺失、额外、重复与不支持品种 |
+| 证据分级 | `DatasetBuilder`每次都写`coverage_audit: historical completeness not verified`等certification_issues；即使覆盖局部完整也不等于真实上游全量 | 报告分列本地代码集一致性和快照/历史认证问题，不把本地一致或手工fixture当准入证明，不新增正授权 |
+| 未支持范围 | `StockCandidate.eligible`仅支持.SH/.SZ，而快照可能包含.BJ；ETF需额外历史分类/交易规则且coverage_audit当前必报fund_trade_rules | BJ明确进入不支持及缺候选清单；ETF另留认证门禁，不以股票对账报告替代ETF规则 |
+
+对账使用研究快照的instrument表（内部一致性来源，**不**是独立上游证明），要求明确`as_of == dataset.quality.as_of`；发布日期和快照校验由后续生产入口调用DatasetRepository完成。返回结构化missing/extra/duplicate/unsupported与quality/coverage缺证据，不持久化新表、不读写主库。验收通过只说明静态对账实现及测试，不说明生产全集认证。测试覆盖少票、额外票、退市/未来上市、BJ、无独立日历/公司行为等认证缺口。
+
+#### T3-ALLOC-01b 组合试验无目标状态分级（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 返回契约 | `execute_portfolio_trial`的`intent=None`同时来自非月末/周末、缺ETF代表和选股无结果，调用方无法识别调度语义 | 给`PortfolioTrialResult`增加封闭状态：`TARGET`、`NOT_SCHEDULED`、`NO_TARGET_UNCLASSIFIED`；仅规则明确不在调仓日时归`NOT_SCHEDULED` |
+| 生产门禁 | `build_dual_momentum_target`可明确返回`cash_only`，而None不携带可信清仓意图 | 只对非空intent归`TARGET`，保持显式cash_only；其他None一律保留未分类，后续入口不得转换为清仓或ADVISORY |
+| 回归 | 现有纯单测只断言`intent is None` | 覆盖两种调度、缺代表、空代表的现金目标、股票无目标；不运行DB或真实LLM |
+
+此增量只调整纯试验结果契约，不改变四个策略数值或生产执行权限。其余`NO_TARGET_UNCLASSIFIED`需在独立来源和策略原因完整分类后才可决定是否发布目标；本增量不提供该正授权。
+
+#### T3-ALLOC-01b 组合生命周期冻结政策契约（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 领域政策 | 四家族的`holding_policy_for_trial`只在纯试验中使用，真实政策版本不保存对应退出窗口 | 用现有`LifecyclePolicyVersion`新增严格`portfolio_trial`配置：trial_id、definition_hash、`PortfolioHoldingPolicy`字段；不另建重复政策表 |
+| 持久化与哈希 | `TargetTrialBinding`仅复制政策版本ID，不能证明该版本的内容与试验一致 | 沿用`LifecyclePolicyService.publish`的不可变版本及canonical hash，发布时拒绝混入旧模板字段；只读核查重算hash并比较绑定的版本ID、trial spec、管理配置与政策配置 |
+| 执行门禁 | 当前成交/持仓服务按旧模板`ManagementPolicy`消费，组合政策即使匹配也尚未接到真实fill | 本增量只建立完整且可复核的政策身份，不授予目标/资格/BUY；后续必须让真实fill初始化与逐日持仓评估读取相同版本，再做隔离PG端到端回放 |
+
+使用四家族预注册配置生成唯一政策配置，兼容旧模板政策行；发布函数沿用现有ledger事务语义。审计读取需在版本行锁下刷新ORM、核对发布状态、策略源码hash、绑定不可变内容、政策状态/ID/哈希和严格配置相等；任何缺失返回拒绝，不推断旧数据。定向测试覆盖四家族、null/错误政策、配置/哈希漂移、重放与旧模板兼容；隔离库fixture显式指向`liveprofit_quant_strategy_test`，不运行主库迁移和真实LLM。
+
+#### T3-ALLOC-01b 组合政策真实执行入口隔离（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| BUY成交 | `LifecycleOrderService._initialize_lifecycle_from_first_fill`按`template_id`走旧管理规则；若组合政策和旧模板ID误配，可能按旧规则初始化，且active/无信号/缺快照可提前返回 | 所有BUY先核同标的活动及订单绑定生命周期，再独立核signal和task快照的版本政策；任一路径指向`portfolio_trial`则拒绝，版本冲突也拒绝；异常由事务调用方回滚 |
+| 每日持仓 | `PositionLifecycleManager.process_day`同样按`template_id`走旧评价器 | 在创建日事实/意图前识别组合政策并拒绝，要求后续专用组合持仓状态与同源政策接线 |
+
+这是过渡期新增风险BUY门禁，不替代完整组合fill/持仓实现；保护性SELL仍按成交账本处理，不调用旧模板评价器。`correct_fill`/`void_fill`只修改既有成交历史、不会调用旧模板评价器；它们可能因更正BUY/SELL数量而增加当前仓位，其政策状态重算与实际持仓对账仍列T4/组合生命周期门禁，不能视为新增风险授权。旧模板政策正常工作。隔离PG定向测试覆盖active/closed/order.lifecycle_id、无信号BUY、信号/快照两种版本来源及仅版本ID无政策子快照、错配拒绝、SELL保留，并核对回滚后填单/仓位/现金/事件无残留。
+### T3 目标试验身份跨批次传递增量（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 目标事实 | `PortfolioTrialResult`有试验身份，`PortfolioTargetIntent`无对应字段 | 将试验 ID 与定义哈希成对附入目标，结果对象核一致性 |
+| 决策入口 | `FamilyBatchService.project`只核版本和资格，不能证明目标属于绑定试验 | 在组合锁、版本锁下对已绑定版本核目标、scope、政策及冻结内容；无绑定的旧模板维持原路径 |
+| 成交状态 | `SuggestedOrder`无目标腿与试验身份 | 后续建立订单来源事实，再接真实fill及组合持仓；本增量不把批次认证解释为成交授权 |
+
+`execute_portfolio_trial`仅在产生明确 `TARGET` 时附试验身份；`NOT_SCHEDULED`和`NO_TARGET_UNCLASSIFIED`继续不生成目标。批次持久化仍使用已有成员 `intent` JSONB，不改表结构；绑定版本目标缺失或身份不一致时拒绝新投影。无绑定版本也须先锁定并核查政策，组合政策不能走旧式无身份目标。后续订单来源事实须从该不可变成员腿在同一事务中生成，不能依赖信号或成交时反推家族权重。
+
+#### T3-ALLOC-01b 组合目标专用建单前置门禁（2026-09-28）
+
+`EntryBatchService.materialize`仅消费扫描`QuantExecutionSignal`，未消费可信`PortfolioTrialResult`；`order_materialization.py`按旧模板生命周期首仓比例裁剪组合数量。因此历史批次重放照旧只返回收据；新消费在组合锁后重新审计每个成员目标与版本绑定，凡组合目标一律在任务/订单写入前拒绝。下一阶段先建立可信目标生产和独立数据认证，随后由冻结目标腿直接建单并在同事务保存订单来源，不套用旧扫描信号0.50比例。隔离PG验证绑定晚于旧批次时不能生成订单/收据。
+
+#### T3-ALLOC-01b 可信目标输入来源清单（2026-09-28）
+
+| 输入 | 当前载体 | 生产前门禁 |
+|---|---|---|
+| 股票/ETF上市全集 | `source_reader.instrument`来自本地`market.instrument` | 独立上游逐证券有效期全集认证；本地对账不能代替 |
+| 复权收盘序列 | `daily.close`与`adj_factor`可读，股票/ETF诊断候选转换器已实现 | 同一as-of复权口径已转换；完整窗口、来源可得时点与公司行动仍待独立认证 |
+| ADV20 | `instrument_daily.amount`原表单位千元；研究reader此前未读取，现已补列 | 20个有效交易日换算为元、缺值保持未知，并校验停牌/窗口 |
+| ST/停牌/上市根数 | `trade_status_effective`与独立日历/停牌证据 | 历史时点与有效日一致性；不因停牌缺日线误判 |
+| ETF分类/规则/月代表 | `etf_catalog`按时点可读，ETF候选及月代表已有诊断转换；证券级交易规则尚未进入快照 | 独立目录全集、类别/停牌/规则生效期及月选集持久来源证据冻结 |
+| 基准与账户状态 | 研究reader已单列沪深300及其诊断窗口；持仓/冷却事实仍需平台账本 | 基准来源可得时点、组合锁下owner/冷却快照、成交后更新 |
+
+`DatasetBuilder.quality.certification_issues`当前始终包含历史覆盖未认证，公司行动与证券规则同样未认证，不能把`READY`当作`certifiable`。先交付可诊断输入构造与证据缺项，再接独立证书和生产目标；没有正目标证据时维持旧消费者阻断。
+
+#### T3-ALLOC-01b 沪深300基准历史快照输入
+
+股票两家族的`benchmark_bars`此前只有测试构造，旧`source_reader`只枚举stock/fund而排除指数；既有执行期基准固定取`000300.SH`。研究reader现单独读取`market.instrument_daily`中由`market.instrument`证明为index且交易日在非空上市日至退市日前的`000300.SH`原始收盘，保存为独立`benchmark_daily`快照表，避免混入股票/ETF候选全集。DatasetBuilder做日期截至日过滤与基本值核验；没有足够基准证据时目标继续未知，不转为现金意图。读取列为ts_code/trade_date/close/source，既有快照缺该可选表仍可供旧研究读取，但不能作为组合股票目标的生产证据。
+
+后续把`benchmark_daily`纳入已有`audit_historical_coverage`：只有快照包含该表且含股票候选时，按传入的独立验证交易日历逐日核`000300.SH`的有限正收盘；缺日记入独立`benchmark_daily`计数，非交易日/错代码和重复键拒绝。快照旧版没有该表仍可用于旧研究，但`DatasetQuality.certification_issues`明确保留基准缺证；有表且完整日历时仍须单独核来源可得时点，不能由覆盖完整直接授予生产目标。
+
+#### T3-ALLOC-01b 股票候选诊断转换增量
+
+研究快照的`daily.close`、`adj_factor`和原始`amount`需逐证券日合并；复权收盘统一为`close × 当日因子 ÷ 截止日因子`，不能混入旧前复权因子列。`amount`原单位千元，最近20个独立交易所开市日逐日有有效成交额时才计算`ADV20_CNY = sum(amount) × 1000 ÷ 20`。250根有效日线仅证明至少250个上市后成交日；少于250根或快照窗口不足时保持未知，不能把当前上市目录倒推为上市根数。最终日需有日线、有效复权因子和可信ST/停牌状态，账户`held/cooldown`逐代码显式提供；缺任一项只产生诊断缺口，不构造看似可用的`StockCandidate`。转换结果携带快照质量与候选全集对账问题，供后续独立证书和真实账户锁内取值核验；本增量不向旧扫描建单路径输出目标。
+
+#### T3-ALLOC-01b 沪深300试验序列诊断转换增量
+
+`benchmark_daily`已单列在研究快照中，但组合股票规则需要`tuple[(date, Decimal)]`。转换器须由调用方提供独立验证的交易日历和所需连续根数（股票家族60/120/200日参数）；只在截止日与快照日期一致、最近N个交易日每一日均有`000300.SH`有限正收盘、唯一日期及非空来源时输出完整序列。错误代码、重复日、窗口内非交易日、未来行情、坏收盘或缺日必须形成可诊断问题并保持输出空序列，不能将部分序列传成趋势不成立。结果单列`source availability not verified`及快照原有认证问题；这一步仅构建软件输入，不发放历史可得性或生产目标资格。
+
+#### T3-ALLOC-01b 股票组合输入门禁汇总增量
+
+两项诊断转换分别能产生候选与沪深300序列，但尚无统一判定，直接用空候选/空基准调用组合规则会得到`NO_TARGET_UNCLASSIFIED`，调用方无法区分真实无信号与输入缺口。新增只读汇总：仅接受预注册股票组合试验ID，从冻结参数取基准MA窗口（中期动量60/120/200，短期反转120）；同一快照、截止日和独立交易日历构造股票候选及指数序列。逐证券缺口/候选全集不匹配/基准缺口归入本地输入问题，快照认证、独立覆盖、基准来源可得时点及账户锁内来源归入认证门禁。结果保存试验ID/hash与两类证据，但不创建`PortfolioTrialInput`、不调用`execute_portfolio_trial`、不产出`PortfolioTargetIntent`；只有后续独立证书和真实账户事实接通后，才允许专用生产入口消费。
+
+#### T3-ALLOC-01b ETF候选诊断转换增量
+
+ETF家族的`FundCandidate`还缺从研究快照到领域输入的转换。研究reader已有基金日线原价/成交额、`fund_adj`复权因子、`factor_daily.atr_bfq`及按可得时间截断的`etf_catalog`；但目录的`etf_type`不能推出五个策略类别，基金停牌与交易规则也没有同一来源证书。诊断转换对快照上市区间内的基金逐只检查目录身份/跟踪指数、外部显式类别及停牌事实、最终日ATR原价、至少250根上市后价、最近20个独立交易日成交额与复权因子。前复权收盘仍取`close × 当日因子 ÷ 截止日因子`，ATR保持未复权`atr_bfq`，金额从千元换算成人民币元；缺项逐只记gap，显式`OTHER`类别单列排除，不能默认为非停牌或任一策略类别。结果恒保留分类来源、基金停牌/交易规则与历史公司行为认证门禁，不做月代表选择、不调用ETF目标规则。
+
+#### T3-ALLOC-01b ETF全集分区与月代表诊断增量
+
+月代表选择的输入必须先证明同一快照截止日的全部在市`fund`代码逐只落入候选、显式`OTHER`排除或缺证据三类；缺目录/分类/ATR的基金不能静默消失并改变最高成交额代表。只读全集审计按上市日至退市日前对照这三类，发现重复、额外或未交代代码即列本地问题，独立ETF目录全集证书另列认证门禁。月选择仅接受预注册ETF组合试验、显式已核月末标志和`evaluation_as_of <= decision_date`；无本地缺口时用现有确定性选择器在`evaluation_as_of`冻结双动量类别×指数代表或防御三类代表，缺证据时不返回代表集合。结果携带试验ID/hash、分区/选择诊断及未认证来源；不构造`PortfolioTrialInput`或目标，非月末也不能借空集合表达清仓。
+
+#### T3-ALLOC-01b ETF月代表诊断事实持久化增量（2026-09-28）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 研究事实 | `inspect_monthly_fund_representatives`结果只在内存中，重新运行时无法核对所用快照和显式分类/日历 | 新建独立不可变`quant_fund_representative_freezes`表，绑定研究快照UUID/manifest SHA、预注册trial ID/定义hash、行情截至日和决策日，保存选择结果、问题及规范化输入摘要 |
+| 来源完整性 | 仅存代表代码会丢失构造输入；本地快照`READY`也不代表独立认证 | 写入时由持久快照和调用方显式日历/分类事实重新计算诊断；内容hash覆盖日历、分类、完整诊断候选、分区与结果；状态固定`DIAGNOSTIC`，不得作为生产目标或资格 |
+| 重放与冲突 | 相同月份可重试，同一快照/试验/截至日/决策日结果若变化则不能覆盖历史 | 联合唯一键按快照+trial+两日期；相同内容幂等返回，差异抛冲突，历史行禁止更新/删除；不同快照允许并存以供修订审计 |
+| 验证 | 仅纯测试不足以证明事务唯一键与不可变性 | 先核隔离库fixture，再运行定向纯/PG测试；核快照篡改、同键重放/冲突、非月末/阻断不误冻结、迁移与只读回读；独立Code Review后记录增量验收 |
+
+该表服务研究重现性；无证书的结果保持诊断身份，不能填入`PortfolioTrialInput.monthly_representatives`或`defensive_symbols`。生产目标仍待独立目录/历史来源/账户证书及专用执行入口。
+
+#### T1 历史事实本地修订轨迹增量（2026-09-29）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 覆盖写入 | `market.instrument_daily.updated_at`只保留最后一次写入，`market.adj_factor`无时间列；例如重拉最近三日后，旧值及首次本地观测时间消失 | 在market schema增加`fact_revision`追加表，PG触发器捕获日线、复权、技术因子、复合状态四张核心事实表的INSERT/实质UPDATE/DELETE，保存DB观测时刻、操作和完整JSONB行 |
+| 取用边界 | 当前研究reader直接读最终表，无法还原修订前本地写入事件，且历史补采发生在2026年 | 新增只读as-of事件查询，未有记录或已删除返回未知/无值；触发时间可早于事务提交，不作为决策时已可见或上游已发布证明 |
+| 性能与审计 | 每日增量会重拉三日，重复写入相同值 | UPDATE比较排除`updated_at`后的业务载荷，仅变化时追加；修订表拒绝UPDATE/DELETE；按事实表/代码/日期/观测时刻索引，保留源表原有事务边界 |
+| 验证 | DAO层多条采集入口均能写四张表，逐个改Python容易漏路径 | 用隔离`liveprofit_instrument_test`的schema初始化与SQL验证插入、同值更新、修订、删除、回滚、as-of未知/旧值；只运行定向测试，不动主库或真实LLM |
+
+这是**本地入库写入事件轨迹**，并非事务提交可见时点或上游发布时间证书：安装触发器前的存量行没有过去的修订历史，今后的回填也只证明回填时本地写入。四表证券日主键禁止原地修改，修正身份须显式删旧增新并留墓碑。完整历史认证仍须独立源发布时间/原件、证券全集、公司行动与ETF规则，并把逐组件证书同快照校验和关联后才能授予目标资格。
+
+#### T3 显式规则规划计算增量（2026-09-29）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 价格与数量 | `ExecutionConstraintEvaluator`和`PositionPlanner`仍按政策`.01` tick及100股整手裁剪；科创最低200股后逐股递增会被错误裁成100倍数 | 规划器接受调用方显式逐证券规则集合；有规则时按下一真实开市日、生效期、早于决策日的发布日期、价格tick、最低/步长/最高数量裁剪全部预算及ADV20容量 |
+| 来源边界 | 0025诊断repository只核本地hash，`source_uri`和发布日期仍由调用方声明 | 显式规则路径只验证算术，不构成可信生产授权；缺键或错证券/晚发布日期拒绝该路径。真实入口接线必须先有官方原件和解释的独立认证持久事实，不把诊断规则直接交给执行 |
+| 兼容与验收 | 当前真实入口仍使用旧政策，SELL需要继续处理持仓保护 | 纯规划器未提供规则集合时维持现有行为，随后在认证读取器完成时统一将三个真实BUY入口改为强制证书，保护SELL单独核可卖数量与回转日；定向纯测核200后逐股、tick、现金递减、ADV20和缺/晚/错规则 |
+
+该增量完成的是**显式规则计算能力**；生产BUY门禁、ETF回转账本和历史规则覆盖均为后续独立验收，当前不得宣称T3整体通过。
+
+#### T3 交易所原件安全采集增量（2026-09-29）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 原件取得 | 0025的`register_source`接受任意调用方提交的字节、URI及发布日期，无法区分官方站点真实取得与手工声明 | 提供HTTPS采集器，仅允许上交所、深交所、北交所官方DNS域；逐跳及最终URL核验、限制跳转和8 MiB正文、拒绝压缩响应与异常媒体类型，返回原始字节、SHA、请求/最终URI及本机取得时刻 |
+| 采集事实 | 只把采集结果降成0025来源行会丢请求URI及抓取时刻，与手工`register_source`不可区分 | 0026新增不可变采集事件表，FK原件行并保存请求/最终URI、原文hash、本机抓取时刻及DB记录时刻；同一原件每次抓取各记一条，不覆盖历史。诊断读取重核事件与原件身份 |
+| 认证边界 | TLS站点来源和当前抓取时刻仍不能证明历史T日已发布，也不能证明逐证券解释正确 | 采集结果保持诊断身份，不加`certified`标记；发布日期和每条规则解释需另有官方通知/原件条款、有效期、证券分类及独立审核证据，才可能进入生产读取器 |
+| 验证 | 真实站点可因网络/反爬限制而不响应 | 离线fake opener测试域名、跳转、正文限制、媒体类型及hash；真实点测深交所PDF及通知页并记录hash，失败站点按网络异常单列，不推断规则不存在或未发布 |
+
+此增量不修改0025既有表或主库，只在隔离库验证0026。后续认证读取器应引用保存的采集事件、原件hash与解释hash，不能单凭采集器返回值或手填`published_on`放行BUY。
+
+#### T3 ETF单证券档位预算增量（2026-09-29）
+
+| 维度 | 问题 | 方案概览 |
+|---|---|---|
+| 风险档 | `RiskProfileLimits`此前只有股票单票5/8/10%，显式ETF规则进入共享规划器仍会按股票上限裁剪 | 三档增加固定ETF单证券20/25/30%上限；该政策上限由冻结`risk_profile`派生，不新增用户可编辑账户字段 |
+| 同证券暴露 | `PositionPlanner.single_used`已有T日估值持仓和未完成BUY金额，ETF不能只核新单 | 证券规则显式为ETF时，以档位ETF上限扣同代码持仓/待成交；股票保留账户`max_single_stock_pct`，含费用现金另核 |
+| 来源边界 | 任意调用方可自声明`asset_type='etf'`，旧真实入口尚未传认证规则 | 此阶段只验显式规则算法；生产必须由认证resolver交叉核官方证券身份及执行日规则，缺/冲突拒绝BUY，不能把自声明ETF提高股票预算 |
+
+验收以三档10万元数值、股票对照、ETF现有持仓与待成交合计反例、独立Code Review为准；真实ETF执行仍受来源及T+0/T+1账户可卖量门禁。
+### T3前向规则认证证书设计（2026-09-29增量）
+
+现有0025规则解释保存调用方声明的发布日期和数值，0026仅证明本机从交易所HTTPS取得字节；它们无法单独授权真实BUY。生产前向认证应新增不可变证书事件：关联规则观察、官方规则原件采集事件和独立证券身份原件采集事件，保存复核人、解释摘要及证书hash。证书签发后还需独立提交可见性见证；`recorded_at`可能早于事务提交，不能单凭它证明T日前可得。前向授权只允许在全部原件取得、解释复核和提交可见性**之后**作出的真实决策；历史回放还须独立原始发布时间证据，不得将当前抓取倒推到历史T日。按证券/执行日要求唯一证书；源hash漂移、身份类别不一致、冲突解释、规则晚生效或日历不支持均拒绝新BUY。证书为独立业务事实，适合新增持久表；复用0025/0026原件及现有任务系统，不将审核历史藏入JSON或Redis。诊断规则不自动升级成证书。
+
+实现路径：先落证书模型/迁移和只读核验，再以同一锁内reader供扫描、共同批次、生命周期追加和订单落库消费；测试用独立隔离库构造正证书及缺证/冲突/晚认证反例。既有实际人工成交继续入账并标偏离，不因证书缺失丢弃事实。证书签发要求可信审核身份和逐证券身份原件，未取得时所有新BUY继续拒绝。
+
+0028阶段把证书读取严格收窄为`resolve_live_now`即时诊断：仅系统中国日期等于决策日期时读取，独立连接确认当前已提交，返回读取完成后的`authorized_at`与证书ID；跨午夜拒绝。它不证明冻结T收盘或任意历史`evaluation_as_of`已可见，故生产消费必须在**新决策时点**核`authorized_at`和原信号截止语义并持久绑定证书，当前未接真实BUY入口仍为空规则集。身份原件的symbol/type/locator是审核人签名解释，与规则观察机器比较；系统不能仅凭PDF字节自动理解证券身份。逐人密钥及签发流程未配置时，证书不授生产资格。
+
+### T3账户全回撤持久动作设计（2026-09-29增量）
+
+`PortfolioRiskState`现可核全回撤，却只在`PositionPlanner`报告中输出布尔值；单策略HOLDING信号不能保证覆盖账户全部持仓。例如账户持有A/B两票，今日只扫描A时，B不会形成退出目标。推荐新增账户级风险动作事件与逐持仓退出目标表：在组合锁内以同一净值事实和风险档检查全回撤，事件冻结峰值/当前净值、档位预算、事实日期和输入hash，逐持仓目标固定为零；重跑同一事实幂等，事实漂移拒绝，已成交/撤单/停牌后目标仍存在，直到真实持仓为零。暂停事件使所有新增风险入口在同一组合锁内拒绝；恢复须明确原因及新的净值事实，不因反弹自动解除。保护SELL和实际成交更正不受暂停阻断。退出执行依赖T4可卖量账本及逐证券规则，缺证时保持目标为待执行，不凭持仓总量伪造可卖量。
+
+风险动作历史是独立业务事实，应新增不可变表；用`Portfolio`布尔列会丢触发和恢复审计，用现有任务JSON会把跨日持久目标绑定到单次任务，Redis不能承载关键事实。读取最新事件仅是状态投影，事件和目标在一事务写入；组合锁先于策略版本/持仓锁，已有SELL预留与目标在同一时点复核。该增量首先关闭“暂停+目标持久”软件门禁，真实可执行卖单仍以T4账本事实为后续门禁。
+
+恢复资格按保守策略实现：仅接受当前PAUSE事件ID、暂停日之后的新净值事实、当前回撤严格小于档位预算一半、实际持仓全部为零、无未完成BUY建议；审核身份与原因单列入不可变RESUME事件，重复同一请求幂等。回升或持仓清空均不自动恢复。审核声明由组合/PAUSE/日期/净值事实hash/审核人/原因组成的HMAC-SHA256签名绑定，按`LIVEPROFIT_RISK_REVIEW_KEYS`中逐审核人独立的规范base64密钥验签；软件检查解码后至少32字节及配置内互异，未配置密钥拒绝恢复。密钥在环境中独立供给，仓库不存密钥，生产随机生成/发放/轮换/吊销、签发工具与人员授权仍需接入，当前无生产恢复API。账户退出投影按`(market,symbol)`匹配同日行情和已有SELL预留，非CN保持待执行，显式结算可卖量缺失时保持未知，不借持仓总量推断可卖；订单落库与结算账本另按T4接线。

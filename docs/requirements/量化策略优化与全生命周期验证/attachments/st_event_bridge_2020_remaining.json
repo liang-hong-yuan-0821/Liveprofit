@@ -1,0 +1,271 @@
+{
+  "generated_at": "2026-09-25T21:52:25.915625+00:00",
+  "reports": [
+    {
+      "day": "2020-02-20",
+      "before": "2020-02-19",
+      "after": "2020-02-21",
+      "before_count": 140,
+      "after_count": 140,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 140,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "4d49eb71022164c3dc4e83b3d879f0532234e0da34d48a26c59b6ef7bd90cd2f",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-02-25",
+      "before": "2020-02-24",
+      "after": "2020-02-26",
+      "before_count": 140,
+      "after_count": 140,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 140,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "4d49eb71022164c3dc4e83b3d879f0532234e0da34d48a26c59b6ef7bd90cd2f",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-03-16",
+      "before": "2020-03-13",
+      "after": "2020-03-17",
+      "before_count": 139,
+      "after_count": 139,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 139,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "0a1b20aa177e0b037efa61f94f14d166abed0c19cf46322376c9ae5adcab8bae",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-04-23",
+      "before": "2020-04-22",
+      "after": "2020-04-24",
+      "before_count": 142,
+      "after_count": 144,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "000837.SZ",
+          "name": "*ST秦机",
+          "pub_date": "20200422",
+          "imp_date": "20200423",
+          "st_type": "*ST"
+        }
+      ],
+      "next_events": [
+        {
+          "ts_code": "600225.SH",
+          "name": "*ST松江",
+          "pub_date": "20200423",
+          "imp_date": "20200424",
+          "st_type": "*ST"
+        }
+      ],
+      "candidate_count": 143,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "f03ace692e6a48736bc2c5a3f3c80285de27fa785de38e440942d24b7acb1d8a",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-06-18",
+      "before": "2020-06-17",
+      "after": "2020-06-19",
+      "before_count": 202,
+      "after_count": 202,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "002336.SZ",
+          "name": "ST人乐",
+          "pub_date": "20200617",
+          "imp_date": "20200618",
+          "st_type": "撤消*ST并实行ST"
+        },
+        {
+          "ts_code": "300028.SZ",
+          "name": "金亚退",
+          "pub_date": "20200617",
+          "imp_date": "20200618",
+          "st_type": "退市整理期"
+        }
+      ],
+      "next_events": [
+        {
+          "ts_code": "000572.SZ",
+          "name": "ST海马",
+          "pub_date": "20200618",
+          "imp_date": "20200619",
+          "st_type": "撤消*ST并实行ST"
+        }
+      ],
+      "candidate_count": 202,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "4f28454d810ccbe85665e304111a971ff4bb8755c0104ec2fb23e9dca8baca0b",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-07-08",
+      "before": "2020-07-07",
+      "after": "2020-07-09",
+      "before_count": 213,
+      "after_count": 213,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "002290.SZ",
+          "name": "ST中科创",
+          "pub_date": "20200707",
+          "imp_date": "20200708",
+          "st_type": "撤消*ST并实行ST"
+        }
+      ],
+      "next_events": [],
+      "candidate_count": 213,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "cdc5c2f7daaee4136eb3cd3503ba3bb1c5956a2a7a608360c900d63e43ca1f0d",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-07-20",
+      "before": "2020-07-17",
+      "after": "2020-07-21",
+      "before_count": 212,
+      "after_count": 212,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 212,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "edc86e0f81f605b04f19c1af4478ed00ea2ee87d31a298f6b921216b00031787",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-08-03",
+      "before": "2020-07-31",
+      "after": "2020-08-04",
+      "before_count": 212,
+      "after_count": null,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [
+        {
+          "ts_code": "002089.SZ",
+          "name": "ST新海",
+          "pub_date": "20200801",
+          "imp_date": "20200804",
+          "st_type": "撤消*ST并实行ST"
+        },
+        {
+          "ts_code": "002427.SZ",
+          "name": "ST尤夫",
+          "pub_date": "20200803",
+          "imp_date": "20200804",
+          "st_type": "撤消*ST并实行ST"
+        }
+      ],
+      "result": "UNAVAILABLE"
+    },
+    {
+      "day": "2020-08-04",
+      "before": "2020-08-03",
+      "after": "2020-08-05",
+      "before_count": null,
+      "after_count": 212,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "002089.SZ",
+          "name": "ST新海",
+          "pub_date": "20200801",
+          "imp_date": "20200804",
+          "st_type": "撤消*ST并实行ST"
+        },
+        {
+          "ts_code": "002427.SZ",
+          "name": "ST尤夫",
+          "pub_date": "20200803",
+          "imp_date": "20200804",
+          "st_type": "撤消*ST并实行ST"
+        }
+      ],
+      "next_events": [
+        {
+          "ts_code": "300216.SZ",
+          "name": "千山退",
+          "pub_date": "20200805",
+          "imp_date": "20200805",
+          "st_type": "退市整理期"
+        }
+      ],
+      "result": "UNAVAILABLE"
+    },
+    {
+      "day": "2020-08-24",
+      "before": "2020-08-21",
+      "after": "2020-08-25",
+      "before_count": 212,
+      "after_count": 214,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [
+        {
+          "ts_code": "600365.SH",
+          "name": "ST通葡",
+          "pub_date": "20200824",
+          "imp_date": "20200825",
+          "st_type": "ST"
+        },
+        {
+          "ts_code": "601777.SH",
+          "name": "*ST力帆",
+          "pub_date": "20200824",
+          "imp_date": "20200825",
+          "st_type": "*ST"
+        }
+      ],
+      "candidate_count": 212,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "cbd4f69be5317f1cbe07967c151bddb3ec88c53f3a68889f8b9426304ef07107",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2020-11-20",
+      "before": "2020-11-19",
+      "after": "2020-11-23",
+      "before_count": 217,
+      "after_count": 217,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 217,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "dce1018cffeb45383b0c26b7cd7b6122100ff2061068639b546cb8276a9385f5",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    }
+  ]
+}

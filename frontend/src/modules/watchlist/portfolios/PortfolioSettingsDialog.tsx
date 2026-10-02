@@ -1,6 +1,6 @@
 import { PercentField, percentDraft, percentValue } from '../../../shared/ui/PercentField';
 // 组合账户设置（plan 4.2.1）：原子编辑名称与全部资金/风控字段，
-// 409 冲突时重新拉取组合与持仓；任务仅读取提交时快照。
+// 409 冲突时重新拉取组合与持仓；量化生成订单前复核实时账户和资格。
 
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
@@ -23,6 +23,12 @@ interface PortfolioSettingsDialogProps {
   portfolio: PortfolioDTO;
   trigger: React.ReactNode;
 }
+
+const PROFILE_CAPS = {
+  CONSERVATIVE: { trade: .0025, open: .02, total: .50, single: .05, drawdown: .08, sectorRisk: .01, dailyRisk: .01 },
+  BALANCED: { trade: .005, open: .04, total: .75, single: .08, drawdown: .15, sectorRisk: .02, dailyRisk: .02 },
+  AGGRESSIVE: { trade: .0075, open: .06, total: .90, single: .10, drawdown: .25, sectorRisk: .03, dailyRisk: .03 },
+} as const;
 
 export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSettingsDialogProps) {
   const [open, setOpen] = useState(false);
@@ -47,6 +53,7 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
   const [peakNetAssetValue, setPeakNetAssetValue] = useState(portfolio.peak_net_asset_value?.toString() ?? '');
   const [dayStartNetAssetValue, setDayStartNetAssetValue] = useState(portfolio.day_start_net_asset_value?.toString() ?? '');
   const [riskFactsAsOf, setRiskFactsAsOf] = useState(portfolio.risk_facts_as_of ?? '');
+  const [riskProfile, setRiskProfile] = useState<PortfolioDTO["risk_profile"]>(portfolio.risk_profile ?? null);
   const mutation = useUpdatePortfolioMutation();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -117,6 +124,23 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
       showError('行业开放风险上限必须 ≤ 组合开放风险上限', '行业开放风险上限');
       return;
     }
+    if (riskProfile) {
+      const cap = PROFILE_CAPS[riskProfile];
+      for (const [label, value, limit] of [
+        ['单笔风险比例', percentValue(riskPct, original.risk_per_trade_pct), cap.trade],
+        ['组合开放风险上限', percentValue(portfolioRiskPct, original.max_portfolio_open_risk_pct), cap.open],
+        ['总仓位上限', total, cap.total],
+        ['单票市值上限', percentValue(singlePct, original.max_single_stock_pct), cap.single],
+        ['最大回撤熔断', percentValue(drawdownPct, original.max_drawdown_pct), cap.drawdown],
+        ['行业开放风险上限', percentValue(sectorRiskPct, original.max_sector_open_risk_pct), cap.sectorRisk],
+        ['单日新增风险上限', percentValue(dailyRiskPct, original.max_daily_new_risk_pct), cap.dailyRisk],
+      ] as Array<[string, number, number]>) {
+        if (value > limit) {
+          showError(`${label}超过${riskProfile === 'CONSERVATIVE' ? '保守' : riskProfile === 'BALANCED' ? '均衡' : '进取'}档上限 ${(limit * 100).toFixed(2)}%`, label);
+          return;
+        }
+      }
+    }
     const facts = [netAssetValue, peakNetAssetValue, dayStartNetAssetValue, riskFactsAsOf];
     const anyFact = facts.some((value) => value.trim() !== '');
     const allFacts = facts.every((value) => value.trim() !== '');
@@ -152,6 +176,7 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
         peakNetAssetValue: allFacts ? Number(peakNetAssetValue) : null,
         dayStartNetAssetValue: allFacts ? Number(dayStartNetAssetValue) : null,
         riskFactsAsOf: allFacts ? riskFactsAsOf : null,
+        riskProfile,
         expectedVersion: original.version,
       },
       { onSuccess: () => setOpen(false), onError: error => { if (toApiError(error).status === 409) setConflict(true); } },
@@ -178,6 +203,7 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
     setPeakNetAssetValue(portfolio.peak_net_asset_value?.toString() ?? '');
     setDayStartNetAssetValue(portfolio.day_start_net_asset_value?.toString() ?? '');
     setRiskFactsAsOf(portfolio.risk_facts_as_of ?? '');
+    setRiskProfile(portfolio.risk_profile ?? null);
   }
 
   return (
@@ -189,6 +215,15 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
         </DialogHeader>
         <div className="space-y-3">
           <SettingsGroup title="账户基础" open={groups.has('basic')} onToggle={() => setGroups(current => { const next = new Set(current); next.has('basic') ? next.delete('basic') : next.add('basic'); return next; })}>
+          <label className="flex flex-col gap-1 text-sm">策略资格风险档位
+            <select className="rounded border bg-[var(--color-bg)] p-2" value={riskProfile ?? ''} onChange={event => setRiskProfile((event.target.value || null) as PortfolioDTO['risk_profile'])}>
+              <option value="">未选择（暂停开仓、加仓）</option>
+              <option value="CONSERVATIVE">保守</option>
+              <option value="BALANCED">均衡</option>
+              <option value="AGGRESSIVE">进取</option>
+            </select>
+            <span className="text-xs text-[var(--color-fg-muted)]">匹配该档位下已验证的策略资格；各风险参数可更保守，超过档位上限时不能保存。</span>
+          </label>
           <Field label="名称" value={name} onChange={setName} />
           <Field label="总资产（元）" value={totalAssets} onChange={setTotalAssets} />
           <Field label="可用现金（元）" value={availableCash} onChange={setAvailableCash} />
@@ -215,7 +250,7 @@ export function PortfolioSettingsDialog({ portfolio, trigger }: PortfolioSetting
           </SettingsGroup>
         </div>
         <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-          任务仅读取提交时的组合快照；修改账户参数不影响已提交任务。校验：现金 ∈ [0, 总资产]、
+          量化任务保存提交时快照，生成建议订单前会复核最新账户与策略资格。校验：现金 ∈ [0, 总资产]、
           各比例大于 0% 且不超过 100%、单票 ≤ 总仓位、行业 ≤ 总仓位。
         </p>
         {stale && <p role="alert" className="text-xs text-amber-500">账户已有更新，草稿已保留。<button type="button" onClick={reseed} className="ml-2 underline">放弃草稿并加载最新设置</button></p>}

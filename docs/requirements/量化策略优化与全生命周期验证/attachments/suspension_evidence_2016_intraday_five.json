@@ -1,0 +1,42 @@
+[
+  {
+    "ts_code": "000159.SZ",
+    "trade_date": "2016-02-22",
+    "scope": "intraday",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2016-02-23/1201990713.PDF",
+    "published_on": "2016-02-23",
+    "evidence_note": "公司重大事项停牌公告明确2016-02-22上午盘中停牌；当日Tushare日线有成交，上游S事件时段为空。公告次日发布，研究as-of不得提前使用。"
+  },
+  {
+    "ts_code": "000510.SZ",
+    "trade_date": "2016-03-16",
+    "scope": "intraday",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2016-03-17/1202051870.PDF",
+    "published_on": "2016-03-17",
+    "evidence_note": "公司子公司事故公告明确股票自2016-03-16盘中停牌；当日有真实成交日线，上游S事件无时段。公告次日发布。"
+  },
+  {
+    "ts_code": "000533.SZ",
+    "trade_date": "2016-03-25",
+    "scope": "intraday",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2016-03-28/1202083670.PDF",
+    "published_on": "2016-03-28",
+    "evidence_note": "公司重大资产重组停牌公告明确股票自2016-03-25下午起停牌；当日有真实成交日线，上游S事件无时段。按公告公开页面日期2016-03-28门控历史可得性。"
+  },
+  {
+    "ts_code": "000659.SZ",
+    "trade_date": "2016-08-18",
+    "scope": "intraday",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2016-08-19/1202581775.PDF",
+    "published_on": "2016-08-19",
+    "evidence_note": "公司非公开发行筹划公告明确2016-08-18盘中即时停牌；当日有真实成交日线，上游S事件无时段。公告次日发布。"
+  },
+  {
+    "ts_code": "000711.SZ",
+    "trade_date": "2016-10-19",
+    "scope": "intraday",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2016-10-20/1202770688.PDF",
+    "published_on": "2016-10-20",
+    "evidence_note": "公司重大事项停牌公告明确2016-10-19下午盘中临时停牌；当日有真实成交日线，上游S事件无时段。公告次日发布。"
+  }
+]

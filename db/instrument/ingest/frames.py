@@ -7,6 +7,7 @@
 import logging
 import time
 
+import numpy as np
 import pandas as pd
 
 from AI.dataflows.providers.base_provider import (
@@ -166,9 +167,31 @@ def fetch_day_frames(provider, trade_date: str, stock_codes: list = None,
             df = _pull_market_frame(provider, trade_date, market, kind, codes)
             if df is None:
                 raise StoreFetchError(f"{market} {kind} 拉取失败")
+            required = {"ts_code", "trade_date"}
+            if kind == "factor":
+                required.add("adj_factor")
+            if not required.issubset(df.columns):
+                raise StoreFetchError(f"{market} {kind} 必需列缺失")
+            if df["ts_code"].isna().any() or df.duplicated(["ts_code", "trade_date"]).any():
+                raise StoreFetchError(f"{market} {kind} 代码/日期重复或为空")
+            dates = pd.to_datetime(df["trade_date"].astype(str), errors="coerce")
+            if dates.isna().any() or not dates.dt.strftime("%Y%m%d").eq(trade_date).all():
+                raise StoreFetchError(f"{market} {kind} 返回日期不匹配")
+            if kind == "factor":
+                values = pd.to_numeric(df["adj_factor"], errors="coerce").to_numpy(dtype=float)
+                if not np.isfinite(values).all() or (values <= 0).any():
+                    raise StoreFetchError(f"{market} 复权因子非正或无效")
             frames[f"{market}_{kind}"] = df
     if frames["stock_daily"].empty and frames["fund_daily"].empty:
         raise StoreFetchError("当日两市场日线均为空（交易日历开放日无任何行情，判定异常）")
+    if stock_codes and frames["stock_daily"].empty:
+        raise StoreFetchError("交易日股票日线整日为空")
+    if fund_codes and frames["fund_daily"].empty:
+        raise StoreFetchError("交易日基金日线整日为空")
+    if not set(frames["stock_daily"]["ts_code"]) <= set(frames["stock_factor"]["ts_code"]):
+        raise StoreFetchError("股票日线代码缺少同日复权因子")
+    if not set(frames["fund_daily"]["ts_code"]) <= set(frames["fund_factor"]["ts_code"]):
+        raise StoreFetchError("基金日线代码缺少同日复权因子")
     return {
         "daily": pd.concat([frames["stock_daily"], frames["fund_daily"]],
                            ignore_index=True),

@@ -1,0 +1,414 @@
+{
+  "schema_version": 1,
+  "related_scope": "explicit direct regression modules; task-specific gates may require broader coverage",
+  "modules": {
+    "backend.analysis": {
+      "source_paths": [
+        "backend/modules/analysis",
+        "backend/api/analysis_services.py",
+        "backend/api/routers/analysis_tasks.py",
+        "backend/api/routers/analysis_events.py",
+        "backend/workers/analysis_actor.py",
+        "backend/workers/analysis_executor.py",
+        "backend/workers/wiring.py"
+      ],
+      "test_path": "tests/backend/analysis",
+      "related": [
+        "backend.quant_strategy",
+        "frontend.analysis"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.daily_research": {
+      "source_paths": [
+        "backend/modules/daily_research"
+      ],
+      "test_path": "tests/backend/daily_research",
+      "related": [
+        "backend.analysis",
+        "frontend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.event_study": {
+      "source_paths": [
+        "backend/modules/event_study"
+      ],
+      "test_path": "tests/backend/event_study",
+      "related": [
+        "ai.event_study",
+        "frontend.event_study"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.investment_workspace": {
+      "source_paths": [
+        "backend/modules/investment_workspace"
+      ],
+      "test_path": "tests/backend/investment_workspace",
+      "related": [
+        "backend.quant_strategy",
+        "backend.analysis",
+        "frontend.watchlist"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.market_data": {
+      "source_paths": [
+        "backend/modules/market_data",
+        "backend/api/routers/market_data.py",
+        "backend/api/routers/market_refresh.py",
+        "backend/workers/market_refresh.py",
+        "backend/workers/market_ingest.py"
+      ],
+      "test_path": "tests/backend/market_data",
+      "related": [
+        "backend.analysis",
+        "backend.quant_research",
+        "backend.daily_research",
+        "frontend.market"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.migrations": {
+      "source_paths": [
+        "backend/migrations",
+        "alembic.ini"
+      ],
+      "test_path": "tests/backend/migrations",
+      "related": [
+        "backend.analysis",
+        "backend.quant_strategy",
+        "backend.investment_workspace",
+        "backend.quant_research",
+        "backend.market_data"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.platform": {
+      "source_paths": [
+        "backend/bootstrap",
+        "backend/main.py",
+        "backend/api/dependencies.py",
+        "backend/api/exception_handlers.py",
+        "backend/workers/broker.py",
+        "backend/workers/dispatcher.py",
+        "backend/openapi"
+      ],
+      "test_path": "tests/backend/platform",
+      "related": [
+        "backend.analysis",
+        "backend.market_data",
+        "backend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.quant_research": {
+      "source_paths": [
+        "backend/modules/quant_research"
+      ],
+      "test_path": "tests/backend/quant_research",
+      "related": [
+        "backend.quant_strategy",
+        "backend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "backend.quant_strategy": {
+      "source_paths": [
+        "backend/modules/quant_strategy"
+      ],
+      "test_path": "tests/backend/quant_strategy",
+      "related": [
+        "backend.analysis",
+        "backend.investment_workspace",
+        "backend.quant_research",
+        "frontend.analysis"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.analysis": {
+      "source_paths": [
+        "frontend/src/modules/analysis"
+      ],
+      "test_path": "tests/frontend/analysis",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.api": {
+      "source_paths": [
+        "frontend/src/api"
+      ],
+      "test_path": "tests/frontend/api",
+      "related": [
+        "frontend.analysis",
+        "frontend.market",
+        "frontend.watchlist",
+        "frontend.event_study",
+        "frontend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.app": {
+      "source_paths": [
+        "frontend/src/app"
+      ],
+      "test_path": "tests/frontend/app",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.daily_research": {
+      "source_paths": [
+        "frontend/src/modules/daily-research"
+      ],
+      "test_path": "tests/frontend/daily_research",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.event_study": {
+      "source_paths": [
+        "frontend/src/modules/event-study"
+      ],
+      "test_path": "tests/frontend/event_study",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.market": {
+      "source_paths": [
+        "frontend/src/modules/market"
+      ],
+      "test_path": "tests/frontend/market",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.shared": {
+      "source_paths": [
+        "frontend/src/shared",
+        "frontend/src/stores"
+      ],
+      "test_path": "tests/frontend/shared",
+      "related": [
+        "frontend.analysis",
+        "frontend.market",
+        "frontend.watchlist",
+        "frontend.event_study",
+        "frontend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "frontend.watchlist": {
+      "source_paths": [
+        "frontend/src/modules/watchlist"
+      ],
+      "test_path": "tests/frontend/watchlist",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.event_study": {
+      "source_paths": [
+        "AI/eventStudy"
+      ],
+      "test_path": "tests/ai/event_study",
+      "related": [
+        "ai.market",
+        "ai.sector",
+        "ai.stock",
+        "backend.event_study",
+        "backend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.graph": {
+      "source_paths": [
+        "AI/graph"
+      ],
+      "test_path": "tests/ai/graph",
+      "related": [
+        "backend.analysis",
+        "ai.market",
+        "ai.sector",
+        "ai.stock",
+        "ai.screening",
+        "ai.position"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.market": {
+      "source_paths": [
+        "AI/marketAgents"
+      ],
+      "test_path": "tests/ai/market",
+      "related": [
+        "ai.graph",
+        "data.transforms"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.position": {
+      "source_paths": [
+        "AI/position"
+      ],
+      "test_path": "tests/ai/position",
+      "related": [
+        "ai.graph"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.screening": {
+      "source_paths": [
+        "AI/screening"
+      ],
+      "test_path": "tests/ai/screening",
+      "related": [
+        "ai.graph"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.sector": {
+      "source_paths": [
+        "AI/sectorAgents"
+      ],
+      "test_path": "tests/ai/sector",
+      "related": [
+        "ai.graph",
+        "ai.screening"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.stock": {
+      "source_paths": [
+        "AI/stockAgents"
+      ],
+      "test_path": "tests/ai/stock",
+      "related": [
+        "ai.graph",
+        "ai.position"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.strategy_sandbox": {
+      "source_paths": [
+        "AI/strategy_sandbox"
+      ],
+      "test_path": "tests/ai/strategy_sandbox",
+      "related": [
+        "backend.quant_research",
+        "backend.quant_strategy",
+        "backend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.templates": {
+      "source_paths": [
+        "AI/templates"
+      ],
+      "test_path": "tests/ai/templates",
+      "related": [
+        "ai.market",
+        "ai.sector",
+        "ai.stock",
+        "backend.analysis"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "ai.utils": {
+      "source_paths": [
+        "AI/utils"
+      ],
+      "test_path": "tests/ai/utils",
+      "related": [
+        "ai.market",
+        "ai.sector",
+        "ai.stock",
+        "ai.graph"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "data.ingest": {
+      "source_paths": [
+        "db/instrument/ingest"
+      ],
+      "test_path": "tests/data/ingest",
+      "related": [
+        "data.instrument",
+        "backend.market_data",
+        "backend.quant_research",
+        "backend.daily_research"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "data.instrument": {
+      "source_paths": [
+        "db/instrument/dao",
+        "db/instrument/db.py",
+        "db/instrument/schema.sql",
+        "db/instrument/audit_history.py"
+      ],
+      "test_path": "tests/data/instrument",
+      "related": [
+        "data.ingest",
+        "backend.market_data",
+        "backend.quant_research",
+        "backend.quant_strategy",
+        "ai.event_study"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "data.providers": {
+      "source_paths": [
+        "AI/dataflows/providers"
+      ],
+      "test_path": "tests/data/providers",
+      "related": [
+        "data.ingest",
+        "data.transforms",
+        "backend.market_data",
+        "ai.market",
+        "ai.sector",
+        "ai.screening"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "data.transforms": {
+      "source_paths": [
+        "AI/dataflows/interface.py",
+        "AI/dataflows/market_features.py",
+        "AI/dataflows/technical",
+        "AI/dataflows/utils"
+      ],
+      "test_path": "tests/data/transforms",
+      "related": [
+        "ai.market",
+        "ai.sector",
+        "ai.screening",
+        "ai.position",
+        "backend.quant_strategy"
+      ],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "e2e.analysis_flow": {
+      "source_paths": [],
+      "test_path": "tests/e2e/analysis_flow",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "e2e.market_refresh": {
+      "source_paths": [],
+      "test_path": "tests/e2e/market_refresh",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "e2e.smoke": {
+      "source_paths": [],
+      "test_path": "tests/e2e/smoke",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    },
+    "e2e.workspace_ui": {
+      "source_paths": [],
+      "test_path": "tests/e2e/workspace_ui",
+      "related": [],
+      "environment": "Check local fixtures and markers; DB/Redis, live dependencies and E2E require explicit opt-ins."
+    }
+  }
+}

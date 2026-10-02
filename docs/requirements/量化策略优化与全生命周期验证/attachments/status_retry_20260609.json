@@ -1,0 +1,16 @@
+{
+  "start": "2026-06-09",
+  "end": "2026-06-09",
+  "calendar_days": 1,
+  "pending_before": 1,
+  "attempted": [
+    {
+      "trade_date": "20260609",
+      "status": "SUCCESS",
+      "rows": 5527
+    }
+  ],
+  "pending_after": 0,
+  "next_dates": [],
+  "generated_at": "2026-09-25T11:34:31.145379+00:00"
+}

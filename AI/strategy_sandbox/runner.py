@@ -14,13 +14,16 @@
 from __future__ import annotations
 
 import json
-import math
 import os
 import subprocess
 import sys
 import tempfile
 
-from AI.strategy_sandbox.protocol import MAX_STDOUT_BYTES, StrategyRunResult, validate_strategy_output
+from AI.strategy_sandbox.protocol import (
+    MAX_STDOUT_BYTES,
+    StrategyRunResult,
+    validate_strategy_output,
+)
 
 DEFAULT_TIMEOUT_SECONDS = 0.3
 
@@ -99,10 +102,12 @@ def run_strategy(
     has_position: bool = False,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     on_process=None,
+    allow_null_take_profit: bool = False,
 ) -> StrategyRunResult:
     """执行一次策略并校验输出；异常/超时/非法输出 fail-closed（error_code 非 None）。
 
     on_process(popen) 在子进程创建后回调（执行控制登记/注销用）。
+    allow_null_take_profit 只能由宿主已校验的管理政策决定；默认沿用旧七键严格合同。
     """
     degraded = sys.platform == "win32"
     # 序列化失败时尚未启动进程，避免子进程一直等待 stdin。
@@ -161,7 +166,10 @@ def run_strategy(
             error_message="策略执行抛出异常", resource_limit_degraded=degraded,
         )
     try:
-        validation = validate_strategy_output(output, has_position=has_position)
+        validation = validate_strategy_output(
+            output, has_position=has_position,
+            allow_null_take_profit=allow_null_take_profit,
+        )
     except Exception:  # noqa: BLE001
         # 非法输出永不外溢：任何校验路径异常都 fail-closed 为该票 INVALID_OUTPUT
         return StrategyRunResult(

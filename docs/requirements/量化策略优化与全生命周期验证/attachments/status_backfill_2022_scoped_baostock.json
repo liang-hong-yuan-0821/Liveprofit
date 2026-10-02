@@ -1,0 +1,1082 @@
+{
+  "start": "2022-01-01",
+  "end": "2022-12-31",
+  "calendar_days": 242,
+  "pending_before": 153,
+  "attempted": [
+    {
+      "trade_date": "20220104",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220105",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220106",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220110",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220107",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220111",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220112",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220113",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220114",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220117",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220119",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220118",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220120",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220121",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220124",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220125",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220126",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220127",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220208",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220207",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220128",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220209",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220214",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220211",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220210",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220215",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220217",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220216",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220218",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220221",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220222",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220225",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220224",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220223",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220303",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220302",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220301",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220228",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220304",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220307",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220308",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220309",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220310",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220311",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220314",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220315",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220316",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220317",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220318",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220321",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220322",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220323",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220324",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220325",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220328",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220329",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220330",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220331",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220401",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220406",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220407",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220408",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220411",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220412",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220414",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220413",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220418",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220415",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220419",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220420",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220421",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220422",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220428",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220427",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220426",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220425",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220429",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220505",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220511",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220510",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220509",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220506",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220512",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220516",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220513",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220517",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220519",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220518",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220524",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220523",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220525",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220520",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220526",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220601",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220531",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220530",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220527",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220704",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220602",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220630",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220705",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220701",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220629",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220628",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220607",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220606",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220707",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220706",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220627",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220623",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220622",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220708",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220608",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220711",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220624",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220621",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220609",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220616",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220615",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220614",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220613",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220610",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220712",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220617",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220714",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220713",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220620",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220721",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220720",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220719",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220718",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220715",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220722",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220725",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220726",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220727",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220728",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220729",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220801",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220803",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220802",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220804",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220805",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220808",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220809",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220810",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220811",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220812",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220815",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220816",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220817",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220818",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20220819",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    }
+  ],
+  "pending_after": 0,
+  "next_dates": [],
+  "generated_at": "2026-09-26T04:20:50.973901+00:00"
+}

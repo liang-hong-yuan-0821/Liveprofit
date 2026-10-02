@@ -161,6 +161,12 @@ def resolve_execution_logs_root(core: CoreSettings) -> Path:
     return root
 
 
+def resolve_research_dataset_root(core: CoreSettings) -> Path:
+    """Resolve permanent research files consistently in API and worker processes."""
+    root = Path(core.research_dataset_root)
+    return root if root.is_absolute() else PROJECT_ROOT / root
+
+
 def _normalize_loopback_host(url: str) -> str:
     """连接串中的 localhost/::1 归一化为 127.0.0.1（Docker 端口代理仅监听 IPv4 loopback）。"""
     from urllib.parse import urlsplit, urlunsplit

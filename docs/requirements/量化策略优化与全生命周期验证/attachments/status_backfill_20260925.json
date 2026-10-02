@@ -1,0 +1,132 @@
+{
+  "start": "2026-01-01",
+  "end": "2026-09-24",
+  "calendar_days": 178,
+  "pending_before": 169,
+  "attempted": [
+    {
+      "trade_date": "20260916",
+      "status": "SUCCESS",
+      "rows": 5564
+    },
+    {
+      "trade_date": "20260915",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20260914",
+      "status": "SUCCESS",
+      "rows": 5562
+    },
+    {
+      "trade_date": "20260911",
+      "status": "SUCCESS",
+      "rows": 5562
+    },
+    {
+      "trade_date": "20260910",
+      "status": "SUCCESS",
+      "rows": 5561
+    },
+    {
+      "trade_date": "20260909",
+      "status": "SUCCESS",
+      "rows": 5560
+    },
+    {
+      "trade_date": "20260908",
+      "status": "SUCCESS",
+      "rows": 5558
+    },
+    {
+      "trade_date": "20260907",
+      "status": "SUCCESS",
+      "rows": 5558
+    },
+    {
+      "trade_date": "20260904",
+      "status": "SUCCESS",
+      "rows": 5556
+    },
+    {
+      "trade_date": "20260903",
+      "status": "SUCCESS",
+      "rows": 5555
+    },
+    {
+      "trade_date": "20260902",
+      "status": "SUCCESS",
+      "rows": 5554
+    },
+    {
+      "trade_date": "20260901",
+      "status": "SUCCESS",
+      "rows": 5553
+    },
+    {
+      "trade_date": "20260831",
+      "status": "SUCCESS",
+      "rows": 5551
+    },
+    {
+      "trade_date": "20260825",
+      "status": "SUCCESS",
+      "rows": 5550
+    },
+    {
+      "trade_date": "20260824",
+      "status": "SUCCESS",
+      "rows": 5549
+    },
+    {
+      "trade_date": "20260821",
+      "status": "SUCCESS",
+      "rows": 5549
+    },
+    {
+      "trade_date": "20260820",
+      "status": "SUCCESS",
+      "rows": 5548
+    },
+    {
+      "trade_date": "20260819",
+      "status": "SUCCESS",
+      "rows": 5547
+    },
+    {
+      "trade_date": "20260818",
+      "status": "SUCCESS",
+      "rows": 5545
+    },
+    {
+      "trade_date": "20260817",
+      "status": "SUCCESS",
+      "rows": 5544
+    }
+  ],
+  "pending_after": 150,
+  "next_dates": [
+    "2026-09-15",
+    "2026-08-14",
+    "2026-08-13",
+    "2026-08-12",
+    "2026-08-11",
+    "2026-08-10",
+    "2026-08-07",
+    "2026-08-06",
+    "2026-08-05",
+    "2026-08-04",
+    "2026-08-03",
+    "2026-07-31",
+    "2026-07-30",
+    "2026-07-29",
+    "2026-07-28",
+    "2026-07-27",
+    "2026-07-24",
+    "2026-07-23",
+    "2026-07-22",
+    "2026-07-21"
+  ],
+  "generated_at": "2026-09-25T11:28:47.787592+00:00"
+}

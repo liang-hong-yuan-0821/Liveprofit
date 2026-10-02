@@ -28,8 +28,10 @@
 |------|------|------|
 | [standards/](standards/index.md) | 项目规范 | [开发流程](standards/workspace/开发流程.md)、[方案评审](standards/workspace/方案评审.md)、[代码验收](standards/workspace/代码验收.md)及领域约束 |
 | [requirements/](requirements/) | 任务桶 | 进行中任务（每任务一文件夹：README+plan+8 文件骨架）｜[templates](requirements/templates/骨架说明.md) 任务骨架模板｜[archive](requirements/archive/) 已归档方案 |
-| [knowledge/](knowledge/) | 知识沉淀 | [backend](knowledge/backend/)（[API 契约](knowledge/backend/API契约.md) + [数据库表结构](knowledge/backend/数据库表结构.md)）｜[frontend](knowledge/frontend/)（[前端平台](knowledge/frontend/前端平台.md)）｜[ai](knowledge/ai/)（[市场层](knowledge/ai/市场层.md) / [板块层](knowledge/ai/板块层.md) / [个股层](knowledge/ai/个股层.md)）｜[产品需求分析](knowledge/产品需求分析.md)（产品基线） |
+| [knowledge/](knowledge/) | 知识沉淀 | [backend](knowledge/backend/)（[API 契约](knowledge/backend/API契约.md) + [数据库表结构](knowledge/backend/数据库表结构.md) + [量化目标契约](knowledge/backend/量化目标契约.md)）｜[frontend](knowledge/frontend/)（[前端平台](knowledge/frontend/前端平台.md)）｜[ai](knowledge/ai/)（[市场层](knowledge/ai/市场层.md) / [板块层](knowledge/ai/板块层.md) / [个股层](knowledge/ai/个股层.md)）｜[产品需求分析](knowledge/产品需求分析.md)（产品基线） |
 | [experience/](experience/) | 经验沉淀 | [index](experience/index.md)（pitfalls + best-practices 总索引） |
+| [测试体系](knowledge/test/测试体系.md) | 跨领域知识 | 正式测试归属、模块选择与默认资源门禁；运行细则见 [tests/README.md](../tests/README.md) |
+| [测试文件索引](knowledge/test/测试索引.md) | 自动生成索引 | 先查询候选，再按模块读取用途、场景、被测代码和依赖；维护测试顶部说明后重新生成 |
 
 > **约定**：standards维护规范，experience保存已核实经验；根AGENTS按业务与阶段触发读取。知识库文档（knowledge/）随项目持续演进；`requirements/<任务名>/` 下的任务实施完成后整合进 knowledge/ 并归档 `requirements/archive/`。
 

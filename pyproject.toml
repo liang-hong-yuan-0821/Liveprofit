@@ -16,6 +16,7 @@ dependencies = [
 
     # 金融数据源
     "tushare>=1.4.0",
+    "baostock>=0.9.4,<0.10",
     "akshare>=1.17.0",
     # 向量数据库
     "chromadb>=0.6.0",
@@ -85,14 +86,21 @@ test = [
 
 [tool.setuptools.packages.find]
 include = ["AI*", "backend*", "db*"]
-exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*", "var*", "backend/tests*"]
+exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*", "var*"]
 
 [tool.setuptools.package-data]
 "AI.templates" = ["*.md", "market/*.md", "sector/*.md", "stock/*.md"]
 "db.instrument" = ["schema.sql"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "backend/tests"]
+testpaths = ["tests/backend", "tests/ai", "tests/data", "tests/e2e"]
+addopts = ["--strict-markers"]
+markers = [
+    "real_llm: real LLM/toolkit/memory; human-only --allow-live opt-in",
+    "external_data: real external data source; explicit manual execution",
+    "requires_db: isolated PostgreSQL/Redis; --allow-db opt-in",
+    "e2e: end-to-end flow; --allow-e2e opt-in",
+]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

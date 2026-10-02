@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-09-26T04:36:30.829144+00:00",
+  "year": 2026,
+  "through": "2026-09-24",
+  "calendar": "exchange_calendars XSHG",
+  "calendar_sha256": "b045cee2aa8f54ca330574c777918dca525dffba9d6001fd08d9224d13dbdfdb",
+  "factor_gap_rows": 6845,
+  "factor_gap_codes": 156,
+  "listed_before_calendar_start": [],
+  "first_bar_not_listing_date": [],
+  "pre_effective_listing_bar_codes": [],
+  "max_local_bar_rank": 59,
+  "untrusted_no_bar_session_count": 0,
+  "untrusted_no_bar_by_year": {
+    "2025": 0,
+    "2026": 0
+  },
+  "untrusted_no_bar_codes": [],
+  "untrusted_no_bar_session_examples": [],
+  "factor_absent_after_bar20_count": 0,
+  "factor_absent_after_bar20_examples": [],
+  "ma60_missing_after_bar59_count": 0,
+  "ma60_missing_after_bar59_examples": [],
+  "atr_missing_after_bar20_count": 0,
+  "atr_missing_after_bar20_examples": []
+}

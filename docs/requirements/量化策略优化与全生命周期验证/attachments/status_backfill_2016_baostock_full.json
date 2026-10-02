@@ -1,0 +1,3104 @@
+{
+  "start": "2016-01-01",
+  "end": "2016-12-31",
+  "calendar_days": 244,
+  "pending_before": 244,
+  "attempted": [
+    {
+      "trade_date": "20161205",
+      "status": "PARTIAL",
+      "rows": 2987,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161010",
+      "status": "PARTIAL",
+      "rows": 2929,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160922",
+      "status": "PARTIAL",
+      "rows": 2921,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160819",
+      "status": "PARTIAL",
+      "rows": 2898,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160812",
+      "status": "PARTIAL",
+      "rows": 2891,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160811",
+      "status": "PARTIAL",
+      "rows": 2888,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160810",
+      "status": "PARTIAL",
+      "rows": 2888,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160809",
+      "status": "PARTIAL",
+      "rows": 2887,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160808",
+      "status": "PARTIAL",
+      "rows": 2884,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160805",
+      "status": "PARTIAL",
+      "rows": 2882,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160804",
+      "status": "PARTIAL",
+      "rows": 2881,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160803",
+      "status": "PARTIAL",
+      "rows": 2881,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160802",
+      "status": "PARTIAL",
+      "rows": 2881,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160801",
+      "status": "PARTIAL",
+      "rows": 2878,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160729",
+      "status": "PARTIAL",
+      "rows": 2877,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160728",
+      "status": "PARTIAL",
+      "rows": 2877,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160727",
+      "status": "PARTIAL",
+      "rows": 2876,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160726",
+      "status": "PARTIAL",
+      "rows": 2876,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160725",
+      "status": "PARTIAL",
+      "rows": 2873,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160722",
+      "status": "PARTIAL",
+      "rows": 2873,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160721",
+      "status": "PARTIAL",
+      "rows": 2873,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160720",
+      "status": "PARTIAL",
+      "rows": 2873,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160719",
+      "status": "PARTIAL",
+      "rows": 2873,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160718",
+      "status": "PARTIAL",
+      "rows": 2872,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160715",
+      "status": "PARTIAL",
+      "rows": 2872,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160714",
+      "status": "PARTIAL",
+      "rows": 2872,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160713",
+      "status": "PARTIAL",
+      "rows": 2872,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160712",
+      "status": "PARTIAL",
+      "rows": 2872,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160711",
+      "status": "PARTIAL",
+      "rows": 2870,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160708",
+      "status": "PARTIAL",
+      "rows": 2870,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160707",
+      "status": "PARTIAL",
+      "rows": 2869,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160706",
+      "status": "PARTIAL",
+      "rows": 2868,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160705",
+      "status": "PARTIAL",
+      "rows": 2867,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160704",
+      "status": "PARTIAL",
+      "rows": 2865,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160701",
+      "status": "PARTIAL",
+      "rows": 2865,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160630",
+      "status": "PARTIAL",
+      "rows": 2864,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160629",
+      "status": "PARTIAL",
+      "rows": 2864,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160628",
+      "status": "PARTIAL",
+      "rows": 2862,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160627",
+      "status": "PARTIAL",
+      "rows": 2861,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160624",
+      "status": "PARTIAL",
+      "rows": 2861,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160623",
+      "status": "PARTIAL",
+      "rows": 2859,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160622",
+      "status": "PARTIAL",
+      "rows": 2859,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160621",
+      "status": "PARTIAL",
+      "rows": 2858,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160620",
+      "status": "PARTIAL",
+      "rows": 2858,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160617",
+      "status": "PARTIAL",
+      "rows": 2858,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160616",
+      "status": "PARTIAL",
+      "rows": 2858,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160615",
+      "status": "PARTIAL",
+      "rows": 2858,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160614",
+      "status": "PARTIAL",
+      "rows": 2857,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160613",
+      "status": "PARTIAL",
+      "rows": 2857,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160608",
+      "status": "PARTIAL",
+      "rows": 2857,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160607",
+      "status": "PARTIAL",
+      "rows": 2855,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160606",
+      "status": "PARTIAL",
+      "rows": 2854,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160603",
+      "status": "PARTIAL",
+      "rows": 2853,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160602",
+      "status": "PARTIAL",
+      "rows": 2852,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160601",
+      "status": "PARTIAL",
+      "rows": 2851,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160531",
+      "status": "PARTIAL",
+      "rows": 2851,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160530",
+      "status": "PARTIAL",
+      "rows": 2851,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160527",
+      "status": "PARTIAL",
+      "rows": 2849,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160526",
+      "status": "PARTIAL",
+      "rows": 2849,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160525",
+      "status": "PARTIAL",
+      "rows": 2848,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160524",
+      "status": "PARTIAL",
+      "rows": 2847,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160523",
+      "status": "PARTIAL",
+      "rows": 2847,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160520",
+      "status": "PARTIAL",
+      "rows": 2847,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160519",
+      "status": "PARTIAL",
+      "rows": 2847,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160518",
+      "status": "PARTIAL",
+      "rows": 2846,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160517",
+      "status": "PARTIAL",
+      "rows": 2846,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160516",
+      "status": "PARTIAL",
+      "rows": 2845,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160513",
+      "status": "PARTIAL",
+      "rows": 2844,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160512",
+      "status": "PARTIAL",
+      "rows": 2845,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160511",
+      "status": "PARTIAL",
+      "rows": 2845,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160510",
+      "status": "PARTIAL",
+      "rows": 2844,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160509",
+      "status": "PARTIAL",
+      "rows": 2844,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160506",
+      "status": "PARTIAL",
+      "rows": 2844,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160505",
+      "status": "PARTIAL",
+      "rows": 2842,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160504",
+      "status": "PARTIAL",
+      "rows": 2842,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160503",
+      "status": "PARTIAL",
+      "rows": 2841,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160429",
+      "status": "PARTIAL",
+      "rows": 2840,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160428",
+      "status": "PARTIAL",
+      "rows": 2839,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160427",
+      "status": "PARTIAL",
+      "rows": 2837,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160426",
+      "status": "PARTIAL",
+      "rows": 2836,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160425",
+      "status": "PARTIAL",
+      "rows": 2836,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160422",
+      "status": "PARTIAL",
+      "rows": 2835,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160421",
+      "status": "PARTIAL",
+      "rows": 2835,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160420",
+      "status": "PARTIAL",
+      "rows": 2834,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160419",
+      "status": "PARTIAL",
+      "rows": 2835,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160418",
+      "status": "PARTIAL",
+      "rows": 2834,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160415",
+      "status": "PARTIAL",
+      "rows": 2833,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160414",
+      "status": "PARTIAL",
+      "rows": 2832,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160413",
+      "status": "PARTIAL",
+      "rows": 2832,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160412",
+      "status": "PARTIAL",
+      "rows": 2832,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160411",
+      "status": "PARTIAL",
+      "rows": 2831,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160408",
+      "status": "PARTIAL",
+      "rows": 2831,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160407",
+      "status": "PARTIAL",
+      "rows": 2832,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160406",
+      "status": "PARTIAL",
+      "rows": 2832,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160405",
+      "status": "PARTIAL",
+      "rows": 2831,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160401",
+      "status": "PARTIAL",
+      "rows": 2831,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160331",
+      "status": "PARTIAL",
+      "rows": 2831,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160330",
+      "status": "PARTIAL",
+      "rows": 2829,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160329",
+      "status": "PARTIAL",
+      "rows": 2829,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160328",
+      "status": "PARTIAL",
+      "rows": 2827,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160325",
+      "status": "PARTIAL",
+      "rows": 2825,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000533.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160324",
+      "status": "PARTIAL",
+      "rows": 2826,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160323",
+      "status": "PARTIAL",
+      "rows": 2825,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160322",
+      "status": "PARTIAL",
+      "rows": 2825,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160321",
+      "status": "PARTIAL",
+      "rows": 2823,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160318",
+      "status": "PARTIAL",
+      "rows": 2823,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160317",
+      "status": "PARTIAL",
+      "rows": 2823,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160316",
+      "status": "PARTIAL",
+      "rows": 2822,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000510.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160315",
+      "status": "PARTIAL",
+      "rows": 2822,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160314",
+      "status": "PARTIAL",
+      "rows": 2821,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160311",
+      "status": "PARTIAL",
+      "rows": 2821,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160310",
+      "status": "PARTIAL",
+      "rows": 2820,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160309",
+      "status": "PARTIAL",
+      "rows": 2819,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160308",
+      "status": "PARTIAL",
+      "rows": 2817,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160307",
+      "status": "PARTIAL",
+      "rows": 2816,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160304",
+      "status": "PARTIAL",
+      "rows": 2815,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160303",
+      "status": "PARTIAL",
+      "rows": 2815,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160302",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160301",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160229",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160226",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160225",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160224",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160223",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160222",
+      "status": "PARTIAL",
+      "rows": 2813,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000159.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160219",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160218",
+      "status": "PARTIAL",
+      "rows": 2814,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160217",
+      "status": "PARTIAL",
+      "rows": 2812,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160216",
+      "status": "PARTIAL",
+      "rows": 2812,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160215",
+      "status": "PARTIAL",
+      "rows": 2812,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160205",
+      "status": "PARTIAL",
+      "rows": 2811,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160204",
+      "status": "PARTIAL",
+      "rows": 2810,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160203",
+      "status": "PARTIAL",
+      "rows": 2808,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160202",
+      "status": "PARTIAL",
+      "rows": 2808,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160201",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160129",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160128",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160127",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160126",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160125",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160122",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160121",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160120",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160119",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160118",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160115",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160114",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160113",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160112",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160111",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160108",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160107",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160106",
+      "status": "PARTIAL",
+      "rows": 2807,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160105",
+      "status": "PARTIAL",
+      "rows": 2806,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160104",
+      "status": "PARTIAL",
+      "rows": 2806,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    },
+    {
+      "trade_date": "20160815",
+      "status": "PARTIAL",
+      "rows": 2892,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160816",
+      "status": "PARTIAL",
+      "rows": 2893,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160817",
+      "status": "PARTIAL",
+      "rows": 2894,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160818",
+      "status": "PARTIAL",
+      "rows": 2896,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "000659.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160822",
+      "status": "PARTIAL",
+      "rows": 2899,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160825",
+      "status": "PARTIAL",
+      "rows": 2901,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160824",
+      "status": "PARTIAL",
+      "rows": 2901,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160823",
+      "status": "PARTIAL",
+      "rows": 2901,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160829",
+      "status": "PARTIAL",
+      "rows": 2904,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160826",
+      "status": "PARTIAL",
+      "rows": 2904,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160830",
+      "status": "PARTIAL",
+      "rows": 2906,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160831",
+      "status": "PARTIAL",
+      "rows": 2907,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160901",
+      "status": "PARTIAL",
+      "rows": 2908,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160907",
+      "status": "PARTIAL",
+      "rows": 2909,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160906",
+      "status": "PARTIAL",
+      "rows": 2909,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160902",
+      "status": "PARTIAL",
+      "rows": 2909,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160905",
+      "status": "PARTIAL",
+      "rows": 2910,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160908",
+      "status": "PARTIAL",
+      "rows": 2911,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160909",
+      "status": "PARTIAL",
+      "rows": 2912,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160912",
+      "status": "PARTIAL",
+      "rows": 2913,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160913",
+      "status": "PARTIAL",
+      "rows": 2916,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160914",
+      "status": "PARTIAL",
+      "rows": 2918,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160919",
+      "status": "PARTIAL",
+      "rows": 2919,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160921",
+      "status": "PARTIAL",
+      "rows": 2921,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160920",
+      "status": "PARTIAL",
+      "rows": 2921,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160927",
+      "status": "PARTIAL",
+      "rows": 2922,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160926",
+      "status": "PARTIAL",
+      "rows": 2922,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160923",
+      "status": "PARTIAL",
+      "rows": 2922,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160929",
+      "status": "PARTIAL",
+      "rows": 2925,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160928",
+      "status": "PARTIAL",
+      "rows": 2925,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20160930",
+      "status": "PARTIAL",
+      "rows": 2928,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161011",
+      "status": "PARTIAL",
+      "rows": 2930,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161012",
+      "status": "PARTIAL",
+      "rows": 2934,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161013",
+      "status": "PARTIAL",
+      "rows": 2935,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161014",
+      "status": "PARTIAL",
+      "rows": 2936,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161017",
+      "status": "PARTIAL",
+      "rows": 2937,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161019",
+      "status": "PARTIAL",
+      "rows": 2939,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "000711.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161020",
+      "status": "PARTIAL",
+      "rows": 2940,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161018",
+      "status": "PARTIAL",
+      "rows": 2940,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161024",
+      "status": "PARTIAL",
+      "rows": 2943,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161021",
+      "status": "PARTIAL",
+      "rows": 2943,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161025",
+      "status": "PARTIAL",
+      "rows": 2946,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161026",
+      "status": "PARTIAL",
+      "rows": 2947,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161027",
+      "status": "PARTIAL",
+      "rows": 2948,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161028",
+      "status": "PARTIAL",
+      "rows": 2949,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161031",
+      "status": "PARTIAL",
+      "rows": 2950,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161103",
+      "status": "PARTIAL",
+      "rows": 2953,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161102",
+      "status": "PARTIAL",
+      "rows": 2953,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161101",
+      "status": "PARTIAL",
+      "rows": 2953,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161104",
+      "status": "PARTIAL",
+      "rows": 2954,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161107",
+      "status": "PARTIAL",
+      "rows": 2956,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161108",
+      "status": "PARTIAL",
+      "rows": 2957,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161109",
+      "status": "PARTIAL",
+      "rows": 2959,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161110",
+      "status": "PARTIAL",
+      "rows": 2960,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161111",
+      "status": "PARTIAL",
+      "rows": 2962,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161114",
+      "status": "PARTIAL",
+      "rows": 2963,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161115",
+      "status": "PARTIAL",
+      "rows": 2964,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161116",
+      "status": "PARTIAL",
+      "rows": 2966,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161117",
+      "status": "PARTIAL",
+      "rows": 2968,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161118",
+      "status": "PARTIAL",
+      "rows": 2971,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161121",
+      "status": "PARTIAL",
+      "rows": 2972,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161122",
+      "status": "PARTIAL",
+      "rows": 2975,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161123",
+      "status": "PARTIAL",
+      "rows": 2976,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161124",
+      "status": "PARTIAL",
+      "rows": 2978,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161128",
+      "status": "PARTIAL",
+      "rows": 2980,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161125",
+      "status": "PARTIAL",
+      "rows": 2980,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161129",
+      "status": "PARTIAL",
+      "rows": 2983,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161130",
+      "status": "PARTIAL",
+      "rows": 2984,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161201",
+      "status": "PARTIAL",
+      "rows": 2986,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161202",
+      "status": "PARTIAL",
+      "rows": 2987,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161206",
+      "status": "PARTIAL",
+      "rows": 2990,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161207",
+      "status": "PARTIAL",
+      "rows": 2991,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161208",
+      "status": "PARTIAL",
+      "rows": 2994,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161209",
+      "status": "PARTIAL",
+      "rows": 2997,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161212",
+      "status": "PARTIAL",
+      "rows": 2998,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161213",
+      "status": "PARTIAL",
+      "rows": 3002,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161214",
+      "status": "PARTIAL",
+      "rows": 3003,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161215",
+      "status": "PARTIAL",
+      "rows": 3004,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161216",
+      "status": "PARTIAL",
+      "rows": 3006,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161219",
+      "status": "PARTIAL",
+      "rows": 3007,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161220",
+      "status": "PARTIAL",
+      "rows": 3011,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161221",
+      "status": "PARTIAL",
+      "rows": 3013,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161222",
+      "status": "PARTIAL",
+      "rows": 3014,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161223",
+      "status": "PARTIAL",
+      "rows": 3017,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161226",
+      "status": "PARTIAL",
+      "rows": 3018,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161227",
+      "status": "PARTIAL",
+      "rows": 3019,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161228",
+      "status": "PARTIAL",
+      "rows": 3024,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161229",
+      "status": "PARTIAL",
+      "rows": 3027,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    },
+    {
+      "trade_date": "20161230",
+      "status": "PARTIAL",
+      "rows": 3029,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "300372.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    }
+  ],
+  "pending_after": 244,
+  "next_dates": [
+    "2016-01-05",
+    "2016-01-04",
+    "2016-02-01",
+    "2016-01-29",
+    "2016-01-28",
+    "2016-01-27",
+    "2016-01-26",
+    "2016-01-25",
+    "2016-01-22",
+    "2016-01-21",
+    "2016-01-20",
+    "2016-01-19",
+    "2016-01-18",
+    "2016-01-15",
+    "2016-01-14",
+    "2016-01-13",
+    "2016-01-12",
+    "2016-01-11",
+    "2016-01-08",
+    "2016-01-07",
+    "2016-01-06",
+    "2016-02-03",
+    "2016-02-02",
+    "2016-02-04",
+    "2016-02-05",
+    "2016-02-17",
+    "2016-02-16",
+    "2016-02-15",
+    "2016-02-22",
+    "2016-03-02",
+    "2016-03-01",
+    "2016-02-29",
+    "2016-02-26",
+    "2016-02-25",
+    "2016-02-24",
+    "2016-02-23",
+    "2016-02-19",
+    "2016-02-18",
+    "2016-03-04",
+    "2016-03-03",
+    "2016-03-07",
+    "2016-03-08",
+    "2016-03-09",
+    "2016-03-10",
+    "2016-03-14",
+    "2016-03-11",
+    "2016-03-16",
+    "2016-03-15",
+    "2016-03-21",
+    "2016-03-18",
+    "2016-03-17",
+    "2016-03-25",
+    "2016-03-23",
+    "2016-03-22",
+    "2016-03-24",
+    "2016-03-28",
+    "2016-03-30",
+    "2016-03-29",
+    "2016-04-11",
+    "2016-04-08",
+    "2016-04-05",
+    "2016-04-01",
+    "2016-03-31",
+    "2016-04-14",
+    "2016-04-13",
+    "2016-04-12",
+    "2016-04-07",
+    "2016-04-06",
+    "2016-04-15",
+    "2016-04-20",
+    "2016-04-18",
+    "2016-04-22",
+    "2016-04-21",
+    "2016-04-19",
+    "2016-04-26",
+    "2016-04-25",
+    "2016-04-27",
+    "2016-04-28",
+    "2016-04-29",
+    "2016-05-03",
+    "2016-05-05",
+    "2016-05-04",
+    "2016-05-13",
+    "2016-05-10",
+    "2016-05-09",
+    "2016-05-06",
+    "2016-05-16",
+    "2016-05-12",
+    "2016-05-11",
+    "2016-05-18",
+    "2016-05-17",
+    "2016-05-24",
+    "2016-05-23",
+    "2016-05-20",
+    "2016-05-19",
+    "2016-05-25",
+    "2016-05-27",
+    "2016-05-26",
+    "2016-06-01",
+    "2016-05-31",
+    "2016-05-30",
+    "2016-06-02",
+    "2016-06-03",
+    "2016-06-06",
+    "2016-06-07",
+    "2016-06-14",
+    "2016-06-13",
+    "2016-06-08",
+    "2016-06-21",
+    "2016-06-20",
+    "2016-06-17",
+    "2016-06-16",
+    "2016-06-15",
+    "2016-06-23",
+    "2016-06-22",
+    "2016-06-27",
+    "2016-06-24",
+    "2016-06-28",
+    "2016-06-30",
+    "2016-06-29",
+    "2016-07-04",
+    "2016-07-01",
+    "2016-07-05",
+    "2016-07-06",
+    "2016-07-07",
+    "2016-07-11",
+    "2016-07-08",
+    "2016-07-18",
+    "2016-07-15",
+    "2016-07-14",
+    "2016-07-13",
+    "2016-07-12",
+    "2016-07-25",
+    "2016-07-22",
+    "2016-07-21",
+    "2016-07-20",
+    "2016-07-19",
+    "2016-07-27",
+    "2016-07-26",
+    "2016-07-29",
+    "2016-07-28",
+    "2016-08-01",
+    "2016-08-04",
+    "2016-08-03",
+    "2016-08-02",
+    "2016-08-05",
+    "2016-08-08",
+    "2016-08-09",
+    "2016-08-11",
+    "2016-08-10",
+    "2016-08-12",
+    "2016-08-15",
+    "2016-08-16",
+    "2016-08-17",
+    "2016-08-18",
+    "2016-08-19",
+    "2016-08-22",
+    "2016-08-25",
+    "2016-08-24",
+    "2016-08-23",
+    "2016-08-29",
+    "2016-08-26",
+    "2016-08-30",
+    "2016-08-31",
+    "2016-09-01",
+    "2016-09-07",
+    "2016-09-06",
+    "2016-09-02",
+    "2016-09-05",
+    "2016-09-08",
+    "2016-09-09",
+    "2016-09-12",
+    "2016-09-13",
+    "2016-09-14",
+    "2016-09-19",
+    "2016-09-22",
+    "2016-09-21",
+    "2016-09-20",
+    "2016-09-27",
+    "2016-09-26",
+    "2016-09-23",
+    "2016-09-29",
+    "2016-09-28",
+    "2016-09-30",
+    "2016-10-10",
+    "2016-10-11",
+    "2016-10-12",
+    "2016-10-13",
+    "2016-10-14",
+    "2016-10-17",
+    "2016-10-19",
+    "2016-10-20",
+    "2016-10-18",
+    "2016-10-24",
+    "2016-10-21",
+    "2016-10-25",
+    "2016-10-26",
+    "2016-10-27",
+    "2016-10-28",
+    "2016-10-31",
+    "2016-11-03",
+    "2016-11-02",
+    "2016-11-01",
+    "2016-11-04",
+    "2016-11-07",
+    "2016-11-08",
+    "2016-11-09",
+    "2016-11-10",
+    "2016-11-11",
+    "2016-11-14",
+    "2016-11-15",
+    "2016-11-16",
+    "2016-11-17",
+    "2016-11-18",
+    "2016-11-21",
+    "2016-11-22",
+    "2016-11-23",
+    "2016-11-24",
+    "2016-11-28",
+    "2016-11-25",
+    "2016-11-29",
+    "2016-11-30",
+    "2016-12-01",
+    "2016-12-05",
+    "2016-12-02",
+    "2016-12-06",
+    "2016-12-07",
+    "2016-12-08",
+    "2016-12-09",
+    "2016-12-12",
+    "2016-12-13",
+    "2016-12-14",
+    "2016-12-15",
+    "2016-12-16",
+    "2016-12-19",
+    "2016-12-20",
+    "2016-12-21",
+    "2016-12-22",
+    "2016-12-23",
+    "2016-12-26",
+    "2016-12-27",
+    "2016-12-28",
+    "2016-12-29",
+    "2016-12-30"
+  ],
+  "generated_at": "2026-09-25T22:50:11.675507+00:00"
+}

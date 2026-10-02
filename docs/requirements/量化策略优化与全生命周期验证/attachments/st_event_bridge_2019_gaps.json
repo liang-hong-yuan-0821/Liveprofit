@@ -1,0 +1,100 @@
+{
+  "generated_at": "2026-09-25T21:45:56.343123+00:00",
+  "reports": [
+    {
+      "day": "2019-04-01",
+      "before": "2019-03-29",
+      "after": "2019-04-02",
+      "before_count": 91,
+      "after_count": 89,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "600321.SH",
+          "name": "ST正源",
+          "pub_date": "20190329",
+          "imp_date": "20190401",
+          "st_type": "撤消*ST并实行ST"
+        }
+      ],
+      "next_events": [
+        {
+          "ts_code": "600202.SH",
+          "name": "哈空调",
+          "pub_date": "20190401",
+          "imp_date": "20190402",
+          "st_type": "撤销*ST"
+        },
+        {
+          "ts_code": "600871.SH",
+          "name": "石化油服",
+          "pub_date": "20190401",
+          "imp_date": "20190402",
+          "st_type": "撤销*ST"
+        }
+      ],
+      "candidate_count": 91,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "c93a3f9681d6a1088d18e409e48047e18fee737f36362e01da06553307f3cd19",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2019-10-24",
+      "before": "2019-10-23",
+      "after": "2019-10-25",
+      "before_count": 139,
+      "after_count": 139,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 139,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "910f9e2e1191522ce8c48da979d3dc1a606b1aef1aba2135410cd58a410f6dea",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2019-11-04",
+      "before": "2019-11-01",
+      "after": "2019-11-05",
+      "before_count": 138,
+      "after_count": 139,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "600319.SH",
+          "name": "ST亚星",
+          "pub_date": "20191101",
+          "imp_date": "20191104",
+          "st_type": "ST"
+        }
+      ],
+      "next_events": [],
+      "candidate_count": 139,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "261df5ffe5e8977b82a31494ed1bdf19671e7b591f0788983140761dc52e7fe7",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2019-11-28",
+      "before": "2019-11-27",
+      "after": "2019-11-29",
+      "before_count": 138,
+      "after_count": 138,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 138,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "3f303b0f8deb29d6388eeafcef7591087c8ad0162b711331c85a0883f1afdad5",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    }
+  ]
+}

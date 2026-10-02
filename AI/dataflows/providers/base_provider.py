@@ -324,6 +324,35 @@ class BaseStockDataProvider(ABC):
         logger.warning("数据不可用：%s 不支持 个股技术因子（stk_factor_pro）。", self.name)
         return None
 
+    def get_fund_factor_df(self, ts_code: str, start_date: str, end_date: str, fields: str | None = None):
+        """场内基金未复权技术因子（fund_factor_pro），升序 DataFrame；不支持返回 None。"""
+        logger.warning("数据不可用：%s 不支持 场内基金技术因子（fund_factor_pro）。", self.name)
+        return None
+
+    def get_fund_daily_df(self, ts_code: str, start_date: str, end_date: str):
+        """One fund's unadjusted daily history, ascending DataFrame; unavailable is None."""
+        return None
+
+    def get_historical_st_df(self, trade_date: str):
+        """Historical daily ST membership (stock_st); unavailable returns None."""
+        return None
+
+    def get_verified_full_day_suspensions_df(self, trade_date: str):
+        """Dated S events with no daily bar; unavailable returns None."""
+        return None
+
+    def get_bse_mapping_df(self):
+        """Old and new Beijing Exchange stock codes; unavailable returns None."""
+        return None
+
+    def get_etf_basic_df(self):
+        """Listed, delisted and pending ETF catalog, including QDII; unavailable returns None."""
+        return None
+
+    def get_etf_limit_df(self, trade_date: str):
+        """One day's exchange ETF price limits; unavailable returns None."""
+        return None
+
     # ==================== 证券市场数据库（db.instrument ingest）— 结构化接口 ====================
     # 供 db.instrument.ingest（统一采集回填/增量）消费，返回 DataFrame。
     # 结构化接口约定（规则 8）：默认返回 None（不返回 _not_supported() 的 str，
@@ -343,8 +372,13 @@ class BaseStockDataProvider(ABC):
         """单交易日全市场股票技术因子（stk_factor_pro，含 qfq 十项）。"""
         return None
 
-    def get_full_market_trade_status_df(self, trade_date: str):
-        """单交易日股票交易状态、ST 标记与涨跌停价。"""
+    def get_full_market_fund_factor_df(self, trade_date: str):
+        """单交易日全市场场内基金未复权技术因子（fund_factor_pro）。"""
+        return None
+
+    def get_full_market_trade_status_df(self, trade_date: str, *, st_observations=None,
+                                       no_trade_observations=None):
+        """单日状态；可传全市场或沪深全量已核验独立ST帧（含逐证券st_conflict隔离标记）。"""
         return None
 
     def get_stock_basic_df(self):

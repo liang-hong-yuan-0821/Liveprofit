@@ -151,7 +151,17 @@ class DispatcherRuntime:
                 lease_ttl_seconds=self._settings.worker.lease_ttl_seconds,
                 retry=self._settings.core,
             )
-            return service.recover_expired_leases(grace_seconds=self._settings.core.recovery_grace_seconds)
+            recovered = service.recover_expired_leases(grace_seconds=self._settings.core.recovery_grace_seconds)
+        # Also runs at startup. Durable manifests/outcomes recover callbacks lost
+        # after a worker's task-success commit without re-running the scan.
+        from backend.modules.quant_strategy.application.batch_completion import recover_batches
+        try:
+            completed = recover_batches(self._container.session_factory)
+            if completed:
+                logger.info("家族批次已收敛：%s 条", completed)
+        except Exception:
+            logger.exception("家族批次恢复失败，下个周期重试")
+        return recovered
 
     def dispatch_due(self, limit: int) -> int:
         with SqlAlchemyAnalysisUnitOfWork(self._container.session_factory) as uow:

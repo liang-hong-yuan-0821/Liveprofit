@@ -1,0 +1,23 @@
+Listing tests:
+  [chromium] › market_refresh\ui\market-refresh.spec.ts:54:5 › stale → queued → partial → complete, page reload reuses the running job
+  [chromium] › market_refresh\ui\market-refresh.spec.ts:81:5 › failure and offline status preserve the existing chart and history selection
+  [chromium] › smoke\ui\smoke.spec.ts:7:7 › 页面冒烟 › 大盘：市场/板块/信息三固定区块
+  [chromium] › smoke\ui\smoke.spec.ts:16:7 › 页面冒烟 › 自选：分组与组合两区
+  [chromium] › smoke\ui\smoke.spec.ts:23:7 › 页面冒烟 › AI 看板：不请求 SSE events 端点
+  [chromium] › smoke\ui\smoke.spec.ts:34:7 › 页面冒烟 › 任务中心：状态筛选可见，页面无创建表单
+  [chromium] › smoke\ui\smoke.spec.ts:43:7 › 页面冒烟 › 事件研究：表单可见，无任务跳转
+  [chromium] › smoke\ui\smoke.spec.ts:49:7 › 页面冒烟 › 资源 404：显示专用不存在态与返回入口
+  [chromium] › smoke\ui\smoke.spec.ts:55:7 › 页面冒烟 › 未匹配路由：NotFoundState 提供返回入口
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 1440 dark
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 1440 light
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 1280 dark
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 1280 light
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 1024 dark
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 1024 light
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 390 dark
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:32:7 › market 390 light
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:42:5 › mobile navigation restores focus and honors reduced motion
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:47:5 › real UUID task stays within mobile viewport and report precedes diagnostics
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:52:5 › wide topology scrolls internally and has accessible full node names
+  [chromium] › workspace_ui\ui\ux-review.spec.ts:59:5 › review edits one draft, preserves hidden selection and never loads remote images
+Total: 21 tests in 3 files

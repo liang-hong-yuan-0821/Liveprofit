@@ -82,6 +82,7 @@ async def create_portfolio(
                 peak_net_asset_value=payload.peak_net_asset_value,
                 day_start_net_asset_value=payload.day_start_net_asset_value,
                 risk_facts_as_of=payload.risk_facts_as_of,
+                **({"risk_profile": payload.risk_profile} if "risk_profile" in payload.model_fields_set else {}),
             )
 
     dto = await services.run(_do)
@@ -119,6 +120,7 @@ async def update_portfolio(
                 peak_net_asset_value=payload.peak_net_asset_value,
                 day_start_net_asset_value=payload.day_start_net_asset_value,
                 risk_facts_as_of=payload.risk_facts_as_of,
+                **({"risk_profile": payload.risk_profile} if "risk_profile" in payload.model_fields_set else {}),
                 expected_version=payload.expected_version,
             )
 

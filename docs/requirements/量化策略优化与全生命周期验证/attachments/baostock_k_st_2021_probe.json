@@ -1,0 +1,109 @@
+{
+  "year": 2021,
+  "generated_at": "2026-09-25T23:18:15.378513+00:00",
+  "source": "baostock.query_history_k_data_plus.daily.unadjusted",
+  "calendar_days": 243,
+  "instrument_codes": 4623,
+  "expected_stock_days": 1062370,
+  "observed_stock_days": 1062370,
+  "failed_codes": [],
+  "missing_count": 0,
+  "missing_examples": [],
+  "extra_count": 20,
+  "extra_examples": [
+    [
+      "000662.SZ",
+      "2021-04-12"
+    ],
+    [
+      "000760.SZ",
+      "2021-07-23"
+    ],
+    [
+      "002071.SZ",
+      "2021-05-07"
+    ],
+    [
+      "002359.SZ",
+      "2021-07-23"
+    ],
+    [
+      "002450.SZ",
+      "2021-05-31"
+    ],
+    [
+      "002711.SZ",
+      "2021-07-15"
+    ],
+    [
+      "300362.SZ",
+      "2021-08-30"
+    ],
+    [
+      "600068.SH",
+      "2021-09-13"
+    ],
+    [
+      "600086.SH",
+      "2021-03-17"
+    ],
+    [
+      "600247.SH",
+      "2021-03-22"
+    ],
+    [
+      "600317.SH",
+      "2021-01-29"
+    ],
+    [
+      "600485.SH",
+      "2021-06-01"
+    ],
+    [
+      "600614.SH",
+      "2021-07-21"
+    ],
+    [
+      "600634.SH",
+      "2021-07-21"
+    ],
+    [
+      "600677.SH",
+      "2021-03-18"
+    ],
+    [
+      "600687.SH",
+      "2021-03-03"
+    ],
+    [
+      "600701.SH",
+      "2021-04-30"
+    ],
+    [
+      "600723.SH",
+      "2021-10-22"
+    ],
+    [
+      "600891.SH",
+      "2021-05-12"
+    ],
+    [
+      "600978.SH",
+      "2021-03-22"
+    ]
+  ],
+  "known_st_overlap": 1052488,
+  "st_conflict_count": 1,
+  "st_conflict_examples": [
+    [
+      "002529.SZ",
+      "2021-06-22",
+      true,
+      false
+    ]
+  ],
+  "bar_presence_conflict_count": 0,
+  "bar_presence_conflict_examples": [],
+  "raw_parquet": "logs\\quant_history\\baostock_k_st_2021.parquet",
+  "raw_parquet_sha256": "00959dbb855804682df9112e2d53bcdf8c934a32edbf650dda26cece1c029658"
+}

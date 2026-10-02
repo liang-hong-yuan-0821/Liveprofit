@@ -7,8 +7,9 @@ the fact, intent and suggested order in a single transaction.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from decimal import Decimal, InvalidOperation, ROUND_FLOOR
 from typing import Any
 import hashlib
@@ -19,6 +20,10 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from backend.modules.quant_strategy.application.errors import FillValidationError
+from backend.modules.quant_strategy.domain.management_policies import ManagementPolicy
+from backend.modules.quant_strategy.domain.family_management import (
+    FamilyManagementState, evaluate_family_management,
+)
 
 LOT = Decimal("100")
 ALLOWED_EXPOSURES = {
@@ -116,8 +121,62 @@ def evaluate_lifecycle_day(
     observation_no: int,
     trailing: TrailingStateInput | None = None,
     expectation: ExpectationStateInput | None = None,
+    management_policy: ManagementPolicy | None = None,
 ) -> LifecycleDecision:
     """Evaluate the frozen N6 priority chain for one complete trading day."""
+
+    if management_policy is not None:
+        if not state.risk_capacity_shares.is_finite() or state.risk_capacity_shares <= 0:
+            return _unavailable(state, actual_shares, trailing, expectation)
+        if fact.get("is_suspended") is True:
+            return _unavailable(state, actual_shares, trailing, expectation, "SUSPENDED_SESSION")
+        expectation_status = expectation.status if expectation else None
+        expectation_days = expectation.observed_trading_days if expectation else None
+        if state.template_id == "ma5_pre_cross_v1" and expectation is not None and expectation.status == "PENDING":
+            ma5, ma20 = _optional(fact.get("ma5")), _optional(fact.get("ma20"))
+            observed_close = _optional(fact.get("close"))
+            if (trade_date > expectation.fill_trade_date and observed_close is not None
+                    and observed_close > 0 and ma5 is not None and ma5 > 0
+                    and ma20 is not None and ma20 > 0):
+                expectation_days = max(expectation.observed_trading_days, observation_no)
+                expectation_status = "FULFILLED" if ma5 > ma20 else (
+                    "EXPIRED" if expectation_days >= expectation.window_trading_days else "PENDING"
+                )
+        transition = evaluate_family_management(
+            management_policy,
+            FamilyManagementState(
+                state.initial_fill_price, state.initial_stop_price,
+                trailing.high_water_mark if trailing and trailing.phase != "PROTECT" else None,
+                trailing.active_stop_price if trailing else state.initial_stop_price,
+                state.target_exposure_pct, state.confirmation_completed,
+                state.target_exposure_pct == 0,
+            ),
+            close=_optional(fact.get("close")), atr=_optional(fact.get("atr")),
+            ma20=_optional(fact.get("ma20")), valid_sessions_after_fill=observation_no,
+            new_risk_allowed=fact.get("new_risk_allowed") is not False,
+        )
+        if expectation_status == "EXPIRED" and transition.target_exposure != 0:
+            transition = replace(transition, target_exposure=Decimal(0), reason="EXPECTATION_TIMEOUT", data_available=True)
+        elif expectation_status == "PENDING" and transition.reason == "ADD_AT_R":
+            transition = replace(transition, target_exposure=state.target_exposure_pct, reason="EXPECTATION_PENDING")
+        target = _target(state.risk_capacity_shares, transition.target_exposure)
+        if not transition.data_available:
+            target = actual_shares
+        elif fact.get("new_risk_allowed") is False or transition.target_exposure < state.target_exposure_pct:
+            target = min(target, actual_shares)
+        return LifecycleDecision(
+            transition.target_exposure, target,
+            "ADD_AT_R" if transition.target_exposure == 1 and management_policy.max_adds == 1
+            and not state.confirmation_completed and transition.data_available else transition.reason,
+            "EXIT_PENDING" if transition.target_exposure == 0 else
+            "DATA_UNAVAILABLE" if not transition.data_available else
+            "CONFIRMATION_PENDING" if transition.reason == "ADD_AT_R" else "INITIALIZED",
+            state.profit_target_reached,
+            expectation_status,
+            expectation_days,
+            "TRAILING" if management_policy.trailing_atr_multiple is not None else None,
+            transition.highest_close, transition.active_stop, transition.data_available,
+        )
 
     try:
         close = _d(fact.get("close"), "close")
@@ -129,6 +188,8 @@ def evaluate_lifecycle_day(
 
     def decision(exposure: Decimal, reason: str, phase: str, **overrides) -> LifecycleDecision:
         target_shares = _target(state.risk_capacity_shares, exposure)
+        if fact.get("new_risk_allowed") is False:
+            target_shares = min(target_shares, actual_shares)
         # A profit trim or weakening rule must never buy shares back.
         if exposure < state.target_exposure_pct:
             target_shares = min(target_shares, actual_shares)
@@ -345,9 +406,21 @@ class PositionLifecycleManager:
     def __init__(self, session) -> None:
         self._session = session
 
+    def _reject_portfolio_policy_replay(self, lifecycle_id):
+        from backend.modules.quant_strategy.infrastructure.lifecycle_models import (
+            LifecyclePolicyVersion, PositionLifecycleState,
+        )
+        config = self._session.scalar(select(LifecyclePolicyVersion.config).join(
+            PositionLifecycleState,
+            PositionLifecycleState.lifecycle_policy_version_id == LifecyclePolicyVersion.id,
+        ).where(PositionLifecycleState.id == lifecycle_id))
+        if isinstance(config, dict) and "portfolio_trial" in config:
+            raise FillValidationError("组合试验政策尚未接入真实逐日持仓生命周期")
+
     def process_day(
         self, lifecycle_id: uuid.UUID, *, trade_date: date, fact: dict[str, Any],
         data_as_of: datetime, price_basis: str = "raw", commit: bool = True,
+        buy_context: dict | None = None, defer_buy: bool = False,
     ):
         from backend.modules.investment_workspace.infrastructure.models import PortfolioPosition
         from backend.modules.quant_strategy.infrastructure.lifecycle_models import (
@@ -364,6 +437,7 @@ class PositionLifecycleManager:
             PositionDailyFact.trade_date == trade_date,
         )).scalar_one_or_none()
         if existing_fact is not None:
+            self._reject_portfolio_policy_replay(lifecycle_id)
             if existing_fact.input_hash != digest or existing_fact.price_basis != price_basis:
                 raise FillValidationError("同一生命周期同一交易日事实已冻结且输入不同")
             intent = self._session.execute(select(PositionIntent).where(
@@ -373,12 +447,24 @@ class PositionLifecycleManager:
             order = self._session.execute(select(SuggestedOrder).where(
                 SuggestedOrder.intent_id == intent.id
             ).order_by(SuggestedOrder.created_at.desc()).limit(1)).scalar_one_or_none() if intent else None
+            if existing_fact.planning_result is not None:
+                order_id = existing_fact.planning_result.get("order_id")
+                order = self._session.get(SuggestedOrder, uuid.UUID(order_id)) if order_id else None
             return existing_fact, intent, order, None
 
+        from .planning_account import lock_portfolio
+        portfolio_id = self._session.scalar(select(PositionLifecycleState.portfolio_id).where(
+            PositionLifecycleState.id == lifecycle_id))
+        if portfolio_id is None:
+            raise FillValidationError("活动持仓生命周期不存在")
+        portfolio = lock_portfolio(self._session, portfolio_id)
+        from .portfolio_drawdown_actions import PortfolioDrawdownActions
+        PortfolioDrawdownActions(self._session).pause_for_planning(
+            portfolio_id, valuation_date=trade_date)
         lifecycle = self._session.execute(select(PositionLifecycleState).where(
             PositionLifecycleState.id == lifecycle_id,
             PositionLifecycleState.closed_at.is_(None),
-        ).with_for_update()).scalar_one_or_none()
+        ).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
         if lifecycle is None:
             raise FillValidationError("活动持仓生命周期不存在")
         # Another worker may have frozen this day while this transaction was
@@ -389,6 +475,7 @@ class PositionLifecycleManager:
             PositionDailyFact.trade_date == trade_date,
         )).scalar_one_or_none()
         if existing_fact is not None:
+            self._reject_portfolio_policy_replay(lifecycle_id)
             if existing_fact.input_hash != digest or existing_fact.price_basis != price_basis:
                 raise FillValidationError("同一生命周期同一交易日事实已冻结且输入不同")
             intent = self._session.execute(select(PositionIntent).where(
@@ -398,24 +485,32 @@ class PositionLifecycleManager:
             order = self._session.execute(select(SuggestedOrder).where(
                 SuggestedOrder.intent_id == intent.id
             ).order_by(SuggestedOrder.created_at.desc()).limit(1)).scalar_one_or_none() if intent else None
+            if existing_fact.planning_result is not None:
+                order_id = existing_fact.planning_result.get("order_id")
+                order = self._session.get(SuggestedOrder, uuid.UUID(order_id)) if order_id else None
             return existing_fact, intent, order, None
         position = self._session.execute(select(PortfolioPosition).where(
             PortfolioPosition.id == lifecycle.position_id
-        ).with_for_update()).scalar_one_or_none()
+        ).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
         if position is None or _d(position.quantity, "position.quantity") <= 0:
             raise FillValidationError("生命周期缺少实际持仓")
         policy = self._session.get(LifecyclePolicyVersion, lifecycle.lifecycle_policy_version_id)
         version = self._session.get(QuantStrategyVersion, lifecycle.strategy_version_id)
         if policy is None or version is None:
             raise FillValidationError("生命周期冻结版本不存在")
+        from .lifecycle_service import LifecyclePolicyService
         config = dict(policy.config or {})
+        if "portfolio_trial" in config:
+            raise FillValidationError("组合试验政策尚未接入真实逐日持仓生命周期")
         template_id = config.get("template_id") or version.template_id
         if not template_id:
             raise FillValidationError("生命周期策略未声明 template_id")
 
+        management = LifecyclePolicyService.read_family(policy, template_id)
+
         trailing_row = self._session.execute(select(PositionTrailingStop).where(
             PositionTrailingStop.lifecycle_id == lifecycle.id
-        ).with_for_update()).scalar_one_or_none()
+        ).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
         trailing_input = None
         if trailing_row is not None and trailing_row.config_snapshot:
             cfg = trailing_row.config_snapshot
@@ -427,7 +522,7 @@ class PositionLifecycleManager:
             )
         expectation_row = self._session.execute(select(PositionExpectation).where(
             PositionExpectation.lifecycle_id == lifecycle.id
-        ).with_for_update()).scalar_one_or_none()
+        ).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
         expectation_input = ExpectationStateInput(
             fill_trade_date=expectation_row.fill_trade_date,
             observed_trading_days=expectation_row.observed_trading_days,
@@ -445,6 +540,26 @@ class PositionLifecycleManager:
             PositionDailyFact.trade_date > (fill_trade_date or date.min),
             PositionDailyFact.trade_date < trade_date,
         )) or 0
+        observation_no = (int(prior_facts) + 1) if fill_trade_date is None or trade_date > fill_trade_date else 0
+        if management is not None:
+            if fill_trade_date is None:
+                raise FillValidationError("冻结管理政策缺少真实首笔成交日期")
+            def valid_session(payload):
+                close = _optional(payload.get("close"))
+                valid = close is not None and close > 0 and payload.get("is_suspended") is not True
+                if expectation_input is not None and expectation_input.status == "PENDING":
+                    ma5, ma20 = _optional(payload.get("ma5")), _optional(payload.get("ma20"))
+                    valid = valid and ma5 is not None and ma5 > 0 and ma20 is not None and ma20 > 0
+                return valid
+            payloads = self._session.scalars(select(PositionDailyFact.input_payload).where(
+                PositionDailyFact.lifecycle_id == lifecycle.id,
+                PositionDailyFact.trade_date > fill_trade_date,
+                PositionDailyFact.trade_date < trade_date,
+            ))
+            observation_no = sum(valid_session(payload) for payload in payloads)
+            observation_no += int(trade_date > fill_trade_date and valid_session(fact))
+            if management.trailing_atr_multiple is not None and trailing_input is None:
+                raise FillValidationError("冻结ATR政策缺少持久化移动止损状态")
         before_version = lifecycle.state_version
         decision = evaluate_lifecycle_day(
             LifecycleStateInput(
@@ -460,7 +575,8 @@ class PositionLifecycleManager:
             ),
             trade_date=trade_date, fact=fact,
             actual_shares=_d(position.quantity, "position.quantity"),
-            observation_no=(int(prior_facts) + 1) if fill_trade_date is None or trade_date > fill_trade_date else 0,
+            observation_no=observation_no,
+            management_policy=management,
             trailing=trailing_input, expectation=expectation_input,
         )
 
@@ -504,6 +620,7 @@ class PositionLifecycleManager:
             intent, order = self._materialize_delta(
                 lifecycle, position, decision, trade_date, fact,
                 PositionIntent=PositionIntent, SuggestedOrder=SuggestedOrder,
+                portfolio=portfolio, buy_context=buy_context, daily=daily, defer_buy=defer_buy,
             )
         try:
             if commit:
@@ -521,15 +638,61 @@ class PositionLifecycleManager:
             raise
         return daily, intent, order, decision
 
-    def _materialize_delta(self, lifecycle, position, decision, trade_date, fact, *, PositionIntent, SuggestedOrder):
+    def _materialize_delta(self, lifecycle, position, decision, trade_date, fact, *, PositionIntent, SuggestedOrder,
+                           portfolio, buy_context, daily, defer_buy=False):
+        pending_orders = list(self._session.scalars(select(SuggestedOrder).where(
+            SuggestedOrder.lifecycle_id == lifecycle.id,
+            SuggestedOrder.status.in_(self.ACTIVE_ORDER_STATUSES),
+        ).with_for_update().execution_options(populate_existing=True)))
+        actual = _d(position.quantity, "position.quantity")
         active_intent = self._session.execute(select(PositionIntent).where(
             PositionIntent.lifecycle_id == lifecycle.id,
             PositionIntent.status.in_(("ACTIVE", "EXECUTING", "RECONCILIATION_REQUIRED")),
-        ).with_for_update()).scalar_one_or_none()
+        ).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
+        broker_facing = [order for order in pending_orders
+                         if order.status != "PROPOSED" or order.filled_quantity != 0]
+        if broker_facing:
+            target_delta = decision.target_shares - actual
+            remaining = sum(
+                (Decimal(1) if order.side == "BUY" else Decimal(-1))
+                * (_d(order.quantity, "order.quantity") - _d(order.filled_quantity, "order.filled_quantity"))
+                for order in pending_orders
+            )
+            conflicts = (
+                any(order.status == "RECONCILIATION_REQUIRED" for order in broker_facing)
+                or (active_intent is not None and active_intent.status == "RECONCILIATION_REQUIRED")
+                or (active_intent is not None and not (
+                    _d(active_intent.target_shares, "intent.target_shares") == decision.target_shares
+                    and (active_intent.reason_code == decision.reason_code
+                         or decision.target_shares == 0 and decision.reason_code == "EXIT_PENDING")
+                ))
+                or any(order.intent_id is not None
+                       and (active_intent is None or order.intent_id != active_intent.id)
+                       for order in broker_facing)
+                or any(order.intent_id is None for order in broker_facing)
+                or target_delta == 0
+                or any((order.side == "BUY") != (target_delta > 0) for order in broker_facing)
+                or (remaining > 0) != (target_delta > 0)
+                or abs(remaining) > abs(target_delta)
+            )
+            if conflicts:
+                for order in pending_orders:
+                    if order.status == "PROPOSED" and order.filled_quantity == 0:
+                        order.status = "SUPERSEDED"
+                        order.revision += 1
+                    elif order.status != "RECONCILIATION_REQUIRED":
+                        order.status = "RECONCILIATION_REQUIRED"
+                        order.revision += 1
+                if active_intent is not None and active_intent.status != "RECONCILIATION_REQUIRED":
+                    active_intent.status = "RECONCILIATION_REQUIRED"
+                    active_intent.revision += 1
+                daily.planning_result = {"stage": "AWAITING_ORDER_RECONCILIATION"}
+                return active_intent, None
         if active_intent is not None:
             if (
                 _d(active_intent.target_shares, "intent.target_shares") == decision.target_shares
-                and active_intent.reason_code == decision.reason_code
+                and (active_intent.reason_code == decision.reason_code
+                     or decision.target_shares == 0 and decision.reason_code == "EXIT_PENDING")
             ):
                 intent = active_intent
             elif active_intent.status == "ACTIVE":
@@ -549,28 +712,38 @@ class PositionLifecycleManager:
             self._session.add(intent)
             self._session.flush()
 
-        pending_orders = list(self._session.scalars(select(SuggestedOrder).where(
-            SuggestedOrder.lifecycle_id == lifecycle.id,
-            SuggestedOrder.status.in_(self.ACTIVE_ORDER_STATUSES),
-        ).with_for_update()))
-        actual = _d(position.quantity, "position.quantity")
-        if decision.target_shares == actual:
-            for pending in pending_orders:
-                if pending.status in ("PROPOSED", "PARTIALLY_FILLED"):
-                    pending.status = "SUPERSEDED"
-                    pending.revision += 1
-                else:
-                    raise FillValidationError("执行中或待对账订单阻止目标归位")
-            return intent, None
-        desired_direction = Decimal(1) if decision.target_shares > actual else Decimal(-1)
-        for pending in pending_orders:
-            pending_direction = Decimal(1) if pending.side == "BUY" else Decimal(-1)
-            if pending_direction != desired_direction and pending.status in ("PROPOSED", "PARTIALLY_FILLED"):
+        def settle_conflicting_order(pending: SuggestedOrder) -> bool:
+            """Return true only when an unsubmitted suggestion was safely removed."""
+            if pending.status == "PROPOSED" and pending.filled_quantity == 0:
                 pending.status = "SUPERSEDED"
                 pending.revision += 1
-            elif pending_direction == desired_direction and pending.intent_id is None:
+                return True
+            if pending.status != "RECONCILIATION_REQUIRED":
+                pending.status = "RECONCILIATION_REQUIRED"
+                pending.revision += 1
+            daily.planning_result = {"stage": "AWAITING_ORDER_RECONCILIATION",
+                                     "order_id": str(pending.id)}
+            return False
+
+        if decision.target_shares == actual:
+            blocked = False
+            for pending in pending_orders:
+                blocked = not settle_conflicting_order(pending) or blocked
+            if blocked:
+                return intent, None
+            return intent, None
+        desired_direction = Decimal(1) if decision.target_shares > actual else Decimal(-1)
+        blocked = False
+        for pending in pending_orders:
+            pending_direction = Decimal(1) if pending.side == "BUY" else Decimal(-1)
+            if pending_direction != desired_direction:
+                blocked = not settle_conflicting_order(pending) or blocked
+            elif (pending_direction == desired_direction and pending.intent_id is None
+                  and pending.status == "PROPOSED" and pending.filled_quantity == 0):
                 pending.lifecycle_id = lifecycle.id
                 pending.intent_id = intent.id
+        if blocked:
+            return intent, None
         remaining = sum(
             (Decimal(1) if p.side == "BUY" else Decimal(-1))
             * (_d(p.quantity, "order.quantity") - _d(p.filled_quantity, "order.filled_quantity"))
@@ -582,36 +755,153 @@ class PositionLifecycleManager:
             and (remaining > 0) == (target_delta > 0)
             and abs(remaining) > abs(target_delta)
         ):
+            blocked = False
             for pending in pending_orders:
                 pending_direction = Decimal(1) if pending.side == "BUY" else Decimal(-1)
-                if pending_direction == desired_direction and pending.status in ("PROPOSED", "PARTIALLY_FILLED"):
-                    pending.status = "SUPERSEDED"
-                    pending.revision += 1
-                elif pending_direction == desired_direction:
-                    raise FillValidationError("执行中或待对账订单超过新目标")
+                if pending_direction == desired_direction:
+                    blocked = not settle_conflicting_order(pending) or blocked
+            if blocked:
+                return intent, None
             remaining = Decimal(0)
         delta = decision.target_shares - actual - remaining
         if delta == 0:
             return intent, None
         side = "BUY" if delta > 0 else "SELL"
+        if side == "BUY" and defer_buy:
+            # Reconcile existing orders above first: deferring a new BUY must
+            # not leave a cancellable old order larger than today's target.
+            daily.planning_result = json.loads(json.dumps({
+                "stage": "AWAITING_BATCH", "decision": asdict(decision), "order_id": None,
+            }, default=str))
+            return intent, None
         quantity = abs(delta)
-        if side == "BUY":
-            quantity = (quantity / LOT).to_integral_value(rounding=ROUND_FLOOR) * LOT
-        else:
+        if side == "SELL":
             quantity = min(quantity, actual)
         if quantity <= 0:
             return intent, None
         price = _d(fact.get("close"), "close")
-        stop = _optional(fact.get("active_stop_price")) or _optional(decision.active_stop_price) or _optional(lifecycle.initial_stop_price)
+        earliest = trade_date
+        stop = _optional(decision.active_stop_price) or _optional(lifecycle.initial_stop_price)
+        cash = Decimal(0)
+        industry = None
+        if side == "BUY":
+            from .planning_account import planning_account
+            from .position_planner import plan_buy_target
+            account = planning_account(self._session, portfolio)
+            context = buy_context or {}
+            from .strategy_admission import StrategyAdmissionService
+            admission = StrategyAdmissionService(self._session).gate_new_risk(
+                lifecycle.strategy_version_id, asset_scope=context.get("asset_scope"),
+                risk_profile=portfolio.risk_profile,
+            )
+            if (lifecycle.market != "CN" or daily.price_basis != "raw"
+                    or any(p["market"] != "CN" for p in account["positions"] + account["pending_orders"])
+                    or context.get("valuation_date") != trade_date):
+                projection = {"order_status": "BUY_REJECTED_CONTEXT"}
+            elif not admission["allowed"]:
+                projection = {"order_status": "BUY_REJECTED_ADMISSION"}
+            else:
+                from .certified_instrument_rules import live_authorizations
+                rule_authorization = live_authorizations(
+                    self._session, symbols={lifecycle.symbol}, decision_date=trade_date,
+                    expected_asset_type=("etf" if context.get("asset_scope") == "CN_ETF" else "stock"),
+                ).get(lifecycle.symbol)
+                # Reserve external same-symbol buys against the lifecycle target
+                # as well as against account exposure. Do not net pending sells.
+                reserved = sum((p["remaining_quantity"] for p in account["pending_orders"]
+                                if p["side"] == "BUY" and p["symbol"] == lifecycle.symbol), Decimal(0))
+                projection = plan_buy_target(
+                    symbol=lifecycle.symbol, max_quantity=max(Decimal(0), decision.target_shares - actual - reserved),
+                    entry=price, stop=stop, take=_optional(lifecycle.profit_take_price),
+                    strategy_version_id=lifecycle.strategy_version_id,
+                    market=fact.get("execution_market") or {}, valuation_date=trade_date,
+                    max_notional=context.get("max_add_notional"),
+                    entry_lower=context.get("entry_lower"), entry_upper=context.get("entry_upper"),
+                    closes=context.get("closes", {}), industry_map=context.get("industry_map", {}),
+                    industry_bucket_available=context.get("industry_bucket_available") is True,
+                    risk_gate="block" if fact.get("new_risk_allowed") is False else None,
+                    execution_policy_snapshot=fact.get("execution_policy"), **account,
+                    instrument_rules=({lifecycle.symbol: rule_authorization.rule}
+                                      if rule_authorization is not None else {}),
+                )
+            daily.planning_result = json.loads(json.dumps({
+                "account": account, "market_context": context, "projection": projection,
+                "admission": admission,
+            }, default=str))
+            if projection["order_status"] != "ELIGIBLE":
+                return intent, None
+            current_rule = live_authorizations(
+                self._session, symbols={lifecycle.symbol}, decision_date=trade_date,
+                expected_asset_type=("etf" if context.get("asset_scope") == "CN_ETF" else "stock"),
+            ).get(lifecycle.symbol)
+            if (rule_authorization is None or current_rule is None
+                    or current_rule.certificate_id != rule_authorization.certificate_id
+                    or current_rule.rule != rule_authorization.rule):
+                daily.planning_result = {
+                    **daily.planning_result,
+                    "projection": {**daily.planning_result["projection"],
+                                   "order_status": "BUY_REJECTED_INSTRUMENT_RULE"},
+                }
+                return intent, None
+            rule_certificate_id = current_rule.certificate_id
+            quantity, price, stop = projection["shares"], projection["order_cost_price"], projection["order_stop_price"]
+            cash = projection["notional"] + projection["estimated_fees"]
+            industry = projection["risk_bucket"]["industry_code"]
+            earliest = projection["earliest_execution_trade_date"]
+        if side == "SELL":
+            from .position_planner import plan_reduction
+            from .execution_constraints import ExecutionConstraintEvaluator, ExecutionPolicy
+            market = fact.get("execution_market") or {}
+            available_sell = _optional(fact.get("available_sell_quantity"))
+            if str(market.get("trade_date"))[:10] != trade_date.isoformat():
+                daily.planning_result = {"sell_status": "SELL_MARKET_FACTS_UNAVAILABLE"}
+                return intent, None
+            if available_sell is None or available_sell < 0 or available_sell > actual:
+                daily.planning_result = {"sell_status": "SELLABLE_QUANTITY_UNKNOWN"}
+                return intent, None
+            # Include reservations from manual and signal orders, not only this
+            # lifecycle's orders, so independent sources cannot oversell.
+            sell_orders = self._session.scalars(select(SuggestedOrder).where(
+                SuggestedOrder.portfolio_id == lifecycle.portfolio_id,
+                SuggestedOrder.market == lifecycle.market,
+                SuggestedOrder.symbol == lifecycle.symbol,
+                SuggestedOrder.side == "SELL",
+                SuggestedOrder.status.in_(self.ACTIVE_ORDER_STATUSES),
+            ).with_for_update().execution_options(populate_existing=True))
+            reserved_sell = sum((_d(order.quantity, "order.quantity") - _d(order.filled_quantity, "order.filled_quantity")
+                                 for order in sell_orders), Decimal(0))
+            reduction = plan_reduction(
+                target_quantity=decision.target_shares, actual_quantity=actual,
+                available_quantity=available_sell,
+                reserved_quantity=reserved_sell, market=market,
+                execution=ExecutionConstraintEvaluator(ExecutionPolicy.from_snapshot(fact.get("execution_policy"))),
+            )
+            if reduction.code is not None:
+                return intent, None
+            quantity, price = reduction.quantity, reduction.price
+            earliest = reduction.earliest_execution_trade_date
+        decision_at = datetime.now(timezone.utc)
+        if side == "BUY" and decision_at.astimezone(ZoneInfo("Asia/Shanghai")).date() != trade_date:
+            daily.planning_result = {
+                **daily.planning_result,
+                "projection": {**daily.planning_result["projection"],
+                               "order_status": "BUY_REJECTED_INSTRUMENT_RULE"},
+            }
+            return intent, None
         order = SuggestedOrder(
             id=uuid.uuid4(), portfolio_id=lifecycle.portfolio_id, position_id=position.id,
             lifecycle_id=lifecycle.id, intent_id=intent.id,
+            rule_certificate_id=rule_certificate_id if side == "BUY" else None,
+            rule_authorized_at=current_rule.authorized_at if side == "BUY" else None,
+            decision_at=decision_at,
             market=lifecycle.market, symbol=lifecycle.symbol, side=side,
             quantity=quantity, filled_quantity=Decimal(0), limit_price=price,
-            stop_price=stop, reserved_cash=quantity * price if side == "BUY" else Decimal(0),
+            stop_price=stop, reserved_cash=cash, industry_code=industry,
             reserved_risk=max(Decimal(0), price - stop) * quantity if side == "BUY" and stop else Decimal(0),
             reason_code=decision.reason_code, status="PROPOSED", revision=1,
-            earliest_execution_trade_date=trade_date,
+            earliest_execution_trade_date=earliest,
         )
         self._session.add(order)
+        if side == "BUY":
+            daily.planning_result = {**daily.planning_result, "order_id": str(order.id)}
         return intent, order

@@ -1,0 +1,1553 @@
+{
+  "start": "2016-01-01",
+  "end": "2016-12-31",
+  "calendar_days": 244,
+  "pending_before": 218,
+  "attempted": [
+    {
+      "trade_date": "20160216",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160215",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160222",
+      "status": "PARTIAL",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "000159.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160302",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160301",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160229",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160226",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160225",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160224",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160223",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160219",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160218",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160304",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160303",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160307",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160308",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160309",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160310",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160314",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160311",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160316",
+      "status": "PARTIAL",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "000510.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160315",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160321",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160318",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160317",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160325",
+      "status": "PARTIAL",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "000533.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160323",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160322",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160324",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160328",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160330",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160329",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160411",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160408",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160405",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160401",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160331",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160414",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160413",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160412",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160407",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160406",
+      "status": "SUCCESS",
+      "rows": 1,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160415",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160420",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160418",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160422",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160421",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160419",
+      "status": "SUCCESS",
+      "rows": 2,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160426",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160425",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160427",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160428",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160429",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160503",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160505",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160504",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160513",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160510",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160509",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160506",
+      "status": "SUCCESS",
+      "rows": 3,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160516",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160512",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160511",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160518",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160517",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160524",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160523",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160520",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160519",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160525",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160527",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160526",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160601",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160531",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160530",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160602",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160603",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160606",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160607",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160614",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160613",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160608",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160621",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160620",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160617",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160616",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160615",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160623",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160622",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160627",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160624",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160628",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160630",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160629",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160704",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160701",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160705",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160706",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160707",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160711",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160708",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160718",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160715",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160714",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160713",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160712",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160725",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160722",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160721",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160720",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160719",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160727",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160726",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160729",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160728",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160801",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160804",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160803",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160802",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160805",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160808",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160809",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160811",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160810",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160812",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160815",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160816",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160817",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160818",
+      "status": "PARTIAL",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "000659.SZ"
+      ]
+    },
+    {
+      "trade_date": "20160819",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160822",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160825",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160824",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160823",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160829",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160826",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160830",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160831",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160901",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160907",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160906",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160902",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160905",
+      "status": "SUCCESS",
+      "rows": 4,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160908",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160909",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160912",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160913",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160914",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160919",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160922",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160921",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160920",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160927",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160926",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160923",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160929",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160928",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20160930",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161010",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161011",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161012",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161013",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161014",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161017",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161019",
+      "status": "PARTIAL",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": [
+        "000711.SZ"
+      ]
+    },
+    {
+      "trade_date": "20161020",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161018",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161024",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161021",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161025",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161026",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161027",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161028",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161031",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161103",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161102",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161101",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161104",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161107",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161108",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161109",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161110",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161111",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161114",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161115",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161116",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161117",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161118",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161121",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161122",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161123",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161124",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161128",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161125",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161129",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161130",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161201",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161205",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161202",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161206",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161207",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161208",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161209",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161212",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161213",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161214",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161215",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161216",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161219",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161220",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161221",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161222",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161223",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161226",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161227",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161228",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161229",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20161230",
+      "status": "SUCCESS",
+      "rows": 5,
+      "source": "tushare+baostock",
+      "ambiguous_codes": []
+    }
+  ],
+  "pending_after": 5,
+  "next_dates": [
+    "2016-02-22",
+    "2016-03-16",
+    "2016-03-25",
+    "2016-08-18",
+    "2016-10-19"
+  ],
+  "generated_at": "2026-09-25T23:13:56.527242+00:00"
+}

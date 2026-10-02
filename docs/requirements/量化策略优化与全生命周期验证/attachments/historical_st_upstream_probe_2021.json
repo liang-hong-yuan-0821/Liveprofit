@@ -1,0 +1,14 @@
+[
+  {
+    "trade_date": "20210129",
+    "stock_st_rows": 0,
+    "bak_basic_rows": 0,
+    "local_bar_rows": 5003
+  },
+  {
+    "trade_date": "20210316",
+    "stock_st_rows": 0,
+    "bak_basic_rows": 0,
+    "local_bar_rows": 5111
+  }
+]

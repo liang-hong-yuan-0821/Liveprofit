@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-09-25T20:24:59.418608+00:00",
+  "year": 2021,
+  "calendar": "exchange_calendars XSHG",
+  "calendar_sha256": "5188176bd37402b00f2af034ab7b06162e0f40288713c0e876a77af85c41d655",
+  "factor_gap_rows": 28733,
+  "factor_gap_codes": 588,
+  "listed_before_calendar_start": [],
+  "first_bar_not_listing_date": [],
+  "pre_effective_listing_bar_codes": [
+    "920089.BJ",
+    "920092.BJ",
+    "920680.BJ",
+    "920720.BJ",
+    "920981.BJ"
+  ],
+  "max_local_bar_rank": 59,
+  "untrusted_no_bar_session_count": 0,
+  "untrusted_no_bar_by_year": {
+    "2020": 0,
+    "2021": 0
+  },
+  "untrusted_no_bar_codes": [],
+  "untrusted_no_bar_session_examples": [],
+  "factor_absent_after_bar20_count": 0,
+  "factor_absent_after_bar20_examples": [],
+  "ma60_missing_after_bar59_count": 0,
+  "ma60_missing_after_bar59_examples": [],
+  "atr_missing_after_bar20_count": 0,
+  "atr_missing_after_bar20_examples": []
+}

@@ -18,12 +18,15 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
+from types import SimpleNamespace
 
 from backend.modules.quant_strategy.application.execution_constraints import (
     ExecutionConstraintEvaluator,
     ExecutionPolicy,
 )
 from backend.modules.quant_strategy.application.portfolio_risk import PortfolioRiskState
+from backend.modules.investment_workspace.domain.risk_profiles import PROFILES, profile_budget_violations
+from backend.modules.quant_strategy.domain.instrument_rules import InstrumentTradingRule
 
 LOT_SIZE = Decimal(100)
 ELIGIBLE = "ELIGIBLE"
@@ -39,6 +42,7 @@ BUY_REJECTED_INDUSTRY_BUCKET = "BUY_REJECTED_INDUSTRY_BUCKET"
 PORTFOLIO_VALUE_INCONSISTENT = "PORTFOLIO_VALUE_INCONSISTENT"
 PORTFOLIO_ALREADY_OVER_LIMIT = "PORTFOLIO_ALREADY_OVER_LIMIT"
 SELL_REJECTED_NO_POSITION = "SELL_REJECTED_NO_POSITION"
+SELLABLE_QUANTITY_UNKNOWN = "SELLABLE_QUANTITY_UNKNOWN"
 SELL_PARTIAL_REJECTED_LOT_SIZE = "SELL_PARTIAL_REJECTED_LOT_SIZE"
 STALE_POSITION_VALUATION = "STALE_POSITION_VALUATION"
 BUY_REJECTED_STALE_VALUATION = "BUY_REJECTED_STALE_VALUATION"
@@ -54,6 +58,121 @@ class PlanSummary:
     valued_at: datetime | None = None
     portfolio_open_risk: Decimal = Decimal(0)
     daily_new_risk: Decimal = Decimal(0)
+    full_drawdown_exit_required: bool = False
+
+
+@dataclass(frozen=True)
+class ReductionPlan:
+    code: str | None
+    quantity: Decimal = Decimal(0)
+    price: Decimal = Decimal(0)
+    fees: Decimal = Decimal(0)
+    slippage: Decimal = Decimal(0)
+    earliest_execution_trade_date: date | None = None
+
+
+def plan_buy_target(*, symbol: str, max_quantity: Decimal, entry: Decimal,
+                    stop: Decimal, take: Decimal | None, market: dict,
+                    valuation_date: date, max_notional: Decimal | None = None,
+                    strategy_version_id: uuid.UUID | None = None,
+                    entry_lower: Decimal | None = None, entry_upper: Decimal | None = None,
+                    **account_context) -> dict:
+    """Plan an explicitly raw-price target through the ordinary BUY planner.
+
+    This adapter never supplies guessed market facts or a synthetic profit
+    target. The returned projection is suitable for a caller's transaction;
+    no account or order is mutated here.
+    """
+    if (entry_lower is None) != (entry_upper is None):
+        raise ValueError("entry interval requires both raw-price bounds")
+    if entry_lower is not None and (
+        not isinstance(entry_lower, Decimal) or not isinstance(entry_upper, Decimal)
+        or not entry_lower.is_finite() or not entry_upper.is_finite() or not 0 < entry_lower <= entry_upper
+    ):
+        raise ValueError("entry interval must contain finite positive raw prices")
+    if not isinstance(max_quantity, Decimal) or not max_quantity.is_finite() or max_quantity < 0:
+        raise ValueError("BUY target quantity must be finite and nonnegative")
+    if max_notional is not None and (not isinstance(max_notional, Decimal)
+                                    or not max_notional.is_finite() or max_notional < 0):
+        raise ValueError("BUY family budget must be finite and nonnegative")
+    if (str(market.get("trade_date"))[:10] != valuation_date.isoformat()
+            or any(type(market.get(key)) is not bool for key in ("is_suspended", "is_st"))):
+        return {"order_status": "BUY_MARKET_FACTS_UNAVAILABLE"}
+    try:
+        for key in ("raw_close", "adv20_amount", "up_limit"):
+            value = _dec(market.get(key))
+            if not value.is_finite() or value <= 0:
+                raise ValueError
+        for value in (entry, stop, *(() if take is None else (take,))):
+            if not _dec(value).is_finite():
+                raise ValueError
+    except (ValueError, TypeError):
+        return {"order_status": "BUY_MARKET_FACTS_UNAVAILABLE"}
+    signal = SimpleNamespace(
+        id=uuid.uuid4(), signal_kind="BUY", ts_code=symbol,
+        entry_price=entry, stop_loss=stop, take_profit=take,
+        valuation_price=market["raw_close"], max_quantity=max_quantity,
+        max_notional=max_notional, entry_lower=entry_lower, entry_upper=entry_upper,
+        # Lifecycle prices already use raw basis; prevent a second qfq mapping.
+        execution_market={**market, "qfq_close": market["raw_close"]},
+    )
+
+    class Projection:
+        fields: dict
+
+        def list_actionable(self, task_id, attempt_no):
+            return (signal,)
+
+        def update_order_fields(self, signal_id, fields):
+            self.fields = fields
+
+    projection = Projection()
+    PositionPlanner(projection).plan(
+        task_id=signal.id, attempt_no=1, valuation_date=valuation_date,
+        strategy_version_id=strategy_version_id,
+        **account_context,
+    )
+    return projection.fields
+
+
+def plan_reduction(*, target_quantity: Decimal, actual_quantity: Decimal,
+                   available_quantity: Decimal, reserved_quantity: Decimal,
+                   market: dict, execution: ExecutionConstraintEvaluator,
+                   lot_size: Decimal = LOT_SIZE) -> ReductionPlan:
+    """Shared reduction gate. Sell reservations consume quantity, never cash.
+
+The caller supplies settlement-aware availability for the execution session.
+Only a complete liquidation may include an odd lot.
+"""
+    values = (target_quantity, actual_quantity, available_quantity, reserved_quantity, lot_size)
+    if any(not isinstance(v, Decimal) or not v.is_finite() or v < 0 for v in values) or lot_size <= 0:
+        raise ValueError("reduction quantities must be finite and nonnegative with a positive lot")
+    if target_quantity > actual_quantity:
+        raise ValueError("a reduction cannot increase the position")
+    if (type(market.get("is_suspended")) is not bool
+            or market.get("raw_close") is None or market.get("down_limit") is None):
+        return ReductionPlan("SELL_MARKET_FACTS_UNAVAILABLE")
+    try:
+        date.fromisoformat(str(market.get("trade_date"))[:10])
+        close, lower = _dec(market["raw_close"]), _dec(market["down_limit"])
+        if not close.is_finite() or not lower.is_finite() or min(close, lower) <= 0:
+            return ReductionPlan("SELL_MARKET_FACTS_UNAVAILABLE")
+    except (ValueError, TypeError):
+        return ReductionPlan("SELL_MARKET_FACTS_UNAVAILABLE")
+    available = max(Decimal(0), min(available_quantity, actual_quantity) - reserved_quantity)
+    desired = max(Decimal(0), actual_quantity - target_quantity - reserved_quantity)
+    code, price, slip, earliest = execution.evaluate_sell(market=market, available_quantity=available)
+    if code:
+        return ReductionPlan(code, earliest_execution_trade_date=earliest)
+    if price <= 0:
+        return ReductionPlan("SELL_PRICE_UNAVAILABLE", earliest_execution_trade_date=earliest)
+    quantity = min(desired, available)
+    if target_quantity != 0:
+        quantity = (quantity / lot_size).to_integral_value(rounding="ROUND_FLOOR") * lot_size
+    if quantity <= 0:
+        return ReductionPlan("SELL_NO_EXECUTABLE_DELTA", earliest_execution_trade_date=earliest)
+    return ReductionPlan(None, quantity, price, execution.fees(quantity * price, side="SELL"),
+                         slip * quantity, earliest)
 
 
 def _dec(value) -> Decimal:
@@ -84,6 +203,10 @@ class PositionPlanner:
         pending_orders: list[dict] | None = None,
         valuation_date: date | None = None,
         lifecycle_managed_symbols: set[str] | None = None,
+        owner_versions: dict[str, str | None] | None = None,
+        strategy_version_id: uuid.UUID | None = None,
+        admission_block_code: str | None = None,
+        instrument_rules: dict[str, InstrumentTradingRule] | None = None,
     ) -> PlanSummary:
         summary = PlanSummary(valued_at=datetime.now(timezone.utc))
         execution = ExecutionConstraintEvaluator(ExecutionPolicy.from_snapshot(execution_policy_snapshot))
@@ -118,6 +241,13 @@ class PositionPlanner:
         existing_market_value = sum(holdings_value.values(), Decimal(0))
         unallocated = total_assets - available_cash - existing_market_value
         new_buy_blocked: str | None = None
+        profile = portfolio_snapshot.get("risk_profile")
+        excess = profile_budget_violations(profile, risk)
+        if excess:
+            new_buy_blocked = "BUY_REJECTED_PROFILE_BUDGET"
+            summary.warnings.append("风险档预算不匹配：" + ",".join(excess))
+        if portfolio_snapshot.get("risk_pause_event_id") is not None:
+            summary.warnings.append("账户全回撤暂停：" + str(portfolio_snapshot["risk_pause_event_id"]))
         if unallocated < 0:
             new_buy_blocked = PORTFOLIO_VALUE_INCONSISTENT
             summary.warnings.append("unallocated_assets<0：拒绝全部新 BUY")
@@ -127,6 +257,11 @@ class PositionPlanner:
         elif total_assets > 0 and existing_market_value > total_assets * max_total_pct:
             new_buy_blocked = PORTFOLIO_ALREADY_OVER_LIMIT
             summary.warnings.append("已有市值超过总仓位上限：拒绝全部新 BUY")
+        if portfolio_snapshot.get("risk_pause_event_id") is not None:
+            new_buy_blocked = "BUY_REJECTED_PORTFOLIO_PAUSED"
+        if portfolio_snapshot.get("account_reconciliation_required") is True:
+            new_buy_blocked = "BUY_REJECTED_ACCOUNT_RECONCILIATION"
+            summary.warnings.append("账户事实尚未认证或有未处置成交报告：拒绝新 BUY")
 
         cash_remaining = available_cash
         single_used: dict[str, Decimal] = dict(holdings_value)
@@ -152,15 +287,43 @@ class PositionPlanner:
                 new_buy_blocked = BUY_REJECTED_INDUSTRY_BUCKET
             summary.warnings.append("持仓行业归属缺失：拒绝新 BUY，保留卖出建议")
 
+        reservations = (portfolio_snapshot.get("pending_orders", [])
+                        if pending_orders is None else pending_orders)
+        # Pending BUY notionals consume exposure as well as cash/open risk.
+        # They are not assets yet, so do not include them in unallocated NAV.
+        for order in reservations:
+            if str(order.get("side", "")).upper() != "BUY":
+                continue
+            try:
+                qty = _dec(order.get("remaining_quantity"))
+                entry = _dec(order.get("order_entry_price"))
+                if not qty.is_finite() or not entry.is_finite() or qty <= 0 or entry <= 0:
+                    raise ValueError
+            except ValueError:
+                new_buy_blocked = new_buy_blocked or "BUY_REJECTED_RISK_FACTS"
+                continue
+            symbol, industry = order.get("symbol"), order.get("industry_code")
+            if not symbol or not industry:
+                new_buy_blocked = new_buy_blocked or "BUY_REJECTED_RISK_FACTS"
+                continue
+            notional = qty * entry
+            existing_market_value += notional
+            single_used[symbol] = single_used.get(symbol, Decimal(0)) + notional
+            key = (industry,)
+            sector_used[key] = sector_used.get(key, Decimal(0)) + notional
+
         risk_state = PortfolioRiskState.build(
             total_assets=total_assets,
             risk=risk,
             positions=positions,
             closes=closes,
             industry_map=industry_map,
-            pending_orders=pending_orders or portfolio_snapshot.get("pending_orders", []),
+            pending_orders=reservations,
             valuation_date=valuation_date,
         )
+        summary.full_drawdown_exit_required = risk_state.full_drawdown_exit_required
+        if risk_state.full_drawdown_exit_required:
+            summary.warnings.append("PORTFOLIO_FULL_DRAWDOWN_EXIT_REQUIRED")
         cash_remaining -= risk_state.reserved_cash
         if risk_state.reserved_cash:
             summary.warnings.append(f"未完成买单现金预留={risk_state.reserved_cash}")
@@ -175,6 +338,20 @@ class PositionPlanner:
                 self._plan_sell(signal, positions, closes, summary, execution, risk_state)
                 continue
             # BUY
+            if admission_block_code is not None:
+                self._reject(signal, "BUY_REJECTED_ADMISSION", summary)
+                if admission_block_code not in summary.warnings:
+                    summary.warnings.append(admission_block_code)
+                continue
+            if signal.ts_code in (lifecycle_managed_symbols or set()):
+                self._reject(signal, "BUY_REJECTED_MANAGED", summary)
+                continue
+            if owner_versions is not None and signal.ts_code in owner_versions:
+                signal_version = getattr(signal, "strategy_version_id", None) or strategy_version_id
+                owner = owner_versions[signal.ts_code]
+                if owner is None or signal_version is None or owner != str(signal_version):
+                    self._reject(signal, "BUY_REJECTED_OWNER", summary)
+                    continue
             if new_buy_blocked:
                 self._reject(signal, new_buy_blocked, summary)
                 continue
@@ -189,6 +366,7 @@ class PositionPlanner:
                 rr_min=rr_min,
                 max_total_pct=max_total_pct,
                 max_single_pct=max_single_pct,
+                risk_profile=profile,
                 max_sector_pct=max_sector_pct,
                 existing_market_value=existing_market_value,
                 cash_remaining=cash_remaining,
@@ -198,6 +376,9 @@ class PositionPlanner:
                 industry_bucket_available=industry_bucket_available,
                 execution=execution,
                 risk_state=risk_state,
+                instrument_rule=(instrument_rules.get(signal.ts_code) if instrument_rules is not None else None),
+                require_instrument_rule=instrument_rules is not None,
+                valuation_date=valuation_date,
             )
             if accepted and notional is not None:
                 cash_remaining -= cash_used
@@ -218,7 +399,9 @@ class PositionPlanner:
             "trade_date": trade_date.isoformat(),
             "raw_close": fallback_raw,
             "qfq_close": fallback_qfq if fallback_qfq is not None else fallback_raw,
-            "raw_amount": Decimal("1000000000000"),
+            # Missing execution-market evidence must not create synthetic BUY
+            # liquidity. SELL uses this fallback only for price and status.
+            "raw_amount": None,
             "is_suspended": False,
             "is_st": False,
             "up_limit": None,
@@ -233,67 +416,60 @@ class PositionPlanner:
         qty = _dec(holding["quantity"])
         close = closes.get(signal.ts_code)
         valuation = close if close is not None else _dec(holding["average_cost"])
-        available = _dec(holding.get("available_quantity", holding["quantity"]))
-        available = max(Decimal(0), available - risk_state.reserved_sell_quantity.get(signal.ts_code, Decimal(0)))
-        market = self._market(signal, fallback_raw=valuation)
-        constraint, order_price, slippage_per_share, earliest = execution.evaluate_sell(
-            market=market, available_quantity=available,
-        )
-        if constraint:
-            self._signals.update_order_fields(signal.id, {
-                "order_status": constraint,
-                "available_sell_quantity": available,
-                "earliest_execution_trade_date": earliest,
-                "execution_policy_version": execution.policy.version,
-            })
+        # Position balance does not prove exchange-settled, unrestricted shares.
+        # The current account snapshot has no certified sellable balance yet.
+        raw_available = holding.get("available_quantity")
+        try:
+            available = _dec(raw_available)
+        except (ValueError, TypeError):
+            self._reject(signal, SELLABLE_QUANTITY_UNKNOWN, summary, kind="sell")
             return
+        if not available.is_finite() or available < 0 or available > qty:
+            self._reject(signal, SELLABLE_QUANTITY_UNKNOWN, summary, kind="sell")
+            return
+        reserved = risk_state.reserved_sell_quantity.get(signal.ts_code, Decimal(0))
         if signal.action == "SELL_ALL":
-            shares = min(qty, available)  # 可用数量可含零股；T+1 冻结部分不得卖出
-            notional = shares * order_price
-            self._signals.update_order_fields(signal.id, {
-                "order_status": ELIGIBLE,
-                "shares": shares,
-                "notional": notional,
-                "valuation_price": valuation,
-                "order_entry_price": order_price,
-                "order_cost_price": order_price,
-                "available_sell_quantity": available,
-                "earliest_execution_trade_date": earliest,
-                "estimated_fees": execution.fees(notional, side="SELL"),
-                "estimated_slippage": slippage_per_share * shares,
-                "execution_policy_version": execution.policy.version,
-            })
+            target = Decimal(0)
+        else:
+            requested = (qty * _dec(signal.sell_ratio) / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
+            target = qty - requested
+        reduction = plan_reduction(
+            target_quantity=target, actual_quantity=qty, available_quantity=available,
+            reserved_quantity=reserved, market=self._market(signal, fallback_raw=valuation), execution=execution,
+        )
+        fields = {
+            "order_status": (SELL_PARTIAL_REJECTED_LOT_SIZE
+                             if reduction.code == "SELL_NO_EXECUTABLE_DELTA" and signal.action == "SELL_PARTIAL"
+                             else reduction.code or ELIGIBLE),
+            "available_sell_quantity": max(Decimal(0), available - reserved),
+            "earliest_execution_trade_date": reduction.earliest_execution_trade_date,
+            "execution_policy_version": execution.policy.version,
+        }
+        if reduction.code is None:
+            fields.update(shares=reduction.quantity, notional=reduction.quantity * reduction.price,
+                          valuation_price=valuation, order_entry_price=reduction.price,
+                          order_cost_price=reduction.price, estimated_fees=reduction.fees,
+                          estimated_slippage=reduction.slippage)
             summary.suggested_sell_orders += 1
-        elif signal.action == "SELL_PARTIAL":
-            ratio = _dec(signal.sell_ratio)
-            shares = min(
-                (qty * ratio / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE,
-                (available / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE,
-            )
-            if shares < LOT_SIZE:
-                self._reject(signal, SELL_PARTIAL_REJECTED_LOT_SIZE, summary, kind="sell")
-                return
-            notional = shares * order_price
-            self._signals.update_order_fields(signal.id, {
-                "order_status": ELIGIBLE,
-                "shares": shares,
-                "notional": notional,
-                "valuation_price": valuation,
-                "order_entry_price": order_price,
-                "order_cost_price": order_price,
-                "available_sell_quantity": available,
-                "earliest_execution_trade_date": earliest,
-                "estimated_fees": execution.fees(notional, side="SELL"),
-                "estimated_slippage": slippage_per_share * shares,
-                "execution_policy_version": execution.policy.version,
-            })
-            summary.suggested_sell_orders += 1
+            risk_state.reserved_sell_quantity[signal.ts_code] = reserved + reduction.quantity
+        self._signals.update_order_fields(signal.id, fields)
 
     def _plan_buy(self, signal, summary, **ctx) -> tuple[bool, Decimal | None, Decimal]:
         """规划 BUY，返回 (是否接受, gross notional, 含费用现金占用)。"""
         total_assets = ctx["total_assets"]
+        rule = ctx["instrument_rule"]
+        if ctx["require_instrument_rule"] and (
+            not isinstance(rule, InstrumentTradingRule) or rule.symbol != signal.ts_code
+        ):
+            self._reject(signal, "BUY_REJECTED_INSTRUMENT_RULE", summary)
+            return False, None, Decimal(0)
         entry = _dec(signal.entry_price)
         stop = _dec(signal.stop_loss)
+        if signal.take_profit is None:
+            # T3 must define rule-policy admission against account constraints.
+            # Never invent a target or silently bypass the account's RR floor.
+            self._reject(signal, BUY_REJECTED_RR, summary)
+            return False, None, Decimal(0)
         take = _dec(signal.take_profit)
         if not (0 < stop < entry < take):
             self._reject(signal, BUY_REJECTED_RR, summary)
@@ -303,7 +479,20 @@ class PositionPlanner:
             return False, None, Decimal(0)
         close = _dec(signal.valuation_price) if signal.valuation_price is not None else entry
         market = self._market(signal, fallback_raw=close, fallback_qfq=close)
-        decision = ctx["execution"].evaluate_buy(entry=entry, stop=stop, take=take, market=market)
+        if ctx["require_instrument_rule"] and (
+            type(ctx["valuation_date"]) is not date
+            or str(market.get("trade_date"))[:10] != ctx["valuation_date"].isoformat()
+        ):
+            self._reject(signal, "BUY_REJECTED_INSTRUMENT_RULE", summary)
+            return False, None, Decimal(0)
+        try:
+            decision = ctx["execution"].evaluate_buy(
+                entry=entry, stop=stop, take=take, market=market,
+                symbol=signal.ts_code, instrument_rule=rule,
+            )
+        except ValueError:
+            self._reject(signal, "BUY_REJECTED_INSTRUMENT_RULE", summary)
+            return False, None, Decimal(0)
         if not decision.eligible:
             fields = {
                 "earliest_execution_trade_date": decision.earliest_execution_trade_date,
@@ -326,12 +515,33 @@ class PositionPlanner:
             "earliest_execution_trade_date": decision.earliest_execution_trade_date,
             "execution_policy_version": ctx["execution"].policy.version,
         }
-        # 信号价只代表策略形态。实际建议买入成本抬高后必须重新满足严格三价关系、
-        # 最低盈亏比与风险预算，避免跳空时成本已越过目标价仍被标为 ELIGIBLE。
-        if not (0 < order_stop < order_cost < order_take):
+        lower, upper = getattr(signal, "entry_lower", None), getattr(signal, "entry_upper", None)
+        if (lower is None) != (upper is None):
             self._reject(signal, BUY_REJECTED_PRICE_RANGE, summary, fields=normalized_fields)
             return False, None, Decimal(0)
-        if (order_take - order_cost) / (order_cost - order_stop) < ctx["rr_min"]:
+        if lower is not None and (
+            not isinstance(lower, Decimal) or not isinstance(upper, Decimal)
+            or not lower.is_finite() or not upper.is_finite()
+            or not 0 < lower <= order_cost <= upper
+        ):
+            self._reject(signal, BUY_REJECTED_PRICE_RANGE, summary, fields=normalized_fields)
+            return False, None, Decimal(0)
+        # The upper bound is a fill ceiling after slippage. Use its highest
+        # executable tick for every reservation; an opening fill above it is
+        # rejected by the execution proxy, never financed from this plan.
+        reservation_price = order_cost
+        if upper is not None:
+            tick = rule.price_tick if rule is not None else ctx["execution"].policy.tick_size
+            reservation_price = (upper / tick).to_integral_value(rounding="ROUND_FLOOR") * tick
+            if reservation_price < order_cost:
+                self._reject(signal, BUY_REJECTED_PRICE_RANGE, summary, fields=normalized_fields)
+                return False, None, Decimal(0)
+        # 信号价只代表策略形态。实际建议买入成本抬高后必须重新满足严格三价关系、
+        # 最低盈亏比与风险预算，避免跳空时成本已越过目标价仍被标为 ELIGIBLE。
+        if not (0 < order_stop < reservation_price < order_take):
+            self._reject(signal, BUY_REJECTED_PRICE_RANGE, summary, fields=normalized_fields)
+            return False, None, Decimal(0)
+        if (order_take - reservation_price) / (reservation_price - order_stop) < ctx["rr_min"]:
             self._reject(signal, BUY_REJECTED_RR, summary, fields=normalized_fields)
             return False, None, Decimal(0)
 
@@ -342,23 +552,40 @@ class PositionPlanner:
             return False, None, Decimal(0)
         sector_key = (bucket["industry_code"],)
 
+        def floor_quantity(capacity: Decimal) -> Decimal:
+            whole = int(capacity.to_integral_value(rounding="ROUND_FLOOR"))
+            if rule is not None:
+                return Decimal(rule.floor_buy_quantity(whole))
+            return Decimal(max(0, whole // 100 * 100))
+
+        minimum_quantity = Decimal(rule.min_buy_quantity if rule is not None else 100)
+
         # 风险手数
         risk_budget = total_assets * ctx["risk_per_trade"]
-        shares_risk = (risk_budget / (order_cost - order_stop) / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
+        shares_risk = floor_quantity(risk_budget / (reservation_price - order_stop))
         # 现金上限（每笔及累计）
-        shares_cash = (ctx["cash_remaining"] / order_cost / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
+        shares_cash = floor_quantity(ctx["cash_remaining"] / reservation_price)
         # 总仓位上限
         total_remaining = ctx["max_total_pct"] * total_assets - ctx["existing_market_value"]
-        shares_total = (total_remaining / order_cost / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
+        shares_total = floor_quantity(total_remaining / reservation_price)
         # 单票上限
-        single_remaining = ctx["max_single_pct"] * total_assets - ctx["single_used"].get(signal.ts_code, Decimal(0))
-        shares_single = (single_remaining / order_cost / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
+        is_etf = rule is not None and rule.asset_type == "etf"
+        single_cap = PROFILES[ctx["risk_profile"]].single_etf if is_etf else ctx["max_single_pct"]
+        single_reject_code = ("BUY_REJECTED_SINGLE_ETF_LIMIT" if is_etf
+                              else BUY_REJECTED_SINGLE_STOCK_LIMIT)
+        single_remaining = single_cap * total_assets - ctx["single_used"].get(signal.ts_code, Decimal(0))
+        shares_single = floor_quantity(single_remaining / reservation_price)
         # 行业上限
         sector_remaining = ctx["max_sector_pct"] * total_assets - ctx["sector_used"].get(sector_key, Decimal(0))
-        shares_sector = (sector_remaining / order_cost / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE
-        risk_per_share = order_cost - order_stop
+        shares_sector = floor_quantity(sector_remaining / reservation_price)
+        risk_per_share = reservation_price - order_stop
+        liquidity_shares = decision.max_liquidity_shares
+        if upper is not None:
+            adv20 = _dec(market["adv20_amount"])
+            max_notional = adv20 * Decimal(1000) * ctx["execution"].policy.max_participation_rate
+            liquidity_shares = min(liquidity_shares, floor_quantity(max_notional / reservation_price))
         risk_capacities = [
-            ((capacity / LOT_SIZE).to_integral_value(rounding="ROUND_FLOOR") * LOT_SIZE, code)
+            (floor_quantity(capacity), code)
             for capacity, code in ctx["risk_state"].capacities(
                 risk_per_share=risk_per_share, industry_code=str(bucket["industry_code"])
             )
@@ -368,13 +595,27 @@ class PositionPlanner:
             (shares_risk, BUY_REJECTED_RR),
             (shares_cash, BUY_REJECTED_CASH),
             (shares_total, BUY_REJECTED_TOTAL_LIMIT),
-            (shares_single, BUY_REJECTED_SINGLE_STOCK_LIMIT),
+            (shares_single, single_reject_code),
             (shares_sector, BUY_REJECTED_SECTOR_LIMIT),
-            (decision.max_liquidity_shares, "BUY_REJECTED_LIQUIDITY"),
+            (liquidity_shares, "BUY_REJECTED_LIQUIDITY"),
             *risk_capacities,
         ]
+        max_quantity = getattr(signal, "max_quantity", None)
+        if max_quantity is not None:
+            maximum = _dec(max_quantity)
+            if not maximum.is_finite() or maximum < 0:
+                raise ValueError("BUY target quantity must be finite and nonnegative")
+            candidates.append((floor_quantity(maximum),
+                               BUY_REJECTED_LOT_SIZE))
+        max_notional = getattr(signal, "max_notional", None)
+        if max_notional is not None:
+            ceiling = _dec(max_notional)
+            if not ceiling.is_finite() or ceiling < 0:
+                raise ValueError("BUY family budget must be finite and nonnegative")
+            candidates.append((floor_quantity(ceiling / reservation_price),
+                               "BUY_REJECTED_FAMILY_BUDGET"))
         shares, reject_code = min(candidates, key=lambda c: c[0])
-        if shares < LOT_SIZE:
+        if shares < minimum_quantity:
             self._reject(
                 signal,
                 reject_code if reject_code != BUY_REJECTED_RR else BUY_REJECTED_LOT_SIZE,
@@ -383,16 +624,16 @@ class PositionPlanner:
             )
             return False, None, Decimal(0)
         # 现金约束按毛额 + 预计费用复核；费用使现金不足时按整手继续缩量。
-        while shares >= LOT_SIZE:
-            candidate_notional = shares * order_cost
+        while shares >= minimum_quantity:
+            candidate_notional = shares * reservation_price
             candidate_fees = ctx["execution"].fees(candidate_notional, side="BUY")
             if candidate_notional + candidate_fees <= ctx["cash_remaining"]:
                 break
-            shares -= LOT_SIZE
-        if shares < LOT_SIZE:
+            shares = floor_quantity(shares - 1)
+        if shares < minimum_quantity:
             self._reject(signal, BUY_REJECTED_CASH, summary, fields=normalized_fields)
             return False, None, Decimal(0)
-        notional = shares * order_cost
+        notional = shares * reservation_price
         fees = ctx["execution"].fees(notional, side="BUY")
         cash_used = notional + fees
         # 用最终股数及 order_cost_price 重算 notional/风险并再次断言全部上限
@@ -403,13 +644,15 @@ class PositionPlanner:
             "order_status": ELIGIBLE,
             "shares": shares,
             "notional": notional,
-            "order_cost_price": order_cost,
+            "order_cost_price": reservation_price,
             "order_entry_price": order_cost,
             "order_stop_price": order_stop,
             "order_take_price": order_take,
             "valuation_price": close,
             "earliest_execution_trade_date": decision.earliest_execution_trade_date,
             "estimated_fees": fees,
+            # Baseline signal-price slippage estimate. Interval stress is
+            # represented by order_cost_price/notional/reserved risk instead.
             "estimated_slippage": prices.slippage_per_share * shares,
             "execution_policy_version": ctx["execution"].policy.version,
             "risk_bucket": {"source": "SW2021", "industry_code": bucket["industry_code"], "industry_name": bucket.get("name")},
@@ -417,7 +660,7 @@ class PositionPlanner:
         ctx["single_used"][signal.ts_code] = ctx["single_used"].get(signal.ts_code, Decimal(0)) + notional
         ctx["sector_used"][sector_key] = ctx["sector_used"].get(sector_key, Decimal(0)) + notional
         ctx["risk_state"].accept(
-            risk_amount=(order_cost - order_stop) * shares,
+            risk_amount=(reservation_price - order_stop) * shares,
             industry_code=str(bucket["industry_code"]),
         )
         summary.suggested_buy_orders += 1

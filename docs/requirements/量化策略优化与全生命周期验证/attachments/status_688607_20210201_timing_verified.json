@@ -1,0 +1,17 @@
+{
+  "rows": 4174,
+  "ambiguous_codes": [],
+  "target": [
+    {
+      "ts_code": "688607.SH",
+      "trade_date": "2021-02-01",
+      "is_suspended": true,
+      "suspension_scope": "intraday",
+      "suspend_timing": "09:33-09:43,11:10-11:10",
+      "is_st": false,
+      "market_board": "科创板",
+      "up_limit": 100000.0,
+      "down_limit": 0.01
+    }
+  ]
+}

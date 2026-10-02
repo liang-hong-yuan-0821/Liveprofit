@@ -1,0 +1,30 @@
+..............................................F......................... [ 36%]
+........................................................................ [ 73%]
+.....................................................                    [100%]
+================================== FAILURES ===================================
+_____________ test_start_registers_jobs_and_startup_check_thread ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002035FE088F0>
+env = (WindowsPath('D:/code/workspace/python/Liveprofit/var/test-layout-refactor/review_delta_01/test_start_registers_jobs_a...ode/workspace/python/Liveprofit/var/test-layout-refactor/review_delta_01/test_start_registers_jobs_and_0/done.marker'))
+
+    def test_start_registers_jobs_and_startup_check_thread(monkeypatch, env):
+        fake = MagicMock()
+        monkeypatch.setattr(sch, "BackgroundScheduler", lambda: fake)
+        monkeypatch.setattr(sch, "_cleanup_stale_lock", MagicMock())
+        fake_thread = MagicMock()
+        monkeypatch.setattr(sch.threading, "Thread", MagicMock(return_value=fake_thread))
+        monkeypatch.setenv("EVENT_STUDY_DAILY_TIME", "09:15")
+        sch.start_daily_scheduler()
+    
+        calls = fake.add_job.call_args_list
+        ids = [c.kwargs["id"] for c in calls]
+>       assert ids == ["daily_job", "daily_job_catchup"]
+E       AssertionError: assert [] == ['daily_job',..._job_catchup']
+E         
+E         Right contains 2 more items, first extra item: 'daily_job'
+E         Use -v to get more diff
+
+tests\ai\event_study\unit\test_app_scheduler.py:74: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/ai/event_study/unit/test_app_scheduler.py::test_start_registers_jobs_and_startup_check_thread
+1 failed, 196 passed in 175.01s (0:02:55)

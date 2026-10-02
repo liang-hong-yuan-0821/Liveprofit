@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-09-26T03:52:06.959913+00:00",
+  "source_scope": [
+    "000670.SZ",
+    "002260.SZ"
+  ],
+  "source_validated_rows": 349,
+  "status_rows": 4685,
+  "ambiguous_codes": [],
+  "target_records": [
+    {
+      "ts_code": "000670.SZ",
+      "trade_date": "2022-01-04",
+      "is_suspended": true,
+      "suspension_scope": "full_day",
+      "suspend_timing": null,
+      "is_st": true,
+      "market_board": "主板",
+      "up_limit": null,
+      "down_limit": null
+    },
+    {
+      "ts_code": "002260.SZ",
+      "trade_date": "2022-01-04",
+      "is_suspended": true,
+      "suspension_scope": "full_day",
+      "suspend_timing": null,
+      "is_st": true,
+      "market_board": "主板",
+      "up_limit": null,
+      "down_limit": null
+    }
+  ]
+}

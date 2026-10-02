@@ -22,6 +22,7 @@ class PortfolioSnapshotDTO(BaseModel):
     total_assets: str
     available_cash: str
     risk: dict
+    risk_profile: str | None = None
     snapshot_at: datetime | None = None
 
 
@@ -76,6 +77,7 @@ class QuantExecutionSummaryDTO(BaseModel):
 class QuantExecutionDTO(BaseModel):
     """decision["quant_execution"] 的无源码投影（旧报告为 null，不渲染面板）。"""
 
+    admission: dict | None = None
     strategy: StrategyAuditDTO
     portfolio_snapshot: PortfolioSnapshotDTO
     matching_buy_preview: list[MatchingBuyPreviewDTO]

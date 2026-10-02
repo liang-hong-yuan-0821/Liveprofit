@@ -1,0 +1,20 @@
+{
+  "start": "2016-06-30",
+  "end": "2016-06-30",
+  "calendar_days": 1,
+  "attempted": 1,
+  "verified_rows": 282,
+  "non_success_days": [],
+  "results": [
+    {
+      "day": "2016-06-30",
+      "status": "SUCCESS",
+      "rows": 282,
+      "bar_conflicts": [],
+      "outside_stock_pool": [
+        "920476.BJ"
+      ]
+    }
+  ],
+  "generated_at": "2026-09-25T17:35:27.981505+00:00"
+}

@@ -1,0 +1,50 @@
+{
+  "days": 7,
+  "written": 540,
+  "warmup": 229,
+  "failed_days": [],
+  "results": [
+    {
+      "day": "2021-11-22",
+      "written": 73,
+      "warmup": 39,
+      "unresolved": []
+    },
+    {
+      "day": "2021-11-23",
+      "written": 75,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2021-11-24",
+      "written": 77,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2021-11-25",
+      "written": 78,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2021-11-26",
+      "written": 78,
+      "warmup": 32,
+      "unresolved": []
+    },
+    {
+      "day": "2021-11-29",
+      "written": 79,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2021-11-30",
+      "written": 80,
+      "warmup": 30,
+      "unresolved": []
+    }
+  ]
+}

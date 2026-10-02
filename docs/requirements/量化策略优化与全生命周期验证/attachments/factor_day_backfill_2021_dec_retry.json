@@ -1,0 +1,26 @@
+{
+  "days": 3,
+  "written": 209,
+  "warmup": 124,
+  "failed_days": [],
+  "results": [
+    {
+      "day": "2021-12-29",
+      "written": 69,
+      "warmup": 40,
+      "unresolved": []
+    },
+    {
+      "day": "2021-12-30",
+      "written": 70,
+      "warmup": 42,
+      "unresolved": []
+    },
+    {
+      "day": "2021-12-31",
+      "written": 70,
+      "warmup": 42,
+      "unresolved": []
+    }
+  ]
+}

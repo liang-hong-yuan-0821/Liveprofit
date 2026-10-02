@@ -1,0 +1,41 @@
+{
+  "start": "2025-01-02",
+  "end": "2025-01-08",
+  "calendar_days": 5,
+  "pending_before": 5,
+  "attempted": [
+    {
+      "trade_date": "20250108",
+      "status": "SUCCESS",
+      "rows": 5386,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20250107",
+      "status": "SUCCESS",
+      "rows": 5386,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20250106",
+      "status": "SUCCESS",
+      "rows": 5386,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20250103",
+      "status": "SUCCESS",
+      "rows": 5386,
+      "ambiguous_codes": []
+    },
+    {
+      "trade_date": "20250102",
+      "status": "SUCCESS",
+      "rows": 5384,
+      "ambiguous_codes": []
+    }
+  ],
+  "pending_after": 0,
+  "next_dates": [],
+  "generated_at": "2026-09-25T14:42:58.392388+00:00"
+}

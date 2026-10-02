@@ -1,0 +1,11 @@
+[
+  {"ts_code":"603056.SH","trade_date":"2026-01-09","scope":"intraday","evidence_note":"公告称午间起停牌，未提供精确分钟区间","published_on":"2026-01-14","source_url":"https://static.cninfo.com.cn/finalpage/2026-01-14/1224932970.PDF"},
+  {"ts_code":"603056.SH","trade_date":"2026-01-12","scope":"full_day","published_on":"2026-01-14","source_url":"https://static.cninfo.com.cn/finalpage/2026-01-14/1224932970.PDF"},
+  {"ts_code":"605028.SH","trade_date":"2026-01-13","scope":"full_day","published_on":"2026-01-13","source_url":"https://static.cninfo.com.cn/finalpage/2026-01-13/1224929951.PDF"},
+  {"ts_code":"688005.SH","trade_date":"2026-01-15","scope":"full_day","published_on":"2026-01-16","source_url":"https://static.cninfo.com.cn/finalpage/2026-01-16/1224936821.PDF"},
+  {"ts_code":"688005.SH","trade_date":"2026-01-16","scope":"full_day","published_on":"2026-01-16","source_url":"https://star.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-01-16/688005_20260116_ZIG4.pdf"},
+  {"ts_code":"603616.SH","trade_date":"2026-01-22","scope":"full_day","published_on":"2026-02-04","source_url":"https://static.cninfo.com.cn/finalpage/2026-02-04/1224965248.PDF"},
+  {"ts_code":"603159.SH","trade_date":"2026-06-16","scope":"full_day","published_on":"2026-06-23","source_url":"https://static.cninfo.com.cn/finalpage/2026-06-23/1225380530.PDF"},
+  {"ts_code":"002731.SZ","trade_date":"2026-07-06","scope":"full_day","published_on":"2026-07-06","source_url":"https://disc.static.szse.cn/disc/disk03/finalpage/2026-07-06/2ff408da-fb79-4c86-a18a-bd07ad1be299.PDF"},
+  {"ts_code":"601238.SH","trade_date":"2026-09-15","scope":"full_day","published_on":"2026-09-15","source_url":"https://static.cninfo.com.cn/finalpage/2026-09-15/1225564444.PDF"}
+]

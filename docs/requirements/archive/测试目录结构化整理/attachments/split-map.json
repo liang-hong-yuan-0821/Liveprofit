@@ -1,0 +1,10 @@
+{
+  "tests/ai/event_study/unit/test_predictor.py": [
+    "tests/ai/event_study/unit/test_predictor.py",
+    "tests/ai/event_study/integration/test_predictor.py"
+  ],
+  "tests/ai/event_study/unit/test_event_routing.py": [
+    "tests/ai/event_study/unit/test_event_routing.py",
+    "tests/ai/event_study/integration/test_event_routing.py"
+  ]
+}

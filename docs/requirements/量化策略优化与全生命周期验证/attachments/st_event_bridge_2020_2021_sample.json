@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-09-25T21:47:44.433280+00:00",
+  "reports": [
+    {
+      "day": "2020-01-02",
+      "before": "2019-12-31",
+      "after": "2020-01-03",
+      "before_count": 138,
+      "after_count": 137,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 138,
+      "next_match": false,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [
+        "600074.SH"
+      ],
+      "candidate_sha256": "d4b3cfe95b8a95926c432bb2fa7d96765c5f5805fd2ea3340a3fba965981f943",
+      "result": "MISMATCH"
+    },
+    {
+      "day": "2021-01-29",
+      "before": "2021-01-28",
+      "after": "2021-02-01",
+      "before_count": 214,
+      "after_count": 214,
+      "target_source_empty": true,
+      "target_events": [],
+      "next_events": [],
+      "candidate_count": 214,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "c1234b9e4a5719d6ef3894bda87b8a46b44bbb2dbc443edee6c5b941bb668975",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    },
+    {
+      "day": "2021-03-16",
+      "before": "2021-03-15",
+      "after": "2021-03-17",
+      "before_count": 215,
+      "after_count": 214,
+      "target_source_empty": true,
+      "target_events": [
+        {
+          "ts_code": "600255.SH",
+          "name": "鑫科材料",
+          "pub_date": "20210315",
+          "imp_date": "20210316",
+          "st_type": "撤销*ST"
+        }
+      ],
+      "next_events": [],
+      "candidate_count": 214,
+      "next_match": true,
+      "next_added_unexplained": [],
+      "next_removed_unexplained": [],
+      "candidate_sha256": "519819d9987fb870f33a0d732ad172b9bd8b418c6feb3ad3d4978c5ef2f87082",
+      "result": "MATCHED_CANDIDATE_ONLY"
+    }
+  ]
+}

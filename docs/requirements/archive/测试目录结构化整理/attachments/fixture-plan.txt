@@ -1,0 +1,133 @@
+
+SETUP    S event_loop_policy
+    SETUP    M pg_env
+        tests/data/instrument/integration/test_db.py::test_get_connection_closes_on_exit (fixtures used: event_loop_policy, pg_env)
+        tests/data/instrument/integration/test_db.py::test_get_connection_rollback_on_exception (fixtures used: event_loop_policy, pg_env)
+        tests/data/instrument/integration/test_db.py::test_init_schema_idempotent (fixtures used: event_loop_policy, pg_env)
+        SETUP    F clean_market_state (fixtures used: pg_env)
+        tests/data/instrument/integration/test_db.py::test_cli_init_schema_smoke (fixtures used: clean_market_state, event_loop_policy, pg_env)
+        TEARDOWN F clean_market_state
+        SETUP    F monkeypatch
+        tests/data/instrument/integration/test_db.py::test_dsn_connection_string_priority (fixtures used: event_loop_policy, monkeypatch, pg_env)
+        TEARDOWN F monkeypatch
+    TEARDOWN M pg_env
+    SETUP    M env
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_unqualified_full_flow_defers_sell_without_sellable_fact_and_rejects_new_buy (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_market_gap_keeps_sell_intent_pending_without_sellable_fact (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_eligible_signal_materializes_one_persisted_suggested_order (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_arc_bottom_buy_freezes_same_context_neckline_seed (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_existing_lifecycle_arbitrates_script_sell_into_one_delta_order (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_snapshot_hash_mismatch_fatal (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_cancel_before_first_batch_raises_and_no_signals (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_data_unavailable_counted_not_blocking (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_execution_uses_frozen_template_contract_after_registry_changes (fixtures used: env, event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F fixed_complete_readiness (fixtures used: monkeypatch)
+        tests/backend/quant_strategy/integration/execution/test_execution.py::test_loader_aligns_factor_values_by_trade_date_and_rejects_missing_latest (fixtures used: event_loop_policy, fixed_complete_readiness, monkeypatch)
+        TEARDOWN F fixed_complete_readiness
+        TEARDOWN F monkeypatch
+    TEARDOWN M env
+    SETUP    M _exclusive_test_database
+    SETUP    M client (fixtures used: _exclusive_test_database)
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_create_task_202_envelope_and_derived_urls (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_missing_idempotency_key_422_problem (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_invalid_create_body_422_problem (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_idempotent_replay_same_key_same_input (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_idempotency_key_reused_with_different_input_409 (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_list_tasks_envelope_fields_and_cursor_pagination (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_invalid_status_filter_422 (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_get_task_detail_and_404 (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_cancel_pending_task_to_cancelled (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_dashboard_empty_is_normal (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_unknown_api_route_404_problem (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_problem_details_never_leak_internals (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+SETUP    S tmp_path_factory
+        SETUP    F _clean_platform_state (fixtures used: client)
+        SETUP    F monkeypatch
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_rerun_terminal_task_200_pending_next_attempt (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy, monkeypatch, request, tmp_path, tmp_path_factory)
+        TEARDOWN F tmp_path
+        TEARDOWN F monkeypatch
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_rerun_non_terminal_409 (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy)
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        SETUP    F monkeypatch
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_rerun_unknown_node_404 (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy, monkeypatch, request, tmp_path, tmp_path_factory)
+        TEARDOWN F tmp_path
+        TEARDOWN F monkeypatch
+        TEARDOWN F _clean_platform_state
+        SETUP    F _clean_platform_state (fixtures used: client)
+        SETUP    F monkeypatch
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        tests/backend/analysis/contract/api/test_analysis_tasks.py::test_rerun_no_checkpoint_409 (fixtures used: _clean_platform_state, _exclusive_test_database, client, event_loop_policy, monkeypatch, request, tmp_path, tmp_path_factory)
+        TEARDOWN F tmp_path
+        TEARDOWN F monkeypatch
+        TEARDOWN F _clean_platform_state
+    TEARDOWN M client
+    TEARDOWN M _exclusive_test_database
+TEARDOWN S tmp_path_factory
+TEARDOWN S event_loop_policy
+no tests ran in 0.75s

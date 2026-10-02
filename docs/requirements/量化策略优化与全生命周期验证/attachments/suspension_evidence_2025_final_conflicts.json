@@ -1,0 +1,18 @@
+[
+  {
+    "ts_code": "603897.SH",
+    "trade_date": "2025-11-04",
+    "scope": "full_day",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2025-11-03/1224782056.PDF",
+    "published_on": "2025-11-03",
+    "evidence_note": "公司11月3日公告自当日开市起全天停牌，预计不超过两个交易日；11月4日无日线。上游同日S/R时段为空，不将R推断成已复牌。"
+  },
+  {
+    "ts_code": "688766.SH",
+    "trade_date": "2025-11-26",
+    "scope": "full_day",
+    "source_url": "https://static.cninfo.com.cn/finalpage/2025-11-26/1224826077.PDF",
+    "published_on": "2025-11-26",
+    "evidence_note": "公司公告11月26日开市起停牌，主库及上游均无日线；上游S的09:30-09:30是零时长占位，不能按盘中时段解释。"
+  }
+]

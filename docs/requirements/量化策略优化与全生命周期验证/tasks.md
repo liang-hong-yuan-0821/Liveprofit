@@ -1,18 +1,199 @@
 # 量化策略优化与全生命周期验证 任务清单
 
-> **状态**：`实现中`（2026-09-24）
-> **进度**：0/8 任务
-> **下一步**：继续 T1 的元数据、覆盖与上游核验；当前仅完成快照基础层。
+> **状态**：实现中（2026-10-02，组合未绑定BUY批量DB捕获/封口实现检查完成；3ar-2整体标准未勾选）
+> **进度**：主线0/8项整体验收；3at四项已完成；完整历史3ar-1已完成，3ar-2进行中，其余待开始
+> **下一步**：接全组合生命周期多步骤DB协调与封口；集中完成3ar-2命令闭环后接建单输入冻结。软件、部署和来源门禁见下方统一清单。
 > **关联方案**：[plan.md](plan.md)
 
+## 3at 本次方案优化与已有改动（已完成范围）
+
+用户最新要求：已有改动保留，只修改方案与tasks，并标明完成状态。3at记录已有成果；下节3ar仅为后续计划，不自动开始。已完成代码仅说明源码与隔离验证完成，不表示已经部署，也不替代T4整体验收。
+
+| 编号 | 任务 | 依赖 | 状态 |
+|---|---|---|---|
+| 3at-1 | A01–A04/A07–A08：来源保全、封存、命令清单、快照、证据与容量契约 | — | 已完成（设计） |
+| 3at-2 | A05：0050成交版本步约束与受控写入迁移 | 本节已写明修复契约 | 已完成 |
+| 3at-3 | A06：分批首仓完成状态与回归 | 本节已写明修复契约 | 已完成（代码与隔离回归） |
+| 3at-4 | 已有验证、独立审查与方案/tasks状态登记 | 3at-1/2/3 | 已完成（局部验收） |
+
+### 3at-1 方案缺口修订
+
+- **目标**：在plan中写出可实施的来源冻结时点、命令完整清单、封存顺序、快照判等、来源矩阵及性能验证方法；明确新增表与复用的取舍。
+- **涉及文件**：`plan.md`、`decisions.md`、`issues.md`及状态台账。
+- **验收标准**：
+  - [x] 逐项反例审查：删任务后首填、封存后追加、跨生命周期漏一步、无数据日报、同票重新建仓均有明确约束与测试落点。
+  - [x] 固定活动集合保证连续；未绑定订单零变化结果有独立行；保护SELL可空shape和旧单UNKNOWN_PRIOR删源例外已补齐，独立delta PASS。
+  - [x] 字段表、正文、命名和迁移起点同步；定向文档`git diff --check`通过。
+- **状态**：已完成（设计修订）；六表DDL与运行验证未完成，见3ar。
+
+### 3at-2 成交版本步完整性
+
+- **目标**：修复可空CHECK、直接伪造写入与TRUNCATE保护，保留正常首填/后续成交和迁移回退语义。
+- **涉及文件**：新建`backend/migrations/versions/0050_fill_version_step_integrity.py`及隔离迁移测试；必要时同步`lifecycle_models.py`。
+- **验收标准**：
+  - [x] 读明测试函数/fixture并确认随机隔离库后，运行对应迁移测试：全空/单空LOCAL_CAUSAL、错误归属、直接INSERT、清表拒绝、正常父触发、升级坏数据拒绝、降级保留事实。
+  - [x] 新迁移语法检查通过；历史0048/0049未改写。
+- **状态**：已完成（2026-10-01）；随机隔离迁移14 passed，包括非owner仅有TRUNCATE权限仍拒绝清表，独立CR PASS。主库未升级，部署项另列3ar-6。
+
+### 3at-3 分批首仓状态
+
+- **目标**：原首仓订单分笔成交完成时正确推进阶段，并保护对账/后继目标与初始锚。
+- **涉及文件**：`backend/modules/quant_strategy/application/lifecycle_service.py`及新增专用回归文件。
+- **验收标准**：
+  - [x] 核明隔离fixture后验证两笔100达到200、未达目标、外部订单、待对账、后继目标、幂等与版本步；保留/删除来源×发布/归档政策及新首填/新订单/错锚/来源版本更换反例。
+  - [x] 关联的首填、成交修订、幂等和事务回滚定向回归5项通过，未调用真实LLM。
+- **状态**：已完成（2026-10-01）；专用27 passed，既有定向5 passed，独立R2 PASS。
+
+### 3at-4 已有验证与状态登记
+
+- **目标**：记录已发生的验证，明确哪些只完成设计、哪些已有代码；停止新增实现。
+- **本轮继续调整文件**：`plan.md`、`tasks.md`。
+- **验收标准**：
+  - [x] 独立Code Review通过；保留来源+归档政策续填边界修复后R2 delta PASS。
+  - [x] 定向迁移与业务回归记录实际结果，设计修正与已实现修复分别标记，不关闭完整3ar/生产/T4门禁。
+  - [x] 按用户要求保留已有改动，方案与tasks列明完成项及后续依赖；本轮不继续实现、不迁移主库、不归档整个T1–T8任务。
+- **状态**：已完成（局部验收与文档登记）。
+
+**已执行验证记录（46项为三个不同范围的合计，不是端到端验收；以下为此前执行，本次文档调整不重跑）：**
+
+```powershell
+.venv\Scripts\python.exe -m pytest backend/tests/integration/quant_strategy/test_fill_version_step_integrity_migration.py -q
+# 14 passed in 22.94s；随机liveprofit_fillstep_0050_test_<uuid>，临时角色已清理
+.venv\Scripts\python.exe -m pytest backend/tests/integration/quant_strategy/test_initial_entry_completion.py -q
+# 27 passed in 4.07s；liveprofit_quant_strategy_test
+.venv/Scripts/python.exe -m pytest backend/tests/integration/quant_strategy/test_lifecycle_service.py::test_fee_aware_fill_stage_stays_in_caller_transaction backend/tests/integration/quant_strategy/test_lifecycle_service.py::test_partial_fill_replay_correction_and_void_are_atomic backend/tests/integration/quant_strategy/test_lifecycle_service.py::test_fill_idempotency_key_rejects_other_order_operation_or_payload backend/tests/integration/quant_strategy/test_lifecycle_service.py::test_legacy_revision_rejects_persisted_initial_fill_anchor_before_projection backend/tests/integration/quant_strategy/test_lifecycle_service.py::test_first_real_fill_initializes_bound_lifecycle_and_not_before -q -x --tb=short -o faulthandler_timeout=60
+# 5 passed in 5.47s；liveprofit_quant_strategy_test，串行执行
+```
+
+未通过/未开展：主库DDL与ACL部署核验、六表落地、所有业务写者接入、逐步历史读取、完整生命周期重放、容量基准、真实来源及生产认证。测试已先读函数/fixture核隔离，无真实LLM调用。
+
+## 3ar 完整操作历史实施清单（已授权实施，当前1/6）
+
+2026-10-01用户明确继续实施，恢复下列依赖顺序。每项须分别记录范围、命令、结果、未通过项及后续门禁；隔离验证与生产部署分开。
+
+| 编号 | 任务 | 依赖 | 状态 |
+|---|---|---|---|
+| 3ar-1 | 六表、类型化关系及迁移基线 | 3at-1/2 | 已完成（隔离软件验收） |
+| 3ar-2 | 命令清单、逐行捕获与操作封口 | 3ar-1 | 进行中 |
+| 3ar-3 | 建单时冻结输入及原值消费随迁 | 3ar-1/2 | 待开始 |
+| 3ar-4 | 首填、日管理、批次及状态写入全接线 | 3ar-2/3、3at-3 | 待开始 |
+| 3ar-5 | 合法删源、历史查询与逐步还原 | 3ar-3/4 | 待开始 |
+| 3ar-6 | 迁移/并发/容量总验收及部署方案 | 3ar-1至5 | 待开始 |
+
+### 后续验收安排（2026-10-01精简，已有证据保留）
+
+实施中的辅助模块、函数和测试文件作为检查点；以下业务单元收尾时集中验收和适用的一次独立review，修复仅复验受影响范围。完整证据写result，其他文档摘要引用。新增设计/契约变化才改plan和decisions，不每个检查点全写八文件。
+
+| 验收单元 | 收尾业务结果 | 必验风险与回归范围 |
+|---|---|---|
+| 3ar-2剩余命令闭环 | 全组合及同事务多步骤请求有独立完整清单，实际变化齐全且能封口 | 漏参与者/漏步骤、封口后写入、A→B→A、回滚/幂等/并发、普通角色；改共享捕获/核验时包含既有绑定和未绑定命令。拟operation_atomicity及受影响现有测试 |
+| 3ar-3建单原值冻结与消费 | 全部建单者保存原值，owner/授权/展示等消费者按契约读取 | ABSENT/NULL/VALUE/Decimal、来源种类、缺证、重试/回滚及历史解释与实时授权边界；拟order_initial_inputs及受影响建单/消费测试 |
+| 3ar-4执行写入接线 | 首填、续填、日管理、批次、状态/对账及受管持仓入口接入同事务历史 | INIT及后续版本、来源矩阵、无数据日报、分批首仓、真实偏离、关闭后重开、回滚/并发；拟operation_writers及受影响成交/管理测试 |
+| 3ar-5A受控删源 | 冻结输入不受删除影响，跨组合引用清理和删除同事务闭合 | 晚到引用、锁序、旧单UNKNOWN、新单缺证、revision/原值/owner、异常全回滚；复用仍适用scope证据，新增真实删除链路 |
+| 3ar-5B历史查询与还原 | 按序还原各步与末端投影，分页完整且只读 | changes链/摘要、无变化和证据变化边界、终态/同票新仓、跨页无重复；拟operation_history及受影响读端测试 |
+| 3ar-6整体与部署 | 汇总跨入口故障矩阵、迁移保全、容量及部署条件 | 按原标准执行3ar-1至5与成交/状态关联回归、迁移升降级/导出、并发及容量；不以局部PASS替代整体运行 |
+
+固定夹具/格式修正只记有影响的原因和最终结果，不逐轮复制调试过程。复用证据需确认相关代码/依赖/fixture/环境仍适用；共享机制改动使其失效时重验。必验项未执行或未通过保持未勾选，不因简化流程降低标准。
+
+<a id="acceptance-gates"></a>
+
+### 统一后续门禁
+
+| 门禁 | 当前状态/负责阶段 |
+|---|---|
+| 完整写者与连续历史 | 3ar-4/5未接全，后续独立旧写者仍可能无新史；软件局部通过不证明完整历史 |
+| 端到端及容量 | 3ar-6/T8未通过；部署机性能预算与长期观察保留 |
+| 主库部署和生产权限 | 主库0051至0054未迁移，生产API/删除接线与ACL未启用；依3ar-6条件处理 |
+| 独立来源认证 | T1历史可得性、T3可信券商终态/结算可卖量、T4账户/报告全集等仍按[统一问题台账](issues.md)核实 |
+
+各验收记录说明自身范围并引用本表，不重复展开同一组门禁。
+
+### 3ar-1 六表与迁移基线
+
+- **范围/文件**：`0051_lifecycle_operation_schema.py`、`lifecycle_operation_models.py`、`lifecycle_history_repository.py`；同步旧流模型/迁移注册/平台表清单。命令、操作、共享来源、共享变化、订单输入、首填绑定六表；旧行只生成UNKNOWN_PRIOR基线。
+- **验收**：
+  - [x] `backend/tests/integration/quant_strategy/test_lifecycle_operation_schema.py`：16 passed，六表字段/类型、复合FK、旧流模型关联、唯一/CHECK、三类输入shape、NULL/JSON null/对象形状/前后版本、无损Decimal、旧基线和字段重算；包含未绑定旧单及纯订单组合。
+  - [x] 随机`liveprofit_lc_history_0051_test_<uuid>`升级/降级，旧业务行原样不变；有任一历史行时缺绝对导出路径拒绝，六表完整逐行原JSON导出/数量/SHA/readback通过。0051过渡版本全部LIVE拒插，0052的窄受控入口另见3ar-2验收；未伪造首填输入。
+  - [x] 既有首仓27项、平台表集合和空库升级/降级2项：29 passed；隔离固定库串行，无真实LLM；独立Code Review R1六项修复后R2 PASS、无遗留。
+- **状态**：已完成（2026-10-01，软件范围）；不是六表生产部署/连续历史或整体验收。旧写者暂未捕获，读取明确`continuous_history_known=False`；完整捕获、首填绑定和LIVE降级故障矩阵依3ar-2至6继续验证。
+
+### 3ar-2 命令、变化与封口
+
+- **范围/文件**：拟新增命令协调服务/审计repository与迁移触发器；独立selector在变更前冻结参与者，变化只由DB捕获，操作头最后封口。
+- **验收**：
+  - [ ] 先扩展现有命令选择/绑定/未绑定测试；独立的全组合、多步骤闭环拟新增`tests/backend/quant_strategy/integration/test_lifecycle_operation_atomicity.py`：漏参与者/漏步骤、空清单伪完整、同键异内容、封口后同/跨事务追加、伪造scope均拒绝。
+  - [ ] 同事务多步及A→B→A逐行留史；提前`SET CONSTRAINTS`后新增写入重新核验；未绑定订单APPLIED/NO_STATE_CHANGE/BLOCKED均恰一结果。
+  - [ ] 核固定活动集合的前后连续性、事务失败全回滚及同命令重放不重复写入；只具应用权限角色不能直写审计明细。
+- **既有验收证据**（结论保留；完整命令、失败修复及review不再在本文件重复）：
+
+| 已验收范围 | 软件结论及边界 | 完整证据 |
+|---|---|---|
+| 单订单原请求及参与者选择 | PASS；只给scope | [单订单选择](result.md#acceptance-3ar2-order-scope) |
+| 未绑定状态重放内容读端 | PASS；只读核内容，不认证DB封口 | [重放读端](result.md#acceptance-3ar2-unbound-read) |
+| 0052未绑定状态命令 | PASS；单未绑定请求真实捕获与结果封口 | [未绑定命令](result.md#acceptance-3ar2-unbound) |
+| 0053已绑定状态命令 | PASS；单已绑定请求操作封口/前驱连续性 | [已绑定命令](result.md#acceptance-3ar2-bound) |
+| 删除来源全集选择 | PASS；跨组合scope，尚不执行删源 | [删除来源选择](result.md#acceptance-3ar2-source-scope) |
+
+- **本轮实现检查**：全组合回撤selector冻结活动生命周期、闭仓在途BUY及未绑定订单结果清单；对被排除的旧成员也保持锁，避免旧写者重新激活漏项。定向36项、关联28项通过，独立静态复核无待修finding；只选择范围，不保存LIVE命令或执行回撤，详见[完整证据](result.md#checkpoint-3ar2-portfolio-scope-20261002)。这属于3ar-2实现检查点，不另拆验收任务、不勾整体标准。
+- **DB实现检查**：0054独立选择无生命周期/绑定订单组合的全部待完成BUY，以已有PAUSE为输入，逐行真实捕获并逐单结果封口；caller控制提交/回滚，生产入口未接。36项定向（含旧入口共享保护回归）及4项平台迁移通过，独立静态复核无待修finding；[完整证据](result.md#checkpoint-3ar2-portfolio-unbound-db-20261002)。仅3ar-2窄实现检查，不新增独立验收任务或关闭多生命周期标准。
+- **状态**：进行中；未绑定单命令持久化/真实捕获/结果封口及随机普通角色ACL已在隔离库验收。入口只接受无先写/先锁的事务，不拼接多个已执行命令；已绑定窄命令操作头与管理状态连续性已隔离验收；删除来源跨组合scope已验收；全组合回撤selector实现检查已完成，其他命令selector、DB多步封口、受控删源及全部写者接线/生产ACL尚未验收，整项不勾选。
+
+### 3ar-3 建单输入与消费
+
+- **范围/文件**：`order_materialization.py`、`position_lifecycle_manager.py`等全部建单者，ownership、授权及展示消费；同事务保存`suggested_order_initial_inputs`，按来源kind校验必需原值。
+- **验收**：
+  - [ ] 拟新增`tests/backend/quant_strategy/integration/test_order_initial_inputs.py`：SIGNAL_ENTRY/LIFECYCLE_INTENT/MANUAL_PROTECTION分别构造，缺键/NULL/Decimal原值可区分；保护SELL不编造策略字段。
+  - [ ] 原任务或信号后续改变不改冻结输入；建单回滚不残留输入；重复物化不产生第二份；旧单缺证不临时复制今日源。
+  - [ ] `rg`枚举所有建单者和原值消费者，逐一登记迁移落点；冻结输入只供历史解释，不替代当前BUY/SELL授权。
+- **状态**：待开始。
+
+### 3ar-4 全部生命周期写入接线
+
+- **范围/文件**：`lifecycle_service.py`、`position_lifecycle_manager.py`、`entry_batch.py`、`lifecycle_batch.py`、回撤服务、状态/对账及`PortfolioService`；适配0047/0048/0050首填语义，不修改旧迁移原文。
+- **验收**：
+  - [ ] 扩展各入口既有功能测试；跨入口历史契约拟新增`tests/backend/quant_strategy/integration/test_lifecycle_operation_writers.py`逐入口验证：首填INIT、后续成交、无数据日报、批次规划、订单/意图终态、回撤及持仓编辑都具有完整命令/操作/行像。
+  - [ ] 首填NULL→1及预分配成交/生命周期ID闭合；同单先未绑定后绑定正确归属；缺任一必需来源或错误版本不能成功封存。
+  - [ ] 有绑定订单、关闭生命周期再同证券开仓、分批首仓及实际偏离不会覆盖原历史；全事务失败无半成品。
+- **状态**：待开始。
+
+### 3ar-5 删源、历史读取与还原
+
+- **范围/文件**：`TaskLifecycleService.delete_task`受控清理，owner/展示随迁，拟新增历史query服务与API，3aq持久输入适配。查询按生命周期/命令序号游标分页。
+- **验收**：
+  - [ ] 扩展现有来源选择测试；独立历史读取与还原契约拟新增`tests/backend/quant_strategy/integration/test_lifecycle_operation_history.py`：建单后合法删源再首填可恢复原值/owner；跨组合、已闭仓及并发新增引用正确加锁或整事务重试。
+  - [ ] 旧单缺输入清理仍保留UNKNOWN_PRIOR；新单缺输入拒绝；无上下文级联不能静默清空受管引用。
+  - [ ] 从首操作依次重演每条changes，与每步managed_state及末端投影一致；无数据日报、终态退出/重入活动集合、同票新仓均可区分。
+  - [ ] 游标首/跨页完整无重复，来源/变化hash从字段重算；读取不修改事实或提升来源认证。
+- **状态**：待开始。
+
+### 3ar-6 整体验收与部署方案
+
+- **范围/文件**：迁移集成、故障矩阵及容量脚本、任务验收文档；后续通过Code Review后才将真实落地结构整合到knowledge。
+- **验收**：
+  - [ ] 隔离执行3ar-1至5及已有成交/状态回归；两会话并发、异常回滚、重试和降级导出通过，记录真实命令/结果/残留项。
+  - [ ] 按plan的1/100/1000生命周期及1/20变化、5次重复记录字节量、提交/分页p50/p95与EXPLAIN；部署环境数值预算未冻结时保持性能未验收。
+  - [ ] 形成停写迁移顺序、旧数据异常清单、应用/迁移角色ACL、全部写者版本一致和启用拒写检查；主库执行需另行明确授权，当前0050未部署。
+  - [ ] 独立Code Review通过；真实来源、账户/结算、研究历史可得性及生产门禁分别列结论，不拿软件通过替代来源认证。
+- **状态**：待开始。
+
 ## 任务总览
+
+> 2026-09-26 2024年全年复核完成：因子242日写1,288,025行、失败0；独立停牌源242日核实3,092条；状态242日全SUCCESS、写1,296,743行。最终年审计未解释缺日线0、复权缺0、状态缺0；因子余5,966条均通过暖机认证。T1尚有2016–2021历史ST、ETF逐证券规则及公司行为验证，继续进行中。
+
+> 2026-09-26 2024年进度：因子242日写1,288,025行、失败0；独立停牌源242日全成功，3,092条恰好覆盖基线无日线证券日。状态前审计未解释缺日线0、复权缺0；因子余5,966条已通过有效上市后前59根日线暖机认证。状态全年补采运行中，T1仍在进行。
+
+> 2026-09-26 2023年全年复核：因子242日写1,249,463行、失败0；独立停牌源242日全成功，2,482条；状态242日全SUCCESS，写1,260,984行。年审计预期1,260,984证券日，未解释缺日线0、复权缺0、状态缺0；因子余16,337条均经有效上市后前59根日线暖机认证。2024年及ETF规则未完成，T1继续进行中。
+
+> 2026-09-26 2022年全年复核：因子242日写1,160,107行、失败0；独立停牌源242日全成功，3,078条；两只延续暂停上市股票官方公告补230条。状态242日尝试，87日SUCCESS、155日PARTIAL，写1,174,111行；5笔北交所秒级盘中停牌时段修复解析并定向重采。最终年审计未解释缺日线0、复权缺0、因子余21,958均通过暖机认证、状态缺230且全为可信暂停上市区间、有日线状态缺0。2023–2024及ETF规则未完成，T1继续进行中。
+
+> 2026-09-26 2021年全年复核：首轮因子243日写1,059,503行，10个新股停牌暖机失败日补独立停牌后重跑归零；状态243日尝试、241日PARTIAL、2日UNAVAILABLE，写1,055,341行；独立停牌源11月北交所开市转板旧码问题修复并完成续段，13只延续暂停上市公告补1,520条。年审计未解释缺日线0、复权缺0、因子余28,733均通过暖机认证、状态缺9,892；2022–2024及ETF规则未完成，T1继续进行中。
 
 | 编号 | 任务 | 依赖 | 状态 |
 |---|---|---|---|
 | T1 | 数据与快照 | — | 进行中 |
-| T2 | 策略契约与 76 组候选 | T1 | 待开始 |
-| T3 | 统一执行与三档风险 | T1、T2 | 待开始 |
-| T4 | 账本对账与生命周期重放 | T1、T2、T3 | 待开始 |
+| T2 | 策略契约与 76 组候选 | T1 | 进行中（冻结政策消费链路84项测试/R2 PASS；76候选入场/目标入口108项测试/R2 PASS；新族持仓与回放待接通） |
+| T3 | 统一执行与三档风险 | T1、T2 | 进行中（共享BUY/减仓、清单注册及自动首仓收敛已验收；联合加仓/证券规则/三档数值待完成） |
+| T4 | 账本对账与生命周期重放 | T1、T2、T3 | 进行中（账户报告与诊断账本、隔离入账及双时点纯重放已分项验收；真实来源/全生命周期仍未验） |
 | T5 | 研究验证与准入 | T1、T2、T3、T4 | 待开始 |
 | T6 | 每日账户流水线 | T1、T3、T4、T5 的准入接口 | 待开始 |
 | T7 | API 与前端闭环 | T4、T5 的接口、T6 | 待开始 |
@@ -20,9 +201,11 @@
 
 ## 验收执行约定
 
-- 下列命令均为**后续验收命令，尚未执行**。命令中的“拟新增”文件必须先按任务交付创建，不能以不存在的测试路径声称已通过。
+2026-10-02已将后续路径与存量用例维护方式同步到集中测试体系，静态检查证据见[result](result.md#test-layout-followup-20261002)；本次没有执行业务验收或勾选主线标准。
+
+- 下列未勾选验收项的命令是**后续验收计划，不能作为通过证据**。先按测试索引定位并读取已有断言/fixture：存量功能扩展现有脚本，独立新增能力才新增文件；拟新增文件须先交付，不能以不存在的路径声称已通过。已执行记录保留执行时路径，后续计划使用集中目录。
 - Python 命令从仓库根执行；前端使用 `pnpm -C frontend`。运行前确认 `.venv` 及依赖可用，集成测试连接隔离测试库和专用 Redis，禁止清理真实账户数据。
-- 测试前用 `rg -l "real_llm|real_toolkit" tests backend/tests` 检索真实依赖；只运行本任务定向测试。AI相关用例使用 `-k "not integration"`，任何命中的真实LLM测试文件额外排除。已核验隔离、没有真实LLM依赖的backend数据库集成测试单独运行，不附该过滤表达式，以免把需要验证的integration目录也排除。
+- 测试定位、维护及依赖门禁统一遵循[tests/README.md](../../../tests/README.md)。先用 `python -m tests.index --source <改动源码>` 或 `--query <需求关键词>` 查已有用例，再读断言及 fixture；用 `python -m tests.run --module <模块> --related --list` 核定范围，并按实际调用链补足。目录、名称、`-k` 或索引均不能证明资源隔离；DB/Redis用例核实隔离后才显式启用 `--allow-db`，真实LLM/toolkit与外部源仅用户手动启用。
 - 新增 schema 后先导出 OpenAPI、再生成客户端、再修改前端消费；不手工修改生成客户端。费用、数据和时间夹具固定，不以实时外部接口作为单测依赖。
 - 任务范围以 [plan.md](plan.md) 的详细设计及文件清单为准；本文件只拆交付与验收，不另立设计。
 
@@ -30,27 +213,77 @@
 
 ### T1 数据与快照
 
+> 2026-09-26 2020年全年复核：因子243日写938,054行、失败0；状态243日已尝试，231日PARTIAL、12日UNAVAILABLE，写902,631行；独立停牌源3,037条，22只暂停上市公告2,987条，未解释缺日线0、复权缺0。因子余22,222条均通过前59根真实日线暖机核验；完整状态缺49,355条，其中有日线日46,231、可信暂停交易日3,124。部分公告为2021年追溯材料，2020研究as-of仍按发布时间门禁。2021–2024及ETF规则未完成，T1继续进行中。
+
+> 2026-09-26 2019年全年复核：因子244日写876,824行、失败0；独立停牌源3,489条，14只暂停上市公告1,895条，未解释缺日线0、复权缺0。因子余10,360条均通过上市初期暖机核验；状态缺16,599条，其中有日线日14,641、可信暂停交易日1,958，4个历史ST整日空源日仍未解。2020–2024及ETF规则未完成，T1继续进行中。
+
+> 2026-09-26 进展：2016年11,581条因子余项已补2015年前置交易上下文并证实199个无日线日期为全天停牌；2018年因子批次、独立停牌源与状态补采覆盖全年，年度审计未解释缺日线0、复权缺0、因子余7,945条经前59根日线暖机认证、状态缺1,180（暂停上市无状态1,179及上游S/日线冲突1）。2019–2024及ETF逐证券规则未完成，T1继续进行中。
+
+> 2026-09-26 最新年度复审：2025年主库未解释缺日线0、复权缺口0；因子组合缺6,474已认证为上市初期暖机，状态余3笔源冲突。2016/2017年独立停牌源与公告已将未解释缺日线分别降到0；2017年因子余26,826条已按实际日线根数与可信停牌认证为暖机，复权缺0，状态缺7,769。2018年因子批次运行中；历史ST、ETF规则、公司行为及其他年份覆盖未验收，T1保持进行中。
+
+> 2026-09-26 2016年因子全年批次写入582,970行，7月5个因合法全天停牌导致的新股ATR暖机误判已定向复核、失败归零；年度因子组合缺587,682→11,581。8月中旬后状态补采写262,741行，所有日期仍有局部未知。新增独立停牌源观察表与逐日核验，单日试点282条可信全天停牌；全年批次与复审进行中，不能以独立停牌观察填造ST阴性。
+
+> 2026-09-26 2025年全年复核：三季度38个无行情且代理无S的北交所证券日找到原始公告并入库，四季度两项也入库；全年未解释缺日线降至1证券日（920305.BJ 4月30日的公司公告仅找到非官方镜像，原始官方URL仍待取得），状态字段缺56证券日。因子首批250只成功，后续200只有界批次197只成功/3只ATR20暖机、再后1000只997只成功/3只ATR20暖机；年度因子缺口（含暖机）1,250,274→868,980。原500只批次发现2026年才上市代码误入2025窗口，已修正筛选。公告只证明停牌范围，不能填造ST/板块/限价。
+
+> 2026-09-26 因子补采批次推进修复：`--limit`此前先截全市场代码表，再跳过已覆盖代码，重复运行会卡在相同前缀；现先筛出快照中有缺口的代码再限额。新增跳过已覆盖前缀的反例，因子回填28项定向测试通过。2025年首个50只待补代码批次成功50、失败0。三季度状态66日中33日完整，33日局部未知，集中于920680/920305/920961三个北交所代码，仍需公告证据；四季度状态执行中。
+
+> 2026-09-26 状态补采：2025年1月18个、2–3月39个交易日的逐日状态待补数均降为0；4–6月60日中45日完整、15日局部未知。逐票上游`daily`/`suspend_d`与公司公告核验后，14个无行情证券日的全天停牌证据入库（920808.BJ连续10日、920680.BJ四日）；上半年审计未解释缺日线降至1，状态字段仍缺16证券日，公告不填造ST/板块/限价。代理`stock_st`在2016年早段、2020-01-02等日期返回空，邻日非空；`bak_basic`同日也空，全市场`namechange`查询受10,000行截断且日期过滤失效。不得把空日判全市场非ST，逐票历史名称仅作为待验证候选证据。7–9月批次执行中。
+
+> 2026-09-25 全历史拆因：2025年首5交易日状态已补齐；2016年首5日`stock_st`空，不能标全市场非ST。旧采集因5只无日线/无S证券拒收2017-01-03整日，现仅留该5只未知、补入3,031条。历史因子回填加入窗口内退市股，排除窗口前已退市股；首批20代码17成功，旧CLI有失败仍退出0已修复。2016/2017因子缺口分别下降3,699/3,670，2017状态缺口下降3,031；北交所71只股票的现目录日期早于交易所开市，历史证券池仍需独立核实。公告证据已按发布时间接入研究快照及覆盖审计，不提前泄漏未来公告。T1继续进行中。
+
+> 2026-09-25 年度审计已把“因子整行缺”“ATR缺”“状态整行缺”分列；2020/2021证实排除北交所开市前不可能证券日3,618/11,573个，同口径已接入状态源、研究读取和覆盖。开市后逐票上市日期及ETF规则仍缺独立证据，T1不可认证。
+
+> 2026-09-25 停牌库反向核验：主库9/17、9/18各约600条旧S误标已按现行代理逐日重写，实际S数分别13/14；全库剩30个有日线S均为上游带时段的日内停牌。历史审计新增单日停牌/日线重叠>50告警，2026重跑无异常尖峰。日内时段未持久化，精细盘中交易规则仍待补；T1不勾选。
+
+> 2026-09-25 七项源冲突复核：项目代理对七个无日线证券日均同日返回S/R且日内时段为空，按代码取`daily`也全空；现找到逐项公司/交易所公告确认均为停牌，故价格不可补造。公告证据仍未进入数据库可信来源模型，机器审计依旧报七项。另11个有行情的S/R冲突需继续复核；T1不勾选。
+
+> 2026-09-25 系统复跑：全量报告对1991年起每年核对独立XSHG交易日历，新增同截止日基线退化门禁；2026年状态缺口从931,610降到18、未解释缺日线从2,030降到7，18个未知证券日来自13个日期的停复牌源冲突，不能猜测。当前全量报告无新增退化。默认平台刷新经PG事实重验，旧daily_job默认关闭；全历史CLI尚未接入周期调度，T1不勾选。
+
+> 2026-09-25 系统审计：以独立SSE交易日历按年扫描1990–2026股票与广义基金证券日，机器报告与可读结论置于attachments。股票日线只从2016年起；2016–2025年股票状态缺10,332,056证券日、因子组合缺10,146,433（含暖机），2026年至9/24状态缺931,610、因子缺957,511。广义基金因子、ETF历史规则与公司行为仍不可认证；当日ETF目录1,829只已首次真实观察，不能向过去倒填。日常任务现会将采集不完整上报为非零退出；历史状态按独立日历有界补采并保留未知结果。所有数字为审计发现，T1不勾选。
+
+> 2026-09-25 增量：8月26–28日主库缺日线3/3/4项，经逐代码上游验证全部是可信S停牌；修复 `stk_limit` 历史响应含非当日上市证券且超过6,000行时误拒整日状态的边界，定向补入三日状态。写后未解释缺日线0、逐日质量缺口0；38项状态测试通过。T1仍需更长历史与ETF规则审计。
+
+> 2026-09-25 增量：全市场新仓readiness失败时，旧执行服务可只扫冻结持仓；BUY被阻止，生命周期追加份额受同一门禁约束，既有止损/SELL仍可运行。执行与生命周期纯函数定向20项通过；仍需真实行情链路与账户集成验证。
+
+> 2026-09-25 增量：每日基金因子与ETF目录观察已接入；独立交易日历的逐证券/日审计已实现并可阻止缺口快照发布，结果写入清单与PG质量元数据。真实历史覆盖读取、ETF专用交易规则证据和持仓保护真实输入仍待完成。
+
+> 2026-09-25 增量：审计已区分可信停牌及可证明的因子暖机；真实库四日股票域只读重跑发现股票日线无缺、复权缺11,108证券日，因子11,538行的ATR全空。`atr_qfq`已纳入采集成功与共同水位门禁；历史补采、ETF分类和规则证据仍待完成。此前混合基金的初版数字不能视为最终缺采数。
+
+> 2026-09-25 增量：确认22/23日股票复权整日0行；修正增量“最新日线存在就跳过三日窗口”，新增历史强制重拉已有日期入口。当前本机对代理的出站请求被网络策略拒绝，主库未补采；上游可用后按日期与代码核验并重跑覆盖报告。
+
+> 2026-09-25 增量：独立量化执行现于扫描前提交自动补采并核对目标日；无持仓时缺口任务在创建后两小时内有界重试，有持仓时仅进入保护执行、禁止新开仓。无显式目标日时以补采服务返回的已收盘交易日为准。相关增量/执行回归99项通过。旧网络阻断已解除，22/23日复权已定向补齐；此项不代表完整历史及ETF规则验收。
+
+> 2026-09-25 增量：访问权限调整后上游恢复；已核验并定向补入22/23日股票复权5,567/5,568行，已有股票日线对应复权缺口为0。21～24日单日股票因子/状态已重采，零涨跌停价按未知记录；四日独立日历审计仍有174个因子组合缺口，需扩大窗口判暖机及真实缺采。ETF与完整历史未验。
+
+> 2026-09-25 增量：每日更新新增超过三日窗口的复权缺口自动发现/有界重试，独立最近日历逐证券缺日线检测（可信停牌豁免）、源帧逐代码日线/复权匹配、历史当日活跃股票范围与写后质量校验。缺口使CLI非零退出；相关增量/执行回归99项通过。超出最近日历窗口的双方同时缺采和ETF规则仍需T1专项覆盖，不把日常门禁视为历史完整验收。
+
+> 2026-09-26 更新入口复核：上交所9月25–27日休市，最后A股交易日为24日；统一增量从上游补回9月22/23/24日整日缺失的基金日线2147/2133/2133条，三日股票、基金配对复权及股票状态写后质量均无缺口。修复基金日线整日空源和基金复权缺配对被误记成功，最近独立日历中的基金整日缺采进入重试/失败门禁；33项定向测试通过。T1历史及ETF证据仍未验收。
+
+> 2026-09-26 历史上游续采：2020/2021 BaoStock逐证券原始源分别951,986/1,062,370全覆盖；与已有Tushare ST值的2/1条分歧已持久化隔离，批次其余无冲突日期可供补采，2020状态全年逐日批次运行中。年度最终缺口、ETF逐只规则和T2–T8仍待验收。
+
 - **目标**：建立统一价格基准、历史可投资范围与按字段/证券检查的完整水位；交付可追溯的不可变研究数据集。
 - **涉及文件**：修改 `AI/dataflows/providers/base_provider.py`、`AI/dataflows/providers/cn/tushare.py`、`db/instrument/ingest/`、`db/instrument/dao/`、`backend/modules/market_data/infrastructure/refresh_repository.py`、`backend/modules/analysis/infrastructure/quant_execution_market_data.py`；拟新增 `backend/modules/quant_research/application/dataset_builder.py`、`backend/modules/quant_research/infrastructure/dataset_store.py` 与版本元数据、增量迁移。
 - **依赖**：无。
 - **验收标准**：
-  - [ ] 执行 `.venv/Scripts/python.exe -m pytest backend/tests/unit/quant_strategy/test_data_readiness.py backend/tests/unit/market_data/test_quant_refresh_repository.py backend/tests/unit/market_data/test_quant_refresh_ingest.py -q -k "not integration"`，覆盖缺字段、停牌、暖机不足、覆盖率和统一水位。
-  - [ ] 拟新增 `backend/tests/unit/quant_research/test_dataset_builder.py`，执行对应 pytest，验证未来数据删除不改变过去输入、退市证券未被现存名单排除、快照发布失败不能标 READY、校验和不符不能读取。
+  - [ ] 扩展已有用例，执行 `.venv/Scripts/python.exe -m pytest tests/backend/quant_strategy/unit/test_data_readiness.py tests/backend/market_data/unit/test_quant_refresh_repository.py tests/backend/market_data/unit/test_quant_refresh_ingest.py -q`，覆盖缺字段、停牌、暖机不足、覆盖率和统一水位。
+  - [ ] 扩展已有 `tests/backend/quant_research/unit/test_dataset_builder.py`，执行对应 pytest，验证未来数据删除不改变过去输入、退市证券未被现存名单排除、快照发布失败不能标 READY、校验和不符不能读取。
   - [ ] 用独立参考序列对照股票与 ETF 指标、复权转换和公司行为；记录上游端点真实签名、返回字段、排序及日期覆盖。网络连接失败单列，不据此认定端点无能力。
   - [ ] 人工抽查快照清单：版本、来源、截止时间、覆盖缺口、校验和及持久目录齐全；历史 ST/退市/行业/交易规则缺口会阻止收益认证；目录不受短期任务产物清理约束。
-- **状态**：`进行中`（2026-09-24）。已新增研究快照构建与Parquet原子发布/校验层；5个新用例与既有T1定向测试合计32个通过。PG元数据、历史覆盖与上游实测尚未完成，验收项不勾选。
+- **状态**：`进行中`（2026-09-25）。已新增研究快照构建、Parquet原子发布/校验层、PG元数据模型及0015迁移，并配置独立容器卷；共同水位复核逐证券/字段覆盖。代理端点已点测基金因子、逐日ST及L/D/P ETF目录；基金因子按本地日线逐日校验后单证券提交，快照要求ETF分类证据在研究截止日前可用。独立量化执行的有界补采等待和持仓保护分流已接入。快照可读与收益认证已拆分，历史覆盖审计缺失时禁止认证。历史覆盖、ETF目录持久化及ETF规则证据仍未完成，验收项不勾选。
 
 ### T2 策略契约与 76 组候选
+
+> 2026-09-25 增量：旧七套的各一个入场变体均已固定进76项预注册清单，并有可运行反例；宿主计算圆弧/量能/带宽/沪深300趋势特征，缺关键特征的新仓记证据不足。三类管理政策已通过严格 JSON 契约接入既有生命周期版本发布，隔离库验证不可变版本；执行授权尚未接线。
 
 - **目标**：扩展单票与组合目标合同，冻结版本输入和生命周期政策；登记旧策略 28 个与新增家族 48 个预注册配置。
 - **涉及文件**：修改 `AI/strategy_sandbox/protocol.py`、`strategy_contract.py`、`validator.py`、`runner.py` 及 `backend/modules/quant_strategy/domain/templates.py`、`application/service.py`、`application/contracts.py`、`infrastructure/models.py`；拟新增 `backend/modules/quant_strategy/domain/portfolio_targets.py` 与相应测试。
 - **依赖**：T1。
 - **验收标准**：
-  - [ ] 执行 `.venv/Scripts/python.exe -m pytest backend/tests/unit/quant_strategy/test_strategy_templates.py backend/tests/unit/quant_strategy/test_strategy_validator.py tests/strategy_sandbox -q -k "not integration"`，验证默认/边界源码、输入字段闭合、旧七键规范化读取及非法输出拒绝。
-  - [ ] 拟新增 `backend/tests/unit/quant_strategy/test_portfolio_targets.py`，运行对应 pytest；验证组合权重、有效期、冻结版本、入场区间与 FIXED_TARGET/TRAILING/RULE_BASED 退出政策，不以虚构止盈价满足 2R。
-  - [ ] 预注册清单可枚举且恰为 `7×2×2 + 12×4 = 76` 个配置；信号与管理政策分别标记，原缺陷版本仅用于诊断，不参加候选优选。
+  - [ ] 扩展已有用例，执行 `.venv/Scripts/python.exe -m pytest tests/backend/quant_strategy/unit/test_strategy_templates.py tests/backend/quant_strategy/unit/test_strategy_validator.py tests/ai/strategy_sandbox/unit -q`，验证默认/边界源码、输入字段闭合、旧七键规范化读取及非法输出拒绝。
+  - [ ] 扩展已有 `tests/backend/quant_strategy/unit/test_portfolio_targets.py`，运行对应 pytest；验证组合权重、有效期、冻结版本、入场区间与 FIXED_TARGET/TRAILING/RULE_BASED 退出政策，不以虚构止盈价满足 2R。
+  - [x] 预注册清单可枚举且恰为 `7×2×2 + 12×4 = 76` 个配置；信号与管理政策分别标记，原缺陷版本仅用于诊断，不参加候选优选。
   - [ ] MACD 恒真加分、圆弧底冻结颈线、均值回归 `close < MA5` 与退出优先均有可触发且可反证的夹具；新版本不改变旧发布源码及历史报告。
-- **状态**：`待开始`（2026-09-24）。
+- **状态**：`进行中`（2026-09-27阶段验收）。候选入口、冻结政策链路、四新族持仓纯规则通过阶段验收；四新族生产持仓消费、研究快照/回放与T3交易准入尚未完成，不能标记T2整体验收。
 
 ### T3 统一执行与三档风险
 
@@ -58,24 +291,173 @@
 - **涉及文件**：修改 `backend/modules/quant_strategy/application/execution.py`、`position_planner.py`、`execution_constraints.py`、`portfolio_risk.py` 及对应 DTO、信号持久化与测试；拟新增同模块 `domain/instrument_rules.py`、`infrastructure/instrument_rule_models.py` 和规则迁移。
 - **依赖**：T1、T2。
 - **验收标准**：
-  - [ ] 拟新增 `backend/tests/unit/quant_strategy/test_position_planner.py`；执行 `.venv/Scripts/python.exe -m pytest backend/tests/unit/quant_strategy/test_execution_constraints.py backend/tests/unit/quant_strategy/test_portfolio_risk.py backend/tests/unit/quant_strategy/test_position_planner.py -q -k "not integration"`，验证三档、三种资金规模、费用、现金、持仓/行业/家族风险与可卖量；测试对象为backend统一规划器，不以旧AI规划器测试替代。
+  - [ ] 扩展已有 `tests/backend/quant_strategy/unit/test_position_planner.py`；执行 `.venv/Scripts/python.exe -m pytest tests/backend/quant_strategy/unit/test_execution_constraints.py tests/backend/quant_strategy/unit/test_portfolio_risk.py tests/backend/quant_strategy/unit/test_position_planner.py tests/backend/quant_strategy/unit/test_buy_target_planner.py tests/backend/quant_strategy/unit/test_reduction_planner.py -q`，验证三档、三种资金规模、费用、现金、持仓/行业/家族风险与可卖量；测试对象为backend统一规划器。
   - [ ] 构造生命周期加仓、同票多策略、部分成交、未完成订单和并发重跑，断言只产生一份归属和资金预留，所有新增风险都经过同一门禁。
   - [ ] 用入场区间上界及最不利 tick、滑点、费用验算风险；T+1 全天成交额改变不得改变开盘模拟容量，容量只依赖 T 日已知 ADV20。
   - [ ] 覆盖节假日、停牌、涨跌停、跳空、T+1、ETF 品种差异、零股及固定目标成本后拒单；退出减仓不被只针对新增风险的准入和熔断阻断。
-- **状态**：`待开始`（2026-09-24）。
+- **状态**：`进行中`（2026-09-27阶段验收）。CN股票共享SELL检查及日历通过增量验收；BUY统一规划、账户/家族预算、证券生效期规则及三档风险仍未验收。
+
+**2026-09-29 T3整体验收收敛清单**（逐项按本文件末尾增量证据更新；任何阶段测试通过都不代替下列整体门禁）：
+
+| 门禁 | 当前状态 | 最终验收观察点 |
+|---|---|---|
+| 统一BUY/SELL、联合加仓及唯一预留 | 新一轮全入口系统审查发现幂等键跨请求、修订后退回PROPOSED、旧已完成意图重开三项major；修复及独立delta PASS，生命周期71项/T4隔离stage14项通过。软件状态流此增量PASS；可信可卖量、券商终态及账户退出订单仍缺 | 扫描/生命周期/批次在同一组合锁和版本时点，部分成交、取消、重跑不重复占款；保护SELL不受新风险准入阻断 |
+| 三档实际预算、ETF单标的上限、半/全回撤动作 | 三档、显式规则ETF 20/25/30%、半回撤及持久PAUSE/零目标已实现；退出投影及内部RESUME事件增量PASS，真实可卖量/跨日订单和可信恢复审核未验 | 10/30/100万元数值、档位与账户值一致；ETF持仓+待成交共同占用；全回撤退出建议和账户级新增风险暂停 |
+| 证券规则及费用的真实入口 | 0028签名双原件证书与0029/0030三个真实BUY入口绑定，物化函数也强制证书；扫描/联合/生命周期正向隔离回归通过。真实官方逐证券覆盖/审核密钥、旧活动单停写迁移未验 | 每个BUY按证券/执行日唯一认证规则核tick、数量、费用/交收；缺/冲突/晚发布拒绝，非普通整手及ETF差异有反例 |
+| 开盘代理与价格基准 | 1% T日ADV20纯代理、日期规则及区间上界可成交tick的资金/风险/费用预留已验；真实源与端到端未全验 | 入场上界+最不利tick/滑点/费用，T+1全天成交额改变不影响容量；跳空、停牌、一字、零股逐项验 |
+| T3系统验收与交付 | 未验 | 定向单元、隔离PG并发与真实输入回放分列；独立Code Review，所有阻断项修复或保留明确数据认证门禁，result记录命令/结果/未通过项 |
 
 ### T4 账本对账与生命周期重放
+
+> 2026-09-30 双时点账本重放增量验收：有效日与本地登记截止可独立指定，迟到/改期更正和撤销反例9项纯测通过；持久只读查询隔离PG定向1项通过、独立CR PASS。同刻资金流清单按账本顺序核对，估值纯测9项、独立delta PASS。登记时刻并非提交/上游可见时间；生命周期日事实与真实账户来源仍未验，T4保持进行中。
 
 - **目标**：真实成交、资金流、账户快照、公司行为和更正形成独立事实，数量、现金、估值与生命周期可以审计重放。
 - **涉及文件**：修改 `backend/modules/investment_workspace/application/portfolios.py`、`contracts.py`、`infrastructure/models.py`、`repositories.py`，以及 `backend/modules/quant_strategy/application/lifecycle_service.py`、`position_lifecycle_manager.py`、`infrastructure/lifecycle_models.py`；拟新增 `investment_workspace/application/account_ledger.py`、`reconciliation.py`、`valuation.py` 及账本模型与增量迁移。
 - **依赖**：T1、T2、T3。
 - **验收标准**：
-  - [ ] 执行 `.venv/Scripts/python.exe -m pytest backend/tests/unit/quant_strategy/test_position_lifecycle_manager.py backend/tests/integration/quant_strategy/test_lifecycle_service.py backend/tests/integration/investment_workspace/test_watchlists_portfolios.py -q`，使用经核验的隔离数据库、无真实LLM夹具验证真实成交推动数量与成本，日行情推动观察及保护价；确认集成用例实际被收集执行。
-  - [ ] 拟新增 `backend/tests/integration/investment_workspace/test_account_ledger.py` 与 `test_reconciliation_valuation.py`，运行对应 pytest；验证入账基线、资金出入、费用、分红送转及差异处理可重放，份额化净值不把入金算成收益。
+  - [ ] 扩展已有用例，核实隔离后执行 `.venv/Scripts/python.exe -m pytest tests/backend/quant_strategy/unit/test_position_lifecycle_manager.py tests/backend/quant_strategy/integration/test_lifecycle_service.py tests/backend/investment_workspace/integration/test_watchlists_portfolios.py -q --allow-db`，验证真实成交推动数量与成本，日行情推动观察及保护价；确认集成用例实际被收集执行。
+  - [ ] 扩展已有 `tests/backend/investment_workspace/unit/test_account_ledger.py` 和 `tests/backend/investment_workspace/integration/test_account_ledger_store.py`；独立对账估值契约拟新增 `tests/backend/investment_workspace/integration/test_reconciliation_valuation.py`，核实隔离后运行对应 pytest；验证入账基线、资金出入、费用、分红送转及差异处理可重放，份额化净值不把入金算成收益。
   - [ ] 注入部分成交、首笔成交撤销、跨日撤单、更正与重复请求；日事实按修订/替代关系保留历史且仅一个 current，观察天数按有效日期去重。
   - [ ] 人工经旧持仓/现金编辑入口操作，观察只能进入初始化、对账或有原因的调整；导入快照差值不能伪造交易，实际超范围成交仍照实入账并标偏离。
   - [ ] 停牌或跌停连续未退出时，次日 HOLD 不取消退出意图；每个持仓读取自身冻结策略版本，除权前后保护原价映射不触发机械假止损。
-- **状态**：`待开始`（2026-09-24）。
+- **状态**：`进行中`（2026-09-29，依赖T3的真实执行验收仍未完成；先实施不授予交易资格的诊断能力）。
+
+#### T4生命周期重放实施链（2026-09-30）
+
+> 当前状态：第1步只读事实清单软件增量已验收；完整链未验收。按以下顺序完成后才可解除首笔成交更正/撤销的局部反转拒绝门禁。
+
+1. **只读事实清单与来源门禁（已完成：软件增量）**：在组合锁下汇集明确归属成交和同证券模糊归属成交，核实际执行时刻、费用、报告/账本一致性、修订链、初始成本字段和日事实日期/版本/输入摘要；问题带事件ID或日期，不写生产投影。隔离PG定向2项PASS、独立Code Review delta PASS。真实同日执行顺序、独立成本/来源认证、日历全集仍保持未知，不能据此允许可写重放。
+  2. **日事实不可变修订链（进行中）**：2a以原`position_daily_facts`唯一行保留稳定current ID，0044触发器为每次实际写入追加不可变快照；存量行标`MIGRATED`基线，不把迁移时刻当原始历史。规划JSON嵌套改写须整体赋值。2b继续设计带原因及来源的原始输入更正提案，并与后续重放/原子切换接线；普通同日异内容重试仍拒绝，不能直接覆盖已执行日事实。
+     - [x] 2a软件增量验收PASS：现存current写入形成连续修订；两会话竞争仍只有一条current，修订前驱连续；伪造修订INSERT和旧修订UPDATE均拒绝；0043旧行回填等值，带修订0044降级先锁表等在途写入、导出JSONL并校验SHA256。隔离PG定向3+1 passed，独立Code Review delta PASS；`test_batch_completion.py::test_automatic_entries_rollback_recover_and_terminal_replay`另有旧夹具无订单失败，集中登记，不作为本增量通过证据。
+     - [x] 2b输入提案软件增量验收PASS：0045不可变表保存原因与声明来源，绑定当前修订并核字节/JSONB/SHA；同键同内容重放、漂移及同基竞争拒绝，current/状态/订单不变；降级导出与在途提案并发测试。定向隔离PG4 passed、独立Code Review delta PASS。来源身份认证、重放及current切换仍留3/4，不把诊断提案作更正批准。
+  3. **确定性离线重放与差异报告（进行中）**：3a纯事件会计内核按显式执行时刻算数量、含费成本与已实现盈亏，缺时间/费用/基线及未知公司行动返回UNKNOWN；3b接独立交易日历、逐日政策状态与现有投影差异，只读不写。验收：首笔撤销、部分成交更正、跨日迟报、除权与停牌日反例；期望、止损、目标、成本逐字段比较。
+     - [x] 3a纯会计增量验收PASS：有效成交集合按执行时刻计算数量、含费总/平均成本和已实现盈亏；拆股总成本不变、零碎权利/未知费用/模糊时序/超持仓SELL返回UNKNOWN。固定Decimal上下文，外部精度/舍入/trap不影响结果；定向纯测6 passed、独立Code Review delta PASS。尚未接生产事件映射或来源认证，不授权投影。
+     - [x] 3b活动持仓逐日政策纯演算增量验收PASS：首笔成交初态、独立日历日期与公司行动覆盖声明、修订ID/持仓及完成意图证据显式传入；停牌日不推进计数/目标/止损，ATR缺seed、行动换基、零持仓终态、畸形日事实均UNKNOWN。TREND_3ATR+MA5期望/高水位跨日验证；纯测10 passed、独立Code Review delta PASS。来源声明不认证，结果仅PROVISIONAL；逐字段差异与完整终态另做。
+     - [x] 3c当前投影只读差异增量验收PASS：组合→生命周期→持仓→止损→期望锁内读取并刷新ORM；仅比较数量/均价、首笔价格/止损/风险容量、目标股数/暴露/止盈/确认、期望与移动止损共14字段。应存在的当前行缺失为UNKNOWN，不把空行判作差异；差异结果仅PROVISIONAL。定向纯测与隔离PG共4 passed，独立Code Review delta PASS。生命周期phase、完成减仓/关闭状态、已实现盈亏、现金及逐日版本未覆盖；完整事实映射、来源认证与生产切换仍为后续门禁。
+     - [x] 3d未修订持久成交本地输入映射增量验收PASS：组合锁下经只读事实清单核本地订单/报告/费用/账本及修订状态后，才整理`ReplayFill`；任一修订、模糊归属、绑定不一致或空流均UNKNOWN且不输出部分候选。`LOCAL_CANDIDATE`保留逐笔来源及初始成本未知，绝不作为认证或生产许可。隔离PG定向2 passed；独立Code Review指出预读ORM旧订单minor，读取链全加`populate_existing`并以双Session预读/变更反例验证，delta PASS。有效修订链解析、公司行动、日事实/成交联接、真实来源和成本基线仍待后续。
+     - [x] 3e日事实本地版本候选增量验收PASS：组合→生命周期→每日current锁内核完整修订链/待处理提案，精确对账显式日历日期并返回最新修订ID和输入副本；缺日、异常链或提案待决整组UNKNOWN。声明日历与日事实来源仍UNKNOWN，需在同一事务消费候选。隔离PG定向1 passed（含跨Session直接更新锁超时反例）；独立Code Review R1指出二次读取竞态，补全体current行锁后delta PASS。逐日实际股数、完成意图、公司行动和独立日历证书仍待联接。
+     - [x] 3f逐事件股数轨迹软件增量验收PASS：3a会计重放保存同一已核基线和每笔事件后的数量/成本，按显式日期投影当日收盘后股数；停牌日持仓延续，分拆生效后数量改变。UNKNOWN会计结果、畸形链或日期拒绝。纯测及3c兼容11 passed；独立Code Review R1发现另传基线可错算首事件前股数，改只读会计结果所存基线并加非零基线反例，delta PASS。来源/日历认证、意图完成和逐日政策联接仍未验收。
+     - [x] 3h生命周期phase差异增量验收PASS：非停牌决策phase逐日传递，停牌保留前阶段、首日即停牌无种子阶段保持UNKNOWN；当前phase与期望phase不同列名报差异。纯测+隔离PG定向14 passed，独立Code Review PASS。减仓完成、关闭时点及其他剩余投影字段仍在后续门禁。
+     - [x] 3i意图完成时点纯重放增量验收PASS：持久成交候选保留订单intent身份，会计逐事件状态携带它；仅在对应意图成交后股数首次准确达到声明目标时记执行时刻和完成日，错方向、越目标、缺成交、畸形链UNKNOWN。同日多项完成无法无损映射3b的一日一项契约，整组UNKNOWN。纯测+隔离PG定向12 passed；独立Code Review R1指出同日顺序丢失major，保留effective_at并加BUY后SELL同日反例后delta PASS。当前意图目标/原因是声明定义，历史修订与来源未认证，结果仅PROVISIONAL，不接生产。
+     - [x] 3j本地意图修订史及定义只读候选增量验收PASS：0046触发器记录意图真实INSERT/UPDATE连续不可变快照，旧行仅MIGRATED基线；回填前阻写表锁、降级先锁父子并导出SHA校验。只读loader锁组合→生命周期→意图，核首个LIVE/ACTIVE定义、链/current一致及目标/原因未变；任一迁移基线/异常整组UNKNOWN，结果仍来源未认证。隔离PG迁移+精确表+loader定向3 passed；独立Code Review迁移R1发现回填窗口并发漏史，锁表及并发升级反例修后delta PASS，loader单独PASS。订单intent归属历史及真实完成时刻来源仍待补。
+     - [x] 3k成交时订单意图绑定增量验收PASS：0047先阻写成交表，旧行标MIGRATED且绑定未知；新成交插入时DB从锁定订单行冻结生命周期和意图，覆盖调用方伪造值，之后成交行UPDATE/DELETE均拒绝；降级锁内导出SHA/readback。正常成交stage改为确定持仓后一次插入。3d仅对LIVE且生命周期相符的冻结绑定传意图。隔离PG迁移、stage与旧确认/修订定向共21 passed；旧测试直接改成交日期的预期改为验证新不可变门禁；独立Code Review PASS。来源/账户归属、旧成交绑定、全量有效成交及真实顺序仍未知，生产入口关闭。
+     - [x] 3l本地报告/成交集合只读核对增量验收PASS：库存按同证券及候选订单并集核已登记报告；已归属报告的证券/方向不符、未posting及无订单报告均带ID阻断3d候选。成交查询并入冻结生命周期ID，订单后续改绑不能让LIVE旧成交从库存消失。隔离PG定向3 passed；独立R1发现错证券报告漏查major，修并加反例后delta PASS，无剩余finding。仅核本地可见集合，不能证明券商报告全量或来源认证。
+     - [x] 3m本地意图完成只读桥接增量验收PASS：同事务先读意图定义史再读成交库存，只允许明确等于首笔ID的无意图BUY作会计起点，后续成交须冻结绑定已有定义；显式声明基线经3a/3i算完成时点。成功也仅PROVISIONAL，明列基线/券商全集未认证；缺身份、畸形UUID或未完成意图均UNKNOWN。纯测与1隔离PG定向13 passed；独立R1发现首笔无意图被误拒major，修后delta发现畸形身份minor，再修后最终PASS。逐日政策帧和来源证书仍待接。
+     - [x] 3n逐日政策帧拼装纯软件增量验收PASS：3e本地日事实、3f逐日股数及3m完成意图须日期严格递增且完全一致；完成时刻转中国日期与声明日一致、身份/原因有效、同日不超过一项，零持仓/错位/畸形整组UNKNOWN。输出帧复制原输入，仍标PROVISIONAL。定向纯测12 passed；独立R1发现完成日期可提前与重复日major，delta又发现不可哈希原因minor，修复及反例后最终PASS。尚未调用3b形成状态或比较当前投影。
+     - [x] 3o政策重放与限定字段差异纯联接增量验收PASS：从同一会计轨迹重算每日日历股数并与3n帧逐日相等后才调用3b、3c；政策未知、日历外成交或字段缺失为UNKNOWN。匹配/差异仍显式PROVISIONAL并保留来源未知。定向纯测5 passed；独立R1发现仅核末日股数major，补中间日错数/末日正确反例后delta PASS。尚未接同事务DB读取或全字段终态。
+     - [x] 3p同事务本地诊断入口软件增量验收PASS：组合锁内先读当前投影，再读意图定义、成交报告库存和日事实；仅在各组本地候选齐备时串3m/3f/3n/3o，缺证整组UNKNOWN。成功仍显式基线、政策种子、日历/行动及券商来源未认证，不改写投影。缺证隔离PG+2纯测3 passed；直接SQL竞争更新持仓在诊断事务锁内超时；完整本地持久样本经0044/0046/0047触发器和0037 posting约束返回PROVISIONAL_DIFFERENCE，隔离PG1 passed。独立Code Review与补充复核PASS。样本手工构造合法成交/posting及终态，不等于正常写服务端到端或T4整体验收。
+     - [x] 3q正常隔离写服务到只读重放增量验收PASS：首笔无意图BUY和次笔冻结intent BUY均以原件字节、持钥签名通过真实`AccountFillPostingStage`，现金1000→898、持仓0→10、含费均价10.2，生命周期版本升至2，日事实版本对齐；同事务读诊断仍为PROVISIONAL_DIFFERENCE。修正`_apply_delta`遗漏买入手续费的平均成本公式，撤销恢复原四位成本。隔离PG正向1项及stage回归15项通过，独立delta Code Review PASS，无未通过项。生产写入口仍关闭，券商账户/成本基线/日历与报告全集不获认证。
+     - [x] 3r活动状态字段诊断增量验收PASS：逐日重放仅据冻结意图实际成交完成`PROFIT_TARGET_TRIM`置`profit_trim_completed=True`，触价只置`profit_target_reached`；锁内当前投影另比较冻结`profit_take_price`/`arc_neckline_price`，缺必需值UNKNOWN、不同值报具名差异。纯测15项及隔离PG诊断2项通过，独立Code Review两次delta PASS。日事实版本未证明实际处理日，故不比较`last_processed_trade_date`；零仓终态/closed_at、有效修订链和来源认证仍未完成。
+     - [x] 3s零仓终态本地标记纯诊断增量验收PASS：只在最终会计数量0、最后一笔SELL冻结绑定唯一零目标退出意图、前面未曾归零时，对当前CLOSED和本地closed_at存在性给PROVISIONAL_MATCH/DIFFERENCE；不把closed_at当券商执行时间。生产确认与诊断共用关闭理由集合。纯测和隔离PG定向7项通过；独立R1 minor畸形不可哈希理由抛错修复后delta PASS。尚未接同事务持久化读链，不等于完整终态/冷却认证。
+     - [x] 3t零仓终态同事务本地诊断增量验收PASS：组合/生命周期锁内读当前数量与关闭标记、0046意图定义、3d/3l有效本地成交；明确0股且没有活动意图/同证券或同持仓活动订单才调用3s，非空公司行动日期整组UNKNOWN。隔离PG样本三笔经签名stage成交，BUY5+BUY5→SELL10归零返回PROVISIONAL_MATCH；当前持仓直改正数、活动订单/意图均UNKNOWN；取消订单并发直写成PROPOSED在100ms锁等待超时。纯测/隔离PG定向8项通过，独立R1发现当前持仓及活动订单漏核major、R2发现取消单状态并发major，修复后delta PASS。仍不证明券商终态、有效修订链或冷却起点。
+     - [x] 3u正常整手成交→真实逐日规划→本地只读重放样本验收PASS：另建两张100股BUY订单，报告成交各100股@10/费1，报告捕获早于当日日规划`data_as_of`；风险容量400×50%目标200，持仓200/含费均价10.01。真实`PositionLifecycleManager.process_day`把日事实版本2→3且无新意图/订单，3p返回PROVISIONAL_MATCH并保留来源问题。隔离PG同文件2项通过，独立Code Review与捕获时间delta PASS。该样本仍由测试声明原件/账户/日历，不认证生产收益或券商事实。
+     - [x] 3v逐日版本与最后处理日只读诊断验收PASS：3e候选携每日日事实前/后版本，首日核本地成交计数与时点，相邻日版本须连续，逐日推进须与实际政策执行一致，末日版本须等于锁内当前版本；此后才比较`last_processed_trade_date`。首日100→101、相邻日跳跃、末日后漂移及伪推进均UNKNOWN；真实整手stage+日规划样本仍PROVISIONAL_MATCH。定向纯测2项、隔离PG同文件2项通过，独立Code Review初审发现首日未锚定major，修后delta PASS。跨日合法成交若无持久版本归因仍UNKNOWN，来源认证与T4整体验收不因此放行。
+     - [x] 3w纯版本链契约增量验收PASS：首笔BUY仅创建生命周期版本1，后续有冻结版本界的成交各+1，逐日事实0/1推进；按版本连续性而非执行时刻拼链，核跨日成交、缺步、重复及末版。纯测2项通过，独立Code Review指出测试误把首笔称为1→2（minor），澄清首笔必须由调用方另证并排除后delta PASS。持久成交版本界尚未写入，3v对跨日跳跃仍UNKNOWN，不放行生产。
+     - [x] 3x未来成交版本步持久化增量验收PASS：0048只在生命周期真实`state_version+1`的同事务GUC成交ID下生成不可变`LOCAL_CAUSAL`版本步；随后成交插入核同ID和生命周期，未推进的直接SQL插入仅生成`UNATTRIBUTED`空步，首笔无关联不生成，旧行无回填。降级锁内导出SHA，升级/降级统一先生命周期后成交表锁；隔离PG stage及日规划文件2项、stage回归全文件15项通过，并发降级确认真实锁等待后writer在500ms内插入完成。独立R1发现仅快照当前版本会伪归因major，delta又发现迁移反序死锁major和竞态测试未确证等待minor，均修复后最终PASS。GUC可由SQL设置，证据仅本地因果、不认证来源；3w/3v消费仍待接。
+     - [x] 3y持久版本步接只读重放增量验收PASS：本地成交候选核非首笔成交全集与0048同生命周期`LOCAL_CAUSAL`步骤一一对应，缺步/UNATTRIBUTED/旧绑定整组UNKNOWN；3p同一锁内以首笔版本1、后续步及日报/当前版本跑3w，3n仅在链的`verified_days`与日报精确一致且末版相同才允许跨日报版本间隙；3o仍核首日截止、实际日推进和最后处理日。纯测/隔离诊断6项及stage回归15项通过，独立Code Review PASS，无finding。正向跨日间隙目前由纯链与帧联接样本覆盖，真实来源及长期回放未认证，结果仅PROVISIONAL。
+     - [x] 3z真实跨日stage→日规划→只读重放验收PASS：隔离样本Sep18首笔100股stage建版1，Sep21真实日规划产`TEMPLATE_CONFIRM_ADD`意图和日事实1→2（BUY建议单延后由测试创建），Sep22第二笔100股stage冻结2→3，次日日规划3→4；含费均价10.01，同事务后新会话3p在Sep21/22日历下PROVISIONAL_MATCH且保留`VERSION_CHAIN_SOURCE_UNCERTIFIED`。原单日样本保留，隔离PG同文件3项通过，独立Code Review PASS，无finding。第二建议单手工创建、券商来源/日历仍声明，不验生产建单或T4整体。
+     - [x] 3aa日报截止与成交版本顺序门禁验收PASS：3p要求逐日日事实`data_as_of`为该中国交易日有时区时刻；有效日截至该日的后续成交必须已在该日处理前的冻结版本内，同日成交执行不晚于事实截止，未来成交不得提前占版本。迟报反例Sep21先日规划1→2、再登记有效日Sep21成交2→3、Sep22规划3→4，诊断UNKNOWN/FILL_DAILY_VERSION_ORDER_CONFLICT；正常跨日仍PROVISIONAL_MATCH。隔离PG同文件4项通过，独立Code Review PASS。日事实截止与本地版本仅为诊断证据，不证明券商发布时间或历史研究可见性。
+     - [x] 3ab有效成交修订图纯内核验收PASS：给定完整已入账报告/成交集合与已独立核签且双流落地的撤销/更正声明，拒重复、缺替代、分叉、环、未应用和未访问节点；只输出每条未撤销链末端的有效成交ID，整组结果仅PROVISIONAL。纯测2项通过，独立Code Review PASS。持久集合完整性/审核签名/0042–0043双流联接尚未接，生产和首笔修订门禁不变。
+     - [x] 3ac报告签名业务字段摘要复核验收PASS：写入与复核读取共用报告规范摘要，读取包含历史复核均重算全部业务字段并核原件字节；直接SQL插入伪摘要且按伪摘要正确签名的隔离反例被拒。定向`test_fill_reviews.py` 3 passed，独立Code Review PASS，无finding。只证明本地自报字段与签名一致，不认证券商账户归属；生产入口仍关闭。
+     - [x] 3ad本地有效成交修订持久适配验收PASS：组合锁内锁定订单并核同证券及订单全部报告、报告/声明签名及原件、posting成交/账本、VOID/CORRECT双流、额外反转和订单全成交事件，再调用3ab纯图；待入账UNKNOWN，已更正只留替代成交，已撤销留空。隔离stage全文件15 passed，最终定向VOID/CORRECT 2 passed；未绑定CONFIRM及第二事务直写订单改绑反例均拒绝，独立Code Review发现两项major修后delta及最终delta PASS。仅本地PROVISIONAL，未接3p生命周期政策重放或生产投影。
+     - [x] 3ae零仓逐日政策纯重放验收PASS：仅在更早日已产生明确零目标退出决策、最终非停牌日有唯一且带来源的同理由完成意图、后面无日帧时输出CLOSED和零目标/暴露；同日决策成交、缺/错理由、零目标初始种子仍UNKNOWN，不推断closed_at。家族泛化EXIT_PENDING保留原冻结退出理由。纯测16 passed；独立R1两项major（延期原意图理由被覆盖、零初始种子虚假结清）修复并补反例后delta PASS。持久意图完成/零股日帧尚未接通，T4整体未通过。
+     - [x] 3af冻结退出意图完成纯计算验收PASS：关闭理由仅允许零目标，关联SELL逐笔会计数量首次到零才记完成成交与中国交易日；非零目标、错方向、未到零、提前/同刻或重复完成均UNKNOWN。全关闭理由与反例纯测17 passed，独立Code Review PASS。输出仅PROVISIONAL，3n零股帧和持久来源/版本接线仍待实现。
+     - [x] 3ag本地有效成交链接入3p只读入口验收PASS：库存锁同证券订单并传递归属订单全集，3ad复核报告/签名/原件/修订双流；仅有效成交ID与原生命周期成交全集相等且首笔仍有效才进入原会计及0048版本链。完整已签更正后旧锚点、失效审核密钥、跨生命周期订单及重复首笔锚点均UNKNOWN/空成交；真实未修订stage→3p正向仍PROVISIONAL。隔离PG两文件21 passed；独立复核发现完整修订反例缺失minor及初始订单误归属major，补反例/门禁后delta PASS。有效集合变化仍需完整生命周期重放，初始锚唯一性尚无DB约束，生产入口不放行。
+     - [x] 3ah初始成交锚点0049全局唯一约束验收PASS：迁移先锁生命周期表再核非空锚重复，重复则事务回滚并保留0048与历史行；无重复创建UNIQUE，多个NULL合法，降级仅去约束。ORM同名约束、隔离随机库升级失败/重试/降级迁移测试1 passed，stage全文件17 passed；独立Code Review PASS。其他环境历史重复需按业务归属人工处置，约束不认证券商来源或可写重放，生产入口不放行。
+     - [x] 3ai真实单笔平仓终态事件只读诊断验收PASS：真实日事实仅保留退出决策日，冻结关闭意图首版状态版本对齐当日日事实后版本；次日最后SELL完成事件和0048步N→N+1形成独立终态，不虚构零仓日事实/修订ID或政策推进。锁内3t再核零仓、活动订单/意图及CLOSED标记；零仓无当前平均单位成本，旧持仓成本不参与终态比较。纯测政策+终态事件22 passed；隔离PG真实BUY→process_day止损→签名SELL、缺终态开市日及关闭意图后来SUPERSEDED反例，诊断文件5 passed；独立Code Review及delta PASS。完整文件首次运行被旧0048降级竞态用例从0049起步卡住，先退0048并交换线程/写者退出序后5 passed，未通过项0。多笔部分SELL、同日决策成交、有效修订及外部来源仍UNKNOWN；T4整体不勾选。
+     - [x] 3aj同一终态开市日多笔部分SELL验收PASS：真实签名BUY100→次日日事实/冻结止损意图1→2→同一后续开市日签名SELL40与SELL60，逐笔0048步骤2→3→4；中间持仓60、意图EXECUTING、3p UNKNOWN，末笔归零/COMPLETED/CLOSED后3p本地PROVISIONAL_MATCH，未造终态日事实。纯测政策+终态事件26 passed、隔离PG诊断文件6 passed；独立Code Review PASS无finding。不同终态开市日、同日决策成交、有效修订与外部来源仍UNKNOWN，T4整体不勾选。
+     - [x] 3ak有效成交集合纯会计候选验收PASS：纯函数重算修订图并核已入账报告与新成交事件载荷一一对应，仅有效末端事件进入3a成本/数量/盈亏，全部VOID回显式基线；反序posting的有效ID按真实执行时点输出。缺/多/重复/错配、未应用声明、同刻或超持仓SELL均UNKNOWN且无部分结果。纯测3文件15 passed；隔离PG真实非首笔生命周期SELL的签名VOID/CORRECT拒绝且拒绝前后持久快照不变2 passed；独立Code Review发现顺序问题后修复并复核PASS。纯输入不证明报告经济字段或外部全集，0048旧版本/政策不随修订重算，3p及生产入口不接线，T4整体不勾选。
+     - [x] 3al修订路径归属与影响纯分类验收PASS：重算3ab图，要求每条根报告与原始成交全集/唯一初始锚精确对应，逐路径核0047 LIVE冻结订单/生命周期/意图和新成交身份；分别标首笔、后续VOID/CORRECT，含多级CORRECT→VOID及提前改期，VOID路径不与有效ID按下标配对。无修订NO_REVISION，异常整组UNKNOWN且无部分路径/最早时点。纯测含相邻3ab/3ak共18 passed；独立审查指出极端时区日期溢出minor，收为UNKNOWN并补回归后delta PASS。调用方全集仍待3ad持久接线，0048/日政策/投影未重放，T4整体不勾选。
+     - [x] 3am已核本地修订路径持久适配验收PASS：3a组合→生命周期→订单锁后由3ad核签名/原件、报告/成交/账本及VOID/CORRECT双流；按report ID回读全路径并核0047冻结身份，独立以同订单CONFIRM减已核CORRECT替代求旧根、核0049唯一首笔锚。只在3ad通过后容许对应修订库存提示，其他缺口整组UNKNOWN。隔离PG聚焦4 passed：无修订、签名失效/错证券/未入账/错归属、真实先更正后关联旧首笔锚LOCAL_IMPACT、已关联后续修订未应用VOID/CORRECT UNKNOWN及读后持久事实不变；独立Code Review PASS无finding。正向为历史夹具，不证明生命周期修订写服务可达，不接3p/生产，T4整体不勾选。
+     - [x] 3an修订影响真实事实范围只读索引验收PASS：3am已核路径后，上海日期同日及之后真实日报ID/最新0044修订ID、全生命周期意图ID/首LIVE 0046修订ID、原始根旧0048因果步分别列示；本库空集合标LOCAL_EMPTY，独立日历/历史可见性仍未知。坏0044/0046链、待提案、缺步/UNATTRIBUTED及旧版本跳号整组UNKNOWN且无部分列表。聚焦隔离PG 9 passed，独立Code Review及旧版本链delta复核PASS无finding；不接3p、3ak或生产，T4整体不勾选。
+     - [x] 3ao已核本地经济字段到有效成交会计只读适配验收PASS：同一干净事务以3am/3ad核全报告、原件/签名、posting、CONFIRM、声明及双流后，逐报告核方向/时间/交易日/数量/价格/费用与账本，连被替代报告都交3ak，仅有效末端进入暂定会计。显式外部成本基线须严格早于全部已过账报告，防原报告与较晚替代间双计；不合法基线、未应用声明、经济错配、同刻有效成交整组UNKNOWN且无部分结果。隔离PG 8 passed，独立CR一项major修复后delta PASS无遗留；不接0048反事实、3p或生产，T4整体不勾选。
+     - [x] 3ap修订后重放工作清单验收PASS：纯映射逐旧根配唯一有效末端/VOID并按根附旧0048步骤，集合与3ao有效会计时序交叉；同事务只读薄适配，初始锚VOID/非BUY/非首位/更正种子及后续因果重排明确REPLAY_BLOCKED。缺/重复/错归或畸形时间整组UNKNOWN且不输出工作清单。纯测6 passed、隔离PG3 passed，独立Code Review PASS无finding。历史正向仅先签名SELL更正后挂旧SELL锚，LOCAL_MAPPING+NONBUY_INITIAL；绝不伪造新版本/日政策/意图完成，不接3p或生产，T4整体不勾选。
+     - [x] 3aq首笔BUY政策种子纯重算验收PASS：显式冻结输入与有效首笔BUY按原创建公式重算容量/目标/相位/止盈/跟踪/期望；保留风险和信号字段缺键/显式null/有值以及MA5模板整数0/1原值。计划量与风险预算两分支、改价/量/日、ATR/旧跟踪、零目标及VOID/非BUY/非首位/畸形manifest边界纯测；本文件20项、连3ap共26 passed。独立Code Review发现MA5原值类型和坏manifest两处后修复，最终PASS无遗留。只给`UNCERTIFIED`暂定候选，不从可变旧行反推历史输入，不接3p或生产，T4整体不勾选。
+     - [x] 3as有效成交与完整日报行情截止纯时序清单验收PASS：按3ap旧根→有效末端、3ao有效会计事件顺序及3e完整日报修订/`data_as_of`交叉，输出`LOCAL_ORDER`原始身份和截止前成交前缀；末日报后成交保留显式尾部。无日报、初锚改变、受影响修订错配、同日成交不早于截止或畸形输入整组UNKNOWN/空槽。聚焦纯测19 passed、编译检查通过；独立Code Review初轮一项major（畸形issues/嵌套会计抛异常）修复后delta PASS无遗留。行情截止不证明政策处理时刻，不生成新0048/0044/意图或授权，T4整体不勾选。
+4. **隔离事务投影切换（待开始）**：仅当事实链完整、所有受影响订单有可信终态且差异可解释时，在统一组合锁下追加更正绑定并切换当前投影；在途冲突转RECON且保留预留。验收：注入任一步失败全事务回滚，原报告不丢，重复请求不重复记账；生产入口仍受账户来源认证门禁。
+
+#### T4账户快照对账纯诊断增量（2026-09-29）
+
+状态：已完成：增量验收PASS；T4整体不勾选。
+
+- [x] 对同一组合/交易日的现金及逐市场证券持仓数量做精确Decimal差异诊断，完整快照才报告缺席证券，部分快照不把缺席视为零。
+- [x] 校验可卖量缺失、畸形、负数或超持仓，重复/畸形行、跨账户及中国日期捕获问题均列为诊断；结果不输出可直接用于SELL建单的可卖量授权。
+- [x] 定向纯测 `.venv\Scripts\python.exe -m pytest backend/tests/unit/investment_workspace/test_reconciliation.py -q --tb=short -p no:cacheprovider`，8 passed/0 failed；独立Code Review PASS。无DB/真实LLM。
+- [ ] 快照来源与完整性认证、旧写入口收敛、结算可卖量证书及账本重放未实现；不能以`local_values_match`放行生产订单。不可变持久化另见下一增量。
+
+#### T4账户观察不可变持久化增量（2026-09-29）
+
+> 状态：已完成：增量验收PASS；T4整体不勾选。
+
+- [x] 0032 将规范化的现金与持仓观察及摘要封在同一不可变行，按组合、来源类型、来源引用幂等；重放内容漂移拒绝，事实不回写本地持仓/现金。
+- [x] 已有账户观察的空持仓组合删除返回领域错误，保留审计历史；投资工作区原夹具的 `TRUNCATE CASCADE` 与不可变历史冲突，改为每用例独立重建仅 `liveprofit_workspace_test`。
+- [x] 定向 `.venv\Scripts\python.exe -m pytest backend/tests/integration/investment_workspace/test_account_observations.py backend/tests/integration/investment_workspace/test_watchlists_portfolios.py -q --tb=short -p no:cacheprovider`，8 passed/0 failed；隔离 PG，未触及主库或真实 LLM。
+- [x] 独立 R2 Code Review PASS；R1两项major均修复，未发现新blocker/major。
+- [ ] 来源和完整性认证、原件、账本及结算可卖量仍属后续门禁，`BROKER_API` 标签本身不授予交易资格。
+
+#### T4账户余额纯重放内核增量（2026-09-29）
+
+> 状态：已完成：增量验收PASS；T4整体不勾选。
+
+- [x] 以组合身份、有效时刻和记录时刻重放基线、外部现金流、含费用成交、公司行动及有原因更正；更正链按记录时刻排序，双时钟截至约束和负余额拒绝。
+- [x] 入金单列 `external_flow_total`，纯现金分红不算入金；跨组合、分叉更正、零变动公司行动和超持仓卖出均有反例。
+- [x] `.venv\Scripts\python.exe -m pytest backend/tests/unit/investment_workspace/test_account_ledger.py -q --tb=short -p no:cacheprovider` 为6 passed/0 failed；纯测无DB/真实LLM；独立Code Review R1两项major一项minor修复后R2 PASS。
+- [ ] 成交/公司行为事件持久化、可信来源、与旧组合投影/实际成交事务接线、成本基准及净值单位化尚未验收；纯重放输出不提供交易授权。
+
+#### T4账户基线与外部资金流水持久化增量（2026-09-30）
+
+> 状态：已完成：增量验收PASS；T4整体不勾选。
+
+- [x] 0033将唯一基线绑定0032完整账户观察，资金流水按组合锁、来源引用与内容hash幂等，含同组合更正链唯一约束和不可变触发器；写前用纯重放拒负余额，回读逐条复算摘要并返回当前诊断余额。
+- [x] 定向 `.venv\Scripts\python.exe -m pytest backend/tests/integration/investment_workspace/test_account_ledger_store.py -q --tb=short -p no:cacheprovider`，3 passed；合账户观察、旧组合与纯核回归25 passed，均仅隔离PG或纯测，无真实LLM/主库写入。
+- [x] 独立Code Review PASS，回读增量delta复核PASS，均无blocker/major；本地记录时刻与事务提交/上游可得时点明确分离。
+- [ ] 实际成交与旧订单同事务接线、公司行为、更正撤销与投影同事务接线、原件来源认证、旧直接编辑入口收敛及可卖量仍未验收；显式费用的诊断交易记录见下一增量。
+
+#### T4显式费用交易流水诊断增量（2026-09-30）
+
+> 状态：已完成：增量验收PASS；T4整体不勾选。
+
+- [x] `append_trade`要求明确费用、正成交价及非零有符号数量，以`-数量×价格-费用`持久化现金变化；同源同义重放幂等，持仓/费用/价格全部进入内容摘要。
+- [x] 超过本地现金或持仓的报告事实仍追加，`replay_current`返回负现金/负持仓偏离，不修改生产`Portfolio`投影或授予交易权限；纯内核默认严格模式保留。
+- [x] 定向交易账本集成5 passed，合账户相关回归27 passed；独立Code Review R1 major修复后R2 PASS，超额买入与卖出反例均通过。
+- [ ] 与实际`OrderFillEvent`和费用原件同事务接线、建议偏离判定/新增风险阻断、公司行为及成本/净值投影仍未验收。
+
+#### T4账本基线后旧直接编辑门禁增量（2026-09-30）
+
+> 状态：已完成：增量验收PASS；T4整体不勾选。
+
+- [x] 旧组合 PATCH 在同一组合行锁下仅阻断现金或总资产直接变化，旧持仓 upsert/remove 阻断；读取与风险政策字段继续可用，异常明确返回 `PORTFOLIO_LEDGER_REQUIRED`/409。
+- [x] 基线建立与旧编辑共享组合锁；双会话测试在未提交基线持锁时验证旧编辑等待，提交后旧编辑被领域门禁拒绝。
+- [x] 账本集成7 passed（含双会话），旧组合回归4 passed；独立Code Review PASS，无blocker/major。数据库写入仅限`liveprofit_workspace_test`，未跑真实LLM。
+- [ ] 账本调整/对账入口、旧风险估值字段归属及真实成交投影一致性仍需后续T4整体验收。
+
+#### T4下一主线：报告成交到真实成交同事务收敛
+
+> 状态：进行中；0034报告事实、0035本地判定及0036更正/撤销声明增量已验收，外部核验与投影未验。
+
+- [x] 0034独立不可变记录报告成交及可空费用/原件来源，重复报告同义幂等、漂移冲突；超订单、错标的/方向报告保留，不能改写订单`filled_quantity`越过数据库约束。定向3 passed、账户组合跑32 passed，独立R2 Code Review PASS。
+- [x] 0035把报告与当前订单修订、本地错侧/超剩余量/费用未知冻结为不可变诊断；相同判定引用返回原快照，新引用重读新订单，始终列`SOURCE_UNVERIFIED`，不投影。隔离PG定向5 passed，独立Code Review PASS。
+- [x] 0036以不可变单出边/单入边记录同组合报告的更正或撤销声明，替代报告和理由保留来源hash，同源重放幂等、漂移拒绝；组合锁内阻环，来源声明不撤回真实成交。隔离PG定向7 passed，独立R2 Code Review PASS。
+- [x] 已建0033账本基线的组合拒旧`confirm_fill/correct_fill/void_fill`直接改现金与持仓，避免无费用及账本记录的孤立投影；更正/撤销改组合→订单→成交锁序，未建基线历史入口保留，报告留存不受阻。隔离PG报告8项、生命周期67项通过，独立Code Review PASS。
+- [x] 未认证报告或账本基线在组合锁下阻断新增风险BUY：规划器、家族分配、直接物化及已有订单旧成交入口均覆盖；VOID声明不自动清除未知，未建基线的保护SELL实际确认不受报告门禁阻断。纯测68、隔离PG家族/入口28及报告/生命周期78 passed，独立R2 Code Review PASS。
+- [x] 0037新增报告实际执行时刻与报告/旧成交/TRADE流水一对一同组合绑定结构；数据库插入校验证券/方向/数量/价格/交易日/执行时刻/费用/现金，拒已撤销或已更正事实，旧无执行时刻报告仍可读。隔离PG结构4项、报告回归11项通过，独立R2 Code Review PASS；仅结构不表示来源认证或生产投影。
+- [x] 公司行动诊断流水支持显式现金与逐证券数量变化、同源幂等和单链更正；分拆、分红不计外部入金，不改生产现金/持仓。隔离PG账本文件8 passed，独立Code Review PASS；发行人来源仍是声明，成本及生产投影未验。
+- [x] 带原因诊断调整支持显式非零现金/持仓变化、规范排序和同源漂移拒绝；不计外部入金，不改生产投影。隔离PG账本文件9 passed，独立Code Review PASS；来源和调整理由仅是声明，未开放交易授权。
+- [x] 已绑定报告的当前诊断逐项显示后续报告更正/撤销声明、成交反转和账本替代；绑定行不删除也不再误读为当前有效或已认证。隔离PG定向5 passed，独立Code Review PASS；只读诊断不执行冲销或放行交易。
+- [x] 0038保存人工复核不可变签名事实，HMAC绑定报告/原件摘要、审核人、原因与复核引用；当前读取重验密钥/签名及撤销状态，DB插入核报告内容。隔离PG定向2 passed，独立R2 Code Review PASS；人工声明不等于券商/账户认证，生产消费者不得只按记录存在放行。
+- [x] 0039在同组合不可变保存最长8 MiB的人工导入原件字节，捕获时计算SHA，复核写入及当前读取重算字节摘要；同源幂等、漂移和跨组合缺失显式拒绝。隔离PG定向3 passed，独立Code Review PASS；仍未证明文件来自券商或属于该账户。
+- [x] 旧`confirm_fill`拆出不提交的内部成交stage，现金公式支持显式费用，旧入口继续旧门禁及原有提交/幂等行为；另一会话看不到未提交stage且回滚无残留。隔离PG生命周期68 passed，独立Code Review PASS；stage不构成生产接受入口。
+- [x] 隔离原子编排同一事务写报告绑定、含费TRADE账本、旧订单成交和生产投影；必须原件字节/当前签名及账本与投影相符，缺证或漂移拒投影。pytest进程+`liveprofit_workspace_test`双门禁阻生产直调；费用未知/超建议报告仍留存且不投影。隔离PG 5 passed、独立R2及补充delta Code Review PASS。此为软件验证，真实账户归属未认证，生产入口关闭。
+- [x] 0040新增诊断TRADE的不可变VOID事件：只替代同组合、同生效时刻TRADE，金额/持仓/费用均零且有原因；原成交历史与费用保留，当前重放剔除原成交。store在组合锁内同源幂等追加，不改订单或生产投影。纯测+隔离PG定向18 passed；独立Code Review及DB畸形VOID直写反例delta复核PASS。
+- [x] 0041为0036撤销/更正声明新增独立不可变签名复核：持钥人签名绑定声明规范摘要、库内原件字节hash、审核人/引用/原因，purpose区别原成交；record和当前verify都重读原件、重算声明全部字段并验当前密钥，同源幂等。相关隔离PG 16 passed；独立R1发现只信自报摘要的major，补统一规范摘要及SQL伪摘要反例后delta PASS。仍不认证券商账户/原件真实，生产入口关闭。
+- [x] 0042隔离VOID编排把签名撤销声明、原0037入账、旧VOID成交和0040账本VOID以不可变唯一行绑定；原入账保存撤销前数量/平均成本，组合→订单锁内重验原签名及声明签名、无后记账本运动、账本/投影前后相符，同事务反转含费成交与BUY成本。仅pytest+专用测试库可执行；隔离PG定向10 passed，独立R1四项发现修复后两次delta PASS。后续运动/漂移拒投影，原报告和声明保留；生产入口关闭。
+- [x] 0043隔离CORRECT编排以不可变行连接更正声明、原入账、旧VOID双流和替代0037入账；同事务先撤原成交再核替代报告签名/费用/订单剩余并入账，失败由caller回滚。DB约束替代成交与原成交同订单；多级更正重放按历史签名核已解决替代报告。生命周期关联的首笔风险锚点无法局部反算，改在任何账本/投影修改前拒绝关联生命周期成交，待完整重放。隔离PG文件13 passed；独立R1一major修后delta PASS。生产入口仍关闭。
+- [x] T4估值/单位化纯诊断按同一时点现金、完整持仓和证券价格求值；负余额、畸形数量/现金/价格、缺价格、非正价值未知。逐笔外部流要求流前估值、累计流和完整有效流ID清单；账本重放从同一有效事件集产出该清单。同刻连续流核上一笔后的现金/持仓/价格；不以净入金当收益。相关纯测15 passed，独立R1两major修复后delta PASS，账本清单与畸形输入补充delta PASS。价格与流清单来源未认证，不接生产收益门禁。
+- [x] 真实持久化`PositionLifecycleState.initial_fill_id`锚点反例验证0043更正在账本/投影写入前拒绝，回滚后现金、已成交量和TRADE数未变；隔离PG原子stage全文件14 passed。此项仅验既有拒绝门禁，不表示生命周期事件重放已完成。
+- [x] T3在途状态流系统审查：旧成交三入口幂等重放核操作、订单/原成交及数量/价格/日期/来源/备注；成交更正/撤销后原单持续RECON，不能经通用状态释放预留；旧完成意图有后继活动意图时保留历史终态，将后继意图及其订单隔离并保留真实修订。隔离PG生命周期71项、T4 stage14项通过，独立R1三major修后delta PASS。可信券商终态及可卖量仍为T3/T4门禁。
+- [x] 旧成交更正/撤销入口在任何投影变动前拒持久化`PositionLifecycleState.initial_fill_id`锚定的首笔成交，要求完整事件重放；原报告可走T4不可变留存。隔离PG生命周期全文件72 passed，两入口及无写入反例、独立delta CR PASS。此门禁不表示完整重放已实现。
+- [ ] 追加式核验/更正判定与真实`OrderFillEvent`一对一身份绑定；有明示费用的已核验部分在组合锁内同时入成交、账本、现金/持仓及订单预留，事务失败整体回滚。
+- [ ] 覆盖超订单、超现金、跨日迟报、部分成交、撤销/更正及费用未知；未处理偏离不得新增风险，保护退出意图继续保留；隔离PG定向验收与独立Code Review后才勾T4对应整体验收项。
 
 ### T5 研究验证与准入
 
@@ -83,7 +465,7 @@
 - **涉及文件**：拟新增 `backend/modules/quant_research/application/replay.py`、`evaluation.py`、`infrastructure/models.py` 及研究/模拟持久化模块、测试；拟新增 `backend/modules/quant_strategy/application/strategy_admission.py`；修改策略版本资格投影与相关服务。
 - **依赖**：T1、T2、T3、T4。
 - **验收标准（软件与历史研究）**：
-  - [ ] 拟新增 `backend/tests/unit/quant_research/test_replay.py`、`test_evaluation.py`、`test_admission.py` 与 `backend/tests/integration/quant_research/`；执行 `.venv/Scripts/python.exe -m pytest backend/tests/unit/quant_research backend/tests/integration/quant_research -q`，使用固定数据、经核验的隔离库及无真实LLM夹具验证回放、统计、持久化及资格隔离；确认集成用例实际执行。
+  - [ ] 先查已有研究用例并复用；独立研究能力拟新增 `tests/backend/quant_research/unit/test_replay.py`、`test_evaluation.py`、`test_admission.py` 及 `tests/backend/quant_research/integration/` 对应用例；核实隔离后执行 `.venv/Scripts/python.exe -m pytest tests/backend/quant_research/unit tests/backend/quant_research/integration -q --allow-db`，使用固定数据及无真实LLM夹具验证回放、统计、持久化及资格隔离；确认集成用例实际执行。
   - [ ] 历史/模拟/每日执行在相同输入下目标一致；模拟事实不写真实账户；删除未来数据不改变过去选择；只有此前已经结束的验证区间可参与该时点选参和组合。
   - [ ] 以冻结快照生成研究记录：756/126/126、步长126、至少四个外层测试窗口，最后252日留出；先冻结候选、参数和资金分配，再评估留出，不根据留出结果重选赢家。
   - [ ] 日收益统一采用扣费单位净值，时间块20日、5,000次、随机种子20260924；DSR记录全 trial，分别执行交易型/配置型样本门槛，缺证据不得晋级。
@@ -99,8 +481,8 @@
 - **涉及文件**：修改 `backend/modules/daily_research/application/scheduler.py`、`quant_pipeline.py`、`backend/workers/dispatcher.py`、`analysis_executor.py`；拟新增 `backend/modules/daily_research/application/portfolio_pipeline.py` 及每日账户运行事实。
 - **依赖**：T1、T3、T4、T5 的准入接口；不依赖候选已经取得实盘资格。
 - **验收标准**：
-  - [ ] 执行 `.venv/Scripts/python.exe -m pytest backend/tests/unit/daily_research/test_scheduler.py backend/tests/unit/daily_research/test_quant_snapshot.py -q -k "not integration"`，确认保留旧扫描与新闻刷新行为且不重复建设调度系统。
-  - [ ] 拟新增 `backend/tests/unit/daily_research/test_portfolio_pipeline.py`，运行对应 pytest；覆盖行情迟到、账户未确认、同日重复、漏跑数日、重试、取消、成交回写后修订及同输入不同任务 ID。
+  - [ ] 扩展已有用例，执行 `.venv/Scripts/python.exe -m pytest tests/backend/daily_research/unit/test_scheduler.py tests/backend/daily_research/unit/test_quant_snapshot.py -q`，确认保留旧扫描与新闻刷新行为且不重复建设调度系统。
+  - [ ] 独立账户流水线拟新增 `tests/backend/daily_research/unit/test_portfolio_pipeline.py`，运行对应 pytest；覆盖行情迟到、账户未确认、同日重复、漏跑数日、重试、取消、成交回写后修订及同输入不同任务 ID。
   - [ ] 同业务输入 hash 幂等；数据更正产生新修订；漏跑只补观察和保护状态，不造历史成交。全市场缺数不能整体阻断数据足够的已有持仓保护。
   - [ ] 人工观察一个完整日运行：账户事实/截止时间可见，估值风险先于建议，退出减仓先于新增仓，未完成订单预留及拒绝原因完整。
 - **状态**：`待开始`（2026-09-24）。
@@ -111,10 +493,10 @@
 - **涉及文件**：修改 `backend/api/routers/lifecycle.py`、`portfolios.py`、`quant_strategies.py` 与对应 schema；拟新增研究和每日账户 router/schema。修改 `frontend/src/modules/analysis/pages/strategies/`、`frontend/src/modules/watchlist/portfolios/`、`frontend/src/modules/analysis/pages/task-detail/QuantExecutionPanel.tsx`，生成 `frontend/src/api/generated/`；拟新增研究/日建议/对账/成交组件及测试。
 - **依赖**：T4、T5 的接口、T6。
 - **验收标准**：
-  - [ ] 执行 `.venv/Scripts/python.exe -m pytest backend/tests/contract/api/test_lifecycle.py backend/tests/contract/api/test_workspace.py backend/tests/contract/api/test_quant_strategies.py backend/tests/contract/api/test_report.py -q -k "not integration"`；新增研究/每日账户契约测试同时验证分页、修订、幂等和稳定错误。
+  - [ ] 扩展已有契约，执行 `.venv/Scripts/python.exe -m pytest tests/backend/quant_strategy/contract/api/test_lifecycle.py tests/backend/investment_workspace/contract/api/test_workspace.py tests/backend/quant_strategy/contract/api/test_quant_strategies.py tests/backend/analysis/contract/api/test_report.py -q`；新增研究/每日账户契约测试同时验证分页、修订、幂等和稳定错误；fixture需要隔离资源时先核实再显式启用。
   - [ ] 按顺序执行 `.venv/Scripts/python.exe -m backend.scripts.export_openapi`、`pnpm -C frontend run generate:api`、`pnpm -C frontend run typecheck`、`pnpm -C frontend run build`，确认生成类型与消费一致。
   - [ ] 执行 `pnpm -C frontend run test -- src/modules/analysis/pages/strategies src/modules/watchlist/portfolios src/modules/analysis/pages/task-detail/QuantExecutionPanel.test.tsx`；断言实际/可卖/目标股数、次日区间与有效期、保护政策、费用、账户/行情时间以及证据不足状态均能展示。
-  - [ ] 拟新增 `frontend/e2e/portfolio-lifecycle.spec.ts`，隔离完整栈执行 `pnpm -C frontend run e2e -- e2e/portfolio-lifecycle.spec.ts`；覆盖“导入账户→查看建议→部分成交→次日建议→更正成交→退出”，同时核验页面与账本投影一致。
+  - [ ] 独立完整流程拟新增 `tests/e2e/portfolio_lifecycle/ui/portfolio-lifecycle.spec.ts`；交付时将流程登记到 `tests/suites.json` 及 Playwright 发现范围，核实隔离完整栈后执行 `pnpm -C frontend run e2e -- tests/e2e/portfolio_lifecycle/ui/portfolio-lifecycle.spec.ts`；覆盖“导入账户→查看建议→部分成交→次日建议→更正成交→退出”，同时核验页面与账本投影一致。涉及真实建单分析/LLM/外部源仅由用户手动显式启用，并独立核实环境认证。
 - **状态**：`待开始`（2026-09-24）。
 
 ### T8 验证、Code Review 与交付
@@ -135,4 +517,331 @@
 - 任务由已确认方案直接拆解，不另开任务清单评审；发生设计修订时同步相关任务，不静默改变预注册研究口径。
 - 每完成任务立即更新任务块、总览、README 状态与 log；未执行验收保留空框。
 - 当前进度0/8指实现任务进度，不把文档建立计为业务交付。
-- 本轮不实现、不归档、不提交；后续任务完成后按仓库归档与显式路径提交规则收尾。
+- 已获授权继续实施；本轮未整体验收，不提前归档；任务完成后按仓库归档与显式路径提交规则收尾。
+
+- 2026-09-26 阶段进展：基金2026年175个交易日补348,480条技术因子，原整行缺口归零；34项MA250空值逐票查上游完整历史，12只基金日期/原价全匹配且样本不足250。ST隔离细化为证券日，冲突字段缺失/非布尔仍拒绝；提供器/隔离库/基金采集69项定向测试通过。2019状态回填仍在运行，T1未完成。
+
+### 2026-09-26 主线恢复检查点
+
+- 当前T2主线回归：模板、validator、76候选、管理政策、组合契约及sandbox定向执行128 passed、1 skipped（Windows不能替代POSIX回收验收）；无真实LLM或DB测试。
+- 下一实施单元：MAIN-01，整体接通候选/冻结政策/输入与输出/管理意图消费，禁止仅新增孤立规则后记T2完成。
+- QSYS-01至08统一收录于issues，作为集中分析及治理队列；数据不完整仍阻止对应收益认证，T1保持未完成。
+
+### T2 管理规则计算进度（2026-09-26）
+
+- [x] 冻结政策、趋势/MACD规则及显式生命周期计算适配；四文件49条纯单元测试通过。
+- [x] 本增量事务消费接通、独立R2 code review PASS；含前轮计算分支修复的复核。
+- [x] 绑定、成交初始化、ATR/有效日事实、实际成交加仓标记接通并通过隔离PG回归。
+- [ ] T3统一planner联调及空止盈准入（现阶段明确拒绝该BUY，不绕过账户RR）。
+
+### T2 候选执行适配进度（2026-09-26）
+
+- [x] 76候选编译与定义摘要，28真实沙箱空仓入口、48组合目标入口。
+- [x] 周/月调仓参数、管理参数完整保留、缺证据与持仓误用拒绝；108定向测试，独立R2 PASS。
+- [ ] 新族持仓冻结规则、研究快照和回放消费接通，T3预算/owner/准入；T2整体仍未验收。
+
+### 新族冻结持仓规则进度（2026-09-26）
+
+- [x] 48候选持仓政策映射，实际成交初始保护、H/G/L消费与每日只减风险状态转换。
+- [x] 187项定向测试通过：停牌/缺数据不计时、已知峰值保留、保护只收紧、退出粘滞及价格基准隔离。
+- [x] 新族持仓纯规则峰值修复经2026-09-27独立阶段验收PASS；生产消费链路仍未完成。
+- [ ] T3准入和统一规划、T4真实账本持久化/成交/冷却/公司行为换基。
+
+### T3 共享减仓增量（2026-09-26）
+
+- [x] 普通SELL与生命周期SELL共用gate、全部来源卖出预留、真实交易日历。
+- [x] 61定向测试（含12隔离PG）、独立R2 PASS。
+- [ ] 生命周期BUY统一风险、ETF生效期规则、家族预算/owner仲裁和全入口验收。
+
+## 2026-09-27 阶段验收与主线顺序
+
+整合回归410 passed、1 skipped（POSIX进程组，仅Windows跳过），隔离PG生命周期用例实际执行；详见result.md最新矩阵。总体0/8整体验收不变。下一主线T3-BUY-01：生命周期BUY复用PositionPlanner，统一现金/费用/预留/开放风险/行业和市场约束，保留空止盈准入及账户RR冲突；之后处理家族预算/owner与证券规则。每个增量交付前均按验收项记录命令、结果、评审和剩余门禁，验收后回到该顺序。
+
+### T3-BUY-01 子项跟踪（2026-09-27）
+
+| 子项 | 状态 | 可执行验收 |
+|---|---|---|
+| 01a 共用目标买入规划与未成交暴露 | 已完成：增量验收PASS | 定向54 passed；相关量化回归230 passed；独立review PASS，无findings |
+| 01b 生命周期事务接线 | 已完成：增量验收PASS | 整合252 passed（含16项隔离PG生命周期）；并发现金、外部部分成交、拒绝重试、锁后对象刷新；R2 PASS |
+
+01a/01b完成当前CN生命周期BUY共用规划；不勾选T3整体验收，家族预算/owner、证券生效期规则、三档风险与无固定止盈政策准入仍未完成。
+
+### T3-ALLOC-01 子项跟踪（2026-09-27）
+
+| 子项 | 状态 | 验收 |
+|---|---|---|
+| 01a 家族仲裁内核及planner金额上限 | 已完成：增量验收PASS | 相关量化259 passed；独立review PASS；覆盖预算、owner、证据时间、保护、输入全排列、金额余数和滑点 |
+| 01b 生产共同决策批次 | 进行中：归属与生产资格门禁验收PASS，共同批次未接 | 隔离库核验真实资格/owner收集、同票首仓并发、多家族同批仲裁与规划审计；尚无完整生产调用，不以01a代替 |
+
+> 01b归属子项：`ownership.py`生产事实收集及普通/生命周期BUY门禁、foreign脚本隔离已完成，287 passed（含22项隔离PG生命周期）+独立review PASS。资格记录、共同批次、owner独立行情窗口与同日跨扫描修订仍未验收。
+
+> 01b资格历史前置：已完成增量验收。新增0017独立追加事件表及保守写入/按时点读取服务，整合298 passed（资格隔离PG11项），R2 PASS；真实验证产出器、生产门禁和共同批次尚未接。
+
+
+> 01b生产资格门禁：增量验收PASS（2026-09-27）。当前ADVISORY复核、档位API/UI/快照/报告及0018完成；后端308、前端7、typecheck和独立review PASS。缺资格阻止BUY并保留保护SELL。共同批次、真实正资格产出和三档数值限制待实现。
+
+
+> 01b共同批次事务/审计：增量验收PASS（2026-09-27）。FamilyBatchService要求完整冻结成员，以同一数据库时点核资格并读取账户/owner/活跃BUY，缺成员不成批、缺资格整批不分配；0019持久化批次与成员、外键/不可变约束和幂等身份。325 passed、R2 PASS。生产扫描汇总、生命周期加仓合批及订单消费仍未接，不勾选01b或T3整体验收。
+
+
+> 01b生命周期延期加仓消费：增量验收PASS。扫描可显式延后新增风险；先协调旧目标/订单，再持久化AWAITING_BATCH，保护SELL即时规划。批次消费者实时重算资格/预算，按当前状态/原价区间/金额上限生成最多一个订单，终态拒绝也幂等。336项整合回归通过，R1两项major已修（旧单协调、入场区间），R2 PASS。完整扫描清单与首仓共同订单仍未接。
+
+
+> 01b完整清单收集与普通首仓建单：增量验收PASS（2026-09-27）。EntryBatchService按完整scan_attempts自动收集当前已完成任务信号，cash_only同样检查完成；族内唯一来源、跨族验证排名、实时重算资格/预算、共享planner与订单持久化、原source_signal及首次fill初始化；0020不可变收据确保整批终态幂等。348 passed、独立R2 PASS。清单注册/worker自动触发尚未接。
+
+
+### T3-ALLOC-01b 清单注册增量（2026-09-27）
+
+状态：Code Review。已实现stage调用方事务、冻结FAMILY_BATCH执行模式、不可变成员-task关系和原子注册。47项定向验收通过：跨连接提交前不可见、全批回滚、重试恢复模式、并发只注册一次。独立审查及整合回归进行中；worker完成触发/失败收敛/联合加仓仍待完成。
+
+清单注册增量验收完成：374 passed（13.35s），独立R2 PASS；R1唯一major为调用方Session旧缓存，已对版本/持仓/待成交查询锁后刷新并用双Session验证。任务总览T3继续进行中，未关闭01b。
+
+
+### T3-ALLOC-01b 自动首仓触发与终态收敛
+
+状态：Code Review。worker触发+dispatcher启动/恢复补查已接入，append-only outcome与entry receipt/订单同事务。18项隔离PG验收通过：重试等待、失败/取消终态、CN跨日截止、当前attempt、上下文冲突、savepoint回滚、并发唯一及漏回调恢复。生命周期联合调度仍待下一子项，当前有生命周期整批阻断。
+
+自动首仓触发/终态收敛增量已完成验收：396 passed（342.17s，无skip），独立R1 PASS，无findings。01b仍进行中，下一项联合加仓及owner行情；主库不部署。
+
+
+### T3-ALLOC-01b 首仓/延期加仓联合消费
+
+状态：已完成：增量验收PASS（2026-09-28）。已实现家族验证排序→族内owner加仓→族内score首仓，同事务刷新账户预留；新增owner任务/政策/行情证明，FAMILY_BATCH只允许owner推进日事实，注册要求owner完整覆盖。首10项隔离PG通过；独立review、owner窗口和补充重试/暂停用例进行中。
+
+
+### 2026-09-27 联合消费收尾检查点
+
+实现与独立R2及scope补充审查PASS：家族排名→族内owner加仓→首仓，刷新账户预留；完整owner日事实/当前attempt/政策/行情/实际品种证明，worker自动联合收敛。定向47项PG、19项执行单测及worker集成单测此前通过（这些统计有重叠，不累加为总数）。最终代码整合重跑239 passed后，既有arc_bottom_75a_v1真实沙箱2秒EXECUTION_TIMEOUT，余下未执行；该批次不能记为全通过。
+
+首轮PG执行中连接断开，服务日志证实后台退出码2并自动恢复，退出根因未定。随后仅复核模板文件及未运行部分，宿主机可用物理内存5092 KiB、虚拟内存余量1587640 KiB，测试停滞，已仅终止本次pytest进程。未改变生产超时标准，未停止业务进程。完整回归尚待环境恢复；本增量暂不勾选验收完成，01b及T3继续进行中。
+
+下一次先恢复此验收，再继续可信目标生产/注册入口、真实资格产出及系统性余项。未部署主库，未运行真实LLM。
+
+
+### 2026-09-28 联合消费最终验收
+
+- [x] 命令：`.venv\Scripts\python.exe -m pytest backend/tests/integration/quant_strategy/test_joint_orders.py backend/tests/integration/quant_strategy/test_batch_completion.py backend/tests/integration/quant_strategy/test_scan_manifest.py backend/tests/integration/quant_strategy/test_entry_batch.py backend/tests/unit/quant_strategy tests/agents/position/test_position_planner.py backend/tests/integration/quant_strategy/test_lifecycle_service.py backend/tests/integration/quant_strategy/test_family_batch.py backend/tests/integration/quant_strategy/test_admission_service.py backend/tests/integration/quant_strategy/test_task_submission.py backend/tests/unit/analysis/test_quant_executor_branch.py backend/tests/unit/analysis/test_batch_recovery_wiring.py -q -x --tb=short -p no:cacheprovider`：414 passed / 18.59s。
+- [x] 既有`arc_bottom_75a_v1`真实沙箱单项重跑：1 passed / 1.09s；保持2秒超时标准。
+- [x] 独立R2及资产类别delta审查PASS，无剩余findings。
+- [ ] 端到端行情上游、真实sandbox子进程、队列领取、主库迁移及真实ADVISORY资格未验收，T3整体不勾选。
+
+
+### T3-ALLOC-01b 数据截至日防未来（2026-09-28）
+
+状态：已完成：增量验收PASS；依赖联合消费增量414项通过，相关纯单测232 passed。
+
+- [x] 将组合候选及基准的日期口径改为`evaluation_as_of`，保留`decision_date`供调仓/冷却；明确拒绝未来输入。
+- [x] 纯单测覆盖9月24日行情→9月28日决策、ETF选集、非末尾未来数据拒绝、冷却与旧同日语义；相关纯回归232 passed（3.67s）。
+- [x] 独立代码审查R1两项major已修、R2 PASS；生产全集证明、版本绑定、真实资格保留下一门禁。
+
+
+### T3-ALLOC-01b 冻结试验/版本绑定（2026-09-28）
+
+状态：已完成：增量验收PASS；依赖截至日增量232项PASS；相关145 passed及4项迁移测试通过。
+
+- [x] 0023独立不可变绑定表及ORM，一版本唯一、试验定义与扫描源码hash持久化。
+- [x] 事务内注册/重放服务，拒绝未知trial、单票trial、scope错误、未发布版本及不同内容复用。
+- [x] 隔离PG验证事务可见性、不可变、并发/重放、归档、hash篡改、ETF scope且不创建准入；145项相关回归、4项迁移测试与独立code review PASS。
+
+
+### T3-ALLOC-01b 股票候选全集对账（2026-09-28）
+
+状态：已完成：增量验收PASS；依赖绑定增量145项PASS。仅为快照内部一致性诊断，T3整体仍进行中。
+
+- [x] 实现快照instrument与输入StockCandidate代码集对账，状态与认证问题分开报告。
+- [x] 纯单测覆盖缺/额外/重复、上市退市、BJ和研究快照未认证；量化研究单元回归192 passed（3.28s），独立R2 code review PASS。
+- [x] 本地对账不授予生产目标/ADVISORY；ETF规则和独立上游全集认证继续作为生产门禁。
+
+
+### T3-ALLOC-01b 组合试验无目标状态分级（2026-09-28）
+
+状态：已完成：增量验收PASS；依赖候选全集对账增量验收PASS。T3整体仍进行中。
+
+- [x] `PortfolioTrialResult`明确`TARGET`、`NOT_SCHEDULED`、`NO_TARGET_UNCLASSIFIED`，禁止None被隐式当清仓。
+- [x] 相关纯单测覆盖调度、缺代表、空代表显式cash_only、股票无目标、防守族缺配置及既有76候选；量化研究回归194 passed（3.26s）。
+- [x] 独立R2 code review PASS；生产正资格仍保持阻断。
+
+
+### T3-ALLOC-01b 组合生命周期冻结政策契约（2026-09-28）
+
+状态：已完成：增量验收PASS；依赖无目标分级增量验收PASS。真实fill/逐日持仓仍未接，T3整体继续进行中。
+
+- [x] 四家族试验可生成并发布严格的冻结`portfolio_trial`政策配置，旧模板政策行为保持。
+- [x] 只读核查精确比较版本/绑定/试验/政策及内容hash，不授予目标或资格。
+- [x] 量化研究及政策纯测203 passed、隔离PG绑定12 passed、现有生命周期服务36 passed；独立R2 code review PASS。真实fill与逐日持仓执行继续作为后续门禁。
+
+
+### T3-ALLOC-01b 组合政策真实执行入口隔离（2026-09-28）
+
+状态：已完成：增量验收PASS；依赖冻结政策契约增量验收PASS。专用组合持仓与账本对账仍未接，T3整体继续进行中。
+
+- [x] 所有可追溯到组合政策的BUY在旧模板分派前拒绝；每日持仓含已有事实重放拒绝组合政策；保护SELL保留账本处理。
+- [x] 隔离PG覆盖活动/已关闭/错误订单绑定生命周期、无信号BUY、signal或快照单独带版本、版本冲突、SELL与回滚；生命周期全文件49 passed（4.38s）。
+- [x] 初版R1/R2发现旁路未验收，重整后独立全量review PASS；真实组合持仓、SELL和纠错后的账本对账列后续门禁。
+### T3-ALLOC-01b 目标试验身份跨批次传递（2026-09-28）
+
+状态：已完成：增量验收PASS；本增量不关闭T3。
+
+- [x] 48个组合试验的明确目标附带 trial ID 与 definition hash，结果拒绝身份漂移；94项相关纯测试通过。
+- [x] 共同批次的新投影对已绑定版本核目标身份、家族、资产范围、政策及冻结政策内容；无绑定组合政策目标拒绝。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_trial_executor.py backend/tests/unit/quant_strategy/test_portfolio_targets.py backend/tests/integration/quant_strategy/test_target_trial_binding.py backend/tests/integration/quant_strategy/test_family_batch.py -q -x --tb=short -p no:cacheprovider`，118 passed；隔离库fixture为`liveprofit_quant_strategy_test`。
+- [x] 独立R1/R2发现两条同类无绑定旁路，均修复并补隔离PG用例；最终定向审查PASS，无遗留finding。
+- [ ] 后续：订单腿来源事实、真实fill持仓初始化、逐日评价和SELL/纠错账本对账；生产候选全集与真实资格仍独立门禁。
+
+### T3-ALLOC-01b 组合目标专用建单前置门禁（2026-09-28）
+
+状态：已完成：增量验收PASS；这是过渡期主线门禁，不关闭T3。
+
+- [x] 识别生产目标调用缺位与旧扫描信号0.50首仓裁剪；不借旧路径生成组合目标订单。
+- [x] 历史无收据批次在消费时重审冻结成员，已绑定组合目标在订单写入前拒绝；隔离PG `test_entry_batch.py` 13 passed。
+- [x] 独立代码审查PASS：历史收据重放、组合→版本锁序、无部分写入及身份旁路；验收范围仅旧消费者门禁，不代表专用建单/成交已实现。
+- [ ] 后续以可信目标生产、订单腿来源和真实fill状态为一条主线实施。
+
+### T3-ALLOC-01b 可信目标输入来源核对（2026-09-28）
+
+状态：进行中；生产目标仍阻断。
+
+- [x] 对照试验输入与研究reader逐字段列出已有载体、单位和独立证据门禁；记录于plan与issues。
+- [x] 研究reader补读历史日成交额`amount`原值（千元）；`tests/db/instrument/test_research_source_db.py`在显式隔离`liveprofit_instrument_test`通过1项。
+- [ ] 股票/ETF诊断候选转换、股票输入与ETF本地全集/月代表门禁已增量验收；历史来源可得时点、公司行动/规则/独立证券全集认证与正目标生产尚未实现，不作整阶段验收。
+
+#### 沪深300基准快照增量
+
+状态：已完成：增量验收PASS；不等于基准交易日窗口认证。
+
+- [x] 研究reader单独读取market.instrument已证明index类型的000300.SH日线；`benchmark_daily`按as-of冻结，不混入股票/ETF候选全集。
+- [x] 缺基准或有基准但交易日/来源可得时点未认证，均保留明确certification_issues；错误代码、重复日、非正/非有限收盘、空来源列为快照问题。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_dataset_builder.py tests/db/instrument/test_research_source_db.py -q -x --tb=short -p no:cacheprovider`，23 passed；DB fixture只重建`liveprofit_instrument_test`。
+- [x] R1发现指数上市/退市有效期遗漏并修复，R2独立Code Review PASS；隔离库含上市前/在市/退市当日反例。未通过项：独立交易日连续性和历史可得时点尚未认证；后续门禁为完整基准窗口证书。
+
+#### 沪深300独立日历覆盖增量
+
+状态：已完成：增量验收PASS；不等于历史来源可得时点认证。
+
+- [x] 仅股票快照且存在`benchmark_daily`时，按显式独立交易日历逐日核有限正收盘；缺日列入coverage missing，异常交易日/代码拒绝，旧快照缺表保持兼容并留certification issue。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_coverage_audit.py backend/tests/unit/quant_research/test_dataset_builder.py -q -x --tb=short -p no:cacheprovider`，混合日期边界补充后34 passed。
+- [x] R1发现基金单独快照也校验异常指数行（major），已限定股票快照；R2独立Code Review PASS。布尔价格回归首次因pandas float列不能直接赋bool而未通过，测试样本改object；随后坏日期反例揭示pandas date比较异常，统一将有效交易日归一为Python date，坏日记录quality issue。混合date/Timestamp、坏日及未来日定向34 passed，独立delta审查PASS。来源可得时点、250日候选及正目标仍是后续门禁。
+
+#### 股票候选诊断转换增量
+
+状态：已完成：增量验收PASS；不等于候选全集、账户来源及公司行动认证。
+
+- [x] 冻结快照按证券日合并原价、复权因子与可信最终日状态；按`close × factor ÷ 截止日factor`生成复权序列，原`amount`千元按独立日历最近20日换算ADV人民币元；上市前行不计250根。
+- [x] 账户held/cooldown逐代码显式提供；缺最终日价格/因子/状态、20日成交额、250根或账户事实时只列逐证券gap，候选缺失进入既有全集对账。快照认证问题仍由audit保留，不授予生产目标。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_stock_candidate_builder.py backend/tests/unit/quant_research/test_target_universe_audit.py -q -x --tb=short -p no:cacheprovider`，15 passed。仅纯单测，无DB/真实LLM；首次状态空值样本需先将pandas布尔列转object，修正fixture后通过。
+- [x] 独立R1审查发现最终日`market_board`未核（minor），与coverage审计可信口径不一致；已加非空板块校验与反例，R2复核PASS。未通过项：来源可得时点、独立证券全集/公司行动/规则、账户锁内来源未认证，正目标仍拒绝。
+
+#### 沪深300试验序列诊断转换增量
+
+状态：已完成：增量验收PASS；不等于历史来源可得时点或生产目标认证。
+
+- [x] 对快照`benchmark_daily`按显式独立交易日历取注册参数所需60/120/200个连续日；全部代码、日期、收盘及来源有效才输出不可变`(date, Decimal)`序列，缺一日则空序列加逐日缺口。
+- [x] 数据集非READY、基金单独范围、错代码、重复/非交易/未来日、无效收盘均拒绝；`complete_local`仅说明本地窗口完整，结果恒保留基准历史来源可得时点认证问题。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_benchmark_input_builder.py -q -x --tb=short -p no:cacheprovider`，10 passed；仅纯单测，无DB/真实LLM。
+- [x] 独立R1发现pandas nullable代码`pd.NA`直接比较触发模糊布尔异常（major），两处改显式字符串判定并加反例；R2复核PASS。后续门禁：股票/基准输入汇总、独立来源时间与账户证书、真实目标生产。
+
+#### 股票组合输入门禁汇总增量
+
+状态：已完成：增量验收PASS；不产生`PortfolioTrialInput`或正目标。
+
+- [x] 只接受预注册股票组合trial ID；按冻结参数为中期动量选60/120/200日基准，为短期反转选120日基准；同一快照、截至日与交易日历调用股票候选和沪深300转换器。
+- [x] 逐证券缺项、候选全集不匹配、基准缺日及数据集非READY列本地问题；快照认证、独立覆盖、基准历史可得时点和账户锁内来源单列认证问题。诊断结果保留trial ID/hash，不调用规则或生成清仓目标。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_stock_trial_readiness.py backend/tests/unit/quant_research/test_stock_candidate_builder.py backend/tests/unit/quant_research/test_benchmark_input_builder.py -q -x --tb=short -p no:cacheprovider`，24 passed；仅相关纯单测，无DB/真实LLM。
+- [x] 独立R1指出把`universe.evidence_issues`整体归认证集合会误分类本地问题（minor）；改由明确的快照认证/覆盖/基准/账户来源字段组成，新增非READY与本地质量反例，R2复核PASS。未通过项：独立历史来源、证券全集、公司行动及真实账户证书仍缺，生产目标门禁保持关闭。
+
+#### ETF候选诊断转换与近期复权窗口增量
+
+状态：已完成：增量验收PASS；不等于ETF目录全集、类别/停牌/交易规则认证。
+
+- [x] 按基金上市区间及快照目录`available_at`构造诊断`FundCandidate`；显式类别/跟踪指数/停牌事实与目录一致，原价ATR、前复权收盘、20日成交额人民币元及至少250根上市后价分别核验；`OTHER`单列排除，QDII/暂停上市目录拒绝。
+- [x] 股票和ETF都要求最近20个独立交易日逐日有有效收盘价、复权因子及成交额；251根历史中缺近期一根因子不能靠剩余250根掩盖。分类/停牌来源和ETF历史交易规则继续列为认证缺口，不调用月代表或目标规则。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_fund_candidate_builder.py backend/tests/unit/quant_research/test_stock_candidate_builder.py backend/tests/unit/quant_research/test_stock_trial_readiness.py -q -x --tb=short -p no:cacheprovider`，23 passed；仅相关纯单测，无DB/真实LLM。
+- [x] 独立R1发现最近20日仅核金额、未核复权因子（major），同步修ETF和股票并加反例；R2对两处delta复核PASS。自查补目录时间显式时区与暂停上市状态反例，最终23项通过。未通过项：独立ETF类别/停牌/规则、公司行动、来源可得时点及全ETF目录证书。
+
+#### ETF全集分区与月代表诊断增量
+
+状态：已完成：增量验收PASS；仅冻结诊断代表，不产生组合试验输入或目标。
+
+- [x] 同一快照截止日把全部在市fund代码对账到候选、显式OTHER排除及逐证券gap；缺口、重复/额外或无在市代码使本地分区不完整，缺任一基金证据时代表结果保持`None`且状态`BLOCKED`。
+- [x] 仅预注册ETF家族及显式月末选择日进入确定性代表选择；双动量按冻结lookback在类别×指数选最高ADV，防御按类别选最高ADV；非选择日不以空集合清仓，完整输入却无合格代表单列`NO_ELIGIBLE_REPRESENTATIVE`。保留目录全集、类别/停牌/规则、月末来源、行情历史可得时点与覆盖认证问题。
+- [x] 定向命令：`pytest backend/tests/unit/quant_research/test_fund_representative_readiness.py backend/tests/unit/quant_research/test_fund_candidate_builder.py backend/tests/unit/quant_research/test_stock_trial_readiness.py -q -x --tb=short -p no:cacheprovider`，19 passed；仅相关纯单测，无DB/真实LLM。
+- [x] 独立Code Review PASS，无blocker/major/minor；人工构造异常分区反例属后续测试建议，公开构造器已逐证券保证分区唯一。未通过项：独立证书与冻结月代表持久化、真实目标生产及专用建单仍待实施。
+
+#### ETF月代表诊断事实持久化增量
+
+状态：已完成：增量验收PASS；持久化记录仅供研究重现，生产目标仍关闭。
+
+- [x] 新增0024独立不可变表，以快照UUID/manifest SHA、预注册trial ID/hash、行情截至日/决策日绑定月代表；显式日历和分类事实随诊断结果保存，输入hash覆盖完整诊断输入。
+- [x] 写入时重读校验快照并重新计算；仅`SELECTED`及完整输入但无合格代表可冻结，非月末和本地阻断拒绝；同键同内容重放复用，异内容冲突，不授予目标/资格/订单权限。
+- [x] 定向命令：`pytest backend/tests/integration/quant_strategy/test_fund_representative_freeze.py backend/tests/unit/quant_research/test_fund_representative_readiness.py backend/tests/integration/test_migrations.py::test_upgrade_creates_exactly_platform_tables -q -x --tb=short -p no:cacheprovider`，11 passed；仅隔离`liveprofit_quant_strategy_test`和`liveprofit_platform_test`迁移，无主库写入/真实LLM。
+- [x] 独立Code Review PASS，无blocker/major/minor；首次测试计数误含前例历史行，按快照收窄；损坏快照断言改为公共错误契约，最终无失败。未通过项：独立历史可得性、ETF目录/规则、账户证书、生产目标及专用建单；并发双会话单测未加，DB唯一约束仍保护同键写入。
+
+#### 本地历史事实修订轨迹增量
+
+状态：已完成：增量验收PASS；仅记录本库未来写入事件，历史可得性认证仍关闭。
+
+- [x] `market.fact_revision`以DB触发器统一记录日线、复权、技术因子及复合状态四表的新增、实质修改和删除；相同业务值仅更新时间不追加，原地修改证券日主键拒绝，五表清表受保护。
+- [x] 只读`read_fact_as_of`对未记录、存在、删除三态明确区分；`observed_at`为触发时写入事件时间，可早于提交，绝不用于证明当时本地可见或上游已发布。既有存量未回填伪时间。
+- [x] 定向命令：`pytest tests/db/instrument/test_fact_revision.py tests/db/instrument/test_db.py::test_init_schema_idempotent -q -x --tb=short -p no:cacheprovider`，7 passed；`pytest backend/tests/integration/market_data/test_refresh_coverage.py::test_fixed_index_catalog_cold_start_and_empty_dynamic_catalog -q -x --tb=short -p no:cacheprovider`，1 passed。分别只操作`liveprofit_instrument_test`、`liveprofit_market_test`，无主库写入/真实LLM。
+- [x] Code Review R1两项major（主键变更旧键悬挂、写入时刻误作可见性）和一项minor（TRUNCATE绕过）均已修复或收窄契约，R2 PASS。未通过项：独立源发布时间/原件、提交可见时间、历史已存在行、证券全集/公司行动/ETF规则及账户证书；本地轨迹不授权研究认证或目标。
+
+#### T3 缺执行行情的 BUY 流动性门禁增量
+
+状态：已完成：定向验收 PASS；ADV20 开盘容量及证券规则整体仍待验收。
+
+- [x] 普通 `PositionPlanner` 无 `execution_market` 时不再虚构超大成交额；BUY 经流动性门禁拒绝，保护 SELL 仍沿既有价格降级路径。
+- [x] 定向命令：`pytest backend/tests/unit/quant_strategy/test_buy_target_planner.py -q -x --tb=short -p no:cacheprovider`，37 passed；纯单测，无 DB/真实 LLM。本子项仅关闭无执行行情时虚构金额的旁路；ADV20 与历史证券规则由后续子项负责。
+
+#### T3 执行期 ADV20 容量输入增量
+
+状态：已完成：定向验收 PASS；开盘模拟与T3整体仍待验收。
+
+- [x] 执行期 loader 按独立 CN 日历核 T 日及此前 19 个开市日，完整正成交额才输出 `adv20_amount`（千元）；缺日历、缺证券日或非正金额输出未知。
+- [x] 所有 BUY 约束均要求显式、有限且正数的 `adv20_amount`；T 日 `raw_amount` 再大也不能代替。旧持久化信号缺键、畸形字符串和缺日历均拒绝；保护 SELL 不增加该门禁。
+- [x] 定向纯测47 passed、mock loader 冒烟1 passed；隔离PG entry batch 14、joint orders 16、lifecycle service 49、batch completion 18 passed。无真实LLM/主库写入。
+- [x] 独立Code Review R1发现旧信号单日金额回退的major，R2确认关闭；minor畸形数值异常已补拒绝及单测。后续门禁：开盘模拟1%参与率、历史证券规则、真实交易可得性及T3整体验收。
+
+#### T3 风险档实际BUY预算增量
+
+状态：已完成：增量验收PASS；账户编辑一致性及完整退出仍待验收。
+
+- [x] 三档冻结单笔风险、组合开放风险、总暴露、单股票权重、回撤上限及行业/每日新增风险半额上限；更保守自定义值可用，超档或缺档均拒绝BUY。
+- [x] 共享规划器在组合锁内读取实时账户数值，返回`BUY_REJECTED_PROFILE_BUDGET`；回撤达到预算一半阻断新增风险，保护性SELL仍独立执行。
+- [x] 定向命令：纯`test_risk_profiles.py`、`test_portfolio_risk.py`、`test_buy_target_planner.py`及隔离PG`test_entry_batch.py`、`test_joint_orders.py`、`test_lifecycle_service.py`、`test_batch_completion.py`，合计155 passed，无失败/跳过、无真实LLM/主库写入。
+- [x] 独立Code Review R1两项major（缺档可经共享规划器BUY、半回撤未阻断），修复后R2 PASS。该检查点尚缺账户创建/PATCH前置校验（下一增量已补）；ETF单标的专用上限、全额回撤退出/暂停资格、三档T5收益验证及T3整体仍未通过。
+
+#### T3 账户风险档编辑一致性增量
+
+状态：已完成：增量验收PASS；旧账户仅在主动编辑时校验，不自动改写。
+
+- [x] 账户创建明确选档时，未填七项预算由该档上限补齐；显式更保守值保留，显式超档值拒绝。PATCH省略风险档沿用已存档并核全套参数，显式清空才解除档位绑定；NaN/无穷等非有限数值拒绝。
+- [x] 设置界面七项上限与后端同值，超档时展开并聚焦对应字段、保存前给出档位及百分比；用户修改后的字段实际提交。
+- [x] 定向后端`test_watchlists_portfolios.py`、`test_task_submission.py`、`test_risk_profiles.py`、`test_buy_target_planner.py`共73 passed；前端`PortfolioDrafts.test.tsx` 7 passed、`pnpm typecheck`通过。数据库只用隔离`liveprofit_workspace_test`/`liveprofit_quant_strategy_test`，无真实LLM/主库写入。
+- [x] 独立Code Review PASS，无blocker/major/minor。剩余门禁：旧已存档超限账户无自动迁移、ETF单标的风险上限、全额回撤退出/资格暂停及T3整体。
+
+#### T3/T5 次日开盘模拟纯约束增量
+
+状态：已完成：纯代理模型增量验收PASS；尚未接历史回放或生产目标。
+
+- [x] 调用方须传T日与ADV20截至日、执行日、证据引用和生效的tick/手数/停牌/涨停事实；ADV20截至日必须等于T日且执行日晚于T日。按T日ADV20的1%及含股票10bps/ETF5bps不利滑点价格算整手容量，支持双倍滑点敏感性。
+- [x] 含滑点开盘价落在入场区间外、一字涨停或停牌不成交；次日全天成交额变化不影响结果，容量不足只部分成交或拒绝。
+- [x] 定向`pytest backend/tests/unit/quant_research/test_opening_execution.py -q -x --tb=short -p no:cacheprovider`，17 passed；独立Code Review R1两项major与一项minor修复后R2 PASS，无DB/真实LLM。
+- [x] 当时验收范围仅纯接口：证据引用字符串不验证原件/发布时间/提交可见性，执行日尚未独立核实为下一开市日；下一增量接日期规则与日历检查，历史回放和真实收益认证继续阻断。
+
+#### T3 按证券与日期生效的交易规则契约增量
+
+状态：已完成：规则纯契约及开盘模拟消费验收PASS；规则来源持久化和生产规划器接线仍待完成。
+
+- [x] 规则记录显式证券、资产类别、执行生效区间、日期级发布日期、来源引用、价格tick、最低/递增/最高买入数量和T+0/T+1；按证券和执行日须唯一匹配，缺失/重叠/畸形拒绝。同T日发布因日期粒度不足以证明收盘前可得，保守拒绝。
+- [x] 开盘模拟实际消费规则tick和买入数量步长，普通100股整手与科创最低200股后逐股递增分别验算；T须是CN开市日，执行日须是下一CN开市日，停牌无开盘价可拒绝。
+- [x] 定向`.venv\Scripts\python.exe -m pytest backend/tests/unit/quant_strategy/test_instrument_rules.py backend/tests/unit/quant_research/test_opening_execution.py -q -x --tb=short -p no:cacheprovider`，33 passed；独立Code Review日历边界两轮修复后PASS，同日发布日期粒度delta复核PASS；无DB/真实LLM。
+- [x] 来源引用与发布日期目前仍为调用方声明，未验证上游原件；真实规则表、历史逐证券覆盖、生产规划器及组合目标/回放均未接，因此T3/T5整体不验收。
+
+#### T3 规则原件与逐证券解释持久化增量
+
+状态：已完成：持久化诊断增量验收PASS；依赖日期规则契约增量。规则原件认证及生产读取仍为后续门禁。
+
+- [x] 0025迁移建独立不可变来源原文表与逐证券规则解释表，原文字节/SHA、有效期和规范规则hash分别保存；相同身份重放幂等、漂移拒绝，不覆盖冲突来源。
+- [x] 诊断repository读时重算原文与解释hash，同证券执行日不同来源冲突为未知；历史来源声明不转生产授权。
+- [x] 隔离`liveprofit_quant_strategy_test`运行`test_instrument_rule_repository.py` 4 passed，与规则/开盘纯测合计37 passed；fixture核实仅重建该测试库，无真实LLM/主库写入。
+- [x] 独立Code Review无blocker/major，两项minor（int4最小量、尾随零tick）修复后delta PASS；result/knowledge同步。剩余来源认证、持久规则的生产接线和历史逐证券覆盖。

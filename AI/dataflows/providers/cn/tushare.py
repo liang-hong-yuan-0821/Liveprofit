@@ -18,6 +18,7 @@ import threading
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
+import numpy as np
 import pandas as pd
 
 from ..base_provider import BaseStockDataProvider, ProviderNetworkAccessDenied
@@ -66,13 +67,19 @@ INDEX_FACTOR_FIELDS = (
     "macd_dif_bfq,macd_dea_bfq,macd_bfq"
 )
 STOCK_FACTOR_FIELDS = (
-    "ts_code,trade_date,ma_bfq_5,ma_bfq_10,ma_bfq_20,ma_bfq_60,ma_bfq_250,"
+    "ts_code,trade_date,close,ma_bfq_5,ma_bfq_10,ma_bfq_20,ma_bfq_60,ma_bfq_250,"
+    "atr_qfq,"
     "boll_mid_bfq,boll_upper_bfq,boll_lower_bfq,"
     "macd_dif_bfq,macd_dea_bfq,macd_bfq,"
     "rsi_bfq_6,rsi_bfq_12,rsi_bfq_24,"
     "ma_qfq_5,ma_qfq_20,ma_qfq_60,"
     "boll_mid_qfq,boll_upper_qfq,boll_lower_qfq,"
     "macd_dif_qfq,macd_dea_qfq,macd_qfq,rsi_qfq_6"
+)
+FUND_FACTOR_FIELDS = (
+    "ts_code,trade_date,close,atr_bfq,ma_bfq_5,ma_bfq_20,ma_bfq_60,ma_bfq_250,"
+    "boll_mid_bfq,boll_upper_bfq,boll_lower_bfq,"
+    "macd_dif_bfq,macd_dea_bfq,macd_bfq,rsi_bfq_6"
 )
 
 try:
@@ -2286,6 +2293,213 @@ class TushareProvider(BaseStockDataProvider):
                 std[col] = pd.to_numeric(df[col], errors="coerce")
         return std
 
+    def get_fund_factor_df(self, ts_code: str, start_date: str, end_date: str, fields: str | None = None):
+        """Read unadjusted fund factors; prices must use matching raw OHLC basis."""
+        if not self.connected:
+            return None
+        code = self._normalize_code(ts_code)
+        try:
+            df = self._api_call(
+                self.api.fund_factor_pro,
+                timeout=_TUSHARE_FACTOR_TIMEOUT,
+                ts_code=code,
+                start_date=start_date.replace("-", ""),
+                end_date=end_date.replace("-", ""),
+                fields=fields or FUND_FACTOR_FIELDS,
+            )
+        except Exception as exc:
+            logger.warning("基金 %s 因子拉取失败: %s", code, exc)
+            return None
+        if df is None or df.empty or not {"ts_code", "trade_date"} <= set(df.columns):
+            return None
+        df = _sort_asc_by_trade_date(df)
+        result = pd.DataFrame({
+            "ts_code": df["ts_code"].astype(str),
+            "trade_date": pd.to_datetime(df["trade_date"], errors="coerce").dt.strftime("%Y-%m-%d"),
+        })
+        if result["trade_date"].isna().any() or not result["ts_code"].eq(code).all():
+            return None
+        for column in df.columns:
+            if column not in ("ts_code", "trade_date"):
+                result[column] = pd.to_numeric(df[column], errors="coerce")
+        return result
+
+    def get_historical_st_df(self, trade_date: str):
+        """Return verified daily ST members; an empty response is unknown, not all-clear."""
+        if not self.connected:
+            return None
+        td = self._normalize_date(trade_date)
+        try:
+            frame = self._api_call(
+                self.api.stock_st, timeout=_TUSHARE_FACTOR_TIMEOUT, trade_date=td,
+                fields="ts_code,trade_date,type,type_name",
+            )
+        except Exception as exc:
+            logger.warning("历史 ST %s 拉取失败: %s", trade_date, exc)
+            return None
+        if frame is None or frame.empty or len(frame) >= 1000:
+            return None
+        if not {"ts_code", "trade_date", "type"} <= set(frame.columns):
+            return None
+        dates = pd.to_datetime(frame["trade_date"].astype(str), errors="coerce")
+        if dates.isna().any() or not dates.dt.strftime("%Y%m%d").eq(td).all():
+            return None
+        if frame["ts_code"].isna().any() or frame["ts_code"].duplicated().any():
+            return None
+        result = frame[["ts_code", "type"]].copy()
+        result["trade_date"] = dates.dt.strftime("%Y-%m-%d")
+        return result[["ts_code", "trade_date", "type"]].sort_values("ts_code").reset_index(drop=True)
+
+    def get_bse_mapping_df(self):
+        """Fetch the complete BSE code identity map; switching dates are not inferred."""
+        if not self.connected:
+            return None
+        try:
+            frame = self._api_call(
+                self.api.bse_mapping, fields="o_code,n_code,list_date",
+                timeout=_TUSHARE_FACTOR_TIMEOUT,
+            )
+        except Exception as exc:
+            logger.warning("北交所新旧代码对照获取失败: %s", exc)
+            return None
+        if frame is None or not {"o_code", "n_code", "list_date"} <= set(frame):
+            return None
+        if (len(frame) < 200 or len(frame) >= 1000
+                or frame[["o_code", "n_code", "list_date"]].isna().any().any()
+                or frame["o_code"].duplicated().any()
+                or frame["n_code"].duplicated().any()
+                or not frame["o_code"].astype(str).str.endswith(".BJ").all()
+                or not frame["n_code"].astype(str).str.match(r"^920[0-9]{3}\.BJ$").all()):
+            return None
+        dates = pd.to_datetime(frame["list_date"].astype(str), errors="coerce")
+        if dates.isna().any():
+            return None
+        return frame[["o_code", "n_code", "list_date"]].reset_index(drop=True)
+
+    def get_verified_full_day_suspensions_df(self, trade_date: str):
+        """Cross-check dated S events against independent daily presence."""
+        if not self.connected:
+            return None
+        td = self._normalize_date(trade_date)
+        try:
+            events = self._api_call(
+                self.api.suspend_d, trade_date=td,
+                fields="ts_code,trade_date,suspend_type,suspend_timing",
+            )
+            daily = self._api_call(
+                self.api.daily, trade_date=td, fields="ts_code,trade_date",
+            )
+        except Exception as exc:
+            logger.warning("全天停牌交叉核验 %s 失败: %s", trade_date, exc)
+            return None
+        if (events is None or daily is None or len(events) >= 5000
+                or len(daily) >= 6000
+                or not {"ts_code", "trade_date", "suspend_type", "suspend_timing"} <= set(events)
+                or not {"ts_code", "trade_date"} <= set(daily)):
+            return None
+        for source in (events, daily):
+            dates = pd.to_datetime(source["trade_date"].astype(str), errors="coerce")
+            if (dates.isna().any() or not dates.dt.strftime("%Y%m%d").eq(td).all()
+                    or source["ts_code"].isna().any()):
+                return None
+        if (daily["ts_code"].duplicated().any()
+                or not set(events["suspend_type"].astype(str)) <= {"S", "R"}):
+            return None
+        if pd.Timestamp(td) < pd.Timestamp("2021-11-15"):
+            # NEEQ-era .BJ events can appear in this upstream response years
+            # before the BSE opened; they are not part of the A-share pool.
+            events = events.loc[~events["ts_code"].astype(str).str.endswith(".BJ")].copy()
+        old_codes = set(events.loc[
+            events["ts_code"].astype(str).str.endswith(".BJ")
+            & ~events["ts_code"].astype(str).str.match(r"^920[0-9]{3}\.BJ$"),
+            "ts_code"].astype(str))
+        if old_codes:
+            mapping = self.get_bse_mapping_df()
+            if mapping is None:
+                return None
+            aliases = dict(zip(mapping["o_code"], mapping["n_code"]))
+            # Three former Selected Layer codes transferred to SH/SZ before
+            # the 920 migration and have no 920 alias. Preserve their dated
+            # BJ identity; the ingest layer checks it against the stock pool.
+            events = events.assign(ts_code=events["ts_code"].replace(aliases))
+        traded = set(daily["ts_code"].astype(str))
+        full_day = []
+        for code, group in events.groupby("ts_code", sort=False):
+            s_rows = group.loc[group["suspend_type"].eq("S")]
+            if (len(s_rows) == 1 and len(group) == 1
+                    and str(s_rows.iloc[0]["suspend_timing"]).strip().lower()
+                    in ("", "nan", "none") and str(code) not in traded):
+                full_day.append(str(code))
+        return pd.DataFrame({"ts_code": sorted(full_day),
+                             "trade_date": [pd.Timestamp(td).strftime("%Y-%m-%d")] * len(full_day)})
+
+    def get_etf_basic_df(self):
+        """Fetch all lifecycle statuses; leave index/type classification to research."""
+        if not self.connected:
+            return None
+        fields = "ts_code,index_code,exchange,etf_type,list_date,list_status"
+        frames = []
+        for status in ("L", "D", "P"):
+            try:
+                frame = self._api_call(
+                    self.api.etf_basic, timeout=_TUSHARE_FACTOR_TIMEOUT,
+                    list_status=status, fields=fields,
+                )
+            except Exception as exc:
+                logger.warning("ETF 目录 %s 拉取失败: %s", status, exc)
+                return None
+            if frame is None or frame.empty or len(frame) >= 5000 or not set(fields.split(",")) <= set(frame.columns):
+                return None
+            if not frame["list_status"].eq(status).all() or frame["ts_code"].isna().any():
+                return None
+            frames.append(frame[fields.split(",")].copy())
+        result = pd.concat(frames, ignore_index=True)
+        if result["ts_code"].duplicated().any():
+            return None
+        raw_dates = result["list_date"]
+        unknown_dates = raw_dates.isna() | raw_dates.astype(str).str.strip().eq("")
+        dates = pd.to_datetime(raw_dates, errors="coerce")
+        # Preserve a source-unknown listing date as NULL on that instrument.
+        # An unknown row cannot certify research, but must not discard every
+        # otherwise valid ETF observation in the same catalog response.
+        if (dates.isna() & ~unknown_dates).any():
+            return None
+        result["list_date"] = dates.dt.strftime("%Y-%m-%d")
+        return result.sort_values("ts_code").reset_index(drop=True)
+
+    def get_etf_limit_df(self, trade_date: str):
+        """ETF-specific limits; a capped or malformed day is unknown."""
+        if not self.connected:
+            return None
+        td = self._normalize_date(trade_date)
+        try:
+            frame = self._api_call(
+                self.api.etf_limit, timeout=_TUSHARE_FACTOR_TIMEOUT,
+                trade_date=td,
+                fields="ts_code,trade_date,asset_type,exchange,up_limit,down_limit",
+            )
+        except Exception as exc:
+            logger.warning("ETF涨跌停价 %s 拉取失败: %s", trade_date, exc)
+            return None
+        required = {"ts_code", "trade_date", "asset_type", "exchange", "up_limit", "down_limit"}
+        if frame is None or frame.empty or len(frame) >= 3000 or not required <= set(frame):
+            return None
+        dates = pd.to_datetime(frame["trade_date"].astype(str), errors="coerce")
+        if (dates.isna().any() or not dates.dt.strftime("%Y%m%d").eq(td).all()
+                or frame["ts_code"].isna().any() or frame["ts_code"].duplicated().any()
+                or not frame["asset_type"].eq("ETF").all()):
+            return None
+        result = frame.copy()
+        result["trade_date"] = dates.dt.strftime("%Y-%m-%d")
+        for column in ("up_limit", "down_limit"):
+            result[column] = pd.to_numeric(result[column], errors="coerce")
+        if (result[["up_limit", "down_limit"]].isna().any().any()
+                or not np.isfinite(result[["up_limit", "down_limit"]].to_numpy(dtype=float)).all()
+                or (result[["up_limit", "down_limit"]] <= 0).any().any()
+                or (result["up_limit"] < result["down_limit"]).any()):
+            return None
+        return result.sort_values("ts_code").reset_index(drop=True)
+
     def get_trade_cal(self, start_date: str, end_date: str, market: str = "CN"):
         """获取交易日历（DataFrame：trade_date, is_open）。V1 仅支持 CN。"""
         if market != "CN":
@@ -2463,8 +2677,66 @@ class TushareProvider(BaseStockDataProvider):
                 df[col] = pd.to_numeric(df[col], errors="coerce")
         return df.sort_values(["ts_code", "trade_date"]).reset_index(drop=True)
 
-    def get_full_market_trade_status_df(self, trade_date: str):
-        """合并 stk_limit、suspend_d 与 stock_basic，生成每只活跃股票的日状态。"""
+    def get_fund_daily_df(self, ts_code: str, start_date: str, end_date: str):
+        """Validate one symbol's raw daily history; reject a capped response."""
+        if not self.connected:
+            return None
+        code = self._normalize_code(ts_code)
+        try:
+            first, last = pd.Timestamp(start_date), pd.Timestamp(end_date)
+            if first > last or not code.endswith((".SH", ".SZ")):
+                return None
+            frame = self._api_call(
+                self.api.fund_daily, ts_code=code,
+                start_date=first.strftime("%Y%m%d"), end_date=last.strftime("%Y%m%d"),
+                fields=",".join(self._STORE_DAILY_COLS),
+            )
+            if (frame is None or frame.empty or len(frame) >= 8000
+                    or not set(self._STORE_DAILY_COLS) <= set(frame.columns)):
+                return None
+            dates = pd.to_datetime(frame["trade_date"].astype(str), errors="coerce")
+            if (not frame["ts_code"].eq(code).all() or dates.isna().any()
+                    or dates.duplicated().any() or not dates.between(first, last).all()):
+                return None
+            result = frame[self._STORE_DAILY_COLS].copy()
+            result["trade_date"] = dates.dt.strftime("%Y-%m-%d")
+            for column in self._STORE_DAILY_COLS[2:]:
+                result[column] = pd.to_numeric(result[column], errors="coerce")
+            close = result["close"]
+            if close.isna().any() or not np.isfinite(close).all() or (close <= 0).any():
+                return None
+            return result.sort_values("trade_date").reset_index(drop=True)
+        except Exception as exc:
+            logger.warning("基金历史日线 %s 拉取失败: %s", code, exc)
+            return None
+
+    def get_full_market_fund_factor_df(self, trade_date: str):
+        """One trade date only: the proxy returns a full-market fund factor slice."""
+        if not self.connected:
+            return None
+        try:
+            df = self._api_call(
+                self.api.fund_factor_pro, timeout=_TUSHARE_FACTOR_TIMEOUT,
+                trade_date=self._normalize_date(trade_date), fields=FUND_FACTOR_FIELDS,
+            )
+        except Exception as exc:
+            logger.warning("全市场基金技术因子 %s 拉取失败: %s", trade_date, exc)
+            return None
+        if df is None or df.empty or not {"ts_code", "trade_date"} <= set(df.columns):
+            return None
+        result = df.copy()
+        dates = pd.to_datetime(result["trade_date"].astype(str), errors="coerce")
+        if dates.isna().any():
+            return None
+        result["trade_date"] = dates.dt.strftime("%Y-%m-%d")
+        for column in result.columns:
+            if column not in ("ts_code", "trade_date"):
+                result[column] = pd.to_numeric(result[column], errors="coerce")
+        return result.sort_values(["ts_code", "trade_date"]).reset_index(drop=True)
+
+    def get_full_market_trade_status_df(self, trade_date: str, *, st_observations=None,
+                                       no_trade_observations=None):
+        """合并涨跌停、停牌、逐日 ST 与股票目录，生成活跃股票的日状态。"""
         if not self.connected:
             return None
         td = self._normalize_date(trade_date)
@@ -2475,58 +2747,261 @@ class TushareProvider(BaseStockDataProvider):
             )
             suspended = self._api_call(
                 self.api.suspend_d, trade_date=td,
-                fields="ts_code,trade_date,suspend_type",
+                fields="ts_code,trade_date,suspend_type,suspend_timing",
+            )
+            daily_presence = self._api_call(
+                self.api.daily, trade_date=td, fields="ts_code,trade_date",
             )
             basics = getattr(self, "_quant_trade_status_basics", None)
             if basics is None:
-                basics = self._api_call(
-                    self.api.stock_basic, exchange="", list_status="L",
-                    fields="ts_code,name,market,list_status",
-                )
+                basics = self.get_stock_basic_df()
                 self._quant_trade_status_basics = basics
         except Exception as exc:
             logger.warning("股票交易状态 %s 拉取失败: %s", trade_date, exc)
             return None
-        if basics is None or basics.empty or limits is None or suspended is None:
+        if basics is None or basics.empty or limits is None or suspended is None or daily_presence is None:
             return None
+        required_basic = {"ts_code", "name", "market", "list_date", "delist_date"}
+        if not required_basic <= set(basics) or basics["ts_code"].duplicated().any():
+            return None
+        if "list_status" in basics:
+            basics = basics.loc[basics["list_status"].isin(("L", "D"))].copy()
+        listing = pd.to_datetime(basics["list_date"], errors="coerce")
+        delisting = pd.to_datetime(basics["delist_date"], errors="coerce")
+        if listing.isna().any() or (basics["delist_date"].notna() & delisting.isna()).any():
+            return None
+        if "list_status" in basics and basics.loc[basics["list_status"].eq("D"), "delist_date"].isna().any():
+            return None
+        day = pd.Timestamp(td)
+        basics = basics.loc[(listing <= day) & (delisting.isna() | (day < delisting))].copy()
+        # Current BSE codes can carry an earlier NEEQ listing date. They could
+        # not have traded on BSE before its 2021-11-15 opening.
+        if day < pd.Timestamp("2021-11-15"):
+            basics = basics.loc[~basics["ts_code"].astype(str).str.endswith(".BJ")].copy()
+        if basics.empty:
+            return None
+        extra_no_trade_codes = set()
+        if no_trade_observations is not None:
+            required_no_trade = {"ts_code", "trade_date", "reported_trading"}
+            if (no_trade_observations.empty
+                    or not required_no_trade <= set(no_trade_observations.columns)
+                    or no_trade_observations["ts_code"].isna().any()
+                    or no_trade_observations["ts_code"].duplicated().any()
+                    or not set(no_trade_observations["ts_code"].astype(str)) <= set(basics["ts_code"].astype(str))
+                    or not pd.to_datetime(no_trade_observations["trade_date"], errors="coerce").dt.strftime("%Y%m%d").eq(td).all()
+                    or not no_trade_observations["reported_trading"].map(
+                        lambda value: type(value) is bool and value is False,
+                    ).all()):
+                return None
+            extra_no_trade_codes = set(no_trade_observations["ts_code"].astype(str))
+        st_ambiguous_codes = set()
+        if st_observations is None:
+            st_members = self.get_historical_st_df(trade_date)
+            if st_members is None:
+                return None
+            st_source = "tushare"
+        else:
+            required_st = {"ts_code", "trade_date", "is_st", "reported_trading", "st_conflict"}
+            active_st_codes = set(basics["ts_code"].astype(str))
+            sh_sz_codes = {code for code in active_st_codes if not code.endswith(".BJ")}
+            if (not required_st <= set(st_observations.columns)
+                    or st_observations["ts_code"].isna().any()
+                    or st_observations["ts_code"].duplicated().any()
+                    or set(st_observations["ts_code"].astype(str)) not in (active_st_codes, sh_sz_codes)
+                    or not pd.to_datetime(st_observations["trade_date"], errors="coerce").dt.strftime("%Y%m%d").eq(td).all()
+                    or not st_observations["is_st"].map(lambda value: type(value) is bool).all()
+                    or not st_observations["st_conflict"].map(lambda value: type(value) is bool).all()
+                    or not st_observations["reported_trading"].map(
+                        lambda value: type(value) is bool,
+                    ).all()):
+                return None
+            st_members = st_observations.loc[st_observations["is_st"], ["ts_code"]].copy()
+            st_ambiguous_codes = set(st_observations.loc[
+                st_observations["st_conflict"], "ts_code",
+            ].astype(str))
+            if set(st_observations["ts_code"].astype(str)) != active_st_codes:
+                # BaoStock covers SH/SZ only. BSE still requires a valid dated
+                # Tushare membership response; absence never proves non-ST.
+                vendor_st = self.get_historical_st_df(trade_date)
+                if vendor_st is None:
+                    st_ambiguous_codes |= active_st_codes - sh_sz_codes
+                else:
+                    bse_st = vendor_st.loc[vendor_st["ts_code"].astype(str).str.endswith(".BJ"), ["ts_code"]]
+                    st_members = pd.concat([st_members, bse_st], ignore_index=True)
+            st_source = "baostock_kline"
+        # Historical BSE suspension and ST feeds can still use pre-920 codes
+        # even when daily, limits and stock_basic already use the new code.
+        # Resolve identity before comparing the independent feeds. An old BJ
+        # code with no 920 alias remains valid only if today's stock directory
+        # still contains it; a mapped collision is not negative evidence.
+        # stk_limit also contains unrelated 900xxx.BJ legacy rows outside the
+        # active stock universe; only event/membership feeds need translation.
+        source_frames = (suspended, st_members)
+        if day < pd.Timestamp("2021-11-15"):
+            # The proxy can return NEEQ-era .BJ suspension codes before the
+            # Beijing exchange opened. They are outside this day's stock pool;
+            # forcing all of them through the later BSE alias map discards the
+            # entire SH/SZ status day when an old code has no alias.
+            suspended, st_members = (
+                data.loc[~data["ts_code"].astype(str).str.endswith(".BJ")].copy()
+                for data in source_frames
+            )
+            source_frames = (suspended, st_members)
+        old_bj_codes = set().union(*(
+            set(data.loc[
+                data["ts_code"].astype(str).str.endswith(".BJ")
+                & ~data["ts_code"].astype(str).str.match(r"^920[0-9]{3}\.BJ$"),
+                "ts_code"].astype(str))
+            for data in source_frames if "ts_code" in data
+        ))
+        if old_bj_codes:
+            mapping = self.get_bse_mapping_df()
+            if mapping is None:
+                return None
+            aliases = dict(zip(mapping["o_code"], mapping["n_code"]))
+            active_codes = set(basics["ts_code"].astype(str))
+            if not old_bj_codes - aliases.keys() <= active_codes:
+                return None
+            suspended, st_members = (
+                data.assign(ts_code=data["ts_code"].replace(aliases))
+                for data in source_frames
+            )
+            if st_members["ts_code"].duplicated().any():
+                return None
         # The proxy ignores suspend_date and returns a capped, undated history.
         # trade_date returns the requested day's S/R events, including a dated
         # field we can verify. It also ignores suspend_type filtering, so R
         # must be removed locally rather than counted as a suspension.
-        if len(suspended) >= 5000:
+        if len(suspended) >= 5000 or len(daily_presence) >= 6000:
             return None
         # None is failure, not proof of an empty suspension set. The proxy's
         # 6000-row cap and malformed/undated responses are likewise unknown.
         required = ((basics, ("ts_code", "name", "market")),
                     (limits, ("ts_code", "trade_date", "up_limit", "down_limit")),
-                    (suspended, ("ts_code", "trade_date", "suspend_type")))
+                    (suspended, ("ts_code", "trade_date", "suspend_type", "suspend_timing")),
+                    (daily_presence, ("ts_code", "trade_date")))
         for data, columns in required:
-            if len(data) >= 6000 or any(c not in data.columns for c in columns):
+            # stk_limit includes old/delisted instruments and can exceed 6000
+            # while still covering every stock listed on the requested date.
+            if any(c not in data.columns for c in columns):
                 return None
-            if data["ts_code"].isna().any() or data["ts_code"].duplicated().any():
+            if data["ts_code"].isna().any() or (data is not suspended and data["ts_code"].duplicated().any()):
                 return None
-        for data, column in ((limits, "trade_date"), (suspended, "trade_date")):
+        for data, column in ((limits, "trade_date"), (suspended, "trade_date"),
+                             (daily_presence, "trade_date")):
             dates = pd.to_datetime(data[column].astype(str), errors="coerce")
             if dates.isna().any() or not dates.dt.strftime("%Y%m%d").eq(td).all():
                 return None
         if not set(suspended["suspend_type"].astype(str)) <= {"S", "R"}:
+            return None
+        traded_codes = set(daily_presence["ts_code"].astype(str))
+        # S+R can describe a resumption followed by an intraday halt. A
+        # nonempty S timing proves the halt was intraday; blank S+R remains
+        # ambiguous and must not be collapsed into a full-day status.
+        timings = suspended["suspend_timing"].fillna("").astype(str).str.strip()
+        suspended = suspended.copy()
+        suspended["suspend_timing"] = timings
+        event_groups = suspended.groupby("ts_code", sort=False)
+        ambiguous_codes = set(st_ambiguous_codes)
+        intraday_codes = set()
+        timing_by_code = {}
+        for code, events in event_groups:
+            s_events = events.loc[events["suspend_type"].eq("S")]
+            r_events = events.loc[events["suspend_type"].eq("R")]
+            if len(s_events) > 1 or len(r_events) > 1:
+                ambiguous_codes.add(str(code))
+                continue
+            if len(s_events) == 1:
+                timing = str(s_events.iloc[0]["suspend_timing"])
+                if timing:
+                    intervals = [part.strip() for part in timing.split(",")]
+                    parsed = [re.fullmatch(
+                        r"(\d{1,2}):(\d{2})(?::(\d{2}))?-(\d{1,2}):(\d{2})(?::(\d{2}))?",
+                        part,
+                    )
+                              for part in intervals]
+                    seconds = [(
+                        3600 * int(match[1]) + 60 * int(match[2]) + int(match[3] or 0),
+                        3600 * int(match[4]) + 60 * int(match[5]) + int(match[6] or 0),
+                    ) for match in parsed if match is not None]
+                    # A positive interval may accompany a zero-length marker
+                    # in the source. Preserve both, but require positive proof
+                    # of an intraday halt rather than accepting markers alone.
+                    if (any(match is None for match in parsed)
+                            or any(int(match[1]) > 23 or int(match[4]) > 23
+                                   or int(match[2]) > 59 or int(match[5]) > 59
+                                   or int(match[3] or 0) > 59 or int(match[6] or 0) > 59
+                                   for match in parsed if match is not None)
+                            or any(start > end for start, end in seconds)
+                            or not any(start < end for start, end in seconds)
+                            or any(seconds[index][0] < seconds[index - 1][1]
+                                   for index in range(1, len(seconds)))):
+                        ambiguous_codes.add(str(code))
+                        continue
+                    intraday_codes.add(str(code))
+                    timing_by_code[str(code)] = timing
+                elif len(r_events) == 1:
+                    ambiguous_codes.add(str(code))
+                elif str(code) in traded_codes:
+                    # An untimed S alongside a bar cannot establish an
+                    # intraday halt; the vendor event could also be stale.
+                    ambiguous_codes.add(str(code))
+        ambiguous_codes &= set(basics["ts_code"].astype(str))
+        if st_observations is not None:
+            reported_no_trade = set(st_observations.loc[
+                ~st_observations["reported_trading"], "ts_code",
+            ].astype(str))
+            # A vendor no-trade flag is accepted only when the independent
+            # Tushare daily response also has no bar. An S/R timing conflict
+            # remains ambiguous even if the two no-trade feeds agree.
+        else:
+            reported_no_trade = set()
+        reported_no_trade |= extra_no_trade_codes
+        resumed_codes = set(suspended.loc[suspended["suspend_type"] == "R", "ts_code"].astype(str))
+        ambiguous_codes |= reported_no_trade & (traded_codes | resumed_codes | intraday_codes)
+        basics = basics.loc[~basics["ts_code"].isin(ambiguous_codes)].copy()
+        if basics.empty:
             return None
         if basics[["name", "market"]].isna().any().any():
             return None
         if limits.empty:
             limits = pd.DataFrame(columns=["ts_code", "up_limit", "down_limit"])
         suspended_codes = set(suspended.loc[suspended["suspend_type"] == "S", "ts_code"].astype(str))
+        suspended_codes |= reported_no_trade - traded_codes - resumed_codes - ambiguous_codes
+        active_codes = set(basics["ts_code"].astype(str))
+        # A missing limit quote is unknown execution data, not proof that the
+        # stock's ST/board/suspension observation is unusable. Conversely, a
+        # symbol absent from both daily and suspension feeds cannot be marked
+        # "not suspended" merely because it appears in today's stock_basic.
+        no_trade_evidence = active_codes - traded_codes - suspended_codes
+        ambiguous_codes |= no_trade_evidence
+        basics = basics.loc[~basics["ts_code"].isin(no_trade_evidence)].copy()
+        if basics.empty:
+            return None
+        active_codes -= no_trade_evidence
+        limits = limits.loc[limits["ts_code"].isin(active_codes)]
         frame = basics[["ts_code", "name", "market"]].merge(
             limits[[c for c in ("ts_code", "up_limit", "down_limit") if c in limits.columns]],
             on="ts_code", how="left",
         )
         frame["trade_date"] = pd.to_datetime(td).strftime("%Y-%m-%d")
         frame["is_suspended"] = frame["ts_code"].isin(suspended_codes)
-        frame["is_st"] = frame["name"].fillna("").astype(str).str.upper().str.contains(r"(?:\*?ST)", regex=True)
+        frame["suspension_scope"] = "none"
+        frame.loc[frame["is_suspended"], "suspension_scope"] = "full_day"
+        frame.loc[frame["is_suspended"] & frame["ts_code"].isin(traded_codes),
+                  "suspension_scope"] = "unknown"
+        frame.loc[frame["ts_code"].isin(intraday_codes), "suspension_scope"] = "intraday"
+        frame["suspend_timing"] = frame["ts_code"].map(timing_by_code)
+        frame["is_st"] = frame["ts_code"].isin(set(st_members["ts_code"]))
         frame["market_board"] = frame["market"]
-        return frame[[
-            "ts_code", "trade_date", "is_suspended", "is_st", "market_board", "up_limit", "down_limit"
+        result = frame[[
+            "ts_code", "trade_date", "is_suspended", "suspension_scope", "suspend_timing",
+            "is_st", "market_board", "up_limit", "down_limit"
         ]]
+        result.attrs["ambiguous_codes"] = sorted(ambiguous_codes)
+        result.attrs["st_source"] = st_source
+        result.attrs["uses_independent_trading"] = bool(extra_no_trade_codes)
+        return result
 
     def get_stock_basic_df(self):
         """全量获取股票目录的所有生命周期状态并归一为标准列。

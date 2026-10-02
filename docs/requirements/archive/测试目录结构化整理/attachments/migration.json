@@ -1,0 +1,1867 @@
+[
+  {
+    "old": "tests/__init__.py",
+    "new": "tests/__init__.py",
+    "sha256": "1cfe61a6e4f441bbd9173aa84062cd2f84655673a25af254149c5ad30a10fe6f"
+  },
+  {
+    "old": "tests/agents/__init__.py",
+    "new": "tests/ai/__init__.py",
+    "sha256": "2e2d06ca325d992d5bd6046ecb6e279066ed93872503b3308bcef74d963708e6"
+  },
+  {
+    "old": "tests/agents/integration/__init__.py",
+    "new": "tests/support/python/manual/__init__.py",
+    "sha256": "d38f0fc3cfdea64d040bc0ade2c81ac9fd31d44187085c134a695253c1783c47"
+  },
+  {
+    "old": "tests/agents/integration/run_agent.py",
+    "new": "tests/support/python/manual/run_agent.py",
+    "sha256": "f53d6fe72c91895205e0dcde59ec6f3c867594bf16610d9c22ad7997c733e42c"
+  },
+  {
+    "old": "tests/agents/marketAgents/__init__.py",
+    "new": "tests/ai/market/__init__.py",
+    "sha256": "406e6e0995a4ff43496125b0d1929ea685878620f6a7818f800c4e4ca460e2c2"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/__init__.py",
+    "new": "tests/ai/market/unit/__init__.py",
+    "sha256": "80e48bcd96e70cad293fd2cce67c32e103b8a814d9730b474ffdb2387b1cb328"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_cn_news_analyst.py",
+    "new": "tests/ai/market/integration/test_cn_news_analyst.py",
+    "sha256": "10f0b15bb24d185adc1bcf87be37209f955ac514f8694e12e873c52f96c0d08b"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_cn_tech_analyst.py",
+    "new": "tests/ai/market/integration/test_cn_tech_analyst.py",
+    "sha256": "961e4392cf0e12ecd20ad510263bb6dc543bec812f629534d6db0775f7292fdd"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_international_event_extraction.py",
+    "new": "tests/ai/market/integration/test_international_event_extraction.py",
+    "sha256": "b3ae432aef03be8ae3652ed1acd8fb6e5ee03e57af1cddc3bdd455c09facef1b"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_international_event_prefetch.py",
+    "new": "tests/ai/market/unit/test_international_event_prefetch.py",
+    "sha256": "69fd95ccf8bc8133a74559d696c8f863bf1c248db5c05693e47b0398e687871f"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_international_news_analyst.py",
+    "new": "tests/ai/market/integration/test_international_news_analyst.py",
+    "sha256": "875f0de4de1d1265b9a038ef3b92650916f7e7fae1364dbc6d2f35b79db7f7f0"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_kr_news_analyst.py",
+    "new": "tests/ai/market/integration/test_kr_news_analyst.py",
+    "sha256": "d2070399a68ad2f2cc764d03948885cc58c1ff17dd5b89aaa7965a0ec827f726"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_kr_tech_analyst.py",
+    "new": "tests/ai/market/integration/test_kr_tech_analyst.py",
+    "sha256": "25c537318004de9c6dd7fb8b83037ad381d850e5de8c9b4d68259b4926be8f48"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_market_structured_output.py",
+    "new": "tests/ai/market/unit/test_market_structured_output.py",
+    "sha256": "6070d5cbcbcb346098391422a759ef2e10cad6430284b86ce4c0568073f44b1b"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_risk_gate.py",
+    "new": "tests/ai/market/unit/test_risk_gate.py",
+    "sha256": "0ba234ca010271e5201dfc235b6044391a8d67249c3f598b6fde9e06fae0b1f2"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_us_news_analyst.py",
+    "new": "tests/ai/market/integration/test_us_news_analyst.py",
+    "sha256": "2d74a01e57cff194085db50151e96fe31b31d10e8df8b123152156295efb272f"
+  },
+  {
+    "old": "tests/agents/marketAgents/analysts/test_us_tech_analyst.py",
+    "new": "tests/ai/market/integration/test_us_tech_analyst.py",
+    "sha256": "79ee99e92a1f8b7ff396003f006a80e47dc86303c9f65e9cfaec403096298815"
+  },
+  {
+    "old": "tests/agents/position/__init__.py",
+    "new": "tests/ai/position/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "old": "tests/agents/position/conftest.py",
+    "new": "tests/backend/quant_strategy/integration/execution/conftest.py",
+    "sha256": "d80f0da4300a57cb8eaf5069172c8191624c6cf66efa75d7445fb37fb9237405"
+  },
+  {
+    "old": "tests/agents/position/test_execution.py",
+    "new": "tests/backend/quant_strategy/integration/execution/test_execution.py",
+    "sha256": "2b341a8f34bf0325079dc8c8c172864e8ef763190745bdb8ea95b4cc4512f04e"
+  },
+  {
+    "old": "tests/agents/position/test_position_manager.py",
+    "new": "tests/ai/position/unit/test_position_manager.py",
+    "sha256": "f0d168dbd7c683cd1afe3e351f4907d657906266a212d866744441d40612b6f8"
+  },
+  {
+    "old": "tests/agents/position/test_position_planner.py",
+    "new": "tests/backend/quant_strategy/unit/test_position_planner.py",
+    "sha256": "ee6894062df1b5e3c10f378428f9f772f8c0db7517db7586aab8aec1ffd38470"
+  },
+  {
+    "old": "tests/agents/position/test_signals_pagination.py",
+    "new": "tests/backend/quant_strategy/integration/execution/test_signals_pagination.py",
+    "sha256": "7c8876a5e8be7eafa39eb72170e20c9bc7bc9f7337163772ac73ddf09ddfd7a4"
+  },
+  {
+    "old": "tests/agents/screening/__init__.py",
+    "new": "tests/ai/screening/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "old": "tests/agents/screening/test_screener.py",
+    "new": "tests/ai/screening/unit/test_screener.py",
+    "sha256": "1b0bbbed72495ebb2738d246bb25e45a76b0f0b7ec8a98b3bc01a2ef58f5da71"
+  },
+  {
+    "old": "tests/agents/sectorAgents/__init__.py",
+    "new": "tests/ai/sector/__init__.py",
+    "sha256": "be91945b486dee00f1ab81a84c09fe384c61178685d60c6308bfb89ba96ef9fa"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/__init__.py",
+    "new": "tests/ai/sector/unit/__init__.py",
+    "sha256": "c3f661e94a31a2e504bf0029b18a448645474fe33301ef3a6ea9f4ca19cb4d6d"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/test_sector_charts.py",
+    "new": "tests/ai/sector/unit/test_sector_charts.py",
+    "sha256": "2aa446e444b2122205d11e9d558769c965fd44dda8720c35f6aeba6fe861b42d"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/test_sector_event_prefetch.py",
+    "new": "tests/ai/sector/unit/test_sector_event_prefetch.py",
+    "sha256": "0d887ad6149185ef57b42d4a75825e20f901db88aebb9f8c9682d36b6a279a20"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/test_sector_news_analyst.py",
+    "new": "tests/ai/sector/integration/test_sector_news_analyst.py",
+    "sha256": "701594733182d223277ff970112e2e352ac2e8e55f4af837b45fcd85840ce5c4"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/test_sector_rotation_analyst.py",
+    "new": "tests/ai/sector/integration/test_sector_rotation_analyst.py",
+    "sha256": "5497da727b5c9895b4ed67049482d9a65cbe579d95458b03d0bc29225754e47d"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/test_sector_structured_list.py",
+    "new": "tests/ai/sector/unit/test_sector_structured_list.py",
+    "sha256": "e44bc7f1175e7c7a8a30bb52b77bdd1b932f821d92b7089004acc854e0a6af2f"
+  },
+  {
+    "old": "tests/agents/sectorAgents/analysts/test_sector_tech_analyst.py",
+    "new": "tests/ai/sector/integration/test_sector_tech_analyst.py",
+    "sha256": "1b04a218c9bde4f3f50de68c2c4523a4852990c0220f13c430f87e708c227709"
+  },
+  {
+    "old": "tests/agents/stockAgents/__init__.py",
+    "new": "tests/ai/stock/__init__.py",
+    "sha256": "80f184770d5c897c555f427eb1c6b967d08cdd104271712059fa20dfe1ddb936"
+  },
+  {
+    "old": "tests/agents/stockAgents/analysts/__init__.py",
+    "new": "tests/ai/stock/unit/analysts/__init__.py",
+    "sha256": "2be021052c2729eb1b464b4894dc87ad8a05dc1976021f1b2b2bf0fc86df45dc"
+  },
+  {
+    "old": "tests/agents/stockAgents/analysts/test_fundamentals_analyst.py",
+    "new": "tests/ai/stock/integration/analysts/test_fundamentals_analyst.py",
+    "sha256": "f3977a84ccaa12727b08f998eb8ea7880cd32e02b00e73b3b90a8d1b4bbe9f74"
+  },
+  {
+    "old": "tests/agents/stockAgents/analysts/test_market_analyst.py",
+    "new": "tests/ai/stock/integration/analysts/test_market_analyst.py",
+    "sha256": "8a47241e5fdba5f2a705bf4403c10c83a775d24d2435b3b9f0993e5bdeceb5bf"
+  },
+  {
+    "old": "tests/agents/stockAgents/analysts/test_news_analyst.py",
+    "new": "tests/ai/stock/integration/analysts/test_news_analyst.py",
+    "sha256": "00629130180c5b4a360fd29f2cb23497b8b66a9f5ceb2d3091ff99a08f7a36bb"
+  },
+  {
+    "old": "tests/agents/stockAgents/analysts/test_social_media_analyst.py",
+    "new": "tests/ai/stock/integration/analysts/test_social_media_analyst.py",
+    "sha256": "b056f0de61b07e5065b595c06e3fc98c029c0c100645bd5bc9cbf313e19c96ff"
+  },
+  {
+    "old": "tests/agents/stockAgents/analysts/test_stock_event_prefetch.py",
+    "new": "tests/ai/stock/unit/analysts/test_stock_event_prefetch.py",
+    "sha256": "4d110c284f729dac6352b5a72f847170f9bbc21528b9c58543b0710ad6a3eb5a"
+  },
+  {
+    "old": "tests/agents/stockAgents/managers/__init__.py",
+    "new": "tests/ai/stock/unit/managers/__init__.py",
+    "sha256": "d490d26c1822bece8d9cdee6c921b43fb8e88187ba95571d078786f0a1e1796e"
+  },
+  {
+    "old": "tests/agents/stockAgents/managers/test_research_manager.py",
+    "new": "tests/ai/stock/integration/managers/test_research_manager.py",
+    "sha256": "2f999a06260bae07a5d8e0f93cd73021568b4cc46ad83f624e13b2e6abdc56c8"
+  },
+  {
+    "old": "tests/agents/stockAgents/managers/test_risk_manager.py",
+    "new": "tests/ai/stock/integration/managers/test_risk_manager.py",
+    "sha256": "e4051313d42fe804e33791b88274088552891759bb1485d06d2beb3f1419f4cf"
+  },
+  {
+    "old": "tests/agents/stockAgents/researchers/__init__.py",
+    "new": "tests/ai/stock/unit/researchers/__init__.py",
+    "sha256": "e49cddff4f76ffbf9e44f016e667c17937fa36581734aa26cb4d6eb8fbae3965"
+  },
+  {
+    "old": "tests/agents/stockAgents/researchers/test_bear_researcher.py",
+    "new": "tests/ai/stock/integration/researchers/test_bear_researcher.py",
+    "sha256": "fcb86d8b89629e7b4efc29f72ecc65c8d4fc2a05023464f4cb921bcfb36ca4d0"
+  },
+  {
+    "old": "tests/agents/stockAgents/researchers/test_bull_researcher.py",
+    "new": "tests/ai/stock/integration/researchers/test_bull_researcher.py",
+    "sha256": "942871245a0d296c6ce2ef7fce01275234048d70eb4e5f7911ae148f0295aa79"
+  },
+  {
+    "old": "tests/agents/stockAgents/risk_mgmt/__init__.py",
+    "new": "tests/ai/stock/unit/risk_mgmt/__init__.py",
+    "sha256": "5d90e2ad03cabd59ff29c2ae283dc177b22ec903bdd64ae93f2d8c84bafbfa90"
+  },
+  {
+    "old": "tests/agents/stockAgents/risk_mgmt/test_aggresive_debator.py",
+    "new": "tests/ai/stock/integration/risk_mgmt/test_aggresive_debator.py",
+    "sha256": "bf74a783840291c1b43164e8ad4460e209048c27e571911649ce1e0339169c26"
+  },
+  {
+    "old": "tests/agents/stockAgents/risk_mgmt/test_conservative_debator.py",
+    "new": "tests/ai/stock/integration/risk_mgmt/test_conservative_debator.py",
+    "sha256": "b47e0a8e953f37198263fa4dce5abfc70cad3a0a5c58cace4b9264a7b0209998"
+  },
+  {
+    "old": "tests/agents/stockAgents/risk_mgmt/test_neutral_debator.py",
+    "new": "tests/ai/stock/integration/risk_mgmt/test_neutral_debator.py",
+    "sha256": "76b1a3d4cbe44b214008b0203a2e1a1921b3b254f252db9be23672fb90bf4a2f"
+  },
+  {
+    "old": "tests/agents/stockAgents/trader/__init__.py",
+    "new": "tests/ai/stock/unit/trader/__init__.py",
+    "sha256": "cd9ebf86b609c1a5ff9f2fecc85a4c966ed445225cdbc195938479f985f17863"
+  },
+  {
+    "old": "tests/agents/stockAgents/trader/test_trader.py",
+    "new": "tests/ai/stock/integration/trader/test_trader.py",
+    "sha256": "f96e72e88e00773f6ab1f55e91625214f534c4ad3a98a3d0b3253e902404b72d"
+  },
+  {
+    "old": "tests/conftest.py",
+    "new": "tests/support/python/live_dependencies.py",
+    "sha256": "7618c12225aa51693b60c64d87b014babbf4c34e0674f27b6399ab6439d5c3d1"
+  },
+  {
+    "old": "tests/dataflows/__init__.py",
+    "new": "tests/data/transforms/unit/__init__.py",
+    "sha256": "68ba3c15159574fa4e97feb27c8cf126048e6d546e0c6ab8225788dc8f14abcd"
+  },
+  {
+    "old": "tests/dataflows/benchmark_result_20260808_022330.json",
+    "new": "tests/data/providers/fixtures/benchmarks/benchmark_result_20260808_022330.json",
+    "sha256": "5e46da4ec8ecd58c147f5f38299f218d820fbe8a397a16c3d60585cdfbe5d771"
+  },
+  {
+    "old": "tests/dataflows/benchmark_result_20260808_022534.json",
+    "new": "tests/data/providers/fixtures/benchmarks/benchmark_result_20260808_022534.json",
+    "sha256": "87e5f5fe6e2723d10a5a6f7c549ffedeb1e4ed310ea042efd8029d3f375077f9"
+  },
+  {
+    "old": "tests/dataflows/benchmark_result_20260808_025258.json",
+    "new": "tests/data/providers/fixtures/benchmarks/benchmark_result_20260808_025258.json",
+    "sha256": "b448f3636db7d37db8c69dd9fb2131c5f15acabe999a39744b2d46093dc53d2b"
+  },
+  {
+    "old": "tests/dataflows/benchmark_result_20260808_030030.json",
+    "new": "tests/data/providers/fixtures/benchmarks/benchmark_result_20260808_030030.json",
+    "sha256": "3122d3118840dd6e94acfc458ed3d8ddecdcea71b690804292b00e63c32046b6"
+  },
+  {
+    "old": "tests/dataflows/benchmark_result_20260808_030341.json",
+    "new": "tests/data/providers/fixtures/benchmarks/benchmark_result_20260808_030341.json",
+    "sha256": "649c334231d0afedbcdf6235ef659bf0777a93f0520e773af01d6682ad56b671"
+  },
+  {
+    "old": "tests/dataflows/benchmark_tushare_provider.py",
+    "new": "tests/support/python/manual/benchmark_tushare_provider.py",
+    "sha256": "feeca72da359d5f24322ada65a4b10d1b3b88afaf9fc3e483030af539ea871af"
+  },
+  {
+    "old": "tests/dataflows/ingest/test_etf_catalog.py",
+    "new": "tests/data/ingest/unit/test_etf_catalog.py",
+    "sha256": "d45a494afad1f356f22e0145971bd4ea5e32724f8a5badbfe58454335f4a93e0"
+  },
+  {
+    "old": "tests/dataflows/ingest/test_fund_factors.py",
+    "new": "tests/data/ingest/unit/test_fund_factors.py",
+    "sha256": "1257d5eed546f2a087298e24a75edf096f2e18109ba06f4fcca9889461c6f62b"
+  },
+  {
+    "old": "tests/dataflows/providers/__init__.py",
+    "new": "tests/data/providers/unit/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_bse_mapping.py",
+    "new": "tests/data/providers/unit/test_tushare_bse_mapping.py",
+    "sha256": "bb68d081f66b023b4cfde3c8175602c5f24b751d90abb1e3fc7e4c3ec69e6d8d"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_connection.py",
+    "new": "tests/data/providers/unit/test_tushare_connection.py",
+    "sha256": "b5da3af54dffd06883a8edaa60be88491588e4493724ef8cf7efa6aa717dd4ab"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_etf_basic.py",
+    "new": "tests/data/providers/unit/test_tushare_etf_basic.py",
+    "sha256": "5a576dc87317464cfdff9882f922041dd0fbfe97b66f9ba06f3e47e4702cb576"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_etf_limit.py",
+    "new": "tests/data/providers/unit/test_tushare_etf_limit.py",
+    "sha256": "10a2ec9c3f4239ab2ec6c4a925f4ce87109334888a069a5ac572718302fdfed6"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_factor.py",
+    "new": "tests/data/providers/unit/test_tushare_factor.py",
+    "sha256": "93bd2e1e92a0b3a6df12db1d1caf53bdfd2e5b9df01b4a2d4b2d2dc68f84bc26"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_fund_factor.py",
+    "new": "tests/data/providers/unit/test_tushare_fund_factor.py",
+    "sha256": "bea56bfca01a11f9000afcdc0481a7477d6e798adb0303275f93872bce7a298c"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_historical_st.py",
+    "new": "tests/data/providers/unit/test_tushare_historical_st.py",
+    "sha256": "5ee7eaf8b69e6d1baa063b953bcec87052b45c2705ab0fd879d2783878c8d9a8"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_index_global.py",
+    "new": "tests/data/providers/unit/test_tushare_index_global.py",
+    "sha256": "6b33257b0c5e87a7a568a18ffe42de98c6676c7b5748fc3683595ffbd322984d"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_market_features.py",
+    "new": "tests/data/providers/unit/test_tushare_market_features.py",
+    "sha256": "d712ce6ff6daa2930f7a3140ec114a55a865791d0cf845fafd33df71ebc49f00"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_sector_fallback.py",
+    "new": "tests/data/providers/unit/test_tushare_sector_fallback.py",
+    "sha256": "f702567db09cf53ee8404a7b1dcf4a6f533b64908ee870983e5a90953450adab"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_store_methods.py",
+    "new": "tests/data/providers/unit/test_tushare_store_methods.py",
+    "sha256": "bf50bc58293c9867867fd02181b843824cc7551f5b943f8fb3e4dcb1e65b86a5"
+  },
+  {
+    "old": "tests/dataflows/providers/test_tushare_trade_status.py",
+    "new": "tests/data/providers/unit/test_tushare_trade_status.py",
+    "sha256": "28b9fee6cffbe5f19a369654376932d1199f8665078c6c672c7463d40e089273"
+  },
+  {
+    "old": "tests/dataflows/test_akshare_board_daily_sections.py",
+    "new": "tests/data/transforms/unit/test_akshare_board_daily_sections.py",
+    "sha256": "73841f71963e37a46778fed1f433dc82ddac3ade707d77e66407a66542c54878"
+  },
+  {
+    "old": "tests/dataflows/test_akshare_index_data_df.py",
+    "new": "tests/data/transforms/unit/test_akshare_index_data_df.py",
+    "sha256": "04ed0145e74a72ab64c09ed9089088c800c1639202f9e04e8a491b6650ad11fe"
+  },
+  {
+    "old": "tests/dataflows/test_board_daily_sections.py",
+    "new": "tests/data/transforms/unit/test_board_daily_sections.py",
+    "sha256": "54471b745f65e7eee8fd8bcecf4946caa6bd25d96cc7127c91ed104bac4b162e"
+  },
+  {
+    "old": "tests/dataflows/test_concept_daily_gains.py",
+    "new": "tests/data/transforms/unit/test_concept_daily_gains.py",
+    "sha256": "ae8c448642712754d7ff874cfecb31a460af034f4e5dcefacaf0c970b8cc44ab"
+  },
+  {
+    "old": "tests/dataflows/test_daily_returns_matrix.py",
+    "new": "tests/data/transforms/unit/test_daily_returns_matrix.py",
+    "sha256": "017cf74f48e4aacc5384adf9a7bbca4ceb4cbf7926249fbcd77b21a943d63836"
+  },
+  {
+    "old": "tests/dataflows/test_limit_ladder_utils.py",
+    "new": "tests/data/transforms/unit/test_limit_ladder_utils.py",
+    "sha256": "a25eaa5f71604e6d87b412bca4dae1321da7bdfd671c7f8176bf864c950be0f6"
+  },
+  {
+    "old": "tests/dataflows/test_market_features.py",
+    "new": "tests/data/transforms/unit/test_market_features.py",
+    "sha256": "74e70bb39f40bdf096706c3778ad0abc34318057405af76da8e134133b95a35c"
+  },
+  {
+    "old": "tests/dataflows/test_screening_data.py",
+    "new": "tests/data/transforms/unit/test_screening_data.py",
+    "sha256": "191b21aab6e47fe24a86b428a98941b465e8446d60ac053435128d8fdf9a7b59"
+  },
+  {
+    "old": "tests/dataflows/test_stock_factor.py",
+    "new": "tests/data/transforms/unit/test_stock_factor.py",
+    "sha256": "9e20e4a54d21158b4a68f2372f021bbb9a74cc14737b10e902f82c5fb6a9cd94"
+  },
+  {
+    "old": "tests/db/instrument/_helpers.py",
+    "new": "tests/data/instrument/support/helpers.py",
+    "sha256": "f270a5af6f02d2acdbc4a98333ac3a4143c758d3ac6766c7838f85c66df9efdd"
+  },
+  {
+    "old": "tests/db/instrument/conftest.py",
+    "new": "tests/support/python/instrument_env.py",
+    "sha256": "4ae388ffeca10f24ed3d9a2d2ff320243bdd84884e135be8a12689b1cf2e4451"
+  },
+  {
+    "old": "tests/db/instrument/test_audit_history.py",
+    "new": "tests/data/ingest/unit/test_audit_history.py",
+    "sha256": "9add588c850eef5ae4bd4b5193dbd9ba9e8b1cdac36c55121fdec173dafc29e6"
+  },
+  {
+    "old": "tests/db/instrument/test_backfill.py",
+    "new": "tests/data/ingest/unit/test_backfill.py",
+    "sha256": "9642cb143bb12d6a80ec1500afc4d138f985eee8e1695bc221a0d42fd7a8830b"
+  },
+  {
+    "old": "tests/db/instrument/test_db.py",
+    "new": "tests/data/instrument/integration/test_db.py",
+    "sha256": "74c0f07103ff0caf05f6336958468a1f72296614e6782abc86d5d4e4fc76c70a"
+  },
+  {
+    "old": "tests/db/instrument/test_etf_catalog_db.py",
+    "new": "tests/data/instrument/integration/test_etf_catalog_db.py",
+    "sha256": "458ac95372f7f9e420ab70f606582649ee4ca199f9bb67e3ac8dab8ad416bc29"
+  },
+  {
+    "old": "tests/db/instrument/test_fact_revision.py",
+    "new": "tests/data/instrument/integration/test_fact_revision.py",
+    "sha256": "6e01297aa41b67466fc15735c8bdd010410e3c25f75afc3384c716bbc99b54d9"
+  },
+  {
+    "old": "tests/db/instrument/test_factor_day_backfill.py",
+    "new": "tests/data/ingest/unit/test_factor_day_backfill.py",
+    "sha256": "cd88a4eadfbfa59418a9c414b1f96d66d3fdd6971fc3ca51598e87afa8d47019"
+  },
+  {
+    "old": "tests/db/instrument/test_frames_validation.py",
+    "new": "tests/data/ingest/unit/test_frames_validation.py",
+    "sha256": "bec3c98e7746eea5f32309a4dfea0f1c4200aab7abf7b503a17b8d5efb7ca3e0"
+  },
+  {
+    "old": "tests/db/instrument/test_incremental.py",
+    "new": "tests/data/ingest/integration/test_incremental.py",
+    "sha256": "98544a459cd35b299ae95bdc7a0986d0cc874be326c44896d0b621ec27dc6bf0"
+  },
+  {
+    "old": "tests/db/instrument/test_index_ingestion.py",
+    "new": "tests/data/ingest/integration/test_index_ingestion.py",
+    "sha256": "2ee85a19988f81ee62aa221d7d0da79c19268e74f53e9b387f7203de13aeb05c"
+  },
+  {
+    "old": "tests/db/instrument/test_industries_ingest.py",
+    "new": "tests/data/instrument/integration/test_industries_ingest.py",
+    "sha256": "6652da2975b4f1d97b2157619df3f707c50d91c2ab34c17e9536ca8e8e33e5cb"
+  },
+  {
+    "old": "tests/db/instrument/test_instrument.py",
+    "new": "tests/data/instrument/unit/test_instrument.py",
+    "sha256": "5117771dedfea3981ce9efa43be97573108194761e78df7b11dd24421f09337e"
+  },
+  {
+    "old": "tests/db/instrument/test_instrument_daily.py",
+    "new": "tests/data/instrument/unit/test_instrument_daily.py",
+    "sha256": "2747251764e4a917dd784f76ee4de636ab9edaacfb1cdda418b4ae872e2da117"
+  },
+  {
+    "old": "tests/db/instrument/test_market_data_dao_compat.py",
+    "new": "tests/data/instrument/unit/test_market_data_dao_compat.py",
+    "sha256": "c1058986867915fdb12681fec39ece28f8e0810c78d6ccb3b55ec61657badbc3"
+  },
+  {
+    "old": "tests/db/instrument/test_market_ingest_wrapper.py",
+    "new": "tests/data/instrument/unit/test_market_ingest_wrapper.py",
+    "sha256": "a85e9fcbb15860d363b6cd0181a74b6c8576826a74a60d7bd73d85afa08a9dde"
+  },
+  {
+    "old": "tests/db/instrument/test_migrate_legacy.py",
+    "new": "tests/data/instrument/unit/test_migrate_legacy.py",
+    "sha256": "962431da1dc73a4d4e3e99f0e51a32db8c949c9e96093a384a360eb630ae500f"
+  },
+  {
+    "old": "tests/db/instrument/test_refresh_ingestion.py",
+    "new": "tests/data/ingest/unit/test_refresh_ingestion.py",
+    "sha256": "1bac3e20726c4fca2d917104067fe06cdfe6ae203cef7aecee4acba952e63610"
+  },
+  {
+    "old": "tests/db/instrument/test_refresh_ingestion_db.py",
+    "new": "tests/data/ingest/integration/test_refresh_ingestion_db.py",
+    "sha256": "c92aebb1615f541e142dce2eb0e7897fa89f37f1a8481d53c93bec6f46a0c8c7"
+  },
+  {
+    "old": "tests/db/instrument/test_research_source_db.py",
+    "new": "tests/data/instrument/integration/test_research_source_db.py",
+    "sha256": "c464bb10132992c70053190f81aac697bc0885c46419b761291ef45cdddb048e"
+  },
+  {
+    "old": "tests/db/instrument/test_sector.py",
+    "new": "tests/data/instrument/unit/test_sector.py",
+    "sha256": "698c78da75063e899db2c05c52cc25f2413f27cc004243a6a2dfd252b2c15142"
+  },
+  {
+    "old": "tests/db/instrument/test_sector_daily_ingest.py",
+    "new": "tests/data/ingest/integration/test_sector_daily_ingest.py",
+    "sha256": "78c40d6ebc573769c81d8609594b0f7f1195a84ef0de13ba990c5905d00e72fc"
+  },
+  {
+    "old": "tests/db/instrument/test_sectors.py",
+    "new": "tests/data/ingest/unit/test_sectors.py",
+    "sha256": "4fe417ce4e2021b4ff50165595baaeec6f9594296423698b1fb71a4c610982b2"
+  },
+  {
+    "old": "tests/db/instrument/test_status_backfill.py",
+    "new": "tests/data/ingest/integration/test_status_backfill.py",
+    "sha256": "ed6adfb48acc7ef5ba87c9f589c0befc58ee9bc38a6e7a31b5f57c8d14479781"
+  },
+  {
+    "old": "tests/db/instrument/test_stock_factor_backfill.py",
+    "new": "tests/data/ingest/unit/test_stock_factor_backfill.py",
+    "sha256": "dea5ec3423fbe688e191c3057ab67c8659efd0f9b2a9d5368bd09b00c19cf72b"
+  },
+  {
+    "old": "tests/db/instrument/test_stock_st_source_db.py",
+    "new": "tests/data/ingest/integration/test_stock_st_source_db.py",
+    "sha256": "8945d41fe7866044b12dd697cd28e4a59efb065c030b17be6136d023a916eff5"
+  },
+  {
+    "old": "tests/db/instrument/test_suspension_source_backfill.py",
+    "new": "tests/data/ingest/unit/test_suspension_source_backfill.py",
+    "sha256": "6037108a67609a71728b3f1c9b8f414de45597a5532c6ca48a9993f09ff315ac"
+  },
+  {
+    "old": "tests/db/instrument/test_suspension_status_db.py",
+    "new": "tests/data/instrument/integration/test_suspension_status_db.py",
+    "sha256": "5ea84f521f9730162b44720f18e8fe906204d649459805eb6afe8debc7e449ca"
+  },
+  {
+    "old": "tests/event_study/test_ai_prelabel.py",
+    "new": "tests/ai/event_study/unit/test_ai_prelabel.py",
+    "sha256": "eeefb8fe12a9efea5f0ed38fe625e24bdcc9a6e03a90295c0ee7cb536254f29a"
+  },
+  {
+    "old": "tests/event_study/test_app_scheduler.py",
+    "new": "tests/ai/event_study/unit/test_app_scheduler.py",
+    "sha256": "9a0b16327d1be5737b83d3b01bed0f62cef142cc1550d53a6c8e23373985f641"
+  },
+  {
+    "old": "tests/event_study/test_daily_job_market_status.py",
+    "new": "tests/ai/event_study/unit/test_daily_job_market_status.py",
+    "sha256": "23b1455145c22d94a15a3ace52725e65b49af3935b53f9f88266b17a73b33f01"
+  },
+  {
+    "old": "tests/event_study/test_event_routing.py",
+    "new": "tests/ai/event_study/unit/test_event_routing.py",
+    "sha256": "6ce3fd4277284fbf9e3e51f8659ea8a7c814325abfe1872d3171b13d87542512"
+  },
+  {
+    "old": "tests/event_study/test_event_study.py",
+    "new": "tests/ai/event_study/unit/test_event_study.py",
+    "sha256": "30ae193ca232c4454ab2952641c6c500cf8bd98e5cc80c981e4132be1f779a65"
+  },
+  {
+    "old": "tests/event_study/test_industry_news.py",
+    "new": "tests/ai/event_study/unit/test_industry_news.py",
+    "sha256": "bc8fadfe0cc3cebf04033f2c04e7629bf4bee87a705efcf711d2c5464d0bf53d"
+  },
+  {
+    "old": "tests/event_study/test_market_context.py",
+    "new": "tests/ai/event_study/unit/test_market_context.py",
+    "sha256": "c14040939592e0a5d3d1e55e2ca802c551a0033d2b910a0dc4eeb9afcc48e8df"
+  },
+  {
+    "old": "tests/event_study/test_name_resolver.py",
+    "new": "tests/ai/event_study/unit/test_name_resolver.py",
+    "sha256": "f7bce431c8ef9d5e8c6f00c7d5da25e62d640c0f9cb9f8ee765c05fb5b4f9608"
+  },
+  {
+    "old": "tests/event_study/test_predictor.py",
+    "new": "tests/ai/event_study/unit/test_predictor.py",
+    "sha256": "3d38f0bc0f5244b010d10f705c20b314dacbc2b2e8b3c121d142e9eeddca65ff"
+  },
+  {
+    "old": "tests/event_study/test_prompt_injection.py",
+    "new": "tests/ai/event_study/unit/test_prompt_injection.py",
+    "sha256": "4bd0c205bd2eba9514f1323be86ba093e0ad4ef5952edc01748016f65a9eb400"
+  },
+  {
+    "old": "tests/event_study/test_review_regressions.py",
+    "new": "tests/ai/event_study/unit/test_review_regressions.py",
+    "sha256": "3cbc453c8685e93bcf6ad4f31420db6a8452d154f9472d015f01d53b838f380e"
+  },
+  {
+    "old": "tests/graph/__init__.py",
+    "new": "tests/ai/graph/unit/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "old": "tests/graph/test_checkpoint.py",
+    "new": "tests/ai/graph/unit/test_checkpoint.py",
+    "sha256": "806c24d7d9c09080b444c54b311531e773d331a362868f87f88619e948b0b1ce"
+  },
+  {
+    "old": "tests/graph/test_derive_risk_gate.py",
+    "new": "tests/ai/graph/unit/test_derive_risk_gate.py",
+    "sha256": "227dbf1d47685940cdb6150bb63dc96a7d2d273bb7960a1f8994d739b0c6d3af"
+  },
+  {
+    "old": "tests/graph/test_graph_topology.py",
+    "new": "tests/ai/graph/integration/test_graph_topology.py",
+    "sha256": "dacaf4eb2c6b4680946caee50516df5cb80bdf21b63aa2b36c2ffa4a020e7407"
+  },
+  {
+    "old": "tests/graph/test_layer_topology.py",
+    "new": "tests/ai/graph/unit/test_layer_topology.py",
+    "sha256": "225fe46d36a4a812b9013a9abb44a272efb8eb38047c096451372d77eee197c8"
+  },
+  {
+    "old": "tests/graph/test_market_layer_graph.py",
+    "new": "tests/ai/graph/unit/test_market_layer_graph.py",
+    "sha256": "3a4570405235c84497216d46da58c079ee9182d5afc38acf1f44b967444e65db"
+  },
+  {
+    "old": "tests/graph/test_prompts.py",
+    "new": "tests/ai/graph/unit/test_prompts.py",
+    "sha256": "b6195a4af62421d19e3f73c76b437899fe446df29deb5d4dba077c615e307750"
+  },
+  {
+    "old": "tests/graph/test_rerun_entry.py",
+    "new": "tests/ai/graph/unit/test_rerun_entry.py",
+    "sha256": "278a0c450ba7b84bf09c95006fd5b05d51dac35478d7ff7ef9e279bd94798e34"
+  },
+  {
+    "old": "tests/graph/test_rerun_guard.py",
+    "new": "tests/ai/graph/unit/test_rerun_guard.py",
+    "sha256": "5eed69fc5c612ff7637726ec419f9ec22b3d4bb442e7eda357e84a8e215e23fe"
+  },
+  {
+    "old": "tests/graph/test_run_log_dir.py",
+    "new": "tests/ai/graph/unit/test_run_log_dir.py",
+    "sha256": "c199fabed3b41aed429573ffd4eb9000be38c8bf991c9690b6b4d52753047b1f"
+  },
+  {
+    "old": "tests/graph/test_signal_processing.py",
+    "new": "tests/ai/graph/unit/test_signal_processing.py",
+    "sha256": "df1343da9ca1e4802062e0d0af923b06d037a13385888b62d9317b7b8f372b3d"
+  },
+  {
+    "old": "tests/graph/test_state_log_events.py",
+    "new": "tests/ai/graph/unit/test_state_log_events.py",
+    "sha256": "9c40f38795fa51ee65ae0d06651050b884f14159700596c649f62c96223b7ff9"
+  },
+  {
+    "old": "tests/graph/test_stock_loop.py",
+    "new": "tests/ai/graph/unit/test_stock_loop.py",
+    "sha256": "f98fc5d972cdabc5bba403cbf2826dd9daa45a9e3fc0896670b856a86ade0cd7"
+  },
+  {
+    "old": "tests/strategy_sandbox/test_runner.py",
+    "new": "tests/ai/strategy_sandbox/unit/test_runner.py",
+    "sha256": "2cca407eceda4b6ea84f8b91de3fb79f76fd884d9acdda29ee776c3e5145a2f3"
+  },
+  {
+    "old": "tests/templates/__init__.py",
+    "new": "tests/ai/templates/unit/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "old": "tests/templates/test_templates.py",
+    "new": "tests/ai/templates/unit/test_templates.py",
+    "sha256": "34069c0024bc9d5ca845898fbe3c91414d6572157ae3feb4ac12015b0de90dbb"
+  },
+  {
+    "old": "tests/utils/test_dp_log_format.py",
+    "new": "tests/ai/utils/unit/test_dp_log_format.py",
+    "sha256": "2bdc9b131b1b4419c2bb3ef3a1d058b4909b4de5ae823b683aefcbfec9664c21"
+  },
+  {
+    "old": "tests/utils/test_logs_reader.py",
+    "new": "tests/ai/utils/unit/test_logs_reader.py",
+    "sha256": "10547bf614fb851f56572d0b6b4cb3b22a7ef11dba3ec9e39f980d8614206627"
+  },
+  {
+    "old": "tests/utils/test_tushare_call_log.py",
+    "new": "tests/ai/utils/unit/test_tushare_call_log.py",
+    "sha256": "2bd0a8be0b44b864e39976c77136d6d2939affc19460288c216178c2e98fea66"
+  },
+  {
+    "old": "backend/tests/contract/api/conftest.py",
+    "new": "tests/support/python/contract_env.py",
+    "sha256": "8ed5a28fe90dc911f39636d4b38333055edd47b4a847910e6b67b178dd2be865"
+  },
+  {
+    "old": "backend/tests/contract/api/test_agents_api.py",
+    "new": "tests/backend/analysis/contract/api/test_agents_api.py",
+    "sha256": "7234e6ad9306f2e959d6edf32b36b374cfdc81640ac94cafecb86ad1d79f0fcd"
+  },
+  {
+    "old": "backend/tests/contract/api/test_analysis_tasks.py",
+    "new": "tests/backend/analysis/contract/api/test_analysis_tasks.py",
+    "sha256": "ffa14071883aca56ce53b421bed7b409cc6044c95f63aee36cbb5c8b18edec9c"
+  },
+  {
+    "old": "backend/tests/contract/api/test_daily_research.py",
+    "new": "tests/backend/daily_research/contract/api/test_daily_research.py",
+    "sha256": "be717bf2c95921abcd62627633d853f940a32c294a0f5f2de0c2152d28e9ff40"
+  },
+  {
+    "old": "backend/tests/contract/api/test_event_studies.py",
+    "new": "tests/backend/event_study/contract/api/test_event_studies.py",
+    "sha256": "cc49c26cba810eeacaeed04e1fd148fff4b301194fa803ec5c43a636bbd5662d"
+  },
+  {
+    "old": "backend/tests/contract/api/test_event_study_review.py",
+    "new": "tests/backend/event_study/contract/api/test_event_study_review.py",
+    "sha256": "dc601f35c4f6e7950935742d5bed8138f3567690ef4bf9b1f6c90974cc7f1959"
+  },
+  {
+    "old": "backend/tests/contract/api/test_execution_logs_api.py",
+    "new": "tests/backend/analysis/contract/api/test_execution_logs_api.py",
+    "sha256": "23f194a00acec033ea39575a43bc40ace34db1672bec41b4bfeb785d3a03a829"
+  },
+  {
+    "old": "backend/tests/contract/api/test_graph_topology_api.py",
+    "new": "tests/backend/analysis/contract/api/test_graph_topology_api.py",
+    "sha256": "d863bb27c683d61bad1809780c13ad6d71ef987d7b68dd37cf707d2a0b57f1ed"
+  },
+  {
+    "old": "backend/tests/contract/api/test_health_real.py",
+    "new": "tests/backend/platform/contract/api/test_health_real.py",
+    "sha256": "c9c3e682b76a81fc9e69ecb5fc75053b5200f5c03372ca8312681a6df5e36fa2"
+  },
+  {
+    "old": "backend/tests/contract/api/test_lifecycle.py",
+    "new": "tests/backend/quant_strategy/contract/api/test_lifecycle.py",
+    "sha256": "2be2f780f0a97fe07f9577ae9aba4d94a7dd3e9e3e97b4b060ee21598e16ad90"
+  },
+  {
+    "old": "backend/tests/contract/api/test_market_data.py",
+    "new": "tests/backend/market_data/contract/api/test_market_data.py",
+    "sha256": "54109061bf0c9301f6bb7eb1966b53d04ddde24e820691e19f43e25111cfbf72"
+  },
+  {
+    "old": "backend/tests/contract/api/test_market_refresh.py",
+    "new": "tests/backend/market_data/contract/api/test_market_refresh.py",
+    "sha256": "d8a4619867463a5db728b020251e210f877b601153428432befe9e832f9e567e"
+  },
+  {
+    "old": "backend/tests/contract/api/test_market_refresh_reads.py",
+    "new": "tests/backend/market_data/contract/api/test_market_refresh_reads.py",
+    "sha256": "bb936339663484fa763c466a05de25a82601ec4ea5bf08cc7042663d0fb44ba8"
+  },
+  {
+    "old": "backend/tests/contract/api/test_quant_signals.py",
+    "new": "tests/backend/quant_strategy/contract/api/test_quant_signals.py",
+    "sha256": "4e3a796f3bd3e3e712e477b3ab755292e4bb7fc961d213bce50ce073e55a6b94"
+  },
+  {
+    "old": "backend/tests/contract/api/test_quant_strategies.py",
+    "new": "tests/backend/quant_strategy/contract/api/test_quant_strategies.py",
+    "sha256": "138d9a0215e3296fd7e3ddc2595339db1715d73f2bac58ac6e046d18c17a83c5"
+  },
+  {
+    "old": "backend/tests/contract/api/test_refresh_isolation.py",
+    "new": "tests/backend/market_data/contract/api/test_refresh_isolation.py",
+    "sha256": "ff838dce2022910462f10be0fd67cfd9d9baf8ec8f213947ee22cf18d6f95165"
+  },
+  {
+    "old": "backend/tests/contract/api/test_report.py",
+    "new": "tests/backend/analysis/contract/api/test_report.py",
+    "sha256": "d31af71a46f8b6ca3d525676041f66c5e0ec4e438276cb7201ab3f9d176f30ee"
+  },
+  {
+    "old": "backend/tests/contract/api/test_sse_protocol.py",
+    "new": "tests/backend/analysis/contract/api/test_sse_protocol.py",
+    "sha256": "642e23dff356adb7359a27bb88bdde8a0b06ca33564c66265e516eeabad627c5"
+  },
+  {
+    "old": "backend/tests/contract/api/test_workspace.py",
+    "new": "tests/backend/investment_workspace/contract/api/test_workspace.py",
+    "sha256": "36b5cceee2027c56703e4af8ce3425ba49b7b9d389082a9be787a6e16a694572"
+  },
+  {
+    "old": "backend/tests/contract/test_openapi_gate.py",
+    "new": "tests/backend/platform/contract/test_openapi_gate.py",
+    "sha256": "5f14cca1469f683aea0e16d2f5a00e0be0f13c44d71123f5d5a340769bce5030"
+  },
+  {
+    "old": "backend/tests/e2e/conftest.py",
+    "new": "tests/e2e/analysis_flow/api/conftest.py",
+    "sha256": "e6a01ab6529fa9901bc2e59bc01ebd2e60c8f61202a323c79e6aeee861f9b765"
+  },
+  {
+    "old": "backend/tests/e2e/test_api_task_flow_e2e.py",
+    "new": "tests/e2e/analysis_flow/api/test_api_task_flow_e2e.py",
+    "sha256": "65c243e3b8558288215d3f4a3450394943680d63d0260442d7604240d4f8d295"
+  },
+  {
+    "old": "backend/tests/integration/analysis/conftest.py",
+    "new": "tests/backend/analysis/integration/conftest.py",
+    "sha256": "82daf604770d69b6d425e7275c056bbac482a3402343af986b53f7a215c394a9"
+  },
+  {
+    "old": "backend/tests/integration/analysis/test_task_flow.py",
+    "new": "tests/backend/analysis/integration/test_task_flow.py",
+    "sha256": "be59687d1284b673934eeb2544d9daae0d843040e3c646dd4ca78a81633e7ed9"
+  },
+  {
+    "old": "backend/tests/integration/analysis/test_worker_bundle.py",
+    "new": "tests/backend/analysis/integration/test_worker_bundle.py",
+    "sha256": "bf6fc925078a43ac7dcfd8c10a9ede3a81187487bf8299a36402ccb552bd69bc"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/conftest.py",
+    "new": "tests/backend/investment_workspace/integration/conftest.py",
+    "sha256": "0968d059107c3c3a85af5069b597bbe8b1726fe7f6cbcfa132758d9ca7032e04"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_account_ledger_store.py",
+    "new": "tests/backend/investment_workspace/integration/test_account_ledger_store.py",
+    "sha256": "0ce2c3b87fae7b3886e734fbe486dd8b0e0bc29af9e10207106268e393d3fa13"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_account_observations.py",
+    "new": "tests/backend/investment_workspace/integration/test_account_observations.py",
+    "sha256": "937795777622004a7c515a753ffe0d3a7f8e62dbb508d0434e5e3af158b26a01"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_fill_evidence.py",
+    "new": "tests/backend/investment_workspace/integration/test_fill_evidence.py",
+    "sha256": "f4b6a95adea1c1faa5c3a4bc910ed5327cbf2ee7ed543c87beeb266851fbd756"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_fill_posting_stage.py",
+    "new": "tests/backend/investment_workspace/integration/test_fill_posting_stage.py",
+    "sha256": "7e1a7c4d3196fc3d30f90bfa00b7531e529a79f87e740a7bc1f958eb18c4fb30"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_fill_postings.py",
+    "new": "tests/backend/investment_workspace/integration/test_fill_postings.py",
+    "sha256": "041e988fe339c25431c5807cf6c26bf18f1741905b704a95f87570df5ad88ac8"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_fill_reports.py",
+    "new": "tests/backend/investment_workspace/integration/test_fill_reports.py",
+    "sha256": "da5cd98a3f8cf06d30d719eb23c165496f7c5fcfa654a59fd7749aa903b63e92"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_fill_resolution_reviews.py",
+    "new": "tests/backend/investment_workspace/integration/test_fill_resolution_reviews.py",
+    "sha256": "6b60a41f1465e5bf387d96d2cacf37bb24a4dc19530f13a7270841c61d2785d5"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_fill_reviews.py",
+    "new": "tests/backend/investment_workspace/integration/test_fill_reviews.py",
+    "sha256": "8d67ffab935a4e9f4837311ac88ae99c9a802f6354b399b066a192376f4b1e74"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_lifecycle_persisted_diagnosis.py",
+    "new": "tests/backend/investment_workspace/integration/test_lifecycle_persisted_diagnosis.py",
+    "sha256": "302892aff1d3424a7bd4a186439e4e810b0125efbc9a24dc4d161005dc3badd5"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_lifecycle_persisted_resolved_accounting.py",
+    "new": "tests/backend/investment_workspace/integration/test_lifecycle_persisted_resolved_accounting.py",
+    "sha256": "caa9b5f3bbbb24528d17f76d1d3c3b3805ce2af7077a27da4d1ef7a4010bf66a"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_lifecycle_revision_impact_surface.py",
+    "new": "tests/backend/investment_workspace/integration/test_lifecycle_revision_impact_surface.py",
+    "sha256": "517b94f23b2218ad65f6d6125706acd181f6b7269a75e752a068ecc22b347ad9"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_lifecycle_revision_replay_manifest.py",
+    "new": "tests/backend/investment_workspace/integration/test_lifecycle_revision_replay_manifest.py",
+    "sha256": "215ec4488f21674b5ed5dba83ae25a63383eb72f2ba4c6209676e3fcee5e9b61"
+  },
+  {
+    "old": "backend/tests/integration/investment_workspace/test_watchlists_portfolios.py",
+    "new": "tests/backend/investment_workspace/integration/test_watchlists_portfolios.py",
+    "sha256": "400cc1d341a953d87827ed488644904f6dda731d2fe11039d559ee0d565ae14b"
+  },
+  {
+    "old": "backend/tests/integration/market_data/__init__.py",
+    "new": "tests/backend/market_data/integration/__init__.py",
+    "sha256": "5d8c83b05cb0392ab04a7d285f87f6bae09050617a051e47b5b58b94f7bfb7a9"
+  },
+  {
+    "old": "backend/tests/integration/market_data/conftest.py",
+    "new": "tests/backend/market_data/integration/conftest.py",
+    "sha256": "114cf034931b8c83f9a5badb122195aa8873c3250eedc67764428d4f84d7fd3a"
+  },
+  {
+    "old": "backend/tests/integration/market_data/test_market_flow.py",
+    "new": "tests/backend/market_data/integration/test_market_flow.py",
+    "sha256": "914c35eb0afcd6141dfb3d3e51246563f995bc2a2cda737f1c777689af0f453a"
+  },
+  {
+    "old": "backend/tests/integration/market_data/test_refresh_coverage.py",
+    "new": "tests/backend/market_data/integration/test_refresh_coverage.py",
+    "sha256": "f6dd5fe7617a5df56be6d12f7c3f0745d44310eeafb15fb7fe7a16aa7497a223"
+  },
+  {
+    "old": "backend/tests/integration/market_data/test_refresh_isolation.py",
+    "new": "tests/backend/market_data/integration/test_refresh_isolation.py",
+    "sha256": "5d544b6ebefb9f885274865939cf3402b8a4262562f8d60735b42f68c72bb5a7"
+  },
+  {
+    "old": "backend/tests/integration/market_data/test_refresh_jobs.py",
+    "new": "tests/backend/market_data/integration/test_refresh_jobs.py",
+    "sha256": "946ae141595ec846ee5921181e8a95a3f9641bea6d7ec36ebce9d936c7ca6f5f"
+  },
+  {
+    "old": "backend/tests/integration/market_data/test_refresh_worker.py",
+    "new": "tests/backend/market_data/integration/test_refresh_worker.py",
+    "sha256": "1765ad1447a9014c1519389a67d82790163e3206e9d4ace78650026751359714"
+  },
+  {
+    "old": "backend/tests/integration/market_data/test_trends.py",
+    "new": "tests/backend/market_data/integration/test_trends.py",
+    "sha256": "c50e4c991bf8a2e8dc722ae8194487814967a68fa1d0b682e5482fd3438388a5"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/conftest.py",
+    "new": "tests/backend/quant_strategy/integration/conftest.py",
+    "sha256": "509cfd9d9bbc36c10c638bc09dbd867d630394d11ec1d4003f8199b688404bd6"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_admission_service.py",
+    "new": "tests/backend/quant_strategy/integration/test_admission_service.py",
+    "sha256": "99062a9050b86e48ee327870d1566391bf3de1d1b367479fc1fb444d70f71cf7"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_batch_completion.py",
+    "new": "tests/backend/quant_strategy/integration/test_batch_completion.py",
+    "sha256": "c50a466beaa80d4121414339595a2c88896210c0a726e769b7b1079f06381e25"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_daily_fact_revision_migration.py",
+    "new": "tests/backend/quant_strategy/integration/test_daily_fact_revision_migration.py",
+    "sha256": "7d8922942a6b8f6e3285c292dcfa560909d0ef43a82f7cfbfb865bbe891b7316"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_entry_batch.py",
+    "new": "tests/backend/quant_strategy/integration/test_entry_batch.py",
+    "sha256": "4a74bc0f8219d1dd6918271d79dcbf4cef696398415d8696f6a7876cf569b745"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_family_batch.py",
+    "new": "tests/backend/quant_strategy/integration/test_family_batch.py",
+    "sha256": "2fb9c51ebc710b09092f321d79c355fd5f2498dc738db611900b4c5bf93f1eb4"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_fill_intent_binding_migration.py",
+    "new": "tests/backend/quant_strategy/integration/test_fill_intent_binding_migration.py",
+    "sha256": "b02db74863df99facc129d498bcf05e98bfecb84d3a0dd6e197aa37000dc77a8"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_fill_version_step_integrity_migration.py",
+    "new": "tests/backend/quant_strategy/integration/test_fill_version_step_integrity_migration.py",
+    "sha256": "cc3fe6ad6cad679a68c5f3b6f0a6ad1209b3f2d47360a051568c5fe93a1addc8"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_fund_representative_freeze.py",
+    "new": "tests/backend/quant_strategy/integration/test_fund_representative_freeze.py",
+    "sha256": "e05c3d80e04112692b1a093515210b4943507fd6918add428fbcc82c920bfaaa"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_initial_entry_completion.py",
+    "new": "tests/backend/quant_strategy/integration/test_initial_entry_completion.py",
+    "sha256": "4e20df364f8ab30dc481f28d9820460e5316fa6eb6f9da9d9094867e56f1034c"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_initial_fill_anchor_uniqueness_migration.py",
+    "new": "tests/backend/quant_strategy/integration/test_initial_fill_anchor_uniqueness_migration.py",
+    "sha256": "a11ec787fa59c6a8922f3a4dde3e82cda64cdee0cad05806843d293a44a438fd"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_instrument_rule_certificates.py",
+    "new": "tests/backend/quant_strategy/integration/test_instrument_rule_certificates.py",
+    "sha256": "583d3c4c5ff425a0fb2f1a8d870645080b61b15150692cd4b374cccbcd9709cc"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_instrument_rule_repository.py",
+    "new": "tests/backend/quant_strategy/integration/test_instrument_rule_repository.py",
+    "sha256": "18355247814535fdde283dc612d8806c2930df3b1b49c1dc157ebd17f093ef08"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_intent_revision_migration.py",
+    "new": "tests/backend/quant_strategy/integration/test_intent_revision_migration.py",
+    "sha256": "4274af28ba78af07ccad434e3819d52f02efb6e779b7033b057ba0a557e3394e"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_joint_orders.py",
+    "new": "tests/backend/quant_strategy/integration/test_joint_orders.py",
+    "sha256": "78bebad948bcf932999658c46877f995ec3b6441166f77ff8ca6f6b8907d6521"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_legacy_buy_quarantine_migration.py",
+    "new": "tests/backend/quant_strategy/integration/test_legacy_buy_quarantine_migration.py",
+    "sha256": "922eb6edb3d624ed3642aafebe004a950e77633cd278a060c06aa49c7736d5ce"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_bound_command.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_bound_command.py",
+    "sha256": "e85f7ad1078dd79030a5b73650a51ca52095a0471c70d3dc006c274df540bcd8"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_command_replay.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_command_replay.py",
+    "sha256": "9507a358c38fa2b942991f1d0bb383d5a9efc5d21e5feea1c4a31e9774f2710b"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_command_selection.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_command_selection.py",
+    "sha256": "22034515328b9ef5b8322023d8a60136b5d04dc84a1e64fa1e6ee86ec1cfd221"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_operation_schema.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_operation_schema.py",
+    "sha256": "baefdc06fe0ac1e04178776f435d92660cc10acabb6891b245eb06cd1d69079e"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_service.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_service.py",
+    "sha256": "03dc39f236fc61e93b465329ac9c1af45fa9b1f8741b29eb7a881800c8554ce2"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_source_selection.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_source_selection.py",
+    "sha256": "685b166fa5afdc21e98eef40cb2975683c294ba80cc1a35d25c03a6f758c28d0"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_lifecycle_unbound_command.py",
+    "new": "tests/backend/quant_strategy/integration/test_lifecycle_unbound_command.py",
+    "sha256": "a88e9a19a306c18d713c9a3e579977ab289e5496d3a175253c2cd5e514f18ff2"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_portfolio_drawdown_actions.py",
+    "new": "tests/backend/quant_strategy/integration/test_portfolio_drawdown_actions.py",
+    "sha256": "5715235d611ace1923be18ab3440e1193a28cfb3c109308156a3988359a8c413"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_quant_strategy_service.py",
+    "new": "tests/backend/quant_strategy/integration/test_quant_strategy_service.py",
+    "sha256": "19d98444739389e47a382dd76dfe0a49c11efcb633ff53a9d0cc73100a805777"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_scan_manifest.py",
+    "new": "tests/backend/quant_strategy/integration/test_scan_manifest.py",
+    "sha256": "e43e250b1ddba50b349fc7b51e64b46d73e665d61528dd734bc58b98a5d46de0"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_target_trial_binding.py",
+    "new": "tests/backend/quant_strategy/integration/test_target_trial_binding.py",
+    "sha256": "80bba3da059a517c44653e7373916f83a34db56b620358839768922ae1576fe6"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_task_submission.py",
+    "new": "tests/backend/quant_strategy/integration/test_task_submission.py",
+    "sha256": "191f4fe70358d869f4869c7539a25ca51561a4070cf02a83aa845f08d8335155"
+  },
+  {
+    "old": "backend/tests/integration/quant_strategy/test_template_loader_runner.py",
+    "new": "tests/backend/quant_strategy/integration/test_template_loader_runner.py",
+    "sha256": "528db3dad72df747fe188f906787ef1aed5a9ed14180eed49c15619668e04955"
+  },
+  {
+    "old": "backend/tests/integration/test_migrations.py",
+    "new": "tests/backend/migrations/integration/test_migrations.py",
+    "sha256": "852fd3db4b038f3eb1fced47dee6890825000f23949baf427eec472bf2814922"
+  },
+  {
+    "old": "backend/tests/market_refresh_probe.py",
+    "new": "tests/support/python/market_refresh_probe.py",
+    "sha256": "41f1aea4a27bc4377e1881718cfe5bd76297ed8af5f9a8d6f857e6cff556b73f"
+  },
+  {
+    "old": "backend/tests/market_refresh_support.py",
+    "new": "tests/support/python/market_refresh_support.py",
+    "sha256": "380fd7ae386096cde97f8869ee584dd2b693886104615c9c7b3e15234b4fdb8a"
+  },
+  {
+    "old": "backend/tests/unit/analysis/fakes.py",
+    "new": "tests/backend/analysis/support/fakes.py",
+    "sha256": "c26a1927e0769b691e1a054854efa09142dc60fb7a87c65d1884c9d98ac0b64d"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_agent_prompts.py",
+    "new": "tests/backend/analysis/unit/test_agent_prompts.py",
+    "sha256": "8df3cd641157770ed562cc8f8623e427ceedd45e482e05c97a5bb8ec23aec0bc"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_artifact_builder.py",
+    "new": "tests/backend/analysis/unit/test_artifact_builder.py",
+    "sha256": "84bed9a922e1e4193d48a1f7019ba131944b9ce7c2606c7680c8292c80b02d68"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_artifact_store.py",
+    "new": "tests/backend/analysis/unit/test_artifact_store.py",
+    "sha256": "5dfec90288c7b14996c2245af71814cb6f75d0e1fb81a563cf02833b1b255e95"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_batch_recovery_wiring.py",
+    "new": "tests/backend/analysis/unit/test_batch_recovery_wiring.py",
+    "sha256": "ea3323e7914637f8c4d005bfde196bf5ace7d09db3b6796ce628bf09e559df82"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_dashboard.py",
+    "new": "tests/backend/analysis/unit/test_dashboard.py",
+    "sha256": "0471127897498e861e6ff20dc4951899e9c9f21ea0bb4044bef37558c3dce4b0"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_execution_logs.py",
+    "new": "tests/backend/analysis/unit/test_execution_logs.py",
+    "sha256": "fab1e95b41950a8409049d8d7be06bdcc12172905ee19374786608ffff03690d"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_graph_topology.py",
+    "new": "tests/backend/analysis/unit/test_graph_topology.py",
+    "sha256": "a0e217ff05e62f1633c8dff40dd40839ea628cce0b3f0183c10b9a7a5d0cebda"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_quant_adv20.py",
+    "new": "tests/backend/analysis/unit/test_quant_adv20.py",
+    "sha256": "f585fa9bf593eb7cdb46f9b9d496bb7cfe919b9ba8df49141c1b52f7acffa6cd"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_quant_executor_branch.py",
+    "new": "tests/backend/analysis/unit/test_quant_executor_branch.py",
+    "sha256": "9083d5e9ae581667abab32ea5c84e2c2ac704f04a825fa5206e7be950c219eef"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_quant_stock_universe.py",
+    "new": "tests/backend/analysis/unit/test_quant_stock_universe.py",
+    "sha256": "5185d64891e4522a2a59df8301c91e35c4a5c127a8dbe52a84a2fad4b6ba82a2"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_real_graph_factory.py",
+    "new": "tests/backend/analysis/unit/test_real_graph_factory.py",
+    "sha256": "03397c24db0886341fd4438d76c9b683f382065c5689b1c1bbcd9966ea58a7ff"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_rerun_service.py",
+    "new": "tests/backend/analysis/unit/test_rerun_service.py",
+    "sha256": "e7716290f446f2fc979f5f7b5c5db873f091d5b98b9833f3c256d966649825ca"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_task_events.py",
+    "new": "tests/backend/analysis/unit/test_task_events.py",
+    "sha256": "d2d92dd8eb7c3a425de79c51a16865b212760b85d986133c2eeb790fb3e904dd"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_task_service.py",
+    "new": "tests/backend/analysis/unit/test_task_service.py",
+    "sha256": "e89e2d1e996dce4978c425cd8374eaea9753c192ceced4ab62d28194af78f804"
+  },
+  {
+    "old": "backend/tests/unit/analysis/test_transaction_boundary.py",
+    "new": "tests/backend/analysis/unit/test_transaction_boundary.py",
+    "sha256": "82efe3fd5936c540635c9fce16871ccd56c42a97253e5b38590032a0829781fd"
+  },
+  {
+    "old": "backend/tests/unit/api/test_health.py",
+    "new": "tests/backend/platform/unit/api/test_health.py",
+    "sha256": "bc5db5f60c16dccb1eb5b7710e76dcf9abef4d466a78f65a2b3b7db888387c0f"
+  },
+  {
+    "old": "backend/tests/unit/api/test_sse_generator.py",
+    "new": "tests/backend/platform/unit/api/test_sse_generator.py",
+    "sha256": "8eb52f84d502603293c8564be9604812867ae5ca3faf8f5a9c6a17e36217ce00"
+  },
+  {
+    "old": "backend/tests/unit/bootstrap/test_market_refresh_settings.py",
+    "new": "tests/backend/platform/unit/bootstrap/test_market_refresh_settings.py",
+    "sha256": "4a4ba29d5aecd8a3e44a5872b18b5af124182d9ac44495a5851e3be885628bf5"
+  },
+  {
+    "old": "backend/tests/unit/bootstrap/test_settings.py",
+    "new": "tests/backend/platform/unit/bootstrap/test_settings.py",
+    "sha256": "b69e22a8087baac36a49b593d3842d65935009f8a437b7b294de79ac2f09495b"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_assessment_review.py",
+    "new": "tests/backend/daily_research/unit/test_assessment_review.py",
+    "sha256": "e50c755e82e14ae3b1076b28fce3f12443ce11a9bfb899235130ff54f8d8082d"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_event_crawler_coverage.py",
+    "new": "tests/backend/daily_research/unit/test_event_crawler_coverage.py",
+    "sha256": "80f6de110aa382ff72d66fa9710b5f2ff589f9d62dd8fc338c1394879cf4ee51"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_market_context.py",
+    "new": "tests/backend/daily_research/unit/test_market_context.py",
+    "sha256": "aed61fe29c80a62f518d64afc9f42d1820b8bc546a8b535b45ea76eb4913af30"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_news_analysis.py",
+    "new": "tests/backend/daily_research/unit/test_news_analysis.py",
+    "sha256": "5790cb108e9841770d85aaaeaa7a8f35fab8c7780d7ab7fc7b20e0085ccaf5e9"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_outcome_validation.py",
+    "new": "tests/backend/daily_research/unit/test_outcome_validation.py",
+    "sha256": "f72b2eab0c1f4961d21c28778d35ad18b70ce5a1742bc00564defce639e97ad0"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_quant_snapshot.py",
+    "new": "tests/backend/daily_research/unit/test_quant_snapshot.py",
+    "sha256": "a571b8f4db0c36cf6b2e8208708765900499ecd0c5d075ce86c749fbf72dc18b"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_readiness_retry.py",
+    "new": "tests/backend/daily_research/unit/test_readiness_retry.py",
+    "sha256": "87f6afd495b02acbf6a823650a0c8d706565fbc382ca78c068b2d23da19531b2"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_scheduler.py",
+    "new": "tests/backend/daily_research/unit/test_scheduler.py",
+    "sha256": "df80146550b768616af5c449cea5a0281f193f9827ea51b976e279125d18ebd3"
+  },
+  {
+    "old": "backend/tests/unit/daily_research/test_scoring.py",
+    "new": "tests/backend/daily_research/unit/test_scoring.py",
+    "sha256": "5fc3335be351cf299022fc6aee326c7ba3caa850e81b02cbc04c618499d7b731"
+  },
+  {
+    "old": "backend/tests/unit/event_study/test_review_service.py",
+    "new": "tests/backend/event_study/unit/test_review_service.py",
+    "sha256": "3447216cae69f5ad1851bea14d7497894d74babc1fc3dd04d94be0d0ff72a585"
+  },
+  {
+    "old": "backend/tests/unit/event_study/test_service.py",
+    "new": "tests/backend/event_study/unit/test_service.py",
+    "sha256": "ce4f124c8a425c7c21db868a0bb680e9008fca8c57100e3cd2131f86c7ece849"
+  },
+  {
+    "old": "backend/tests/unit/investment_workspace/test_account_ledger.py",
+    "new": "tests/backend/investment_workspace/unit/test_account_ledger.py",
+    "sha256": "31e5017aa56adcef0844b3a59ba81c99178db355ff7e5916714935de6eae9ddf"
+  },
+  {
+    "old": "backend/tests/unit/investment_workspace/test_account_valuation.py",
+    "new": "tests/backend/investment_workspace/unit/test_account_valuation.py",
+    "sha256": "72adc930fc7275d7815ebbf439503735c12f97ba3493fb4b4261f5bafbbfdba3"
+  },
+  {
+    "old": "backend/tests/unit/investment_workspace/test_reconciliation.py",
+    "new": "tests/backend/investment_workspace/unit/test_reconciliation.py",
+    "sha256": "632bd4ac49ee05f5c12e024f97675ed17d8b866f289c35aedb60eee917c99861"
+  },
+  {
+    "old": "backend/tests/unit/market_data/test_factor_cover.py",
+    "new": "tests/backend/market_data/unit/test_factor_cover.py",
+    "sha256": "72cee108a24c87b676aa31017620a793733c1d353a9c547638a223f9ace9325a"
+  },
+  {
+    "old": "backend/tests/unit/market_data/test_indicators.py",
+    "new": "tests/backend/market_data/unit/test_indicators.py",
+    "sha256": "f7d7b7a972251546bb6c3b21c582a2bfac8aec10b157c5e6f6d13acb4099a660"
+  },
+  {
+    "old": "backend/tests/unit/market_data/test_quant_refresh_ingest.py",
+    "new": "tests/backend/market_data/unit/test_quant_refresh_ingest.py",
+    "sha256": "ba96eb5e366b30da8acf777198a31c1b88c12411ae75a9bb969c46cbb3a96c46"
+  },
+  {
+    "old": "backend/tests/unit/market_data/test_quant_refresh_repository.py",
+    "new": "tests/backend/market_data/unit/test_quant_refresh_repository.py",
+    "sha256": "3ae4602ea3dc539f5380a015bf5d2e7ee561b8d8e725397ba794c221c77cc0c0"
+  },
+  {
+    "old": "backend/tests/unit/market_data/test_refresh_policy.py",
+    "new": "tests/backend/market_data/unit/test_refresh_policy.py",
+    "sha256": "87200ca03c1b903edffab9c9240432b0a4d87e030bc84e7e20eb356925cf22c4"
+  },
+  {
+    "old": "backend/tests/unit/market_data/test_refresh_service.py",
+    "new": "tests/backend/market_data/unit/test_refresh_service.py",
+    "sha256": "73e963f4e2e983b4d0d153ca09846272d8fe5584139be89545d0fd4414b346e1"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_benchmark_input_builder.py",
+    "new": "tests/backend/quant_research/unit/test_benchmark_input_builder.py",
+    "sha256": "14fa4ad45e087f35298f6b62213a6a213f94e605831b78a9da5926af69a36622"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_coverage_audit.py",
+    "new": "tests/backend/quant_research/unit/test_coverage_audit.py",
+    "sha256": "a34dbe37ec4641d65fad8c7bb62729cce0f62989b9a66c42d5c1049cfcc00e78"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_dataset_builder.py",
+    "new": "tests/backend/quant_research/unit/test_dataset_builder.py",
+    "sha256": "95ab2ca6c399e42f799b1a53102b11039ac3a5983821e3e56f18b3515fbd24fa"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_fund_candidate_builder.py",
+    "new": "tests/backend/quant_research/unit/test_fund_candidate_builder.py",
+    "sha256": "ad5fe35c5833eeea8620444a8c94bd97ba8a80ca217b713381a3d19221590b35"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_fund_representative_readiness.py",
+    "new": "tests/backend/quant_research/unit/test_fund_representative_readiness.py",
+    "sha256": "8c4805cd09bb8a668c1a0caa5f49c805932623ceff80fc2009b04ff350f85b7a"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_opening_execution.py",
+    "new": "tests/backend/quant_research/unit/test_opening_execution.py",
+    "sha256": "6bccb9ed33d1c25d206e1666b94fc42d86b87594de0de9dcafb21d6fa5d78cc1"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_stock_candidate_builder.py",
+    "new": "tests/backend/quant_research/unit/test_stock_candidate_builder.py",
+    "sha256": "46d8d614c03d34859be359ecca720066f44e32eba6ea06c1d11d43dc291e2274"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_stock_trial_readiness.py",
+    "new": "tests/backend/quant_research/unit/test_stock_trial_readiness.py",
+    "sha256": "9f210ec879893bcec6e982576d5eb92843fca47501147bf0d6e3a7be0fa7aaaa"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_target_universe_audit.py",
+    "new": "tests/backend/quant_research/unit/test_target_universe_audit.py",
+    "sha256": "cf7b17f16064228e96aa419e01f2e0c71d0e4ab9353f54063150dbf423d0f81e"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_trial_executor.py",
+    "new": "tests/backend/quant_research/unit/test_trial_executor.py",
+    "sha256": "195e60c65e5220deae1e4934122b20145246c37a42dca12168e48a6099172bd4"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_trial_holdings.py",
+    "new": "tests/backend/quant_research/unit/test_trial_holdings.py",
+    "sha256": "935b2110eaad451826c01b80e1562dd8a20e970591e6239ada51a374137a67a6"
+  },
+  {
+    "old": "backend/tests/unit/quant_research/test_trial_registry.py",
+    "new": "tests/backend/quant_research/unit/test_trial_registry.py",
+    "sha256": "5df328e63ff6cef3c5e9b0263573e3134ca6fc3ecf3eb4c4b47e40cb144b6c02"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_buy_target_planner.py",
+    "new": "tests/backend/quant_strategy/unit/test_buy_target_planner.py",
+    "sha256": "a0aa2311bc596b439548dd8a26fef74b7798405f767d7ad624d721361c22e345"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_create_source.py",
+    "new": "tests/backend/quant_strategy/unit/test_create_source.py",
+    "sha256": "1801770437322395dae920a2ccb2f8293ea5ad0c47b44e74fdcffc2dfbf9fa54"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_data_quality_poc.py",
+    "new": "tests/backend/quant_strategy/unit/test_data_quality_poc.py",
+    "sha256": "0bc1b6a0aa0628bbabe0976a1fbe6580bce39ce660b4a8db8bf380eaafe614c0"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_data_readiness.py",
+    "new": "tests/backend/quant_strategy/unit/test_data_readiness.py",
+    "sha256": "bc19e005b060724cb969343cf926ea80e17e91ff67321245c85131a9bb1d9abe"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_etf_defensive_allocation.py",
+    "new": "tests/backend/quant_strategy/unit/test_etf_defensive_allocation.py",
+    "sha256": "9861a7b99fdd883fa86b7caccb1be856891fe5584ef508ee606b073350ed13db"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_etf_dual_momentum.py",
+    "new": "tests/backend/quant_strategy/unit/test_etf_dual_momentum.py",
+    "sha256": "add909b9b6fbbc306e204ae251b6bb2f41b6422866022feb9ac0012652e73306"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_execution_cancellation.py",
+    "new": "tests/backend/quant_strategy/unit/test_execution_cancellation.py",
+    "sha256": "e6dcbfa0ed31754ad5dbddbfec8bdc1babff39a7121a47e41c972fdad568e79e"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_execution_constraints.py",
+    "new": "tests/backend/quant_strategy/unit/test_execution_constraints.py",
+    "sha256": "64fc20f3fd9f8dba6108a8ccc57ae9100fe553a77fe12a6c901e7cb2834489ad"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_family_allocation.py",
+    "new": "tests/backend/quant_strategy/unit/test_family_allocation.py",
+    "sha256": "17e444b334285a2c9d79cc4dbb6472101ac0ba641dcc3246bdd6eb1e770b0ad6"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_family_management.py",
+    "new": "tests/backend/quant_strategy/unit/test_family_management.py",
+    "sha256": "78f6970c98b01e9f2497689d586e56f726846fd977782b48531bca160d6475d0"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_history_row_image_types.py",
+    "new": "tests/backend/quant_strategy/unit/test_history_row_image_types.py",
+    "sha256": "0f087ab83e3fe7fb6c5ffdd3c83baf8c11a889916cdda52094b1bd4645853d40"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_instrument_rules.py",
+    "new": "tests/backend/quant_strategy/unit/test_instrument_rules.py",
+    "sha256": "42f9a7e3628d18bc1c20f990c18f83ccb4893fa8a9cc6b3fd0a6e6f27f94275b"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_accounting_replay.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_accounting_replay.py",
+    "sha256": "93f99fa67e5588c3338db690c3d90be2e35b055cf19aa9459bb64c10a0a47563"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_command_request.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_command_request.py",
+    "sha256": "303a7e0c15c54a68490a6675ee6c3f75db2002608d2ae9fb8c1ed90131ebeb94"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_fill_resolution_chain.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_fill_resolution_chain.py",
+    "sha256": "9e5a9dde5287d1ec02aac0020cb2f7b8acc5c3e20b7de8cd7b1d82b27d8afdec"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_initial_seed_replay.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_initial_seed_replay.py",
+    "sha256": "91ddd2b68af9068a8f1bd3fc8957ade594751c767faba27627ec258ebd8c0319"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_intent_replay.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_intent_replay.py",
+    "sha256": "40960482f423ff44b8a4df6b9f1b6a34a4876b4a97cce3371c3bcb8f1fe3547e"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_local_intent_bridge.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_local_intent_bridge.py",
+    "sha256": "1970dca9b5340b95a9808b399fce2ec4f02f0444e2eda896c3d74bb4a90650e5"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_local_policy_diff.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_local_policy_diff.py",
+    "sha256": "d475c27f8376369bfee210968c3d5085944e1ad39c4179dd6f17cb8341797681"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_local_policy_frames.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_local_policy_frames.py",
+    "sha256": "55a8919290734cdd9c18b4b5272a522d271b2f0f605f7d78e72b2b18a50a50a6"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_policy_replay.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_policy_replay.py",
+    "sha256": "d956c40bb09dc17c0e33b2f189a1dccd5ea854ae131a2328c4b0080d0edc2c87"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_projection_diff.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_projection_diff.py",
+    "sha256": "23d4d32f509e7dbe8cf6f2d0beae97d128217ae902cb274a5f1c53d154be0812"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_resolved_accounting.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_resolved_accounting.py",
+    "sha256": "e47680b7906b13ee9a783e7a5d46c087a89ac382f842b9013f7e49c5f474e0ba"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_revision_chronology.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_revision_chronology.py",
+    "sha256": "5e7d89dea34fa440738b3c09abd71cd8a3669ce968da322e49f450a1b0628f98"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_revision_impact.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_revision_impact.py",
+    "sha256": "a0d34f3ddb03d32cdc83390ecf2ce11d8204fa6db9b398b713d91a4d2749b5e4"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_revision_replay_manifest.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_revision_replay_manifest.py",
+    "sha256": "6a1deeac29fe7961e0937b09a2b48908c51c433f2d79983d8767c18ae59e8256"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_terminal_policy_event.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_terminal_policy_event.py",
+    "sha256": "879e3665800099f246c3e5a2f12140f6caa13a4c868c4c484bd3181814806c18"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_terminal_replay.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_terminal_replay.py",
+    "sha256": "fa1861dd0c10da488854bb9c8570a75f6f93820df794b2e66bc0f6a4e5d840b2"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_lifecycle_version_chain.py",
+    "new": "tests/backend/quant_strategy/unit/test_lifecycle_version_chain.py",
+    "sha256": "b4b4a655f743020a621d0767d32dcba3da0b65c4d1d026d8b7881806b9a70403"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_management_policies.py",
+    "new": "tests/backend/quant_strategy/unit/test_management_policies.py",
+    "sha256": "a456496946412bd18672410fb496ed75a4279ba818d6608fc7584f1f1748cd70"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_management_runtime.py",
+    "new": "tests/backend/quant_strategy/unit/test_management_runtime.py",
+    "sha256": "4a6abf54cbcf62ca7d00d31ccc00018f17cf2ff1feaed198ed4e5a27be7d8612"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_official_rule_artifact.py",
+    "new": "tests/backend/quant_strategy/unit/test_official_rule_artifact.py",
+    "sha256": "ed1b09f7d677a1820e767e588d5152ad50668454326e1521662100c35be8090f"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_order_materialization_quantity.py",
+    "new": "tests/backend/quant_strategy/unit/test_order_materialization_quantity.py",
+    "sha256": "483506128fce97906f681fa7e396cc0255d6b235cdcb80492204661c628522c9"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_portfolio_policy_contract.py",
+    "new": "tests/backend/quant_strategy/unit/test_portfolio_policy_contract.py",
+    "sha256": "21e52de69c4dd6df25be3b032a1c59423ef07ba50175f6e7f08cce7deb283eec"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_portfolio_risk.py",
+    "new": "tests/backend/quant_strategy/unit/test_portfolio_risk.py",
+    "sha256": "6a0d1af0ed402ee5ea2aea12fd3a2e321347506aa79013ae6a5d712cdf4b73d4"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_portfolio_targets.py",
+    "new": "tests/backend/quant_strategy/unit/test_portfolio_targets.py",
+    "sha256": "3b272750ddc321d6c93788e6b7ab2845942b076ab3402996d5f3f0e763af3492"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_position_lifecycle_manager.py",
+    "new": "tests/backend/quant_strategy/unit/test_position_lifecycle_manager.py",
+    "sha256": "7bf4c6120417810d392e3f0c059a97cf7606759d646666ab5690fb2c0327f8f0"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_reduction_planner.py",
+    "new": "tests/backend/quant_strategy/unit/test_reduction_planner.py",
+    "sha256": "edd2a8fc72e41fb2871012cc48e96498194684c00d76a1ca7ae693deab5fbdd3"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_risk_profiles.py",
+    "new": "tests/backend/quant_strategy/unit/test_risk_profiles.py",
+    "sha256": "4b808af6b144924e94e7eb9ccb94e8590a31ca851bea313f154d97ec3f2010df"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_stock_medium_momentum.py",
+    "new": "tests/backend/quant_strategy/unit/test_stock_medium_momentum.py",
+    "sha256": "900657412fbbbbb5d5c794708bde5d0c411085c230f86b552d014be04efd4ea4"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_stock_short_reversion.py",
+    "new": "tests/backend/quant_strategy/unit/test_stock_short_reversion.py",
+    "sha256": "7847c98a4bbd8ddd1ae8431c54c91a919d3daef7a668c46cfa3518cc389d699a"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_strategy_templates.py",
+    "new": "tests/backend/quant_strategy/unit/test_strategy_templates.py",
+    "sha256": "15dd23814efeb9b7480405d3b70d82036781dd6f71a14c2af67a8c1d64d22f99"
+  },
+  {
+    "old": "backend/tests/unit/quant_strategy/test_strategy_validator.py",
+    "new": "tests/backend/quant_strategy/unit/test_strategy_validator.py",
+    "sha256": "55db846b00f9f9c3e0e8cafc3c8d5cbd194d9de73b6eaf2e9136bb97b2c98267"
+  },
+  {
+    "old": "frontend/src/api/client.test.ts",
+    "new": "tests/frontend/api/unit/client.test.ts",
+    "sha256": "6703334e337fb1ec666b0aa3b269b4c3677901b20bb6591f9ef2a4bfd7059689"
+  },
+  {
+    "old": "frontend/src/app/AppErrorBoundary.test.tsx",
+    "new": "tests/frontend/app/unit/AppErrorBoundary.test.tsx",
+    "sha256": "89658632bd09b9259ad3aaf48506b3008d394cf86eec8b2480b43b5f141837ba"
+  },
+  {
+    "old": "frontend/src/app/RouteErrorBoundary.test.tsx",
+    "new": "tests/frontend/app/unit/RouteErrorBoundary.test.tsx",
+    "sha256": "b0bd913e943139e97be911a857e81c4224af72a5b20a991bb270058c855c5d92"
+  },
+  {
+    "old": "frontend/src/modules/analysis/components/PromptEditDialog.test.tsx",
+    "new": "tests/frontend/analysis/integration/components/PromptEditDialog.test.tsx",
+    "sha256": "344b1299dbc3c86314a41f97e589013caba2fd5b25a90e1ea76a83620387fd62"
+  },
+  {
+    "old": "frontend/src/modules/analysis/components/topologyChartOption.test.ts",
+    "new": "tests/frontend/analysis/unit/components/topologyChartOption.test.ts",
+    "sha256": "63aecc679f2fd5de677f8c7094a1cf88eac0a4d971dcdfe8287f061cf0f5b296"
+  },
+  {
+    "old": "frontend/src/modules/analysis/components/topologyGeometry.test.ts",
+    "new": "tests/frontend/analysis/unit/components/topologyGeometry.test.ts",
+    "sha256": "12f82cc66a4c3f52778c2aa6f2b9664a79303a27ed7a90737f705314c72930bc"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/agents/AgentTopologyPage.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/agents/AgentTopologyPage.test.tsx",
+    "sha256": "f942cc1788694c12a2072fec27bb5e70e3556ee4671e652dda96984f13dd9d9c"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/dashboard/AiDashboardPage.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/dashboard/AiDashboardPage.test.tsx",
+    "sha256": "17e26bf10c7f4053f3f7bbdc29bd32c21c3f3c4342bf1f2f6913df3558c2e69e"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/dashboard/AnalysisTaskForm.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/dashboard/AnalysisTaskForm.test.tsx",
+    "sha256": "d155ca7aaa0b75313cb5cce296c298d2630cef2d9866463631009de1b07a4d9c"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/dashboard/queries.test.ts",
+    "new": "tests/frontend/analysis/unit/pages/dashboard/queries.test.ts",
+    "sha256": "7bc027670021081a1ef4314c03fe00f1c8dc2b049fbf47f8870cf0d261f7ab4c"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/strategies/QuantStrategiesPage.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/strategies/QuantStrategiesPage.test.tsx",
+    "sha256": "0d454d2471efec59f180395aaba0fc757b2c35163e0fa79bd59a5c903a4c80fa"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/AiTaskDetailPage.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/task-detail/AiTaskDetailPage.test.tsx",
+    "sha256": "a3ac82c95502abd7c6d91d69e3f18adc77c9f6c50ac02a4604f22f97a7f1acb0"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/ExecutionLogsPanel.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/task-detail/ExecutionLogsPanel.test.tsx",
+    "sha256": "726fec4ebeb0404caf16daa88657b2b9364f73cff6efe290e856bd10d43b7481"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/GraphTopologyPanel.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/task-detail/GraphTopologyPanel.test.tsx",
+    "sha256": "212d4a8a56a8bc4a6999f0a6608d295f65526832327ead8f3a5d3f31d49209b6"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/QuantExecutionPanel.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/task-detail/QuantExecutionPanel.test.tsx",
+    "sha256": "a1f76e801635ecdaf5dab2de4d3c11c4a1a26c29ab37544b4557c4afd0a821ba"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/ReportContent.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/task-detail/ReportContent.test.tsx",
+    "sha256": "fb5100b4055129c868630cff0b241f03597d00a01a8c0abe829ed46a09a0762c"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/taskEventProtocol.test.ts",
+    "new": "tests/frontend/analysis/unit/pages/task-detail/taskEventProtocol.test.ts",
+    "sha256": "9601856c0c24aac7143da39deea67fe0a0732e62da5dcc7c067102071165bbd0"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/task-detail/useTaskEvents.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/task-detail/useTaskEvents.test.tsx",
+    "sha256": "96cf42ff91f21cc4a3d632d7cea5027e48bae9b225143fb667a7c8b634585ce8"
+  },
+  {
+    "old": "frontend/src/modules/analysis/pages/tasks/AiTasksPage.test.tsx",
+    "new": "tests/frontend/analysis/integration/pages/tasks/AiTasksPage.test.tsx",
+    "sha256": "5c31e7ec89788970797a70982a588ab68045aa3c269e06a7e5822bfd254a004b"
+  },
+  {
+    "old": "frontend/src/modules/daily-research/pages/DailyResearchPage.test.tsx",
+    "new": "tests/frontend/daily_research/integration/pages/DailyResearchPage.test.tsx",
+    "sha256": "67a747e3f32a2075c9480f77fff374bb4b17f4d512df90ff4dfd85f978d35b83"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/EventStudyPage.test.tsx",
+    "new": "tests/frontend/event_study/integration/pages/EventStudyPage.test.tsx",
+    "sha256": "b3867d01c3a21f1e644b0ba6828438692230bcb7ab90bdac8f099308f6bfcbb9"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/PredictionTab.test.tsx",
+    "new": "tests/frontend/event_study/integration/pages/PredictionTab.test.tsx",
+    "sha256": "9c6612c841bf5ce26a2b01153c5ab3d0bb9f3855500269abe7b497dd1a672067"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/review/EventDetailDialog.test.tsx",
+    "new": "tests/frontend/event_study/integration/pages/review/EventDetailDialog.test.tsx",
+    "sha256": "d780975f6a9dbb4687cc1cb3b539b7fa1af4c5c0bbedc021f60486ffa3f80731"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/review/ImpactConfirmTab.test.tsx",
+    "new": "tests/frontend/event_study/integration/pages/review/ImpactConfirmTab.test.tsx",
+    "sha256": "1aa2ed8a281c2f346885e661ca5161f0277efa5ea88b092fd1d6b1ee0333cc18"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/review/mappers/toImpactRowVM.test.ts",
+    "new": "tests/frontend/event_study/unit/pages/review/mappers/toImpactRowVM.test.ts",
+    "sha256": "8adb7232b54b28d7953416f5411d79fe9ced779eb18685d4d4ba11f1b34feadb"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/review/mappers/toPendingEventRowVM.test.ts",
+    "new": "tests/frontend/event_study/unit/pages/review/mappers/toPendingEventRowVM.test.ts",
+    "sha256": "6634beb1afe29c7a668b2fa51ba6bb87d85e715fae409873675d9e5a96715999"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/review/PendingEventsTab.test.tsx",
+    "new": "tests/frontend/event_study/integration/pages/review/PendingEventsTab.test.tsx",
+    "sha256": "a5b400d7af919fb83c8e7612b55c9ccf6b0d85167b7fe6a099684f7dc457a7fb"
+  },
+  {
+    "old": "frontend/src/modules/event-study/pages/review/ReviewTab.test.tsx",
+    "new": "tests/frontend/event_study/integration/pages/review/ReviewTab.test.tsx",
+    "sha256": "e63b2a746ac573026cbfd802ca35468ab3d61326343b81bf23c5b1d60f0914a7"
+  },
+  {
+    "old": "frontend/src/modules/market/components/ConceptTreemap.test.tsx",
+    "new": "tests/frontend/market/integration/components/ConceptTreemap.test.tsx",
+    "sha256": "f1c586231eab8a232e37d61e3e414c31bec342bff98df03ec0cd0c1778f2bfbf"
+  },
+  {
+    "old": "frontend/src/modules/market/components/conceptTreeOption.test.ts",
+    "new": "tests/frontend/market/unit/components/conceptTreeOption.test.ts",
+    "sha256": "4d248147b735e589000fb6bc24e54479b6ef6b3472407ad239114a89bc7cfc9b"
+  },
+  {
+    "old": "frontend/src/modules/market/components/MarketRefreshStatus.test.tsx",
+    "new": "tests/frontend/market/integration/components/MarketRefreshStatus.test.tsx",
+    "sha256": "9fd8d543df6440a4fc62cebd6fe727e4275cf057b5ff914ec836902ea535e768"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/HotConceptsPanel.test.tsx",
+    "new": "tests/frontend/market/integration/pages/HotConceptsPanel.test.tsx",
+    "sha256": "936df3d52861e6be50b2da312b42d277e016041fbaeb1993f3d1ef3fb71b628c"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/HotConceptsPanelClose.test.tsx",
+    "new": "tests/frontend/market/integration/pages/HotConceptsPanelClose.test.tsx",
+    "sha256": "366f16852e729b6de61e0766fbad0f22dc12d1b38ad4b3ad75bb79fc0c07e00e"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/MacroInformationPanel.test.tsx",
+    "new": "tests/frontend/market/integration/pages/MacroInformationPanel.test.tsx",
+    "sha256": "67a1844c2323c1c5f5d723a7fdabd9dd03e8d08948b10f0799a4299cddd6f8a8"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/mappers/toChartViewModels.test.ts",
+    "new": "tests/frontend/market/unit/pages/mappers/toChartViewModels.test.ts",
+    "sha256": "656c57639180b6eeae1cfda426ed531a4659995eb8afc86a7fed8aa80d0bf211"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/mappers/toTrendViewModels.test.ts",
+    "new": "tests/frontend/market/unit/pages/mappers/toTrendViewModels.test.ts",
+    "sha256": "4ff2325c708c0689f4fb0a12369e1955910e3f75191a914ebf441d5b0bffb90f"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/MarketIndicesPanel.test.tsx",
+    "new": "tests/frontend/market/integration/pages/MarketIndicesPanel.test.tsx",
+    "sha256": "099f1094e81db4edbd476662c8de699c7a7f3532db19596da607e5f87879b047"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/MarketOverviewPage.test.tsx",
+    "new": "tests/frontend/market/integration/pages/MarketOverviewPage.test.tsx",
+    "sha256": "df8c73d63bd317ede7aca0c433210ca6ad86842e2331c2760bba0e22733a2ff8"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/queries.test.ts",
+    "new": "tests/frontend/market/unit/pages/queries.test.ts",
+    "sha256": "71bd2312a6d455c48b3e6792efc91c3653400c2f1672ab42f6b06803460e10dc"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/refreshQueries.test.tsx",
+    "new": "tests/frontend/market/integration/pages/refreshQueries.test.tsx",
+    "sha256": "40140ff34b18aa3f5551b333b3c38d22ce671a3f7dbb1d1ed111e9df6f8e0dff"
+  },
+  {
+    "old": "frontend/src/modules/market/pages/TrendComparisonPanel.test.tsx",
+    "new": "tests/frontend/market/integration/pages/TrendComparisonPanel.test.tsx",
+    "sha256": "4d9ca5fab753be787f15fe3034565eb039c688c5f23dbc5787d0756bab25eb2f"
+  },
+  {
+    "old": "frontend/src/modules/watchlist/pages/WatchlistPage.test.tsx",
+    "new": "tests/frontend/watchlist/integration/pages/WatchlistPage.test.tsx",
+    "sha256": "b9cf66090fb410923ae479b5c923bf5588d76b6935825db6c01f475823f07e6d"
+  },
+  {
+    "old": "frontend/src/modules/watchlist/portfolios/PortfolioDrafts.test.tsx",
+    "new": "tests/frontend/watchlist/integration/portfolios/PortfolioDrafts.test.tsx",
+    "sha256": "10f653aed88fd4da64e5e8c51a8e945f0b240bf14c88e8359a888830bdcab547"
+  },
+  {
+    "old": "frontend/src/shared/charts/CandlestickChart.test.tsx",
+    "new": "tests/frontend/shared/unit/charts/CandlestickChart.test.tsx",
+    "sha256": "18fc5c5538a178a7e9e3ff45d02f51191808185abe27024a29ed2edcb31f95f8"
+  },
+  {
+    "old": "frontend/src/shared/charts/drawings.test.ts",
+    "new": "tests/frontend/shared/unit/charts/drawings.test.ts",
+    "sha256": "aa2395276aa68ca33b0e342f631e6ea67b7b7ae665c0fde122cab8f035660fa5"
+  },
+  {
+    "old": "frontend/src/shared/charts/LineChart.test.tsx",
+    "new": "tests/frontend/shared/unit/charts/LineChart.test.tsx",
+    "sha256": "46850d325e08de08a42528c1186d8bc951f0368eadc7b21e8b7609b34bce051c"
+  },
+  {
+    "old": "frontend/src/shared/format/volume.test.ts",
+    "new": "tests/frontend/shared/unit/format/volume.test.ts",
+    "sha256": "00ad09a1d106fe2327363f79ff7190b3abc75d124ba3c3edfed2b14b45ef2708"
+  },
+  {
+    "old": "frontend/src/shared/ui/markdown.test.tsx",
+    "new": "tests/frontend/shared/unit/ui/markdown.test.tsx",
+    "sha256": "321719e16d266dd5aaff1abf4aecbbe41fe37c8645dafce15fc211ec07e1ab02"
+  },
+  {
+    "old": "frontend/src/shared/ui/uxBehavior.test.tsx",
+    "new": "tests/frontend/shared/unit/ui/uxBehavior.test.tsx",
+    "sha256": "4d249a1ce361982cd92f4c677ab03307588f5eaaa3550159a571eeaa66cb247a"
+  },
+  {
+    "old": "frontend/src/stores/uiPreferenceStore.test.ts",
+    "new": "tests/frontend/shared/unit/stores/uiPreferenceStore.test.ts",
+    "sha256": "67d08291367dcb172d863c581ff4b62984dae084b2703642674b95d52cd58994"
+  },
+  {
+    "old": "frontend/src/test/fakeEventSource.ts",
+    "new": "tests/support/frontend/fakeEventSource.ts",
+    "sha256": "02c4722c1368c6d46c77c9761f826e0ee20800d0b5a9977cf84e615858ed102d"
+  },
+  {
+    "old": "frontend/src/test/utils.tsx",
+    "new": "tests/support/frontend/utils.tsx",
+    "sha256": "fff23fa5c0a2c52aa2c8965294e0fe4d53ca6cd51aa18cbb8b10e9c0f00d178e"
+  },
+  {
+    "old": "frontend/src/testSetup.ts",
+    "new": "tests/support/frontend/setup.ts",
+    "sha256": "f71ca1cf640eac1977e9a2c151d989dbaebb2eaea41c87bfee752c8734520fc9"
+  },
+  {
+    "old": "frontend/e2e/market-refresh.spec.ts",
+    "new": "tests/e2e/market_refresh/ui/market-refresh.spec.ts",
+    "sha256": "9fa043f45f4ef20d9337df14b21c1c566ce3fbba6befc3643e1c46c77ef4d5ba"
+  },
+  {
+    "old": "frontend/e2e/smoke.spec.ts",
+    "new": "tests/e2e/smoke/ui/smoke.spec.ts",
+    "sha256": "f579a7407eb6acc8166f3e562757dc094f88888b4a1425df13b77283ab6d1812"
+  },
+  {
+    "old": "frontend/e2e/task-flow.spec.ts",
+    "new": "tests/e2e/analysis_flow/ui/task-flow.spec.ts",
+    "sha256": "b62cec63c698b12dfc813db730d29f1b52da97e7f39a3f8ad3a14795cf5b8c14"
+  },
+  {
+    "old": "frontend/e2e/ux-review.spec.ts",
+    "new": "tests/e2e/workspace_ui/ui/ux-review.spec.ts",
+    "sha256": "f15dc6829059b77e22898877edad390b9d89ccb2faa9f49ebf5f68ae591f2a44"
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "start": "2016-01-04",
+  "end": "2016-01-04",
+  "calendar_days": 1,
+  "pending_before": 1,
+  "attempted": [
+    {
+      "trade_date": "20160104",
+      "status": "PARTIAL",
+      "rows": 2806,
+      "source": "tushare+baostock_st",
+      "ambiguous_codes": [
+        "000033.SZ",
+        "600656.SH"
+      ]
+    }
+  ],
+  "pending_after": 1,
+  "next_dates": [
+    "2016-01-04"
+  ],
+  "generated_at": "2026-09-25T22:30:32.475075+00:00"
+}

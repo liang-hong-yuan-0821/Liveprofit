@@ -1,0 +1,1472 @@
+{
+  "days": 244,
+  "written": 876824,
+  "warmup": 3925,
+  "failed_days": [],
+  "results": [
+    {
+      "day": "2019-01-02",
+      "written": 3531,
+      "warmup": 5,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-03",
+      "written": 3531,
+      "warmup": 6,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-04",
+      "written": 3532,
+      "warmup": 5,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-07",
+      "written": 3531,
+      "warmup": 5,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-08",
+      "written": 3532,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-09",
+      "written": 3532,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-10",
+      "written": 3534,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-11",
+      "written": 3534,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-14",
+      "written": 3532,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-15",
+      "written": 3532,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-16",
+      "written": 3532,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-17",
+      "written": 3533,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-18",
+      "written": 3530,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-21",
+      "written": 3529,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-22",
+      "written": 3529,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-23",
+      "written": 3528,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-24",
+      "written": 3531,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-25",
+      "written": 3530,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-28",
+      "written": 3531,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-29",
+      "written": 3532,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-30",
+      "written": 3535,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2019-01-31",
+      "written": 3535,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-01",
+      "written": 3535,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-11",
+      "written": 3537,
+      "warmup": 16,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-12",
+      "written": 3539,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-13",
+      "written": 3540,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-14",
+      "written": 3541,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-15",
+      "written": 3541,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-18",
+      "written": 3539,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-19",
+      "written": 3539,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-20",
+      "written": 3536,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-21",
+      "written": 3543,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-22",
+      "written": 3544,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-25",
+      "written": 3541,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-26",
+      "written": 3541,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-27",
+      "written": 3541,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-02-28",
+      "written": 3542,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-01",
+      "written": 3546,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-04",
+      "written": 3547,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-05",
+      "written": 3546,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-06",
+      "written": 3543,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-07",
+      "written": 3547,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-08",
+      "written": 3551,
+      "warmup": 6,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-11",
+      "written": 3551,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-12",
+      "written": 3548,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-13",
+      "written": 3546,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-14",
+      "written": 3547,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-15",
+      "written": 3549,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-18",
+      "written": 3546,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-19",
+      "written": 3546,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-20",
+      "written": 3548,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-21",
+      "written": 3547,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-22",
+      "written": 3546,
+      "warmup": 7,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-25",
+      "written": 3539,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-26",
+      "written": 3540,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-27",
+      "written": 3535,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-28",
+      "written": 3536,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-03-29",
+      "written": 3539,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-01",
+      "written": 3543,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-02",
+      "written": 3547,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-03",
+      "written": 3539,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-04",
+      "written": 3541,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-08",
+      "written": 3548,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-09",
+      "written": 3549,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-10",
+      "written": 3551,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-11",
+      "written": 3547,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-12",
+      "written": 3552,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-15",
+      "written": 3552,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-16",
+      "written": 3550,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-17",
+      "written": 3557,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-18",
+      "written": 3561,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-19",
+      "written": 3558,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-22",
+      "written": 3557,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-23",
+      "written": 3557,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-24",
+      "written": 3561,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-25",
+      "written": 3553,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-26",
+      "written": 3550,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-29",
+      "written": 3541,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-04-30",
+      "written": 3526,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-06",
+      "written": 3549,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-07",
+      "written": 3551,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-08",
+      "written": 3550,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-09",
+      "written": 3555,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-10",
+      "written": 3555,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-13",
+      "written": 3552,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-14",
+      "written": 3553,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-15",
+      "written": 3554,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-16",
+      "written": 3557,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-17",
+      "written": 3560,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-20",
+      "written": 3557,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-21",
+      "written": 3560,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-22",
+      "written": 3561,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-23",
+      "written": 3561,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-24",
+      "written": 3563,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-27",
+      "written": 3566,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-28",
+      "written": 3566,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-29",
+      "written": 3570,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-30",
+      "written": 3569,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-05-31",
+      "written": 3569,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-03",
+      "written": 3565,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-04",
+      "written": 3566,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-05",
+      "written": 3567,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-06",
+      "written": 3570,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-10",
+      "written": 3567,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-11",
+      "written": 3568,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-12",
+      "written": 3567,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-13",
+      "written": 3568,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-14",
+      "written": 3571,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-17",
+      "written": 3571,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-18",
+      "written": 3572,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-19",
+      "written": 3573,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-20",
+      "written": 3576,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-21",
+      "written": 3577,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-24",
+      "written": 3580,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-25",
+      "written": 3580,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-26",
+      "written": 3579,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-27",
+      "written": 3580,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-06-28",
+      "written": 3584,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-01",
+      "written": 3583,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-02",
+      "written": 3584,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-03",
+      "written": 3583,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-04",
+      "written": 3580,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-05",
+      "written": 3584,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-08",
+      "written": 3581,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-09",
+      "written": 3577,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-10",
+      "written": 3579,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-11",
+      "written": 3577,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-12",
+      "written": 3581,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-15",
+      "written": 3582,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-16",
+      "written": 3584,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-17",
+      "written": 3584,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-18",
+      "written": 3586,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-19",
+      "written": 3587,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-22",
+      "written": 3589,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-23",
+      "written": 3588,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-24",
+      "written": 3587,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-25",
+      "written": 3590,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-26",
+      "written": 3590,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-29",
+      "written": 3591,
+      "warmup": 36,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-30",
+      "written": 3590,
+      "warmup": 37,
+      "unresolved": []
+    },
+    {
+      "day": "2019-07-31",
+      "written": 3592,
+      "warmup": 37,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-01",
+      "written": 3592,
+      "warmup": 37,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-02",
+      "written": 3595,
+      "warmup": 36,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-05",
+      "written": 3595,
+      "warmup": 37,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-06",
+      "written": 3596,
+      "warmup": 38,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-07",
+      "written": 3595,
+      "warmup": 38,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-08",
+      "written": 3593,
+      "warmup": 40,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-09",
+      "written": 3594,
+      "warmup": 41,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-12",
+      "written": 3595,
+      "warmup": 41,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-13",
+      "written": 3595,
+      "warmup": 40,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-14",
+      "written": 3593,
+      "warmup": 40,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-15",
+      "written": 3597,
+      "warmup": 41,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-16",
+      "written": 3597,
+      "warmup": 40,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-19",
+      "written": 3619,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-20",
+      "written": 3620,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-21",
+      "written": 3620,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-22",
+      "written": 3621,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-23",
+      "written": 3622,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-26",
+      "written": 3623,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-27",
+      "written": 3625,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-28",
+      "written": 3626,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-29",
+      "written": 3625,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-08-30",
+      "written": 3629,
+      "warmup": 14,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-02",
+      "written": 3631,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-03",
+      "written": 3633,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-04",
+      "written": 3632,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-05",
+      "written": 3635,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-06",
+      "written": 3636,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-09",
+      "written": 3638,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-10",
+      "written": 3635,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-11",
+      "written": 3635,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-12",
+      "written": 3636,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-16",
+      "written": 3636,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-17",
+      "written": 3638,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-18",
+      "written": 3637,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-19",
+      "written": 3635,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-20",
+      "written": 3637,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-23",
+      "written": 3636,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-24",
+      "written": 3637,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-25",
+      "written": 3638,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-26",
+      "written": 3638,
+      "warmup": 8,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-27",
+      "written": 3638,
+      "warmup": 9,
+      "unresolved": []
+    },
+    {
+      "day": "2019-09-30",
+      "written": 3642,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-08",
+      "written": 3638,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-09",
+      "written": 3638,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-10",
+      "written": 3639,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-11",
+      "written": 3642,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-14",
+      "written": 3643,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-15",
+      "written": 3645,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-16",
+      "written": 3645,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-17",
+      "written": 3644,
+      "warmup": 10,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-18",
+      "written": 3645,
+      "warmup": 11,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-21",
+      "written": 3642,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-22",
+      "written": 3644,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-23",
+      "written": 3645,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-24",
+      "written": 3646,
+      "warmup": 12,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-25",
+      "written": 3646,
+      "warmup": 13,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-28",
+      "written": 3646,
+      "warmup": 15,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-29",
+      "written": 3646,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-30",
+      "written": 3645,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2019-10-31",
+      "written": 3646,
+      "warmup": 20,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-01",
+      "written": 3646,
+      "warmup": 21,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-04",
+      "written": 3651,
+      "warmup": 18,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-05",
+      "written": 3652,
+      "warmup": 23,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-06",
+      "written": 3648,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-07",
+      "written": 3652,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-08",
+      "written": 3652,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-11",
+      "written": 3654,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-12",
+      "written": 3657,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-13",
+      "written": 3651,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-14",
+      "written": 3654,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-15",
+      "written": 3654,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-18",
+      "written": 3658,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-19",
+      "written": 3658,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-20",
+      "written": 3657,
+      "warmup": 34,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-21",
+      "written": 3658,
+      "warmup": 36,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-22",
+      "written": 3661,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-25",
+      "written": 3663,
+      "warmup": 35,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-26",
+      "written": 3665,
+      "warmup": 33,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-27",
+      "written": 3666,
+      "warmup": 31,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-28",
+      "written": 3665,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2019-11-29",
+      "written": 3667,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-02",
+      "written": 3664,
+      "warmup": 30,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-03",
+      "written": 3671,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-04",
+      "written": 3673,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-05",
+      "written": 3675,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-06",
+      "written": 3677,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-09",
+      "written": 3677,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-10",
+      "written": 3675,
+      "warmup": 27,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-11",
+      "written": 3676,
+      "warmup": 29,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-12",
+      "written": 3679,
+      "warmup": 28,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-13",
+      "written": 3685,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-16",
+      "written": 3690,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-17",
+      "written": 3688,
+      "warmup": 26,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-18",
+      "written": 3689,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-19",
+      "written": 3690,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-20",
+      "written": 3689,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-23",
+      "written": 3694,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-24",
+      "written": 3697,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-25",
+      "written": 3694,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-26",
+      "written": 3695,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-27",
+      "written": 3697,
+      "warmup": 24,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-30",
+      "written": 3698,
+      "warmup": 25,
+      "unresolved": []
+    },
+    {
+      "day": "2019-12-31",
+      "written": 3701,
+      "warmup": 23,
+      "unresolved": []
+    }
+  ]
+}

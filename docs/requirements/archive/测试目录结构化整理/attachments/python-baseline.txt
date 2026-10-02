@@ -1,0 +1,2336 @@
+FFFFFFFFFFF                                                              [100%]
+================================== FAILURES ===================================
+_ test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[False-BUY] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000025BF01703B0>
+action = 'BUY', preflight_pending = False
+
+    @pytest.mark.parametrize("action", ["BUY", "SELL_ALL"])
+    @pytest.mark.parametrize("preflight_pending", [False, True])
+    def test_market_wide_gap_runs_only_holding_protection_and_blocks_buy(monkeypatch, action, preflight_pending):
+        source = '''def strategy(context):
+        return {"action": "BUY", "score": 90, "entry_price": 10,
+                "stop_loss": 9, "take_profit": 13, "sell_ratio": None, "reason": "test"}
+    '''
+        session, market = Mock(), Mock()
+        session.scalars.return_value = []
+        session.scalar.return_value = None
+        market.execute.side_effect = lambda sql, *a: SimpleNamespace(
+            fetchall=lambda: [("000001.SZ",)] if "FROM market.instrument WHERE" in sql else [],
+        )
+        if preflight_pending:
+            gate = Mock(return_value=SimpleNamespace(
+                requested_trade_date=date(2026, 9, 19), market_as_of_trade_date=date(2026, 9, 19),
+            ))
+        else:
+            gate = Mock(side_effect=DataReadinessError("missing qfq"))
+        monkeypatch.setattr(execution.DataReadinessGate, "resolve", gate)
+        universe = Mock(side_effect=AssertionError("full scan must not run"))
+        monkeypatch.setattr(execution.AllMarketUniverseBuilder, "list_active_cn_stocks", universe)
+        monkeypatch.setattr(execution.MarketContextBatchLoader, "load_batch", lambda *a, **k: [{
+            "ts_code": "000001.SZ", "status": "OK",
+            "context": {"position": {"shares": 500}, "ohlcv": {"close": [10]}},
+            "execution_market": {"raw_close": 10},
+        }])
+        output = {"action": action, "score": 90, "entry_price": 10 if action == "BUY" else None,
+                  "stop_loss": 9 if action == "BUY" else None,
+                  "take_profit": 13 if action == "BUY" else None,
+                  "sell_ratio": None, "reason": "test"}
+        monkeypatch.setattr(execution, "run_strategy", lambda *a, **k: SimpleNamespace(ok=True, output=output))
+        from db.instrument.dao import ingest_state
+    
+        monkeypatch.setattr(ingest_state, "is_industry_bucket_available", lambda conn: (False, None))
+        planner_summary = SimpleNamespace(
+            suggested_buy_orders=0, suggested_sell_orders=0, warnings=[],
+            portfolio_open_risk=0, daily_new_risk=0, buy_rejections=[],
+            valued_at=date(2026, 9, 19),
+        )
+        planner = Mock()
+        planner.plan.return_value = planner_summary
+        monkeypatch.setattr(execution, "PositionPlanner", lambda repository: planner)
+        service = QuantExecutionService(
+            task_id=uuid.uuid4(), attempt_no=1,
+            snapshot={
+                "strategy": {"source_code": source, "source_hash": hashlib.sha256(source.encode()).hexdigest(),
+                             "version_no": 1},
+                "positions": [{"symbol": "000001.SZ", "quantity": 500, "average_cost": "10"}],
+                "portfolio": {"id": str(uuid.uuid4()), "name": "test", "version": 1,
+                              "total_assets": "100000", "available_cash": "50000", "risk": {}},
+            },
+            market_conn=market, session=session, execution_control=control(),
+            effective_trade_date=date(2026, 9, 19),
+            protection_only=preflight_pending,
+        )
+        monkeypatch.setattr(service, "_load_holding_closes", lambda codes, *, valuation_date: {})
+        monkeypatch.setattr(service, "_persist_suggested_orders", lambda *a, **k: None)
+>       result = service.run()
+                 ^^^^^^^^^^^^^
+
+var\test-layout-refactor\baseline-tests\test_execution_cancellation.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\modules\quant_strategy\application\execution.py:151: in run
+    return self._run()
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <backend.modules.quant_strategy.application.execution.QuantExecutionService object at 0x0000025B9DF80080>
+
+    def _run(self) -> dict:
+        """执行全市场扫描 + 订单规划，返回 quant_execution 摘要（无源码/无全量信号）。"""
+        strategy = self._snapshot["strategy"]
+        try:
+            management_policy = resolve_management_snapshot(strategy)
+        except (ValueError, TypeError) as exc:
+            raise StrategySnapshotInvalidError(str(exc)) from exc
+        strategy_version_id = (
+            uuid.UUID(str(strategy["version_id"])) if strategy.get("version_id") else None
+        )
+        source_code = strategy["source_code"]
+        frozen_template_contract = strategy.get("template_contract")
+        # 兼容 0010 之前已存在的旧快照；新快照只使用冻结合同，不读取可变注册表。
+        legacy_template = (
+            get_template(strategy["template_id"])
+            if strategy.get("template_id") and not frozen_template_contract
+            else None
+        )
+        benchmark_required = (
+            strategy.get("template_id") == "ma_trend_cross_v1"
+            and (strategy.get("template_params") or {}).get("benchmark_filter") == 1
+        )
+        host_scalars = required_host_scalars(
+            strategy.get("template_id"), strategy.get("template_params"),
+        )
+        # 已发布快照校验：AST + 散列（不符 → 不可重试任务失败）
+        issues = validate_strategy_source(source_code)
+        if issues:
+            raise StrategySnapshotInvalidError(
+                f"策略快照 AST 校验失败：{'；'.join(i.code for i in issues[:5])}"
+            )
+        # 散列校验（与提交时冻结的 source_hash 一致）
+        actual_hash = hashlib.sha256(source_code.encode("utf-8")).hexdigest()
+        if actual_hash != strategy["source_hash"]:
+            raise StrategySnapshotInvalidError("策略快照源码散列不符")
+    
+        global_ready = not self._protection_only
+        readiness_warning = "量化补采尚未通过覆盖复核" if self._protection_only else None
+        try:
+            readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+            if self._protection_only and not self._snapshot.get("positions"):
+                raise DataReadinessError("量化补采尚未通过覆盖复核")
+        except DataReadinessError as exc:
+            if self._scan_only or not self._snapshot.get("positions"):
+                raise
+            global_ready = False
+            readiness_warning = str(exc)
+            requested = self._effective_trade_date
+            readiness = DataReadinessSnapshot(
+                requested_trade_date=requested, market_as_of_trade_date=requested,
+                daily_trade_date=requested, factor_trade_date=requested,
+                adj_factor_trade_date=requested, trade_status_trade_date=requested,
+                coverage_digest="", universe_digest="",
+            )
+        effective_date = readiness.market_as_of_trade_date
+        universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn) if global_ready else []
+        universe_total = len(universe)
+    
+        # 持仓归一：无后缀经 instrument 唯一六位前缀反查（恰一行才转真实 ts_code）
+        suffix_map: dict[str, list[str]] = {}
+        for row in self._market_conn.execute(
+            "SELECT ts_code FROM market.instrument WHERE instrument_type='stock'"
+        ).fetchall():
+            code = row[0]
+            if "." in code:
+                suffix_map.setdefault(code.split(".")[0], []).append(code)
+        holdings: list[dict] = []
+        invalid_holdings: list[tuple[str, str]] = []
+        for p in self._snapshot["positions"]:
+            ts_code, error = _normalize_holding_symbol(p["symbol"], suffix_map)
+            if error:
+                invalid_holdings.append((p["symbol"], error))
+            else:
+                holdings.append({**p, "symbol": ts_code})
+        positions_by_code = {p["symbol"]: p for p in holdings}
+    
+        target_set = set(universe)
+        for h in holdings:
+            target_set.add(h["symbol"])
+        scan_targets = sorted(target_set)
+        stock_symbols = {code for codes in suffix_map.values() for code in codes}
+        portfolio_snapshot_for_lifecycle = self._snapshot.get("portfolio")
+        active_lifecycles = {}
+        lifecycle_versions = {}
+        if portfolio_snapshot_for_lifecycle and portfolio_snapshot_for_lifecycle.get("id"):
+            portfolio_id = uuid.UUID(str(portfolio_snapshot_for_lifecycle["id"]))
+            lifecycle_rows = list(self._session.scalars(
+                    select(PositionLifecycleState).where(
+                        PositionLifecycleState.portfolio_id == portfolio_id,
+                        PositionLifecycleState.closed_at.is_(None),
+                    )
+                ))
+            active_lifecycles = {row.symbol: row.id for row in lifecycle_rows}
+            lifecycle_versions = {row.symbol: row.strategy_version_id for row in lifecycle_rows}
+        lifecycle_managed_symbols = set(active_lifecycles)
+        lifecycle_pending_orders: list[dict] = []
+        lifecycle_order_counts = {"BUY": 0, "SELL": 0}
+    
+        def _process_lifecycle(ts_code: str, ctx: dict | None, execution_market: dict | None, output: dict | None):
+            lifecycle_id = active_lifecycles.get(ts_code)
+            if lifecycle_id is None:
+                return
+            if self._defer_new_risk and lifecycle_versions.get(ts_code) != strategy_version_id:
+                # In a registered family batch each owner has its own frozen
+                # scan/window. Foreign scans must not advance that owner's day.
+                return
+            from .ownership import owned_script_output
+            output = owned_script_output(output, owner_version_id=lifecycle_versions.get(ts_code),
+                                         scanner_version_id=strategy_version_id)
+            if ctx is None or execution_market is None:
+                fact = {"close": None, "high": None, "data_error": "MARKET_CONTEXT_UNAVAILABLE"}
+            else:
+                ohlcv, indicators = ctx["ohlcv"], ctx["indicators"]
+                qfq_close = Decimal(str(execution_market["qfq_close"]))
+                raw_close = Decimal(str(execution_market["raw_close"]))
+                ratio = raw_close / qfq_close
+                volumes = ohlcv.get("volume", [])
+                actual = Decimal(str(ctx["position"].get("shares") or 0))
+                action = output.get("action") if output else None
+                script_target = None
+                if action == "SELL_ALL":
+                    script_target = Decimal(0)
+                elif action == "SELL_PARTIAL" and output.get("sell_ratio") is not None:
+                    script_target = max(Decimal(0), actual * (Decimal(1) - Decimal(str(output["sell_ratio"]))))
+                def last(name, offset=-1):
+                    values = indicators.get(name, [])
+                    return values[offset] if len(values) >= abs(offset) else None
+                def raw_level(name, offset=-1):
+                    return _raw_price_level(last(name, offset), ratio)
+                fact = {
+                    "close": raw_close, "high": Decimal(str(ohlcv["high"][-1])) * ratio,
+                    "atr": _raw_price_level(execution_market.get("atr_qfq"), ratio),
+                    "is_suspended": execution_market.get("is_suspended"),
+                    "ma5": raw_level("ma_qfq_5"), "prev_ma5": raw_level("ma_qfq_5", -2),
+                    "ma20": raw_level("ma_qfq_20"), "prev_ma20": raw_level("ma_qfq_20", -2),
+                    "ma60": raw_level("ma_qfq_60"), "boll_lower": raw_level("boll_lower_qfq"),
+                    "boll_mid": raw_level("boll_mid_qfq"), "boll_upper": raw_level("boll_upper_qfq"),
+                    "macd": last("macd_qfq"), "prev_macd": last("macd_qfq", -2),
+                    "dif": last("macd_dif_qfq"), "prev_dif": last("macd_dif_qfq", -2),
+                    "dea": last("macd_dea_qfq"), "prev_dea": last("macd_dea_qfq", -2),
+                    "rsi": last("rsi_qfq_6"), "prev_rsi": last("rsi_qfq_6", -2),
+                    "volume": volumes[-1] if volumes else None,
+                    "volume_base": max(v for v in volumes[-6:-1] if v is not None) if any(v is not None for v in volumes[-6:-1]) else None,
+                    "script_target_shares": script_target,
+                    "new_risk_allowed": global_ready,
+                    "execution_market": execution_market,
+                    "execution_policy": self._snapshot.get("execution_policy"),
+                    # Position balance does not establish broker sellability.
+                    "available_sell_quantity": positions_by_code[ts_code].get("available_quantity"),
+                    "source_task_id": str(self._task_id),
+                }
+            if self._defer_new_risk:
+                # Preserve the scanner's instrument classification across the
+                # deferral boundary; a batch label cannot certify an ETF/unknown.
+                fact["asset_scope"] = "CN_STOCK" if ts_code in stock_symbols else None
+            _daily, _intent, order, _decision = PositionLifecycleManager(self._session).process_day(
+                lifecycle_id, trade_date=effective_date, fact=fact,
+                data_as_of=datetime.now(timezone.utc), price_basis="raw", commit=False,
+                defer_buy=self._defer_new_risk,
+                buy_context={"valuation_date": effective_date,
+                             "asset_scope": "CN_STOCK" if ts_code in stock_symbols else None,
+                             "closes": self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date),
+                             "industry_map": industry_map, "industry_bucket_available": industry_available},
+            )
+            if order is not None:
+                lifecycle_order_counts[order.side] += 1
+                lifecycle_pending_orders.append({
+                    "id": str(order.id), "side": order.side, "symbol": order.symbol,
+                    "industry_code": order.industry_code,
+                    "remaining_quantity": str(order.quantity - order.filled_quantity),
+                    "order_entry_price": str(order.limit_price),
+                    "order_stop_price": str(order.stop_price) if order.stop_price is not None else None,
+                    "reserved_cash": str(order.reserved_cash), "status": order.status,
+                })
+    
+        # 行业风险桶数据 + 门控（一次查询）
+        industry_map: dict[str, dict] = {}
+        for row in self._market_conn.execute(
+            "SELECT m.ts_code, m.industry_code, i.name FROM market.industry_member m "
+            "JOIN market.industry i ON i.source = m.source AND i.industry_code = m.industry_code "
+            "WHERE m.source = 'SW2021'"
+        ).fetchall():
+            industry_map[row[0]] = {"industry_code": row[1], "name": row[2]}
+        from db.instrument.dao import ingest_state as ingest_state_dao
+    
+        industry_available, _ = ingest_state_dao.is_industry_bucket_available(self._market_conn)
+    
+        loader = MarketContextBatchLoader(lookback=int(strategy.get("required_bars", 250)))
+        benchmark_state = (
+            benchmark_above_ma120(self._market_conn, effective_date)
+            if benchmark_required and global_ready else None
+        )
+        summary_counts = {
+            "data_complete": 0,
+            "scanned": 0,
+            "failed": 0,
+            "buy_matches": 0,
+            "holding_signals": 0,
+        }
+        error_samples: dict[str, list[str]] = {}
+        error_counts: dict[str, int] = {}
+    
+        def _persist_signal(kind, ts_code, result, execution_market, lifecycle_seed=None) -> None:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id,
+                strategy_version_id=strategy_version_id,
+                attempt_no=self._attempt_no,
+                signal_kind=kind,
+                ts_code=ts_code,
+            )
+            if kind == "ERROR":
+                signal.error_code = result.error_code
+                signal.reason = (result.error_message or "")[:240]
+            else:
+                out = result.output
+                signal.action = out["action"]
+                signal.score = out["score"]
+                signal.reason = out["reason"]
+                signal.entry_price = out["entry_price"]
+                signal.stop_loss = out["stop_loss"]
+                signal.take_profit = out["take_profit"]
+                signal.sell_ratio = out["sell_ratio"]
+                if execution_market:
+                    signal.valuation_price = execution_market.get("raw_close")
+                    trade_date = execution_market.get("trade_date") or self._effective_trade_date.isoformat()
+                    signal.signal_trade_date = date.fromisoformat(str(trade_date)[:10])
+                    signal.signal_price_basis = "qfq"
+                    signal.execution_price_basis = "raw"
+                    signal.adj_factor_version = execution_market.get("adj_factor_version")
+                    signal.execution_market = {
+                        **execution_market,
+                        "batch_context": {
+                            "industry": industry_map.get(ts_code),
+                            "industry_bucket_available": industry_available,
+                            "new_risk_allowed": global_ready,
+                        },
+                        **({"lifecycle_seed": lifecycle_seed} if lifecycle_seed else {}),
+                    }
+            self._signals.add(signal)
+    
+        def _persist_data_error(ts_code: str, code: str) -> None:
+            self._signals.add(
+                QuantExecutionSignal(
+                    task_id=self._task_id,
+                    strategy_version_id=strategy_version_id,
+                    attempt_no=self._attempt_no,
+                    signal_kind="ERROR",
+                    ts_code=ts_code,
+                    error_code=code,
+                    reason=f"执行期行情输入不可用: {code}",
+                )
+            )
+    
+        for batch_index in range(0, len(scan_targets), self._batch_size):
+            self._control.raise_if_inactive()
+            batch = scan_targets[batch_index : batch_index + self._batch_size]
+            contexts = loader.load_batch(
+                self._market_conn, batch, effective_date, positions_by_code=positions_by_code,
+                requested_trade_date=readiness.requested_trade_date,
+                benchmark_above_ma120=benchmark_state,
+            )
+            pending: list = []
+            with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
+                for item in contexts:
+                    self._control.raise_if_inactive()
+                    ts = item["ts_code"]
+                    if (item["status"] == "OK" and host_scalars
+                            and not (item["context"]["position"].get("shares") or 0)):
+                        absent = [field for field in host_scalars
+                                  if item["context"].get("meta", {}).get(field) is None]
+                        if absent:
+                            item = {**item, "status": (
+                                "BENCHMARK_UNAVAILABLE" if "benchmark_above_ma120" in absent
+                                else "INDICATOR_UNAVAILABLE"
+                            ), "context": None}
+                    if item["status"] == "OK" and frozen_template_contract is not None:
+                        guard_error = validate_frozen_template_context(frozen_template_contract, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    elif item["status"] == "OK" and legacy_template is not None:
+                        guard_error = validate_template_context(legacy_template, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    if item["status"] != "OK":
+                        summary_counts["failed"] += 1
+                        error_counts[item["status"]] = error_counts.get(item["status"], 0) + 1
+                        samples = error_samples.setdefault(item["status"], [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_data_error(ts, item["status"])
+                        elif ts in positions_by_code:
+                            # 持仓输入错误始终保留，不能被非持仓 sample 上限吞掉。
+                            _persist_data_error(ts, item["status"])
+                        if ts in active_lifecycles:
+                            _process_lifecycle(ts, None, None, None)
+                        continue
+                    summary_counts["data_complete"] += 1
+                    summary_counts["scanned"] += 1
+                    ctx = item["context"]
+                    has_position = (ctx["position"].get("shares") or 0) > 0
+    
+                    execution_market = item["execution_market"]
+    
+                    def _execute(_ctx, _ts, _has_position, _execution_market):
+                        self._control.raise_if_inactive()
+                        proc_holder: dict = {}
+                        try:
+                            result = run_strategy(
+                                source_code,
+                                _ctx,
+                                has_position=_has_position,
+                                timeout=self._sandbox_timeout,
+                                allow_null_take_profit=management_policy is not None,
+                                on_process=lambda popen: (proc_holder.update(p=popen), self._control.register_process(popen)),
+                            )
+                        finally:
+                            popen = proc_holder.get("p")
+                            if popen is not None:
+                                self._control.unregister_process(popen)
+                        if result.ok and management_policy is not None:
+                            result = replace(result, output=adapt_management_output(
+                                result.output, management_policy, _ctx, _execution_market,
+                            ))
+                        return _ts, result, _has_position, _execution_market, _ctx
+    
+                    pending.append(pool.submit(_execute, ctx, ts, has_position, execution_market))
+    
+                for future in as_completed(pending):
+                    self._control.raise_if_inactive()
+                    ts, result, has_position, execution_market, lifecycle_ctx = future.result()
+                    if not result.ok:
+                        summary_counts["failed"] += 1
+                        code = result.error_code or "INVALID_OUTPUT"
+                        error_counts[code] = error_counts.get(code, 0) + 1
+                        # 错误样本按每码 ≤100 条落 ERROR 行（plan 4.3.1 信号保留矩阵）；
+                        # 持仓错误全量落，非持仓错误按 sample 上限落
+                        samples = error_samples.setdefault(code, [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_signal("ERROR", ts, result, None)
+                        elif has_position:
+                            _persist_signal("ERROR", ts, result, None)
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    action = result.output["action"]
+                    if action == "BUY" and not global_ready:
+                        _persist_data_error(ts, "NEW_RISK_BLOCKED_DATA_READINESS")
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    if action == "HOLD" and not has_position:
+                        continue  # 非持仓正常 HOLD 不落表
+                    if action == "BUY":
+                        summary_counts["buy_matches"] += 1
+                        kind = "BUY"
+                    else:
+                        summary_counts["holding_signals"] += 1
+                        kind = "HOLDING"
+                    lifecycle_seed = None
+                    if (
+                        strategy.get("template_id") == "arc_bottom_75a_v1"
+                        and result.output["action"] == "BUY"
+                    ):
+                        closes = lifecycle_ctx["ohlcv"]["close"]
+                        if len(closes) >= 41:
+                            ratio = Decimal(str(execution_market["raw_close"])) / Decimal(str(execution_market["qfq_close"]))
+                            lifecycle_seed = {
+                                "arc_neckline_price": str(max(
+                                    Decimal(str(closes[-41])), Decimal(str(closes[-11]))
+                                ) * ratio),
+                                "input_hash": lifecycle_ctx.get("meta", {}).get("data_hash"),
+                            }
+                    _persist_signal(kind, ts, result, execution_market, lifecycle_seed)
+                    if has_position and ts in active_lifecycles:
+                        _process_lifecycle(ts, lifecycle_ctx, execution_market, result.output)
+            # 每批落盘后提交（取消时已持久化批次保留，未持久化批次丢弃）
+            self._control.raise_if_inactive()
+            self._session.commit()
+            done = min(batch_index + self._batch_size, len(scan_targets))
+            self._on_progress("scan", done, len(scan_targets))
+    
+        # 持仓无效代码：记录 HOLDING 审计错误
+        for symbol, error in invalid_holdings:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id, attempt_no=self._attempt_no,
+                strategy_version_id=strategy_version_id,
+                signal_kind="ERROR", ts_code=symbol, error_code=error, reason=f"持仓代码无效: {symbol}",
+            )
+            self._signals.add(signal)
+    
+        if self._scan_only:
+            self._control.raise_if_inactive()
+            self._session.commit()
+            warnings = []
+            if error_samples:
+                warnings.append(f"扫描错误：{dict(error_counts)}（样本见 signals 表）")
+            return {
+                "strategy": {
+                    "id": str(strategy_version_id) if strategy_version_id else None,
+                    "name": strategy.get("name", ""),
+                    "version_no": strategy.get("version_no"),
+                    "source_hash_prefix": strategy.get("source_hash", "")[:12],
+                    "published_at": strategy.get("published_at"),
+                },
+                "summary": {
+                    "universe_total": universe_total,
+                    "data_complete": summary_counts["data_complete"],
+                    "scanned": summary_counts["scanned"],
+                    "buy_matches": summary_counts["buy_matches"],
+                    "failed_count": summary_counts["failed"],
+                },
+                "warnings": warnings,
+                "requested_trade_date": readiness.requested_trade_date.isoformat(),
+                "market_as_of_trade_date": readiness.market_as_of_trade_date.isoformat(),
+            }
+    
+        # 全量信号落库后：全局排序规划订单
+        portfolio_snapshot = self._snapshot["portfolio"]
+        from .planning_account import lock_portfolio, planning_account
+        current_portfolio = lock_portfolio(self._session, uuid.UUID(str(portfolio_snapshot["id"])))
+        pending_for_plan = [*self._snapshot.get("pending_orders", []), *lifecycle_pending_orders]
+        owner_versions = None
+        if current_portfolio is not None:
+            from .portfolio_drawdown_actions import PortfolioDrawdownActions
+            PortfolioDrawdownActions(self._session).pause_for_planning(
+                current_portfolio.id, valuation_date=readiness.market_as_of_trade_date)
+            current = planning_account(self._session, current_portfolio)
+            owner_versions = current["owner_versions"]
+            lifecycle_managed_symbols = set(self._session.scalars(select(PositionLifecycleState.symbol).where(
+                PositionLifecycleState.portfolio_id == current_portfolio.id,
+                PositionLifecycleState.market == "CN", PositionLifecycleState.closed_at.is_(None),
+            )))
+            portfolio_snapshot, holdings, pending_for_plan = (
+                current["portfolio_snapshot"], current["positions"], current["pending_orders"])
+        closes = self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date)
+        from .strategy_admission import StrategyAdmissionService
+        admission = StrategyAdmissionService(self._session).gate_new_risk(
+            strategy_version_id, asset_scope="CN_STOCK",
+            risk_profile=portfolio_snapshot.get("risk_profile"),
+        )
+        from .certified_instrument_rules import live_authorizations
+        rule_authorizations = live_authorizations(
+            self._session,
+            symbols=set(self._session.scalars(select(QuantExecutionSignal.ts_code).where(
+                QuantExecutionSignal.task_id == self._task_id,
+                QuantExecutionSignal.attempt_no == self._attempt_no,
+                QuantExecutionSignal.signal_kind == "BUY",
+            ))), decision_date=readiness.market_as_of_trade_date)
+        summary = PositionPlanner(self._signals).plan(
+            task_id=self._task_id,
+            attempt_no=self._attempt_no,
+            portfolio_snapshot=portfolio_snapshot,
+            positions=holdings,
+            closes=closes,
+            industry_map=industry_map,
+            industry_bucket_available=industry_available,
+            risk_gate=None,
+            execution_policy_snapshot=self._snapshot.get("execution_policy"),
+            pending_orders=pending_for_plan,
+            valuation_date=readiness.market_as_of_trade_date,
+            lifecycle_managed_symbols=lifecycle_managed_symbols,
+            owner_versions=owner_versions, strategy_version_id=strategy_version_id,
+            admission_block_code=("AWAITING_FAMILY_BATCH" if self._defer_new_risk
+                                  else None if admission["allowed"] else admission["code"]),
+            instrument_rules={symbol: authorization.rule
+                              for symbol, authorization in rule_authorizations.items()},
+        )
+        self._control.raise_if_inactive()
+        self._session.flush()
+        materialization_rejections = self._persist_suggested_orders(
+            portfolio_snapshot, positions=holdings, industry_map=industry_map,
+            rule_authorizations=rule_authorizations)
+>       for code, count in materialization_rejections.items():
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'items'
+
+backend\modules\quant_strategy\application\execution.py:630: AttributeError
+_ test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[False-SELL_ALL] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000025B9E69D6A0>
+action = 'SELL_ALL', preflight_pending = False
+
+    @pytest.mark.parametrize("action", ["BUY", "SELL_ALL"])
+    @pytest.mark.parametrize("preflight_pending", [False, True])
+    def test_market_wide_gap_runs_only_holding_protection_and_blocks_buy(monkeypatch, action, preflight_pending):
+        source = '''def strategy(context):
+        return {"action": "BUY", "score": 90, "entry_price": 10,
+                "stop_loss": 9, "take_profit": 13, "sell_ratio": None, "reason": "test"}
+    '''
+        session, market = Mock(), Mock()
+        session.scalars.return_value = []
+        session.scalar.return_value = None
+        market.execute.side_effect = lambda sql, *a: SimpleNamespace(
+            fetchall=lambda: [("000001.SZ",)] if "FROM market.instrument WHERE" in sql else [],
+        )
+        if preflight_pending:
+            gate = Mock(return_value=SimpleNamespace(
+                requested_trade_date=date(2026, 9, 19), market_as_of_trade_date=date(2026, 9, 19),
+            ))
+        else:
+            gate = Mock(side_effect=DataReadinessError("missing qfq"))
+        monkeypatch.setattr(execution.DataReadinessGate, "resolve", gate)
+        universe = Mock(side_effect=AssertionError("full scan must not run"))
+        monkeypatch.setattr(execution.AllMarketUniverseBuilder, "list_active_cn_stocks", universe)
+        monkeypatch.setattr(execution.MarketContextBatchLoader, "load_batch", lambda *a, **k: [{
+            "ts_code": "000001.SZ", "status": "OK",
+            "context": {"position": {"shares": 500}, "ohlcv": {"close": [10]}},
+            "execution_market": {"raw_close": 10},
+        }])
+        output = {"action": action, "score": 90, "entry_price": 10 if action == "BUY" else None,
+                  "stop_loss": 9 if action == "BUY" else None,
+                  "take_profit": 13 if action == "BUY" else None,
+                  "sell_ratio": None, "reason": "test"}
+        monkeypatch.setattr(execution, "run_strategy", lambda *a, **k: SimpleNamespace(ok=True, output=output))
+        from db.instrument.dao import ingest_state
+    
+        monkeypatch.setattr(ingest_state, "is_industry_bucket_available", lambda conn: (False, None))
+        planner_summary = SimpleNamespace(
+            suggested_buy_orders=0, suggested_sell_orders=0, warnings=[],
+            portfolio_open_risk=0, daily_new_risk=0, buy_rejections=[],
+            valued_at=date(2026, 9, 19),
+        )
+        planner = Mock()
+        planner.plan.return_value = planner_summary
+        monkeypatch.setattr(execution, "PositionPlanner", lambda repository: planner)
+        service = QuantExecutionService(
+            task_id=uuid.uuid4(), attempt_no=1,
+            snapshot={
+                "strategy": {"source_code": source, "source_hash": hashlib.sha256(source.encode()).hexdigest(),
+                             "version_no": 1},
+                "positions": [{"symbol": "000001.SZ", "quantity": 500, "average_cost": "10"}],
+                "portfolio": {"id": str(uuid.uuid4()), "name": "test", "version": 1,
+                              "total_assets": "100000", "available_cash": "50000", "risk": {}},
+            },
+            market_conn=market, session=session, execution_control=control(),
+            effective_trade_date=date(2026, 9, 19),
+            protection_only=preflight_pending,
+        )
+        monkeypatch.setattr(service, "_load_holding_closes", lambda codes, *, valuation_date: {})
+        monkeypatch.setattr(service, "_persist_suggested_orders", lambda *a, **k: None)
+>       result = service.run()
+                 ^^^^^^^^^^^^^
+
+var\test-layout-refactor\baseline-tests\test_execution_cancellation.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\modules\quant_strategy\application\execution.py:151: in run
+    return self._run()
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <backend.modules.quant_strategy.application.execution.QuantExecutionService object at 0x0000025B9E69EC00>
+
+    def _run(self) -> dict:
+        """执行全市场扫描 + 订单规划，返回 quant_execution 摘要（无源码/无全量信号）。"""
+        strategy = self._snapshot["strategy"]
+        try:
+            management_policy = resolve_management_snapshot(strategy)
+        except (ValueError, TypeError) as exc:
+            raise StrategySnapshotInvalidError(str(exc)) from exc
+        strategy_version_id = (
+            uuid.UUID(str(strategy["version_id"])) if strategy.get("version_id") else None
+        )
+        source_code = strategy["source_code"]
+        frozen_template_contract = strategy.get("template_contract")
+        # 兼容 0010 之前已存在的旧快照；新快照只使用冻结合同，不读取可变注册表。
+        legacy_template = (
+            get_template(strategy["template_id"])
+            if strategy.get("template_id") and not frozen_template_contract
+            else None
+        )
+        benchmark_required = (
+            strategy.get("template_id") == "ma_trend_cross_v1"
+            and (strategy.get("template_params") or {}).get("benchmark_filter") == 1
+        )
+        host_scalars = required_host_scalars(
+            strategy.get("template_id"), strategy.get("template_params"),
+        )
+        # 已发布快照校验：AST + 散列（不符 → 不可重试任务失败）
+        issues = validate_strategy_source(source_code)
+        if issues:
+            raise StrategySnapshotInvalidError(
+                f"策略快照 AST 校验失败：{'；'.join(i.code for i in issues[:5])}"
+            )
+        # 散列校验（与提交时冻结的 source_hash 一致）
+        actual_hash = hashlib.sha256(source_code.encode("utf-8")).hexdigest()
+        if actual_hash != strategy["source_hash"]:
+            raise StrategySnapshotInvalidError("策略快照源码散列不符")
+    
+        global_ready = not self._protection_only
+        readiness_warning = "量化补采尚未通过覆盖复核" if self._protection_only else None
+        try:
+            readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+            if self._protection_only and not self._snapshot.get("positions"):
+                raise DataReadinessError("量化补采尚未通过覆盖复核")
+        except DataReadinessError as exc:
+            if self._scan_only or not self._snapshot.get("positions"):
+                raise
+            global_ready = False
+            readiness_warning = str(exc)
+            requested = self._effective_trade_date
+            readiness = DataReadinessSnapshot(
+                requested_trade_date=requested, market_as_of_trade_date=requested,
+                daily_trade_date=requested, factor_trade_date=requested,
+                adj_factor_trade_date=requested, trade_status_trade_date=requested,
+                coverage_digest="", universe_digest="",
+            )
+        effective_date = readiness.market_as_of_trade_date
+        universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn) if global_ready else []
+        universe_total = len(universe)
+    
+        # 持仓归一：无后缀经 instrument 唯一六位前缀反查（恰一行才转真实 ts_code）
+        suffix_map: dict[str, list[str]] = {}
+        for row in self._market_conn.execute(
+            "SELECT ts_code FROM market.instrument WHERE instrument_type='stock'"
+        ).fetchall():
+            code = row[0]
+            if "." in code:
+                suffix_map.setdefault(code.split(".")[0], []).append(code)
+        holdings: list[dict] = []
+        invalid_holdings: list[tuple[str, str]] = []
+        for p in self._snapshot["positions"]:
+            ts_code, error = _normalize_holding_symbol(p["symbol"], suffix_map)
+            if error:
+                invalid_holdings.append((p["symbol"], error))
+            else:
+                holdings.append({**p, "symbol": ts_code})
+        positions_by_code = {p["symbol"]: p for p in holdings}
+    
+        target_set = set(universe)
+        for h in holdings:
+            target_set.add(h["symbol"])
+        scan_targets = sorted(target_set)
+        stock_symbols = {code for codes in suffix_map.values() for code in codes}
+        portfolio_snapshot_for_lifecycle = self._snapshot.get("portfolio")
+        active_lifecycles = {}
+        lifecycle_versions = {}
+        if portfolio_snapshot_for_lifecycle and portfolio_snapshot_for_lifecycle.get("id"):
+            portfolio_id = uuid.UUID(str(portfolio_snapshot_for_lifecycle["id"]))
+            lifecycle_rows = list(self._session.scalars(
+                    select(PositionLifecycleState).where(
+                        PositionLifecycleState.portfolio_id == portfolio_id,
+                        PositionLifecycleState.closed_at.is_(None),
+                    )
+                ))
+            active_lifecycles = {row.symbol: row.id for row in lifecycle_rows}
+            lifecycle_versions = {row.symbol: row.strategy_version_id for row in lifecycle_rows}
+        lifecycle_managed_symbols = set(active_lifecycles)
+        lifecycle_pending_orders: list[dict] = []
+        lifecycle_order_counts = {"BUY": 0, "SELL": 0}
+    
+        def _process_lifecycle(ts_code: str, ctx: dict | None, execution_market: dict | None, output: dict | None):
+            lifecycle_id = active_lifecycles.get(ts_code)
+            if lifecycle_id is None:
+                return
+            if self._defer_new_risk and lifecycle_versions.get(ts_code) != strategy_version_id:
+                # In a registered family batch each owner has its own frozen
+                # scan/window. Foreign scans must not advance that owner's day.
+                return
+            from .ownership import owned_script_output
+            output = owned_script_output(output, owner_version_id=lifecycle_versions.get(ts_code),
+                                         scanner_version_id=strategy_version_id)
+            if ctx is None or execution_market is None:
+                fact = {"close": None, "high": None, "data_error": "MARKET_CONTEXT_UNAVAILABLE"}
+            else:
+                ohlcv, indicators = ctx["ohlcv"], ctx["indicators"]
+                qfq_close = Decimal(str(execution_market["qfq_close"]))
+                raw_close = Decimal(str(execution_market["raw_close"]))
+                ratio = raw_close / qfq_close
+                volumes = ohlcv.get("volume", [])
+                actual = Decimal(str(ctx["position"].get("shares") or 0))
+                action = output.get("action") if output else None
+                script_target = None
+                if action == "SELL_ALL":
+                    script_target = Decimal(0)
+                elif action == "SELL_PARTIAL" and output.get("sell_ratio") is not None:
+                    script_target = max(Decimal(0), actual * (Decimal(1) - Decimal(str(output["sell_ratio"]))))
+                def last(name, offset=-1):
+                    values = indicators.get(name, [])
+                    return values[offset] if len(values) >= abs(offset) else None
+                def raw_level(name, offset=-1):
+                    return _raw_price_level(last(name, offset), ratio)
+                fact = {
+                    "close": raw_close, "high": Decimal(str(ohlcv["high"][-1])) * ratio,
+                    "atr": _raw_price_level(execution_market.get("atr_qfq"), ratio),
+                    "is_suspended": execution_market.get("is_suspended"),
+                    "ma5": raw_level("ma_qfq_5"), "prev_ma5": raw_level("ma_qfq_5", -2),
+                    "ma20": raw_level("ma_qfq_20"), "prev_ma20": raw_level("ma_qfq_20", -2),
+                    "ma60": raw_level("ma_qfq_60"), "boll_lower": raw_level("boll_lower_qfq"),
+                    "boll_mid": raw_level("boll_mid_qfq"), "boll_upper": raw_level("boll_upper_qfq"),
+                    "macd": last("macd_qfq"), "prev_macd": last("macd_qfq", -2),
+                    "dif": last("macd_dif_qfq"), "prev_dif": last("macd_dif_qfq", -2),
+                    "dea": last("macd_dea_qfq"), "prev_dea": last("macd_dea_qfq", -2),
+                    "rsi": last("rsi_qfq_6"), "prev_rsi": last("rsi_qfq_6", -2),
+                    "volume": volumes[-1] if volumes else None,
+                    "volume_base": max(v for v in volumes[-6:-1] if v is not None) if any(v is not None for v in volumes[-6:-1]) else None,
+                    "script_target_shares": script_target,
+                    "new_risk_allowed": global_ready,
+                    "execution_market": execution_market,
+                    "execution_policy": self._snapshot.get("execution_policy"),
+                    # Position balance does not establish broker sellability.
+                    "available_sell_quantity": positions_by_code[ts_code].get("available_quantity"),
+                    "source_task_id": str(self._task_id),
+                }
+            if self._defer_new_risk:
+                # Preserve the scanner's instrument classification across the
+                # deferral boundary; a batch label cannot certify an ETF/unknown.
+                fact["asset_scope"] = "CN_STOCK" if ts_code in stock_symbols else None
+            _daily, _intent, order, _decision = PositionLifecycleManager(self._session).process_day(
+                lifecycle_id, trade_date=effective_date, fact=fact,
+                data_as_of=datetime.now(timezone.utc), price_basis="raw", commit=False,
+                defer_buy=self._defer_new_risk,
+                buy_context={"valuation_date": effective_date,
+                             "asset_scope": "CN_STOCK" if ts_code in stock_symbols else None,
+                             "closes": self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date),
+                             "industry_map": industry_map, "industry_bucket_available": industry_available},
+            )
+            if order is not None:
+                lifecycle_order_counts[order.side] += 1
+                lifecycle_pending_orders.append({
+                    "id": str(order.id), "side": order.side, "symbol": order.symbol,
+                    "industry_code": order.industry_code,
+                    "remaining_quantity": str(order.quantity - order.filled_quantity),
+                    "order_entry_price": str(order.limit_price),
+                    "order_stop_price": str(order.stop_price) if order.stop_price is not None else None,
+                    "reserved_cash": str(order.reserved_cash), "status": order.status,
+                })
+    
+        # 行业风险桶数据 + 门控（一次查询）
+        industry_map: dict[str, dict] = {}
+        for row in self._market_conn.execute(
+            "SELECT m.ts_code, m.industry_code, i.name FROM market.industry_member m "
+            "JOIN market.industry i ON i.source = m.source AND i.industry_code = m.industry_code "
+            "WHERE m.source = 'SW2021'"
+        ).fetchall():
+            industry_map[row[0]] = {"industry_code": row[1], "name": row[2]}
+        from db.instrument.dao import ingest_state as ingest_state_dao
+    
+        industry_available, _ = ingest_state_dao.is_industry_bucket_available(self._market_conn)
+    
+        loader = MarketContextBatchLoader(lookback=int(strategy.get("required_bars", 250)))
+        benchmark_state = (
+            benchmark_above_ma120(self._market_conn, effective_date)
+            if benchmark_required and global_ready else None
+        )
+        summary_counts = {
+            "data_complete": 0,
+            "scanned": 0,
+            "failed": 0,
+            "buy_matches": 0,
+            "holding_signals": 0,
+        }
+        error_samples: dict[str, list[str]] = {}
+        error_counts: dict[str, int] = {}
+    
+        def _persist_signal(kind, ts_code, result, execution_market, lifecycle_seed=None) -> None:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id,
+                strategy_version_id=strategy_version_id,
+                attempt_no=self._attempt_no,
+                signal_kind=kind,
+                ts_code=ts_code,
+            )
+            if kind == "ERROR":
+                signal.error_code = result.error_code
+                signal.reason = (result.error_message or "")[:240]
+            else:
+                out = result.output
+                signal.action = out["action"]
+                signal.score = out["score"]
+                signal.reason = out["reason"]
+                signal.entry_price = out["entry_price"]
+                signal.stop_loss = out["stop_loss"]
+                signal.take_profit = out["take_profit"]
+                signal.sell_ratio = out["sell_ratio"]
+                if execution_market:
+                    signal.valuation_price = execution_market.get("raw_close")
+                    trade_date = execution_market.get("trade_date") or self._effective_trade_date.isoformat()
+                    signal.signal_trade_date = date.fromisoformat(str(trade_date)[:10])
+                    signal.signal_price_basis = "qfq"
+                    signal.execution_price_basis = "raw"
+                    signal.adj_factor_version = execution_market.get("adj_factor_version")
+                    signal.execution_market = {
+                        **execution_market,
+                        "batch_context": {
+                            "industry": industry_map.get(ts_code),
+                            "industry_bucket_available": industry_available,
+                            "new_risk_allowed": global_ready,
+                        },
+                        **({"lifecycle_seed": lifecycle_seed} if lifecycle_seed else {}),
+                    }
+            self._signals.add(signal)
+    
+        def _persist_data_error(ts_code: str, code: str) -> None:
+            self._signals.add(
+                QuantExecutionSignal(
+                    task_id=self._task_id,
+                    strategy_version_id=strategy_version_id,
+                    attempt_no=self._attempt_no,
+                    signal_kind="ERROR",
+                    ts_code=ts_code,
+                    error_code=code,
+                    reason=f"执行期行情输入不可用: {code}",
+                )
+            )
+    
+        for batch_index in range(0, len(scan_targets), self._batch_size):
+            self._control.raise_if_inactive()
+            batch = scan_targets[batch_index : batch_index + self._batch_size]
+            contexts = loader.load_batch(
+                self._market_conn, batch, effective_date, positions_by_code=positions_by_code,
+                requested_trade_date=readiness.requested_trade_date,
+                benchmark_above_ma120=benchmark_state,
+            )
+            pending: list = []
+            with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
+                for item in contexts:
+                    self._control.raise_if_inactive()
+                    ts = item["ts_code"]
+                    if (item["status"] == "OK" and host_scalars
+                            and not (item["context"]["position"].get("shares") or 0)):
+                        absent = [field for field in host_scalars
+                                  if item["context"].get("meta", {}).get(field) is None]
+                        if absent:
+                            item = {**item, "status": (
+                                "BENCHMARK_UNAVAILABLE" if "benchmark_above_ma120" in absent
+                                else "INDICATOR_UNAVAILABLE"
+                            ), "context": None}
+                    if item["status"] == "OK" and frozen_template_contract is not None:
+                        guard_error = validate_frozen_template_context(frozen_template_contract, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    elif item["status"] == "OK" and legacy_template is not None:
+                        guard_error = validate_template_context(legacy_template, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    if item["status"] != "OK":
+                        summary_counts["failed"] += 1
+                        error_counts[item["status"]] = error_counts.get(item["status"], 0) + 1
+                        samples = error_samples.setdefault(item["status"], [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_data_error(ts, item["status"])
+                        elif ts in positions_by_code:
+                            # 持仓输入错误始终保留，不能被非持仓 sample 上限吞掉。
+                            _persist_data_error(ts, item["status"])
+                        if ts in active_lifecycles:
+                            _process_lifecycle(ts, None, None, None)
+                        continue
+                    summary_counts["data_complete"] += 1
+                    summary_counts["scanned"] += 1
+                    ctx = item["context"]
+                    has_position = (ctx["position"].get("shares") or 0) > 0
+    
+                    execution_market = item["execution_market"]
+    
+                    def _execute(_ctx, _ts, _has_position, _execution_market):
+                        self._control.raise_if_inactive()
+                        proc_holder: dict = {}
+                        try:
+                            result = run_strategy(
+                                source_code,
+                                _ctx,
+                                has_position=_has_position,
+                                timeout=self._sandbox_timeout,
+                                allow_null_take_profit=management_policy is not None,
+                                on_process=lambda popen: (proc_holder.update(p=popen), self._control.register_process(popen)),
+                            )
+                        finally:
+                            popen = proc_holder.get("p")
+                            if popen is not None:
+                                self._control.unregister_process(popen)
+                        if result.ok and management_policy is not None:
+                            result = replace(result, output=adapt_management_output(
+                                result.output, management_policy, _ctx, _execution_market,
+                            ))
+                        return _ts, result, _has_position, _execution_market, _ctx
+    
+                    pending.append(pool.submit(_execute, ctx, ts, has_position, execution_market))
+    
+                for future in as_completed(pending):
+                    self._control.raise_if_inactive()
+                    ts, result, has_position, execution_market, lifecycle_ctx = future.result()
+                    if not result.ok:
+                        summary_counts["failed"] += 1
+                        code = result.error_code or "INVALID_OUTPUT"
+                        error_counts[code] = error_counts.get(code, 0) + 1
+                        # 错误样本按每码 ≤100 条落 ERROR 行（plan 4.3.1 信号保留矩阵）；
+                        # 持仓错误全量落，非持仓错误按 sample 上限落
+                        samples = error_samples.setdefault(code, [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_signal("ERROR", ts, result, None)
+                        elif has_position:
+                            _persist_signal("ERROR", ts, result, None)
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    action = result.output["action"]
+                    if action == "BUY" and not global_ready:
+                        _persist_data_error(ts, "NEW_RISK_BLOCKED_DATA_READINESS")
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    if action == "HOLD" and not has_position:
+                        continue  # 非持仓正常 HOLD 不落表
+                    if action == "BUY":
+                        summary_counts["buy_matches"] += 1
+                        kind = "BUY"
+                    else:
+                        summary_counts["holding_signals"] += 1
+                        kind = "HOLDING"
+                    lifecycle_seed = None
+                    if (
+                        strategy.get("template_id") == "arc_bottom_75a_v1"
+                        and result.output["action"] == "BUY"
+                    ):
+                        closes = lifecycle_ctx["ohlcv"]["close"]
+                        if len(closes) >= 41:
+                            ratio = Decimal(str(execution_market["raw_close"])) / Decimal(str(execution_market["qfq_close"]))
+                            lifecycle_seed = {
+                                "arc_neckline_price": str(max(
+                                    Decimal(str(closes[-41])), Decimal(str(closes[-11]))
+                                ) * ratio),
+                                "input_hash": lifecycle_ctx.get("meta", {}).get("data_hash"),
+                            }
+                    _persist_signal(kind, ts, result, execution_market, lifecycle_seed)
+                    if has_position and ts in active_lifecycles:
+                        _process_lifecycle(ts, lifecycle_ctx, execution_market, result.output)
+            # 每批落盘后提交（取消时已持久化批次保留，未持久化批次丢弃）
+            self._control.raise_if_inactive()
+            self._session.commit()
+            done = min(batch_index + self._batch_size, len(scan_targets))
+            self._on_progress("scan", done, len(scan_targets))
+    
+        # 持仓无效代码：记录 HOLDING 审计错误
+        for symbol, error in invalid_holdings:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id, attempt_no=self._attempt_no,
+                strategy_version_id=strategy_version_id,
+                signal_kind="ERROR", ts_code=symbol, error_code=error, reason=f"持仓代码无效: {symbol}",
+            )
+            self._signals.add(signal)
+    
+        if self._scan_only:
+            self._control.raise_if_inactive()
+            self._session.commit()
+            warnings = []
+            if error_samples:
+                warnings.append(f"扫描错误：{dict(error_counts)}（样本见 signals 表）")
+            return {
+                "strategy": {
+                    "id": str(strategy_version_id) if strategy_version_id else None,
+                    "name": strategy.get("name", ""),
+                    "version_no": strategy.get("version_no"),
+                    "source_hash_prefix": strategy.get("source_hash", "")[:12],
+                    "published_at": strategy.get("published_at"),
+                },
+                "summary": {
+                    "universe_total": universe_total,
+                    "data_complete": summary_counts["data_complete"],
+                    "scanned": summary_counts["scanned"],
+                    "buy_matches": summary_counts["buy_matches"],
+                    "failed_count": summary_counts["failed"],
+                },
+                "warnings": warnings,
+                "requested_trade_date": readiness.requested_trade_date.isoformat(),
+                "market_as_of_trade_date": readiness.market_as_of_trade_date.isoformat(),
+            }
+    
+        # 全量信号落库后：全局排序规划订单
+        portfolio_snapshot = self._snapshot["portfolio"]
+        from .planning_account import lock_portfolio, planning_account
+        current_portfolio = lock_portfolio(self._session, uuid.UUID(str(portfolio_snapshot["id"])))
+        pending_for_plan = [*self._snapshot.get("pending_orders", []), *lifecycle_pending_orders]
+        owner_versions = None
+        if current_portfolio is not None:
+            from .portfolio_drawdown_actions import PortfolioDrawdownActions
+            PortfolioDrawdownActions(self._session).pause_for_planning(
+                current_portfolio.id, valuation_date=readiness.market_as_of_trade_date)
+            current = planning_account(self._session, current_portfolio)
+            owner_versions = current["owner_versions"]
+            lifecycle_managed_symbols = set(self._session.scalars(select(PositionLifecycleState.symbol).where(
+                PositionLifecycleState.portfolio_id == current_portfolio.id,
+                PositionLifecycleState.market == "CN", PositionLifecycleState.closed_at.is_(None),
+            )))
+            portfolio_snapshot, holdings, pending_for_plan = (
+                current["portfolio_snapshot"], current["positions"], current["pending_orders"])
+        closes = self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date)
+        from .strategy_admission import StrategyAdmissionService
+        admission = StrategyAdmissionService(self._session).gate_new_risk(
+            strategy_version_id, asset_scope="CN_STOCK",
+            risk_profile=portfolio_snapshot.get("risk_profile"),
+        )
+        from .certified_instrument_rules import live_authorizations
+        rule_authorizations = live_authorizations(
+            self._session,
+            symbols=set(self._session.scalars(select(QuantExecutionSignal.ts_code).where(
+                QuantExecutionSignal.task_id == self._task_id,
+                QuantExecutionSignal.attempt_no == self._attempt_no,
+                QuantExecutionSignal.signal_kind == "BUY",
+            ))), decision_date=readiness.market_as_of_trade_date)
+        summary = PositionPlanner(self._signals).plan(
+            task_id=self._task_id,
+            attempt_no=self._attempt_no,
+            portfolio_snapshot=portfolio_snapshot,
+            positions=holdings,
+            closes=closes,
+            industry_map=industry_map,
+            industry_bucket_available=industry_available,
+            risk_gate=None,
+            execution_policy_snapshot=self._snapshot.get("execution_policy"),
+            pending_orders=pending_for_plan,
+            valuation_date=readiness.market_as_of_trade_date,
+            lifecycle_managed_symbols=lifecycle_managed_symbols,
+            owner_versions=owner_versions, strategy_version_id=strategy_version_id,
+            admission_block_code=("AWAITING_FAMILY_BATCH" if self._defer_new_risk
+                                  else None if admission["allowed"] else admission["code"]),
+            instrument_rules={symbol: authorization.rule
+                              for symbol, authorization in rule_authorizations.items()},
+        )
+        self._control.raise_if_inactive()
+        self._session.flush()
+        materialization_rejections = self._persist_suggested_orders(
+            portfolio_snapshot, positions=holdings, industry_map=industry_map,
+            rule_authorizations=rule_authorizations)
+>       for code, count in materialization_rejections.items():
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'items'
+
+backend\modules\quant_strategy\application\execution.py:630: AttributeError
+_ test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[True-BUY] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000025B9E70E2D0>
+action = 'BUY', preflight_pending = True
+
+    @pytest.mark.parametrize("action", ["BUY", "SELL_ALL"])
+    @pytest.mark.parametrize("preflight_pending", [False, True])
+    def test_market_wide_gap_runs_only_holding_protection_and_blocks_buy(monkeypatch, action, preflight_pending):
+        source = '''def strategy(context):
+        return {"action": "BUY", "score": 90, "entry_price": 10,
+                "stop_loss": 9, "take_profit": 13, "sell_ratio": None, "reason": "test"}
+    '''
+        session, market = Mock(), Mock()
+        session.scalars.return_value = []
+        session.scalar.return_value = None
+        market.execute.side_effect = lambda sql, *a: SimpleNamespace(
+            fetchall=lambda: [("000001.SZ",)] if "FROM market.instrument WHERE" in sql else [],
+        )
+        if preflight_pending:
+            gate = Mock(return_value=SimpleNamespace(
+                requested_trade_date=date(2026, 9, 19), market_as_of_trade_date=date(2026, 9, 19),
+            ))
+        else:
+            gate = Mock(side_effect=DataReadinessError("missing qfq"))
+        monkeypatch.setattr(execution.DataReadinessGate, "resolve", gate)
+        universe = Mock(side_effect=AssertionError("full scan must not run"))
+        monkeypatch.setattr(execution.AllMarketUniverseBuilder, "list_active_cn_stocks", universe)
+        monkeypatch.setattr(execution.MarketContextBatchLoader, "load_batch", lambda *a, **k: [{
+            "ts_code": "000001.SZ", "status": "OK",
+            "context": {"position": {"shares": 500}, "ohlcv": {"close": [10]}},
+            "execution_market": {"raw_close": 10},
+        }])
+        output = {"action": action, "score": 90, "entry_price": 10 if action == "BUY" else None,
+                  "stop_loss": 9 if action == "BUY" else None,
+                  "take_profit": 13 if action == "BUY" else None,
+                  "sell_ratio": None, "reason": "test"}
+        monkeypatch.setattr(execution, "run_strategy", lambda *a, **k: SimpleNamespace(ok=True, output=output))
+        from db.instrument.dao import ingest_state
+    
+        monkeypatch.setattr(ingest_state, "is_industry_bucket_available", lambda conn: (False, None))
+        planner_summary = SimpleNamespace(
+            suggested_buy_orders=0, suggested_sell_orders=0, warnings=[],
+            portfolio_open_risk=0, daily_new_risk=0, buy_rejections=[],
+            valued_at=date(2026, 9, 19),
+        )
+        planner = Mock()
+        planner.plan.return_value = planner_summary
+        monkeypatch.setattr(execution, "PositionPlanner", lambda repository: planner)
+        service = QuantExecutionService(
+            task_id=uuid.uuid4(), attempt_no=1,
+            snapshot={
+                "strategy": {"source_code": source, "source_hash": hashlib.sha256(source.encode()).hexdigest(),
+                             "version_no": 1},
+                "positions": [{"symbol": "000001.SZ", "quantity": 500, "average_cost": "10"}],
+                "portfolio": {"id": str(uuid.uuid4()), "name": "test", "version": 1,
+                              "total_assets": "100000", "available_cash": "50000", "risk": {}},
+            },
+            market_conn=market, session=session, execution_control=control(),
+            effective_trade_date=date(2026, 9, 19),
+            protection_only=preflight_pending,
+        )
+        monkeypatch.setattr(service, "_load_holding_closes", lambda codes, *, valuation_date: {})
+        monkeypatch.setattr(service, "_persist_suggested_orders", lambda *a, **k: None)
+>       result = service.run()
+                 ^^^^^^^^^^^^^
+
+var\test-layout-refactor\baseline-tests\test_execution_cancellation.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\modules\quant_strategy\application\execution.py:151: in run
+    return self._run()
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <backend.modules.quant_strategy.application.execution.QuantExecutionService object at 0x0000025B9E70E4E0>
+
+    def _run(self) -> dict:
+        """执行全市场扫描 + 订单规划，返回 quant_execution 摘要（无源码/无全量信号）。"""
+        strategy = self._snapshot["strategy"]
+        try:
+            management_policy = resolve_management_snapshot(strategy)
+        except (ValueError, TypeError) as exc:
+            raise StrategySnapshotInvalidError(str(exc)) from exc
+        strategy_version_id = (
+            uuid.UUID(str(strategy["version_id"])) if strategy.get("version_id") else None
+        )
+        source_code = strategy["source_code"]
+        frozen_template_contract = strategy.get("template_contract")
+        # 兼容 0010 之前已存在的旧快照；新快照只使用冻结合同，不读取可变注册表。
+        legacy_template = (
+            get_template(strategy["template_id"])
+            if strategy.get("template_id") and not frozen_template_contract
+            else None
+        )
+        benchmark_required = (
+            strategy.get("template_id") == "ma_trend_cross_v1"
+            and (strategy.get("template_params") or {}).get("benchmark_filter") == 1
+        )
+        host_scalars = required_host_scalars(
+            strategy.get("template_id"), strategy.get("template_params"),
+        )
+        # 已发布快照校验：AST + 散列（不符 → 不可重试任务失败）
+        issues = validate_strategy_source(source_code)
+        if issues:
+            raise StrategySnapshotInvalidError(
+                f"策略快照 AST 校验失败：{'；'.join(i.code for i in issues[:5])}"
+            )
+        # 散列校验（与提交时冻结的 source_hash 一致）
+        actual_hash = hashlib.sha256(source_code.encode("utf-8")).hexdigest()
+        if actual_hash != strategy["source_hash"]:
+            raise StrategySnapshotInvalidError("策略快照源码散列不符")
+    
+        global_ready = not self._protection_only
+        readiness_warning = "量化补采尚未通过覆盖复核" if self._protection_only else None
+        try:
+            readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+            if self._protection_only and not self._snapshot.get("positions"):
+                raise DataReadinessError("量化补采尚未通过覆盖复核")
+        except DataReadinessError as exc:
+            if self._scan_only or not self._snapshot.get("positions"):
+                raise
+            global_ready = False
+            readiness_warning = str(exc)
+            requested = self._effective_trade_date
+            readiness = DataReadinessSnapshot(
+                requested_trade_date=requested, market_as_of_trade_date=requested,
+                daily_trade_date=requested, factor_trade_date=requested,
+                adj_factor_trade_date=requested, trade_status_trade_date=requested,
+                coverage_digest="", universe_digest="",
+            )
+        effective_date = readiness.market_as_of_trade_date
+        universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn) if global_ready else []
+        universe_total = len(universe)
+    
+        # 持仓归一：无后缀经 instrument 唯一六位前缀反查（恰一行才转真实 ts_code）
+        suffix_map: dict[str, list[str]] = {}
+        for row in self._market_conn.execute(
+            "SELECT ts_code FROM market.instrument WHERE instrument_type='stock'"
+        ).fetchall():
+            code = row[0]
+            if "." in code:
+                suffix_map.setdefault(code.split(".")[0], []).append(code)
+        holdings: list[dict] = []
+        invalid_holdings: list[tuple[str, str]] = []
+        for p in self._snapshot["positions"]:
+            ts_code, error = _normalize_holding_symbol(p["symbol"], suffix_map)
+            if error:
+                invalid_holdings.append((p["symbol"], error))
+            else:
+                holdings.append({**p, "symbol": ts_code})
+        positions_by_code = {p["symbol"]: p for p in holdings}
+    
+        target_set = set(universe)
+        for h in holdings:
+            target_set.add(h["symbol"])
+        scan_targets = sorted(target_set)
+        stock_symbols = {code for codes in suffix_map.values() for code in codes}
+        portfolio_snapshot_for_lifecycle = self._snapshot.get("portfolio")
+        active_lifecycles = {}
+        lifecycle_versions = {}
+        if portfolio_snapshot_for_lifecycle and portfolio_snapshot_for_lifecycle.get("id"):
+            portfolio_id = uuid.UUID(str(portfolio_snapshot_for_lifecycle["id"]))
+            lifecycle_rows = list(self._session.scalars(
+                    select(PositionLifecycleState).where(
+                        PositionLifecycleState.portfolio_id == portfolio_id,
+                        PositionLifecycleState.closed_at.is_(None),
+                    )
+                ))
+            active_lifecycles = {row.symbol: row.id for row in lifecycle_rows}
+            lifecycle_versions = {row.symbol: row.strategy_version_id for row in lifecycle_rows}
+        lifecycle_managed_symbols = set(active_lifecycles)
+        lifecycle_pending_orders: list[dict] = []
+        lifecycle_order_counts = {"BUY": 0, "SELL": 0}
+    
+        def _process_lifecycle(ts_code: str, ctx: dict | None, execution_market: dict | None, output: dict | None):
+            lifecycle_id = active_lifecycles.get(ts_code)
+            if lifecycle_id is None:
+                return
+            if self._defer_new_risk and lifecycle_versions.get(ts_code) != strategy_version_id:
+                # In a registered family batch each owner has its own frozen
+                # scan/window. Foreign scans must not advance that owner's day.
+                return
+            from .ownership import owned_script_output
+            output = owned_script_output(output, owner_version_id=lifecycle_versions.get(ts_code),
+                                         scanner_version_id=strategy_version_id)
+            if ctx is None or execution_market is None:
+                fact = {"close": None, "high": None, "data_error": "MARKET_CONTEXT_UNAVAILABLE"}
+            else:
+                ohlcv, indicators = ctx["ohlcv"], ctx["indicators"]
+                qfq_close = Decimal(str(execution_market["qfq_close"]))
+                raw_close = Decimal(str(execution_market["raw_close"]))
+                ratio = raw_close / qfq_close
+                volumes = ohlcv.get("volume", [])
+                actual = Decimal(str(ctx["position"].get("shares") or 0))
+                action = output.get("action") if output else None
+                script_target = None
+                if action == "SELL_ALL":
+                    script_target = Decimal(0)
+                elif action == "SELL_PARTIAL" and output.get("sell_ratio") is not None:
+                    script_target = max(Decimal(0), actual * (Decimal(1) - Decimal(str(output["sell_ratio"]))))
+                def last(name, offset=-1):
+                    values = indicators.get(name, [])
+                    return values[offset] if len(values) >= abs(offset) else None
+                def raw_level(name, offset=-1):
+                    return _raw_price_level(last(name, offset), ratio)
+                fact = {
+                    "close": raw_close, "high": Decimal(str(ohlcv["high"][-1])) * ratio,
+                    "atr": _raw_price_level(execution_market.get("atr_qfq"), ratio),
+                    "is_suspended": execution_market.get("is_suspended"),
+                    "ma5": raw_level("ma_qfq_5"), "prev_ma5": raw_level("ma_qfq_5", -2),
+                    "ma20": raw_level("ma_qfq_20"), "prev_ma20": raw_level("ma_qfq_20", -2),
+                    "ma60": raw_level("ma_qfq_60"), "boll_lower": raw_level("boll_lower_qfq"),
+                    "boll_mid": raw_level("boll_mid_qfq"), "boll_upper": raw_level("boll_upper_qfq"),
+                    "macd": last("macd_qfq"), "prev_macd": last("macd_qfq", -2),
+                    "dif": last("macd_dif_qfq"), "prev_dif": last("macd_dif_qfq", -2),
+                    "dea": last("macd_dea_qfq"), "prev_dea": last("macd_dea_qfq", -2),
+                    "rsi": last("rsi_qfq_6"), "prev_rsi": last("rsi_qfq_6", -2),
+                    "volume": volumes[-1] if volumes else None,
+                    "volume_base": max(v for v in volumes[-6:-1] if v is not None) if any(v is not None for v in volumes[-6:-1]) else None,
+                    "script_target_shares": script_target,
+                    "new_risk_allowed": global_ready,
+                    "execution_market": execution_market,
+                    "execution_policy": self._snapshot.get("execution_policy"),
+                    # Position balance does not establish broker sellability.
+                    "available_sell_quantity": positions_by_code[ts_code].get("available_quantity"),
+                    "source_task_id": str(self._task_id),
+                }
+            if self._defer_new_risk:
+                # Preserve the scanner's instrument classification across the
+                # deferral boundary; a batch label cannot certify an ETF/unknown.
+                fact["asset_scope"] = "CN_STOCK" if ts_code in stock_symbols else None
+            _daily, _intent, order, _decision = PositionLifecycleManager(self._session).process_day(
+                lifecycle_id, trade_date=effective_date, fact=fact,
+                data_as_of=datetime.now(timezone.utc), price_basis="raw", commit=False,
+                defer_buy=self._defer_new_risk,
+                buy_context={"valuation_date": effective_date,
+                             "asset_scope": "CN_STOCK" if ts_code in stock_symbols else None,
+                             "closes": self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date),
+                             "industry_map": industry_map, "industry_bucket_available": industry_available},
+            )
+            if order is not None:
+                lifecycle_order_counts[order.side] += 1
+                lifecycle_pending_orders.append({
+                    "id": str(order.id), "side": order.side, "symbol": order.symbol,
+                    "industry_code": order.industry_code,
+                    "remaining_quantity": str(order.quantity - order.filled_quantity),
+                    "order_entry_price": str(order.limit_price),
+                    "order_stop_price": str(order.stop_price) if order.stop_price is not None else None,
+                    "reserved_cash": str(order.reserved_cash), "status": order.status,
+                })
+    
+        # 行业风险桶数据 + 门控（一次查询）
+        industry_map: dict[str, dict] = {}
+        for row in self._market_conn.execute(
+            "SELECT m.ts_code, m.industry_code, i.name FROM market.industry_member m "
+            "JOIN market.industry i ON i.source = m.source AND i.industry_code = m.industry_code "
+            "WHERE m.source = 'SW2021'"
+        ).fetchall():
+            industry_map[row[0]] = {"industry_code": row[1], "name": row[2]}
+        from db.instrument.dao import ingest_state as ingest_state_dao
+    
+        industry_available, _ = ingest_state_dao.is_industry_bucket_available(self._market_conn)
+    
+        loader = MarketContextBatchLoader(lookback=int(strategy.get("required_bars", 250)))
+        benchmark_state = (
+            benchmark_above_ma120(self._market_conn, effective_date)
+            if benchmark_required and global_ready else None
+        )
+        summary_counts = {
+            "data_complete": 0,
+            "scanned": 0,
+            "failed": 0,
+            "buy_matches": 0,
+            "holding_signals": 0,
+        }
+        error_samples: dict[str, list[str]] = {}
+        error_counts: dict[str, int] = {}
+    
+        def _persist_signal(kind, ts_code, result, execution_market, lifecycle_seed=None) -> None:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id,
+                strategy_version_id=strategy_version_id,
+                attempt_no=self._attempt_no,
+                signal_kind=kind,
+                ts_code=ts_code,
+            )
+            if kind == "ERROR":
+                signal.error_code = result.error_code
+                signal.reason = (result.error_message or "")[:240]
+            else:
+                out = result.output
+                signal.action = out["action"]
+                signal.score = out["score"]
+                signal.reason = out["reason"]
+                signal.entry_price = out["entry_price"]
+                signal.stop_loss = out["stop_loss"]
+                signal.take_profit = out["take_profit"]
+                signal.sell_ratio = out["sell_ratio"]
+                if execution_market:
+                    signal.valuation_price = execution_market.get("raw_close")
+                    trade_date = execution_market.get("trade_date") or self._effective_trade_date.isoformat()
+                    signal.signal_trade_date = date.fromisoformat(str(trade_date)[:10])
+                    signal.signal_price_basis = "qfq"
+                    signal.execution_price_basis = "raw"
+                    signal.adj_factor_version = execution_market.get("adj_factor_version")
+                    signal.execution_market = {
+                        **execution_market,
+                        "batch_context": {
+                            "industry": industry_map.get(ts_code),
+                            "industry_bucket_available": industry_available,
+                            "new_risk_allowed": global_ready,
+                        },
+                        **({"lifecycle_seed": lifecycle_seed} if lifecycle_seed else {}),
+                    }
+            self._signals.add(signal)
+    
+        def _persist_data_error(ts_code: str, code: str) -> None:
+            self._signals.add(
+                QuantExecutionSignal(
+                    task_id=self._task_id,
+                    strategy_version_id=strategy_version_id,
+                    attempt_no=self._attempt_no,
+                    signal_kind="ERROR",
+                    ts_code=ts_code,
+                    error_code=code,
+                    reason=f"执行期行情输入不可用: {code}",
+                )
+            )
+    
+        for batch_index in range(0, len(scan_targets), self._batch_size):
+            self._control.raise_if_inactive()
+            batch = scan_targets[batch_index : batch_index + self._batch_size]
+            contexts = loader.load_batch(
+                self._market_conn, batch, effective_date, positions_by_code=positions_by_code,
+                requested_trade_date=readiness.requested_trade_date,
+                benchmark_above_ma120=benchmark_state,
+            )
+            pending: list = []
+            with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
+                for item in contexts:
+                    self._control.raise_if_inactive()
+                    ts = item["ts_code"]
+                    if (item["status"] == "OK" and host_scalars
+                            and not (item["context"]["position"].get("shares") or 0)):
+                        absent = [field for field in host_scalars
+                                  if item["context"].get("meta", {}).get(field) is None]
+                        if absent:
+                            item = {**item, "status": (
+                                "BENCHMARK_UNAVAILABLE" if "benchmark_above_ma120" in absent
+                                else "INDICATOR_UNAVAILABLE"
+                            ), "context": None}
+                    if item["status"] == "OK" and frozen_template_contract is not None:
+                        guard_error = validate_frozen_template_context(frozen_template_contract, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    elif item["status"] == "OK" and legacy_template is not None:
+                        guard_error = validate_template_context(legacy_template, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    if item["status"] != "OK":
+                        summary_counts["failed"] += 1
+                        error_counts[item["status"]] = error_counts.get(item["status"], 0) + 1
+                        samples = error_samples.setdefault(item["status"], [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_data_error(ts, item["status"])
+                        elif ts in positions_by_code:
+                            # 持仓输入错误始终保留，不能被非持仓 sample 上限吞掉。
+                            _persist_data_error(ts, item["status"])
+                        if ts in active_lifecycles:
+                            _process_lifecycle(ts, None, None, None)
+                        continue
+                    summary_counts["data_complete"] += 1
+                    summary_counts["scanned"] += 1
+                    ctx = item["context"]
+                    has_position = (ctx["position"].get("shares") or 0) > 0
+    
+                    execution_market = item["execution_market"]
+    
+                    def _execute(_ctx, _ts, _has_position, _execution_market):
+                        self._control.raise_if_inactive()
+                        proc_holder: dict = {}
+                        try:
+                            result = run_strategy(
+                                source_code,
+                                _ctx,
+                                has_position=_has_position,
+                                timeout=self._sandbox_timeout,
+                                allow_null_take_profit=management_policy is not None,
+                                on_process=lambda popen: (proc_holder.update(p=popen), self._control.register_process(popen)),
+                            )
+                        finally:
+                            popen = proc_holder.get("p")
+                            if popen is not None:
+                                self._control.unregister_process(popen)
+                        if result.ok and management_policy is not None:
+                            result = replace(result, output=adapt_management_output(
+                                result.output, management_policy, _ctx, _execution_market,
+                            ))
+                        return _ts, result, _has_position, _execution_market, _ctx
+    
+                    pending.append(pool.submit(_execute, ctx, ts, has_position, execution_market))
+    
+                for future in as_completed(pending):
+                    self._control.raise_if_inactive()
+                    ts, result, has_position, execution_market, lifecycle_ctx = future.result()
+                    if not result.ok:
+                        summary_counts["failed"] += 1
+                        code = result.error_code or "INVALID_OUTPUT"
+                        error_counts[code] = error_counts.get(code, 0) + 1
+                        # 错误样本按每码 ≤100 条落 ERROR 行（plan 4.3.1 信号保留矩阵）；
+                        # 持仓错误全量落，非持仓错误按 sample 上限落
+                        samples = error_samples.setdefault(code, [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_signal("ERROR", ts, result, None)
+                        elif has_position:
+                            _persist_signal("ERROR", ts, result, None)
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    action = result.output["action"]
+                    if action == "BUY" and not global_ready:
+                        _persist_data_error(ts, "NEW_RISK_BLOCKED_DATA_READINESS")
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    if action == "HOLD" and not has_position:
+                        continue  # 非持仓正常 HOLD 不落表
+                    if action == "BUY":
+                        summary_counts["buy_matches"] += 1
+                        kind = "BUY"
+                    else:
+                        summary_counts["holding_signals"] += 1
+                        kind = "HOLDING"
+                    lifecycle_seed = None
+                    if (
+                        strategy.get("template_id") == "arc_bottom_75a_v1"
+                        and result.output["action"] == "BUY"
+                    ):
+                        closes = lifecycle_ctx["ohlcv"]["close"]
+                        if len(closes) >= 41:
+                            ratio = Decimal(str(execution_market["raw_close"])) / Decimal(str(execution_market["qfq_close"]))
+                            lifecycle_seed = {
+                                "arc_neckline_price": str(max(
+                                    Decimal(str(closes[-41])), Decimal(str(closes[-11]))
+                                ) * ratio),
+                                "input_hash": lifecycle_ctx.get("meta", {}).get("data_hash"),
+                            }
+                    _persist_signal(kind, ts, result, execution_market, lifecycle_seed)
+                    if has_position and ts in active_lifecycles:
+                        _process_lifecycle(ts, lifecycle_ctx, execution_market, result.output)
+            # 每批落盘后提交（取消时已持久化批次保留，未持久化批次丢弃）
+            self._control.raise_if_inactive()
+            self._session.commit()
+            done = min(batch_index + self._batch_size, len(scan_targets))
+            self._on_progress("scan", done, len(scan_targets))
+    
+        # 持仓无效代码：记录 HOLDING 审计错误
+        for symbol, error in invalid_holdings:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id, attempt_no=self._attempt_no,
+                strategy_version_id=strategy_version_id,
+                signal_kind="ERROR", ts_code=symbol, error_code=error, reason=f"持仓代码无效: {symbol}",
+            )
+            self._signals.add(signal)
+    
+        if self._scan_only:
+            self._control.raise_if_inactive()
+            self._session.commit()
+            warnings = []
+            if error_samples:
+                warnings.append(f"扫描错误：{dict(error_counts)}（样本见 signals 表）")
+            return {
+                "strategy": {
+                    "id": str(strategy_version_id) if strategy_version_id else None,
+                    "name": strategy.get("name", ""),
+                    "version_no": strategy.get("version_no"),
+                    "source_hash_prefix": strategy.get("source_hash", "")[:12],
+                    "published_at": strategy.get("published_at"),
+                },
+                "summary": {
+                    "universe_total": universe_total,
+                    "data_complete": summary_counts["data_complete"],
+                    "scanned": summary_counts["scanned"],
+                    "buy_matches": summary_counts["buy_matches"],
+                    "failed_count": summary_counts["failed"],
+                },
+                "warnings": warnings,
+                "requested_trade_date": readiness.requested_trade_date.isoformat(),
+                "market_as_of_trade_date": readiness.market_as_of_trade_date.isoformat(),
+            }
+    
+        # 全量信号落库后：全局排序规划订单
+        portfolio_snapshot = self._snapshot["portfolio"]
+        from .planning_account import lock_portfolio, planning_account
+        current_portfolio = lock_portfolio(self._session, uuid.UUID(str(portfolio_snapshot["id"])))
+        pending_for_plan = [*self._snapshot.get("pending_orders", []), *lifecycle_pending_orders]
+        owner_versions = None
+        if current_portfolio is not None:
+            from .portfolio_drawdown_actions import PortfolioDrawdownActions
+            PortfolioDrawdownActions(self._session).pause_for_planning(
+                current_portfolio.id, valuation_date=readiness.market_as_of_trade_date)
+            current = planning_account(self._session, current_portfolio)
+            owner_versions = current["owner_versions"]
+            lifecycle_managed_symbols = set(self._session.scalars(select(PositionLifecycleState.symbol).where(
+                PositionLifecycleState.portfolio_id == current_portfolio.id,
+                PositionLifecycleState.market == "CN", PositionLifecycleState.closed_at.is_(None),
+            )))
+            portfolio_snapshot, holdings, pending_for_plan = (
+                current["portfolio_snapshot"], current["positions"], current["pending_orders"])
+        closes = self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date)
+        from .strategy_admission import StrategyAdmissionService
+        admission = StrategyAdmissionService(self._session).gate_new_risk(
+            strategy_version_id, asset_scope="CN_STOCK",
+            risk_profile=portfolio_snapshot.get("risk_profile"),
+        )
+        from .certified_instrument_rules import live_authorizations
+        rule_authorizations = live_authorizations(
+            self._session,
+            symbols=set(self._session.scalars(select(QuantExecutionSignal.ts_code).where(
+                QuantExecutionSignal.task_id == self._task_id,
+                QuantExecutionSignal.attempt_no == self._attempt_no,
+                QuantExecutionSignal.signal_kind == "BUY",
+            ))), decision_date=readiness.market_as_of_trade_date)
+        summary = PositionPlanner(self._signals).plan(
+            task_id=self._task_id,
+            attempt_no=self._attempt_no,
+            portfolio_snapshot=portfolio_snapshot,
+            positions=holdings,
+            closes=closes,
+            industry_map=industry_map,
+            industry_bucket_available=industry_available,
+            risk_gate=None,
+            execution_policy_snapshot=self._snapshot.get("execution_policy"),
+            pending_orders=pending_for_plan,
+            valuation_date=readiness.market_as_of_trade_date,
+            lifecycle_managed_symbols=lifecycle_managed_symbols,
+            owner_versions=owner_versions, strategy_version_id=strategy_version_id,
+            admission_block_code=("AWAITING_FAMILY_BATCH" if self._defer_new_risk
+                                  else None if admission["allowed"] else admission["code"]),
+            instrument_rules={symbol: authorization.rule
+                              for symbol, authorization in rule_authorizations.items()},
+        )
+        self._control.raise_if_inactive()
+        self._session.flush()
+        materialization_rejections = self._persist_suggested_orders(
+            portfolio_snapshot, positions=holdings, industry_map=industry_map,
+            rule_authorizations=rule_authorizations)
+>       for code, count in materialization_rejections.items():
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'items'
+
+backend\modules\quant_strategy\application\execution.py:630: AttributeError
+_ test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[True-SELL_ALL] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000025B9E69EED0>
+action = 'SELL_ALL', preflight_pending = True
+
+    @pytest.mark.parametrize("action", ["BUY", "SELL_ALL"])
+    @pytest.mark.parametrize("preflight_pending", [False, True])
+    def test_market_wide_gap_runs_only_holding_protection_and_blocks_buy(monkeypatch, action, preflight_pending):
+        source = '''def strategy(context):
+        return {"action": "BUY", "score": 90, "entry_price": 10,
+                "stop_loss": 9, "take_profit": 13, "sell_ratio": None, "reason": "test"}
+    '''
+        session, market = Mock(), Mock()
+        session.scalars.return_value = []
+        session.scalar.return_value = None
+        market.execute.side_effect = lambda sql, *a: SimpleNamespace(
+            fetchall=lambda: [("000001.SZ",)] if "FROM market.instrument WHERE" in sql else [],
+        )
+        if preflight_pending:
+            gate = Mock(return_value=SimpleNamespace(
+                requested_trade_date=date(2026, 9, 19), market_as_of_trade_date=date(2026, 9, 19),
+            ))
+        else:
+            gate = Mock(side_effect=DataReadinessError("missing qfq"))
+        monkeypatch.setattr(execution.DataReadinessGate, "resolve", gate)
+        universe = Mock(side_effect=AssertionError("full scan must not run"))
+        monkeypatch.setattr(execution.AllMarketUniverseBuilder, "list_active_cn_stocks", universe)
+        monkeypatch.setattr(execution.MarketContextBatchLoader, "load_batch", lambda *a, **k: [{
+            "ts_code": "000001.SZ", "status": "OK",
+            "context": {"position": {"shares": 500}, "ohlcv": {"close": [10]}},
+            "execution_market": {"raw_close": 10},
+        }])
+        output = {"action": action, "score": 90, "entry_price": 10 if action == "BUY" else None,
+                  "stop_loss": 9 if action == "BUY" else None,
+                  "take_profit": 13 if action == "BUY" else None,
+                  "sell_ratio": None, "reason": "test"}
+        monkeypatch.setattr(execution, "run_strategy", lambda *a, **k: SimpleNamespace(ok=True, output=output))
+        from db.instrument.dao import ingest_state
+    
+        monkeypatch.setattr(ingest_state, "is_industry_bucket_available", lambda conn: (False, None))
+        planner_summary = SimpleNamespace(
+            suggested_buy_orders=0, suggested_sell_orders=0, warnings=[],
+            portfolio_open_risk=0, daily_new_risk=0, buy_rejections=[],
+            valued_at=date(2026, 9, 19),
+        )
+        planner = Mock()
+        planner.plan.return_value = planner_summary
+        monkeypatch.setattr(execution, "PositionPlanner", lambda repository: planner)
+        service = QuantExecutionService(
+            task_id=uuid.uuid4(), attempt_no=1,
+            snapshot={
+                "strategy": {"source_code": source, "source_hash": hashlib.sha256(source.encode()).hexdigest(),
+                             "version_no": 1},
+                "positions": [{"symbol": "000001.SZ", "quantity": 500, "average_cost": "10"}],
+                "portfolio": {"id": str(uuid.uuid4()), "name": "test", "version": 1,
+                              "total_assets": "100000", "available_cash": "50000", "risk": {}},
+            },
+            market_conn=market, session=session, execution_control=control(),
+            effective_trade_date=date(2026, 9, 19),
+            protection_only=preflight_pending,
+        )
+        monkeypatch.setattr(service, "_load_holding_closes", lambda codes, *, valuation_date: {})
+        monkeypatch.setattr(service, "_persist_suggested_orders", lambda *a, **k: None)
+>       result = service.run()
+                 ^^^^^^^^^^^^^
+
+var\test-layout-refactor\baseline-tests\test_execution_cancellation.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\modules\quant_strategy\application\execution.py:151: in run
+    return self._run()
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <backend.modules.quant_strategy.application.execution.QuantExecutionService object at 0x0000025B9E69F470>
+
+    def _run(self) -> dict:
+        """执行全市场扫描 + 订单规划，返回 quant_execution 摘要（无源码/无全量信号）。"""
+        strategy = self._snapshot["strategy"]
+        try:
+            management_policy = resolve_management_snapshot(strategy)
+        except (ValueError, TypeError) as exc:
+            raise StrategySnapshotInvalidError(str(exc)) from exc
+        strategy_version_id = (
+            uuid.UUID(str(strategy["version_id"])) if strategy.get("version_id") else None
+        )
+        source_code = strategy["source_code"]
+        frozen_template_contract = strategy.get("template_contract")
+        # 兼容 0010 之前已存在的旧快照；新快照只使用冻结合同，不读取可变注册表。
+        legacy_template = (
+            get_template(strategy["template_id"])
+            if strategy.get("template_id") and not frozen_template_contract
+            else None
+        )
+        benchmark_required = (
+            strategy.get("template_id") == "ma_trend_cross_v1"
+            and (strategy.get("template_params") or {}).get("benchmark_filter") == 1
+        )
+        host_scalars = required_host_scalars(
+            strategy.get("template_id"), strategy.get("template_params"),
+        )
+        # 已发布快照校验：AST + 散列（不符 → 不可重试任务失败）
+        issues = validate_strategy_source(source_code)
+        if issues:
+            raise StrategySnapshotInvalidError(
+                f"策略快照 AST 校验失败：{'；'.join(i.code for i in issues[:5])}"
+            )
+        # 散列校验（与提交时冻结的 source_hash 一致）
+        actual_hash = hashlib.sha256(source_code.encode("utf-8")).hexdigest()
+        if actual_hash != strategy["source_hash"]:
+            raise StrategySnapshotInvalidError("策略快照源码散列不符")
+    
+        global_ready = not self._protection_only
+        readiness_warning = "量化补采尚未通过覆盖复核" if self._protection_only else None
+        try:
+            readiness = DataReadinessGate.resolve(self._market_conn, self._effective_trade_date)
+            if self._protection_only and not self._snapshot.get("positions"):
+                raise DataReadinessError("量化补采尚未通过覆盖复核")
+        except DataReadinessError as exc:
+            if self._scan_only or not self._snapshot.get("positions"):
+                raise
+            global_ready = False
+            readiness_warning = str(exc)
+            requested = self._effective_trade_date
+            readiness = DataReadinessSnapshot(
+                requested_trade_date=requested, market_as_of_trade_date=requested,
+                daily_trade_date=requested, factor_trade_date=requested,
+                adj_factor_trade_date=requested, trade_status_trade_date=requested,
+                coverage_digest="", universe_digest="",
+            )
+        effective_date = readiness.market_as_of_trade_date
+        universe = AllMarketUniverseBuilder.list_active_cn_stocks(self._market_conn) if global_ready else []
+        universe_total = len(universe)
+    
+        # 持仓归一：无后缀经 instrument 唯一六位前缀反查（恰一行才转真实 ts_code）
+        suffix_map: dict[str, list[str]] = {}
+        for row in self._market_conn.execute(
+            "SELECT ts_code FROM market.instrument WHERE instrument_type='stock'"
+        ).fetchall():
+            code = row[0]
+            if "." in code:
+                suffix_map.setdefault(code.split(".")[0], []).append(code)
+        holdings: list[dict] = []
+        invalid_holdings: list[tuple[str, str]] = []
+        for p in self._snapshot["positions"]:
+            ts_code, error = _normalize_holding_symbol(p["symbol"], suffix_map)
+            if error:
+                invalid_holdings.append((p["symbol"], error))
+            else:
+                holdings.append({**p, "symbol": ts_code})
+        positions_by_code = {p["symbol"]: p for p in holdings}
+    
+        target_set = set(universe)
+        for h in holdings:
+            target_set.add(h["symbol"])
+        scan_targets = sorted(target_set)
+        stock_symbols = {code for codes in suffix_map.values() for code in codes}
+        portfolio_snapshot_for_lifecycle = self._snapshot.get("portfolio")
+        active_lifecycles = {}
+        lifecycle_versions = {}
+        if portfolio_snapshot_for_lifecycle and portfolio_snapshot_for_lifecycle.get("id"):
+            portfolio_id = uuid.UUID(str(portfolio_snapshot_for_lifecycle["id"]))
+            lifecycle_rows = list(self._session.scalars(
+                    select(PositionLifecycleState).where(
+                        PositionLifecycleState.portfolio_id == portfolio_id,
+                        PositionLifecycleState.closed_at.is_(None),
+                    )
+                ))
+            active_lifecycles = {row.symbol: row.id for row in lifecycle_rows}
+            lifecycle_versions = {row.symbol: row.strategy_version_id for row in lifecycle_rows}
+        lifecycle_managed_symbols = set(active_lifecycles)
+        lifecycle_pending_orders: list[dict] = []
+        lifecycle_order_counts = {"BUY": 0, "SELL": 0}
+    
+        def _process_lifecycle(ts_code: str, ctx: dict | None, execution_market: dict | None, output: dict | None):
+            lifecycle_id = active_lifecycles.get(ts_code)
+            if lifecycle_id is None:
+                return
+            if self._defer_new_risk and lifecycle_versions.get(ts_code) != strategy_version_id:
+                # In a registered family batch each owner has its own frozen
+                # scan/window. Foreign scans must not advance that owner's day.
+                return
+            from .ownership import owned_script_output
+            output = owned_script_output(output, owner_version_id=lifecycle_versions.get(ts_code),
+                                         scanner_version_id=strategy_version_id)
+            if ctx is None or execution_market is None:
+                fact = {"close": None, "high": None, "data_error": "MARKET_CONTEXT_UNAVAILABLE"}
+            else:
+                ohlcv, indicators = ctx["ohlcv"], ctx["indicators"]
+                qfq_close = Decimal(str(execution_market["qfq_close"]))
+                raw_close = Decimal(str(execution_market["raw_close"]))
+                ratio = raw_close / qfq_close
+                volumes = ohlcv.get("volume", [])
+                actual = Decimal(str(ctx["position"].get("shares") or 0))
+                action = output.get("action") if output else None
+                script_target = None
+                if action == "SELL_ALL":
+                    script_target = Decimal(0)
+                elif action == "SELL_PARTIAL" and output.get("sell_ratio") is not None:
+                    script_target = max(Decimal(0), actual * (Decimal(1) - Decimal(str(output["sell_ratio"]))))
+                def last(name, offset=-1):
+                    values = indicators.get(name, [])
+                    return values[offset] if len(values) >= abs(offset) else None
+                def raw_level(name, offset=-1):
+                    return _raw_price_level(last(name, offset), ratio)
+                fact = {
+                    "close": raw_close, "high": Decimal(str(ohlcv["high"][-1])) * ratio,
+                    "atr": _raw_price_level(execution_market.get("atr_qfq"), ratio),
+                    "is_suspended": execution_market.get("is_suspended"),
+                    "ma5": raw_level("ma_qfq_5"), "prev_ma5": raw_level("ma_qfq_5", -2),
+                    "ma20": raw_level("ma_qfq_20"), "prev_ma20": raw_level("ma_qfq_20", -2),
+                    "ma60": raw_level("ma_qfq_60"), "boll_lower": raw_level("boll_lower_qfq"),
+                    "boll_mid": raw_level("boll_mid_qfq"), "boll_upper": raw_level("boll_upper_qfq"),
+                    "macd": last("macd_qfq"), "prev_macd": last("macd_qfq", -2),
+                    "dif": last("macd_dif_qfq"), "prev_dif": last("macd_dif_qfq", -2),
+                    "dea": last("macd_dea_qfq"), "prev_dea": last("macd_dea_qfq", -2),
+                    "rsi": last("rsi_qfq_6"), "prev_rsi": last("rsi_qfq_6", -2),
+                    "volume": volumes[-1] if volumes else None,
+                    "volume_base": max(v for v in volumes[-6:-1] if v is not None) if any(v is not None for v in volumes[-6:-1]) else None,
+                    "script_target_shares": script_target,
+                    "new_risk_allowed": global_ready,
+                    "execution_market": execution_market,
+                    "execution_policy": self._snapshot.get("execution_policy"),
+                    # Position balance does not establish broker sellability.
+                    "available_sell_quantity": positions_by_code[ts_code].get("available_quantity"),
+                    "source_task_id": str(self._task_id),
+                }
+            if self._defer_new_risk:
+                # Preserve the scanner's instrument classification across the
+                # deferral boundary; a batch label cannot certify an ETF/unknown.
+                fact["asset_scope"] = "CN_STOCK" if ts_code in stock_symbols else None
+            _daily, _intent, order, _decision = PositionLifecycleManager(self._session).process_day(
+                lifecycle_id, trade_date=effective_date, fact=fact,
+                data_as_of=datetime.now(timezone.utc), price_basis="raw", commit=False,
+                defer_buy=self._defer_new_risk,
+                buy_context={"valuation_date": effective_date,
+                             "asset_scope": "CN_STOCK" if ts_code in stock_symbols else None,
+                             "closes": self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date),
+                             "industry_map": industry_map, "industry_bucket_available": industry_available},
+            )
+            if order is not None:
+                lifecycle_order_counts[order.side] += 1
+                lifecycle_pending_orders.append({
+                    "id": str(order.id), "side": order.side, "symbol": order.symbol,
+                    "industry_code": order.industry_code,
+                    "remaining_quantity": str(order.quantity - order.filled_quantity),
+                    "order_entry_price": str(order.limit_price),
+                    "order_stop_price": str(order.stop_price) if order.stop_price is not None else None,
+                    "reserved_cash": str(order.reserved_cash), "status": order.status,
+                })
+    
+        # 行业风险桶数据 + 门控（一次查询）
+        industry_map: dict[str, dict] = {}
+        for row in self._market_conn.execute(
+            "SELECT m.ts_code, m.industry_code, i.name FROM market.industry_member m "
+            "JOIN market.industry i ON i.source = m.source AND i.industry_code = m.industry_code "
+            "WHERE m.source = 'SW2021'"
+        ).fetchall():
+            industry_map[row[0]] = {"industry_code": row[1], "name": row[2]}
+        from db.instrument.dao import ingest_state as ingest_state_dao
+    
+        industry_available, _ = ingest_state_dao.is_industry_bucket_available(self._market_conn)
+    
+        loader = MarketContextBatchLoader(lookback=int(strategy.get("required_bars", 250)))
+        benchmark_state = (
+            benchmark_above_ma120(self._market_conn, effective_date)
+            if benchmark_required and global_ready else None
+        )
+        summary_counts = {
+            "data_complete": 0,
+            "scanned": 0,
+            "failed": 0,
+            "buy_matches": 0,
+            "holding_signals": 0,
+        }
+        error_samples: dict[str, list[str]] = {}
+        error_counts: dict[str, int] = {}
+    
+        def _persist_signal(kind, ts_code, result, execution_market, lifecycle_seed=None) -> None:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id,
+                strategy_version_id=strategy_version_id,
+                attempt_no=self._attempt_no,
+                signal_kind=kind,
+                ts_code=ts_code,
+            )
+            if kind == "ERROR":
+                signal.error_code = result.error_code
+                signal.reason = (result.error_message or "")[:240]
+            else:
+                out = result.output
+                signal.action = out["action"]
+                signal.score = out["score"]
+                signal.reason = out["reason"]
+                signal.entry_price = out["entry_price"]
+                signal.stop_loss = out["stop_loss"]
+                signal.take_profit = out["take_profit"]
+                signal.sell_ratio = out["sell_ratio"]
+                if execution_market:
+                    signal.valuation_price = execution_market.get("raw_close")
+                    trade_date = execution_market.get("trade_date") or self._effective_trade_date.isoformat()
+                    signal.signal_trade_date = date.fromisoformat(str(trade_date)[:10])
+                    signal.signal_price_basis = "qfq"
+                    signal.execution_price_basis = "raw"
+                    signal.adj_factor_version = execution_market.get("adj_factor_version")
+                    signal.execution_market = {
+                        **execution_market,
+                        "batch_context": {
+                            "industry": industry_map.get(ts_code),
+                            "industry_bucket_available": industry_available,
+                            "new_risk_allowed": global_ready,
+                        },
+                        **({"lifecycle_seed": lifecycle_seed} if lifecycle_seed else {}),
+                    }
+            self._signals.add(signal)
+    
+        def _persist_data_error(ts_code: str, code: str) -> None:
+            self._signals.add(
+                QuantExecutionSignal(
+                    task_id=self._task_id,
+                    strategy_version_id=strategy_version_id,
+                    attempt_no=self._attempt_no,
+                    signal_kind="ERROR",
+                    ts_code=ts_code,
+                    error_code=code,
+                    reason=f"执行期行情输入不可用: {code}",
+                )
+            )
+    
+        for batch_index in range(0, len(scan_targets), self._batch_size):
+            self._control.raise_if_inactive()
+            batch = scan_targets[batch_index : batch_index + self._batch_size]
+            contexts = loader.load_batch(
+                self._market_conn, batch, effective_date, positions_by_code=positions_by_code,
+                requested_trade_date=readiness.requested_trade_date,
+                benchmark_above_ma120=benchmark_state,
+            )
+            pending: list = []
+            with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
+                for item in contexts:
+                    self._control.raise_if_inactive()
+                    ts = item["ts_code"]
+                    if (item["status"] == "OK" and host_scalars
+                            and not (item["context"]["position"].get("shares") or 0)):
+                        absent = [field for field in host_scalars
+                                  if item["context"].get("meta", {}).get(field) is None]
+                        if absent:
+                            item = {**item, "status": (
+                                "BENCHMARK_UNAVAILABLE" if "benchmark_above_ma120" in absent
+                                else "INDICATOR_UNAVAILABLE"
+                            ), "context": None}
+                    if item["status"] == "OK" and frozen_template_contract is not None:
+                        guard_error = validate_frozen_template_context(frozen_template_contract, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    elif item["status"] == "OK" and legacy_template is not None:
+                        guard_error = validate_template_context(legacy_template, item["context"])
+                        if guard_error is not None:
+                            item = {**item, "status": guard_error, "context": None}
+                    if item["status"] != "OK":
+                        summary_counts["failed"] += 1
+                        error_counts[item["status"]] = error_counts.get(item["status"], 0) + 1
+                        samples = error_samples.setdefault(item["status"], [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_data_error(ts, item["status"])
+                        elif ts in positions_by_code:
+                            # 持仓输入错误始终保留，不能被非持仓 sample 上限吞掉。
+                            _persist_data_error(ts, item["status"])
+                        if ts in active_lifecycles:
+                            _process_lifecycle(ts, None, None, None)
+                        continue
+                    summary_counts["data_complete"] += 1
+                    summary_counts["scanned"] += 1
+                    ctx = item["context"]
+                    has_position = (ctx["position"].get("shares") or 0) > 0
+    
+                    execution_market = item["execution_market"]
+    
+                    def _execute(_ctx, _ts, _has_position, _execution_market):
+                        self._control.raise_if_inactive()
+                        proc_holder: dict = {}
+                        try:
+                            result = run_strategy(
+                                source_code,
+                                _ctx,
+                                has_position=_has_position,
+                                timeout=self._sandbox_timeout,
+                                allow_null_take_profit=management_policy is not None,
+                                on_process=lambda popen: (proc_holder.update(p=popen), self._control.register_process(popen)),
+                            )
+                        finally:
+                            popen = proc_holder.get("p")
+                            if popen is not None:
+                                self._control.unregister_process(popen)
+                        if result.ok and management_policy is not None:
+                            result = replace(result, output=adapt_management_output(
+                                result.output, management_policy, _ctx, _execution_market,
+                            ))
+                        return _ts, result, _has_position, _execution_market, _ctx
+    
+                    pending.append(pool.submit(_execute, ctx, ts, has_position, execution_market))
+    
+                for future in as_completed(pending):
+                    self._control.raise_if_inactive()
+                    ts, result, has_position, execution_market, lifecycle_ctx = future.result()
+                    if not result.ok:
+                        summary_counts["failed"] += 1
+                        code = result.error_code or "INVALID_OUTPUT"
+                        error_counts[code] = error_counts.get(code, 0) + 1
+                        # 错误样本按每码 ≤100 条落 ERROR 行（plan 4.3.1 信号保留矩阵）；
+                        # 持仓错误全量落，非持仓错误按 sample 上限落
+                        samples = error_samples.setdefault(code, [])
+                        if len(samples) < ERROR_SAMPLE_LIMIT:
+                            samples.append(ts)
+                            _persist_signal("ERROR", ts, result, None)
+                        elif has_position:
+                            _persist_signal("ERROR", ts, result, None)
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    action = result.output["action"]
+                    if action == "BUY" and not global_ready:
+                        _persist_data_error(ts, "NEW_RISK_BLOCKED_DATA_READINESS")
+                        if has_position and ts in active_lifecycles:
+                            _process_lifecycle(ts, lifecycle_ctx, execution_market, None)
+                        continue
+                    if action == "HOLD" and not has_position:
+                        continue  # 非持仓正常 HOLD 不落表
+                    if action == "BUY":
+                        summary_counts["buy_matches"] += 1
+                        kind = "BUY"
+                    else:
+                        summary_counts["holding_signals"] += 1
+                        kind = "HOLDING"
+                    lifecycle_seed = None
+                    if (
+                        strategy.get("template_id") == "arc_bottom_75a_v1"
+                        and result.output["action"] == "BUY"
+                    ):
+                        closes = lifecycle_ctx["ohlcv"]["close"]
+                        if len(closes) >= 41:
+                            ratio = Decimal(str(execution_market["raw_close"])) / Decimal(str(execution_market["qfq_close"]))
+                            lifecycle_seed = {
+                                "arc_neckline_price": str(max(
+                                    Decimal(str(closes[-41])), Decimal(str(closes[-11]))
+                                ) * ratio),
+                                "input_hash": lifecycle_ctx.get("meta", {}).get("data_hash"),
+                            }
+                    _persist_signal(kind, ts, result, execution_market, lifecycle_seed)
+                    if has_position and ts in active_lifecycles:
+                        _process_lifecycle(ts, lifecycle_ctx, execution_market, result.output)
+            # 每批落盘后提交（取消时已持久化批次保留，未持久化批次丢弃）
+            self._control.raise_if_inactive()
+            self._session.commit()
+            done = min(batch_index + self._batch_size, len(scan_targets))
+            self._on_progress("scan", done, len(scan_targets))
+    
+        # 持仓无效代码：记录 HOLDING 审计错误
+        for symbol, error in invalid_holdings:
+            signal = QuantExecutionSignal(
+                task_id=self._task_id, attempt_no=self._attempt_no,
+                strategy_version_id=strategy_version_id,
+                signal_kind="ERROR", ts_code=symbol, error_code=error, reason=f"持仓代码无效: {symbol}",
+            )
+            self._signals.add(signal)
+    
+        if self._scan_only:
+            self._control.raise_if_inactive()
+            self._session.commit()
+            warnings = []
+            if error_samples:
+                warnings.append(f"扫描错误：{dict(error_counts)}（样本见 signals 表）")
+            return {
+                "strategy": {
+                    "id": str(strategy_version_id) if strategy_version_id else None,
+                    "name": strategy.get("name", ""),
+                    "version_no": strategy.get("version_no"),
+                    "source_hash_prefix": strategy.get("source_hash", "")[:12],
+                    "published_at": strategy.get("published_at"),
+                },
+                "summary": {
+                    "universe_total": universe_total,
+                    "data_complete": summary_counts["data_complete"],
+                    "scanned": summary_counts["scanned"],
+                    "buy_matches": summary_counts["buy_matches"],
+                    "failed_count": summary_counts["failed"],
+                },
+                "warnings": warnings,
+                "requested_trade_date": readiness.requested_trade_date.isoformat(),
+                "market_as_of_trade_date": readiness.market_as_of_trade_date.isoformat(),
+            }
+    
+        # 全量信号落库后：全局排序规划订单
+        portfolio_snapshot = self._snapshot["portfolio"]
+        from .planning_account import lock_portfolio, planning_account
+        current_portfolio = lock_portfolio(self._session, uuid.UUID(str(portfolio_snapshot["id"])))
+        pending_for_plan = [*self._snapshot.get("pending_orders", []), *lifecycle_pending_orders]
+        owner_versions = None
+        if current_portfolio is not None:
+            from .portfolio_drawdown_actions import PortfolioDrawdownActions
+            PortfolioDrawdownActions(self._session).pause_for_planning(
+                current_portfolio.id, valuation_date=readiness.market_as_of_trade_date)
+            current = planning_account(self._session, current_portfolio)
+            owner_versions = current["owner_versions"]
+            lifecycle_managed_symbols = set(self._session.scalars(select(PositionLifecycleState.symbol).where(
+                PositionLifecycleState.portfolio_id == current_portfolio.id,
+                PositionLifecycleState.market == "CN", PositionLifecycleState.closed_at.is_(None),
+            )))
+            portfolio_snapshot, holdings, pending_for_plan = (
+                current["portfolio_snapshot"], current["positions"], current["pending_orders"])
+        closes = self._load_holding_closes([p["symbol"] for p in holdings], valuation_date=effective_date)
+        from .strategy_admission import StrategyAdmissionService
+        admission = StrategyAdmissionService(self._session).gate_new_risk(
+            strategy_version_id, asset_scope="CN_STOCK",
+            risk_profile=portfolio_snapshot.get("risk_profile"),
+        )
+        from .certified_instrument_rules import live_authorizations
+        rule_authorizations = live_authorizations(
+            self._session,
+            symbols=set(self._session.scalars(select(QuantExecutionSignal.ts_code).where(
+                QuantExecutionSignal.task_id == self._task_id,
+                QuantExecutionSignal.attempt_no == self._attempt_no,
+                QuantExecutionSignal.signal_kind == "BUY",
+            ))), decision_date=readiness.market_as_of_trade_date)
+        summary = PositionPlanner(self._signals).plan(
+            task_id=self._task_id,
+            attempt_no=self._attempt_no,
+            portfolio_snapshot=portfolio_snapshot,
+            positions=holdings,
+            closes=closes,
+            industry_map=industry_map,
+            industry_bucket_available=industry_available,
+            risk_gate=None,
+            execution_policy_snapshot=self._snapshot.get("execution_policy"),
+            pending_orders=pending_for_plan,
+            valuation_date=readiness.market_as_of_trade_date,
+            lifecycle_managed_symbols=lifecycle_managed_symbols,
+            owner_versions=owner_versions, strategy_version_id=strategy_version_id,
+            admission_block_code=("AWAITING_FAMILY_BATCH" if self._defer_new_risk
+                                  else None if admission["allowed"] else admission["code"]),
+            instrument_rules={symbol: authorization.rule
+                              for symbol, authorization in rule_authorizations.items()},
+        )
+        self._control.raise_if_inactive()
+        self._session.flush()
+        materialization_rejections = self._persist_suggested_orders(
+            portfolio_snapshot, positions=holdings, industry_map=industry_map,
+            rule_authorizations=rule_authorizations)
+>       for code, count in materialization_rejections.items():
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'items'
+
+backend\modules\quant_strategy\application\execution.py:630: AttributeError
+_____ test_null_target_planner_rejects_without_exception_or_fabricated_rr _____
+
+    def test_null_target_planner_rejects_without_exception_or_fabricated_rr():
+        from backend.modules.quant_strategy.application.position_planner import PositionPlanner
+        planner = PositionPlanner.__new__(PositionPlanner)
+        planner._reject = Mock()
+        signal = SimpleNamespace(entry_price=10, stop_loss=9, take_profit=None)
+>       assert planner._plan_buy(signal, Mock(), total_assets=Decimal(10000)) == (False, None, Decimal(0))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+var\test-layout-refactor\baseline-tests\test_management_runtime.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <backend.modules.quant_strategy.application.position_planner.PositionPlanner object at 0x0000025B9E70FFE0>
+signal = namespace(entry_price=10, stop_loss=9, take_profit=None)
+summary = <Mock id='2592523484576'>, ctx = {'total_assets': Decimal('10000')}
+
+    def _plan_buy(self, signal, summary, **ctx) -> tuple[bool, Decimal | None, Decimal]:
+        """规划 BUY，返回 (是否接受, gross notional, 含费用现金占用)。"""
+        total_assets = ctx["total_assets"]
+>       rule = ctx["instrument_rule"]
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'instrument_rule'
+
+backend\modules\quant_strategy\application\position_planner.py:460: KeyError
+_____ test_unknown_holding_industry_blocks_new_buy_but_keeps_partial_sell _____
+
+    def test_unknown_holding_industry_blocks_new_buy_but_keeps_partial_sell():
+        positions = [{"symbol": "600519.SH", "quantity": "500", "average_cost": "10"}]
+        repo, summary = _run(
+            None, [_buy(1, 90), _hold(2, "SELL_PARTIAL", ratio=0.5)],
+            positions=positions, closes={"600519.SH": Decimal("10")},
+        )
+        assert repo.updates[1]["order_status"] == pp.BUY_REJECTED_INDUSTRY_BUCKET
+>       assert repo.updates[2]["shares"] == Decimal("200")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'shares'
+
+var\test-layout-refactor\baseline-tests\test_position_planner.py:235: KeyError
+_______________________ test_sell_all_includes_odd_lots _______________________
+
+    def test_sell_all_includes_odd_lots():
+        positions = [{"market": "CN", "symbol": "600519.SH", "quantity": "150.0000", "average_cost": "1500.0000"}]
+        closes = {"600519.SH": Decimal("1400")}
+        repo, summary = _run(None, [_hold(10, "SELL_ALL")], positions=positions, closes=closes)
+>       assert repo.updates[10]["order_status"] == pp.ELIGIBLE
+E       AssertionError: assert 'SELLABLE_QUANTITY_UNKNOWN' == 'ELIGIBLE'
+E         
+E         - ELIGIBLE
+E         + SELLABLE_QUANTITY_UNKNOWN
+
+var\test-layout-refactor\baseline-tests\test_position_planner.py:260: AssertionError
+_________________________ test_sell_partial_lot_rules _________________________
+
+    def test_sell_partial_lot_rules():
+        positions = [{"market": "CN", "symbol": "600519.SH", "quantity": "500.0000", "average_cost": "10.0000"}]
+        closes = {"600519.SH": Decimal("10")}
+        # 500×0.5=250 → 整手 200
+        repo, summary = _run(None, [_hold(10, "SELL_PARTIAL", ratio=0.5)], positions=positions, closes=closes)
+>       assert repo.updates[10]["shares"] == Decimal("200")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'shares'
+
+var\test-layout-refactor\baseline-tests\test_position_planner.py:272: KeyError
+__________ test_two_sell_sources_in_one_plan_share_reserved_quantity __________
+
+    def test_two_sell_sources_in_one_plan_share_reserved_quantity():
+        positions = [{"market": "CN", "symbol": "600519.SH", "quantity": "1000", "average_cost": "10"}]
+        repo, summary = _run(None, [_hold(701, "SELL_PARTIAL", ratio=0.6), _hold(702, "SELL_ALL")],
+                             positions=positions, closes={"600519.SH": Decimal(10)})
+>       assert repo.updates[701]["shares"] == 600
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'shares'
+
+var\test-layout-refactor\baseline-tests\test_position_planner.py:282: KeyError
+__________ test_admission_denies_new_buy_but_preserves_holding_exit ___________
+
+    def test_admission_denies_new_buy_but_preserves_holding_exit():
+        repo, summary = _run(None, [_buy(1, 90), _hold(2, "SELL", ratio=1)],
+            admission_block_code="ADMISSION_SUSPENDED",
+            positions=[{"market": "CN", "symbol": "600519.SH", "quantity": 100,
+                        "average_cost": "10", "available_sell_quantity": 100}],
+            closes={"600519.SH": Decimal("10")})
+        assert repo.updates[1]["order_status"] == "BUY_REJECTED_ADMISSION"
+>       assert repo.updates[2]["order_status"] == "ELIGIBLE"
+E       AssertionError: assert 'SELLABLE_QUANTITY_UNKNOWN' == 'ELIGIBLE'
+E         
+E         - ELIGIBLE
+E         + SELLABLE_QUANTITY_UNKNOWN
+
+var\test-layout-refactor\baseline-tests\test_position_planner.py:396: AssertionError
+______________ test_default_prompt_keys_cover_topology_llm_nodes ______________
+
+    def test_default_prompt_keys_cover_topology_llm_nodes():
+        """\u62d3\u6251 LLM \u4e3b\u8282\u70b9 \u2286 DEFAULT_PROMPTS \u952e\uff08\u9632\u65b0\u589e/\u6539\u540d\u8282\u70b9\u6f02\u79fb\uff09\u3002
+    
+        DEFAULT_PROMPTS 另有 market 的 US/KR 4 个被折叠进 International News
+        工具循环的分析师条目（覆盖机制对全部 23 个节点生效，v1 编辑入口仅拓扑主节点）。
+        """
+        llm_ids = _topology_llm_node_ids()
+        assert llm_ids <= set(DEFAULT_PROMPTS.keys()), (
+            f"键漂移：拓扑主节点缺少 {llm_ids - set(DEFAULT_PROMPTS)}"
+        )
+>       assert len(DEFAULT_PROMPTS) == 23, f"预期 23 条，实际 {len(DEFAULT_PROMPTS)}"
+E       AssertionError: 预期 23 条，实际 26
+E       assert 26 == 23
+E        +  where 26 = len({'market:CN News Analyst': '你是一位专注 A 股市场微观结构的分析师，聚焦资金日历事件对三个时间级别资金面的影响。\n\n{date_line}\n## 已获取的数据（特征层：资金日历，窗口为交易日口径）\n...方向性结论\n- 仅当输入数据完整且带时间戳时，才允许按输入数据做描述并标注数据日期\n- 美国节点不参与 A 股风险门控，不得输出仓位建议\n\n输出格式：\n# 美国市场新闻分析报告\n\n{output_format}', ...})
+
+var\test-layout-refactor\baseline-tests\test_prompts.py:45: AssertionError
+=========================== short test summary info ===========================
+FAILED var/test-layout-refactor/baseline-tests/test_execution_cancellation.py::test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[False-BUY]
+FAILED var/test-layout-refactor/baseline-tests/test_execution_cancellation.py::test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[False-SELL_ALL]
+FAILED var/test-layout-refactor/baseline-tests/test_execution_cancellation.py::test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[True-BUY]
+FAILED var/test-layout-refactor/baseline-tests/test_execution_cancellation.py::test_market_wide_gap_runs_only_holding_protection_and_blocks_buy[True-SELL_ALL]
+FAILED var/test-layout-refactor/baseline-tests/test_management_runtime.py::test_null_target_planner_rejects_without_exception_or_fabricated_rr
+FAILED var/test-layout-refactor/baseline-tests/test_position_planner.py::test_unknown_holding_industry_blocks_new_buy_but_keeps_partial_sell
+FAILED var/test-layout-refactor/baseline-tests/test_position_planner.py::test_sell_all_includes_odd_lots
+FAILED var/test-layout-refactor/baseline-tests/test_position_planner.py::test_sell_partial_lot_rules
+FAILED var/test-layout-refactor/baseline-tests/test_position_planner.py::test_two_sell_sources_in_one_plan_share_reserved_quantity
+FAILED var/test-layout-refactor/baseline-tests/test_position_planner.py::test_admission_denies_new_buy_but_preserves_holding_exit
+FAILED var/test-layout-refactor/baseline-tests/test_prompts.py::test_default_prompt_keys_cover_topology_llm_nodes
+11 failed in 9.39s

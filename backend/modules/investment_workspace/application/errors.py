@@ -62,3 +62,9 @@ class PortfolioAccountInvalidError(DomainError):
     """组合账户字段跨字段校验失败（0008：现金/比例/上下限关系）。"""
 
     code = "PORTFOLIO_ACCOUNT_INVALID"
+
+
+class PortfolioLedgerRequiredError(DomainError):
+    """A ledger-backed account cannot be changed by the legacy direct editor."""
+
+    code = "PORTFOLIO_LEDGER_REQUIRED"

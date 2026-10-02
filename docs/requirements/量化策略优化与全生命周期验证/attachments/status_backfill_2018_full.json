@@ -1,0 +1,2140 @@
+{
+  "start": "2018-01-01",
+  "end": "2018-12-31",
+  "calendar_days": 243,
+  "pending_before": 243,
+  "attempted": [
+    {
+      "trade_date": "20181228",
+      "status": "PARTIAL",
+      "rows": 3563,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181227",
+      "status": "PARTIAL",
+      "rows": 3563,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181226",
+      "status": "PARTIAL",
+      "rows": 3563,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181225",
+      "status": "PARTIAL",
+      "rows": 3563,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181224",
+      "status": "PARTIAL",
+      "rows": 3563,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181221",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181220",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181219",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181218",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181217",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181214",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181213",
+      "status": "PARTIAL",
+      "rows": 3562,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181212",
+      "status": "PARTIAL",
+      "rows": 3561,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181211",
+      "status": "PARTIAL",
+      "rows": 3561,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181210",
+      "status": "PARTIAL",
+      "rows": 3561,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181207",
+      "status": "PARTIAL",
+      "rows": 3561,
+      "ambiguous_codes": [
+        "000693.SZ",
+        "002070.SZ",
+        "600401.SH",
+        "600680.SH"
+      ]
+    },
+    {
+      "trade_date": "20181206",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181205",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181204",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181203",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181130",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181129",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181128",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181127",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181126",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181123",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181122",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181121",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181120",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181119",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181116",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181115",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181114",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181113",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181112",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181109",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181108",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181107",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181106",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181105",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181102",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181101",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181031",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181030",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181029",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181026",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181025",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181024",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181023",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181022",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181019",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181018",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181017",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181016",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181015",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181012",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181011",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181010",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181009",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20181008",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180928",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180927",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180926",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180925",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180921",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180920",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180919",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180918",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180917",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180914",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180913",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180912",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180911",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180910",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180907",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180906",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180905",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180904",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180903",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180831",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180830",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180829",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180828",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180827",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180824",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180823",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180822",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180821",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180820",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180817",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180816",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180815",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180814",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180813",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180810",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180809",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180808",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180807",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180806",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180803",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180802",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180801",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180731",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180730",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180727",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180726",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180725",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180724",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180723",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180720",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180719",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180718",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180717",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180716",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180713",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180712",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180711",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180710",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180709",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180706",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180705",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180704",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180703",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180702",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180629",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180628",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180627",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180626",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180625",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180622",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180621",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180620",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180619",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180615",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180614",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180613",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180612",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180611",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180608",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180607",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180606",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180605",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180604",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180601",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180531",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180530",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180529",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180528",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180525",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180524",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180523",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180522",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180521",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180518",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180517",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180516",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180515",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180514",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180511",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180510",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180509",
+      "status": "UNAVAILABLE",
+      "rows": 0
+    },
+    {
+      "trade_date": "20180508",
+      "status": "PARTIAL",
+      "rows": 3510,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180507",
+      "status": "PARTIAL",
+      "rows": 3508,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180504",
+      "status": "PARTIAL",
+      "rows": 3508,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180503",
+      "status": "PARTIAL",
+      "rows": 3508,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180502",
+      "status": "PARTIAL",
+      "rows": 3508,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180427",
+      "status": "PARTIAL",
+      "rows": 3508,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180426",
+      "status": "PARTIAL",
+      "rows": 3506,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180425",
+      "status": "PARTIAL",
+      "rows": 3505,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180424",
+      "status": "PARTIAL",
+      "rows": 3505,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180423",
+      "status": "PARTIAL",
+      "rows": 3505,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180420",
+      "status": "PARTIAL",
+      "rows": 3505,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180419",
+      "status": "PARTIAL",
+      "rows": 3504,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180418",
+      "status": "PARTIAL",
+      "rows": 3504,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180417",
+      "status": "PARTIAL",
+      "rows": 3503,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180416",
+      "status": "PARTIAL",
+      "rows": 3502,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180413",
+      "status": "PARTIAL",
+      "rows": 3502,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180412",
+      "status": "PARTIAL",
+      "rows": 3502,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180411",
+      "status": "PARTIAL",
+      "rows": 3501,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180410",
+      "status": "PARTIAL",
+      "rows": 3501,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180409",
+      "status": "PARTIAL",
+      "rows": 3500,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180404",
+      "status": "PARTIAL",
+      "rows": 3500,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180403",
+      "status": "PARTIAL",
+      "rows": 3500,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180402",
+      "status": "PARTIAL",
+      "rows": 3499,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180330",
+      "status": "PARTIAL",
+      "rows": 3499,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180329",
+      "status": "PARTIAL",
+      "rows": 3497,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180328",
+      "status": "PARTIAL",
+      "rows": 3497,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180327",
+      "status": "PARTIAL",
+      "rows": 3496,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180326",
+      "status": "PARTIAL",
+      "rows": 3496,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180323",
+      "status": "PARTIAL",
+      "rows": 3495,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180322",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180321",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180320",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180319",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180316",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180315",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180314",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180313",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180312",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180309",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180308",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180307",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180306",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180305",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180302",
+      "status": "PARTIAL",
+      "rows": 3494,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180301",
+      "status": "PARTIAL",
+      "rows": 3492,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180228",
+      "status": "PARTIAL",
+      "rows": 3489,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180227",
+      "status": "PARTIAL",
+      "rows": 3489,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180226",
+      "status": "PARTIAL",
+      "rows": 3488,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180223",
+      "status": "PARTIAL",
+      "rows": 3487,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180222",
+      "status": "PARTIAL",
+      "rows": 3486,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180214",
+      "status": "PARTIAL",
+      "rows": 3486,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180213",
+      "status": "PARTIAL",
+      "rows": 3486,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180212",
+      "status": "PARTIAL",
+      "rows": 3486,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180209",
+      "status": "PARTIAL",
+      "rows": 3485,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180208",
+      "status": "PARTIAL",
+      "rows": 3485,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180207",
+      "status": "PARTIAL",
+      "rows": 3483,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180206",
+      "status": "PARTIAL",
+      "rows": 3483,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180205",
+      "status": "PARTIAL",
+      "rows": 3481,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180202",
+      "status": "PARTIAL",
+      "rows": 3480,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180201",
+      "status": "PARTIAL",
+      "rows": 3479,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180131",
+      "status": "PARTIAL",
+      "rows": 3477,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180130",
+      "status": "PARTIAL",
+      "rows": 3476,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180129",
+      "status": "PARTIAL",
+      "rows": 3476,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180126",
+      "status": "PARTIAL",
+      "rows": 3476,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180125",
+      "status": "PARTIAL",
+      "rows": 3476,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180124",
+      "status": "PARTIAL",
+      "rows": 3475,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180123",
+      "status": "PARTIAL",
+      "rows": 3474,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180122",
+      "status": "PARTIAL",
+      "rows": 3474,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180119",
+      "status": "PARTIAL",
+      "rows": 3473,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180118",
+      "status": "PARTIAL",
+      "rows": 3472,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180117",
+      "status": "PARTIAL",
+      "rows": 3471,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180116",
+      "status": "PARTIAL",
+      "rows": 3470,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180115",
+      "status": "PARTIAL",
+      "rows": 3468,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180112",
+      "status": "PARTIAL",
+      "rows": 3467,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180111",
+      "status": "PARTIAL",
+      "rows": 3467,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180110",
+      "status": "PARTIAL",
+      "rows": 3467,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180109",
+      "status": "PARTIAL",
+      "rows": 3467,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180108",
+      "status": "PARTIAL",
+      "rows": 3466,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180105",
+      "status": "PARTIAL",
+      "rows": 3466,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180104",
+      "status": "PARTIAL",
+      "rows": 3463,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180103",
+      "status": "PARTIAL",
+      "rows": 3463,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    },
+    {
+      "trade_date": "20180102",
+      "status": "PARTIAL",
+      "rows": 3462,
+      "ambiguous_codes": [
+        "000511.SZ",
+        "000629.SZ",
+        "000950.SZ",
+        "600432.SH",
+        "600806.SH"
+      ]
+    }
+  ],
+  "pending_after": 243,
+  "next_dates": [
+    "2018-12-06",
+    "2018-12-05",
+    "2018-12-04",
+    "2018-12-03",
+    "2018-11-30",
+    "2018-11-29",
+    "2018-11-28",
+    "2018-11-27",
+    "2018-11-26",
+    "2018-11-23",
+    "2018-11-22",
+    "2018-11-21",
+    "2018-11-20",
+    "2018-11-19",
+    "2018-11-16",
+    "2018-11-15",
+    "2018-11-14",
+    "2018-11-13",
+    "2018-11-12",
+    "2018-11-09",
+    "2018-11-08",
+    "2018-11-07",
+    "2018-11-06",
+    "2018-11-05",
+    "2018-11-02",
+    "2018-11-01",
+    "2018-10-31",
+    "2018-10-30",
+    "2018-10-29",
+    "2018-10-26",
+    "2018-10-25",
+    "2018-10-24",
+    "2018-10-23",
+    "2018-10-22",
+    "2018-10-19",
+    "2018-10-18",
+    "2018-10-17",
+    "2018-10-16",
+    "2018-10-15",
+    "2018-10-12",
+    "2018-10-11",
+    "2018-10-10",
+    "2018-10-09",
+    "2018-10-08",
+    "2018-09-28",
+    "2018-09-27",
+    "2018-09-26",
+    "2018-09-25",
+    "2018-09-21",
+    "2018-09-20",
+    "2018-09-19",
+    "2018-09-18",
+    "2018-09-17",
+    "2018-09-14",
+    "2018-09-13",
+    "2018-09-12",
+    "2018-09-11",
+    "2018-09-10",
+    "2018-09-07",
+    "2018-09-06",
+    "2018-09-05",
+    "2018-09-04",
+    "2018-09-03",
+    "2018-08-31",
+    "2018-08-30",
+    "2018-08-29",
+    "2018-08-28",
+    "2018-08-27",
+    "2018-08-24",
+    "2018-08-23",
+    "2018-08-22",
+    "2018-08-21",
+    "2018-08-20",
+    "2018-08-17",
+    "2018-08-16",
+    "2018-08-15",
+    "2018-08-14",
+    "2018-08-13",
+    "2018-08-10",
+    "2018-08-09",
+    "2018-08-08",
+    "2018-08-07",
+    "2018-08-06",
+    "2018-08-03",
+    "2018-08-02",
+    "2018-08-01",
+    "2018-07-31",
+    "2018-07-30",
+    "2018-07-27",
+    "2018-07-26",
+    "2018-07-25",
+    "2018-07-24",
+    "2018-07-23",
+    "2018-07-20",
+    "2018-07-19",
+    "2018-07-18",
+    "2018-07-17",
+    "2018-07-16",
+    "2018-07-13",
+    "2018-07-12",
+    "2018-07-11",
+    "2018-07-10",
+    "2018-07-09",
+    "2018-07-06",
+    "2018-07-05",
+    "2018-07-04",
+    "2018-07-03",
+    "2018-07-02",
+    "2018-06-29",
+    "2018-06-28",
+    "2018-06-27",
+    "2018-06-26",
+    "2018-06-25",
+    "2018-06-22",
+    "2018-06-21",
+    "2018-06-20",
+    "2018-06-19",
+    "2018-06-15",
+    "2018-06-14",
+    "2018-06-13",
+    "2018-06-12",
+    "2018-06-11",
+    "2018-06-08",
+    "2018-06-07",
+    "2018-06-06",
+    "2018-06-05",
+    "2018-06-04",
+    "2018-06-01",
+    "2018-05-31",
+    "2018-05-30",
+    "2018-05-29",
+    "2018-05-28",
+    "2018-05-25",
+    "2018-05-24",
+    "2018-05-23",
+    "2018-05-22",
+    "2018-05-21",
+    "2018-05-18",
+    "2018-05-17",
+    "2018-05-16",
+    "2018-05-15",
+    "2018-05-14",
+    "2018-05-11",
+    "2018-05-10",
+    "2018-05-09",
+    "2018-01-02",
+    "2018-01-04",
+    "2018-01-03",
+    "2018-01-08",
+    "2018-01-05",
+    "2018-01-12",
+    "2018-01-11",
+    "2018-01-10",
+    "2018-01-09",
+    "2018-01-15",
+    "2018-01-16",
+    "2018-01-17",
+    "2018-01-18",
+    "2018-01-19",
+    "2018-01-23",
+    "2018-01-22",
+    "2018-01-24",
+    "2018-01-30",
+    "2018-01-29",
+    "2018-01-26",
+    "2018-01-25",
+    "2018-01-31",
+    "2018-02-01",
+    "2018-02-02",
+    "2018-02-05",
+    "2018-02-07",
+    "2018-02-06",
+    "2018-02-09",
+    "2018-02-08",
+    "2018-02-22",
+    "2018-02-14",
+    "2018-02-13",
+    "2018-02-12",
+    "2018-02-23",
+    "2018-02-26",
+    "2018-02-28",
+    "2018-02-27",
+    "2018-03-01",
+    "2018-03-22",
+    "2018-03-21",
+    "2018-03-20",
+    "2018-03-19",
+    "2018-03-16",
+    "2018-03-15",
+    "2018-03-14",
+    "2018-03-13",
+    "2018-03-12",
+    "2018-03-09",
+    "2018-03-08",
+    "2018-03-07",
+    "2018-03-06",
+    "2018-03-05",
+    "2018-03-02",
+    "2018-03-23",
+    "2018-03-27",
+    "2018-03-26",
+    "2018-03-29",
+    "2018-03-28",
+    "2018-04-02",
+    "2018-03-30",
+    "2018-04-09",
+    "2018-04-04",
+    "2018-04-03",
+    "2018-04-11",
+    "2018-04-10",
+    "2018-04-16",
+    "2018-04-13",
+    "2018-04-12",
+    "2018-04-17",
+    "2018-04-19",
+    "2018-04-18",
+    "2018-04-25",
+    "2018-04-24",
+    "2018-04-23",
+    "2018-04-20",
+    "2018-04-26",
+    "2018-05-07",
+    "2018-05-04",
+    "2018-05-03",
+    "2018-05-02",
+    "2018-04-27",
+    "2018-05-08",
+    "2018-12-12",
+    "2018-12-11",
+    "2018-12-10",
+    "2018-12-07",
+    "2018-12-21",
+    "2018-12-20",
+    "2018-12-19",
+    "2018-12-18",
+    "2018-12-17",
+    "2018-12-14",
+    "2018-12-13",
+    "2018-12-28",
+    "2018-12-27",
+    "2018-12-26",
+    "2018-12-25",
+    "2018-12-24"
+  ],
+  "generated_at": "2026-09-25T18:32:54.379650+00:00"
+}

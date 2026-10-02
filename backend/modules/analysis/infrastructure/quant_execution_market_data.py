@@ -11,10 +11,11 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
 import hashlib
 import json
 import math
+from datetime import date, datetime
+from decimal import Decimal
 
 from AI.strategy_sandbox.protocol import build_context
 from db.instrument.dao.instrument import list_active_cn_stocks
@@ -40,6 +41,21 @@ def _finite_number(value) -> bool:
         return False
 
 
+def _adv20_amount(bars: list, *, trade_date: date, calendar) -> str | None:
+    """Mean of 20 verified exchange sessions through T, in daily.amount's 千元 unit."""
+    schedule = calendar.schedule("CN")
+    if (not schedule.available or not schedule.supported_from <= trade_date <= schedule.supported_through):
+        return None
+    expected = tuple(session.trade_date.isoformat() for session in schedule.sessions
+                     if session.trade_date <= trade_date)[-20:]
+    recent = bars[-20:]
+    if (len(expected) != 20 or expected[-1] != trade_date.isoformat()
+            or tuple(_trade_date_key(row[1]) for row in recent) != expected
+            or any(not _finite_number(row[7]) or float(row[7]) <= 0 for row in recent)):
+        return None
+    return str(sum((Decimal(str(row[7])) for row in recent), Decimal(0)) / Decimal(20))
+
+
 class AllMarketUniverseBuilder:
     """执行期读模型：实时枚举活跃 CN 股票（不是 Graph 节点）。"""
 
@@ -48,11 +64,44 @@ class AllMarketUniverseBuilder:
         return list_active_cn_stocks(conn)
 
 
+def benchmark_above_ma120(conn, effective_trade_date: date, *, calendar=None) -> bool | None:
+    """Strict point-in-time HS300 trend, using 120 raw index closes through T."""
+    if calendar is None:
+        from backend.modules.market_data.infrastructure.calendar_adapter import (
+            MarketCalendarAdapter,
+        )
+
+        calendar = MarketCalendarAdapter()
+    schedule = calendar.schedule("CN")
+    if not schedule.available:
+        return None
+    expected = tuple(session.trade_date for session in schedule.sessions
+                     if session.trade_date <= effective_trade_date)[-120:]
+    if len(expected) != 120 or expected[-1] != effective_trade_date:
+        return None
+    rows = conn.execute(
+        "SELECT trade_date, close FROM market.instrument_daily "
+        "WHERE ts_code = '000300.SH' AND trade_date <= %s "
+        "ORDER BY trade_date DESC LIMIT 120",
+        (effective_trade_date.isoformat(),),
+    ).fetchall()
+    if (len(rows) != 120
+            or tuple(_trade_date_key(row[0]) for row in rows)
+            != tuple(day.isoformat() for day in reversed(expected))
+            or any(not _finite_number(row[1]) or float(row[1]) <= 0 for row in rows)):
+        return None
+    return float(rows[0][1]) > sum(float(row[1]) for row in rows) / 120
+
+
 class MarketContextBatchLoader:
     """执行期批量行情读取：200 code 参数化批量，批完即弃。"""
 
-    def __init__(self, *, lookback: int = DEFAULT_LOOKBACK) -> None:
+    def __init__(self, *, lookback: int = DEFAULT_LOOKBACK, calendar=None) -> None:
         self._lookback = lookback
+        if calendar is None:
+            from backend.modules.market_data.infrastructure.calendar_adapter import MarketCalendarAdapter
+            calendar = MarketCalendarAdapter()
+        self._calendar = calendar
 
     def load_batch(
         self,
@@ -62,6 +111,7 @@ class MarketContextBatchLoader:
         *,
         positions_by_code: dict[str, dict] | None = None,
         requested_trade_date: date | None = None,
+        benchmark_above_ma120: bool | None = None,
     ) -> list[dict]:
         """返回每票一项：{ts_code, context|None, status}。
 
@@ -84,10 +134,10 @@ class MarketContextBatchLoader:
         factor_rows = conn.execute(
             "WITH ranked AS (SELECT ts_code, trade_date, ma_qfq_5, ma_qfq_20, ma_qfq_60, "
             "boll_mid_qfq, boll_upper_qfq, boll_lower_qfq, macd_dif_qfq, macd_dea_qfq, "
-            "macd_qfq, rsi_qfq_6, row_number() OVER (PARTITION BY ts_code ORDER BY trade_date DESC) AS rn "
+            "macd_qfq, rsi_qfq_6, atr_qfq, row_number() OVER (PARTITION BY ts_code ORDER BY trade_date DESC) AS rn "
             "FROM market.factor_daily WHERE ts_code = ANY(%s) AND trade_date <= %s) "
             "SELECT ts_code, trade_date, ma_qfq_5, ma_qfq_20, ma_qfq_60, boll_mid_qfq, "
-            "boll_upper_qfq, boll_lower_qfq, macd_dif_qfq, macd_dea_qfq, macd_qfq, rsi_qfq_6 "
+            "boll_upper_qfq, boll_lower_qfq, macd_dif_qfq, macd_dea_qfq, macd_qfq, rsi_qfq_6, atr_qfq "
             "FROM ranked WHERE rn <= %s ORDER BY ts_code, trade_date DESC",
             (ts_codes, upper, self._lookback),
         ).fetchall()
@@ -100,8 +150,10 @@ class MarketContextBatchLoader:
             (ts_codes, upper, self._lookback),
         ).fetchall()
         status_rows = conn.execute(
-            "SELECT ts_code, trade_date, is_suspended, is_st, up_limit, down_limit, market_board "
-            "FROM market.trade_status_daily WHERE ts_code = ANY(%s) AND trade_date = %s",
+            "SELECT ts_code, trade_date, is_suspended, is_st, up_limit, down_limit, market_board, "
+            "suspension_scope, suspend_timing "
+            "FROM market.trade_status_effective WHERE ts_code = ANY(%s) AND trade_date = %s "
+            "AND source IN ('tushare','tushare+baostock')",
             (ts_codes, upper),
         ).fetchall()
 
@@ -209,8 +261,10 @@ class MarketContextBatchLoader:
                 position=position,
                 bars_count=self._lookback,
                 price_basis="qfq",
+                benchmark_above_ma120=benchmark_above_ma120,
                 data_hash=hashlib.sha256(json.dumps(
-                    {"dates": dates, "qfq": qfq, "indicators": aligned, "adj": str(base_adj)},
+                    {"dates": dates, "qfq": qfq, "indicators": aligned,
+                     "adj": str(base_adj), "benchmark_above_ma120": benchmark_above_ma120},
                     ensure_ascii=False, separators=(",", ":"), default=str,
                 ).encode("utf-8")).hexdigest(),
             )
@@ -222,10 +276,16 @@ class MarketContextBatchLoader:
                     "trade_date": upper,
                     "raw_close": float(bars[-1][5]),
                     "qfq_close": float(qfq[-1][3]),
+                    "atr_qfq": next((float(r[12]) if _finite_number(r[12]) else None
+                                     for r in factors if _trade_date_key(r[1]) == upper and len(r) > 12), None),
                     "raw_amount": float(bars[-1][7]) if bars[-1][7] is not None else None,
+                    "adv20_amount": _adv20_amount(bars, trade_date=effective_trade_date,
+                                                  calendar=self._calendar),
                     "adj_factor": float(base_adj),
                     "adj_factor_version": upper,
                     "is_suspended": bool(status_row[2]),
+                    "suspension_scope": status_row[7] if len(status_row) > 7 else None,
+                    "suspend_timing": status_row[8] if len(status_row) > 8 else None,
                     "is_st": bool(status_row[3]),
                     "up_limit": float(status_row[4]) if status_row[4] is not None else None,
                     "down_limit": float(status_row[5]) if status_row[5] is not None else None,

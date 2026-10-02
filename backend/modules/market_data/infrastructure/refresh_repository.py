@@ -146,9 +146,10 @@ class RefreshRepository:
             "codes": list(catalog), "dates": [_iso(day) for day in dates],
             "units": [{"code": unit["code"], "trade_date": unit["trade_date"]} for unit in result["missing_units"]],
         }
-        digest_data = [catalog_stamp, result["summary"], result["status_stamp"], result["days"], result["missing_units"]]
-        # JSON object keys must be text, unlike the internal date-keyed day map.
-        digest_data[3] = [(_iso(day), counts) for day, counts in result["days"].items()]
+        day_stamp = [(day.isoformat(), counts) for day, counts in sorted(result["days"].items())]
+        digest_data = [catalog_stamp, result["summary"], result["status_stamp"],
+                       result["suspension_stamp"], day_stamp, result["missing_units"],
+                       result["history_gap"]]
         digest = hashlib.sha256(json.dumps(digest_data, default=str, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:24]
         complete = [day for day, counts in result["days"].items() if counts["expected_count"] and not counts["missing_count"]]
         return {
@@ -396,7 +397,8 @@ class RefreshRepository:
     def _coverage(self, conn, resource, catalog, dates, history_dates, *, units=None):
         days = {day: self._empty_counts() for day in dates}
         result = {"days": days, "missing_units": [], "latest": None, "latest_valid": None,
-                  "summary": [], "status_stamp": [], "history_gap": False}
+                  "summary": [], "status_stamp": [], "suspension_stamp": [],
+                  "history_gap": False}
         if not catalog:
             return result
         codes = list(catalog)
@@ -423,12 +425,27 @@ class RefreshRepository:
             observed = {(code, day): bool(is_valid) for code, day, is_valid, _ in rows}
             if resource == Resource.CN_STOCK_DAILY:
                 result["status_stamp"] = conn.execute(
-                    "SELECT ts_code, trade_date, is_suspended, source, updated_at FROM market.trade_status_daily "
+                    "SELECT ts_code, trade_date, (is_suspended AND suspension_scope='full_day'), "
+                    "source, updated_at FROM market.trade_status_effective "
                     "WHERE ts_code = ANY(%s) AND trade_date = ANY(%s) ORDER BY ts_code, trade_date",
                     (codes, list(dates)),
                 ).fetchall()
                 suspended = {(code, day) for code, day, flag, source, _ in result["status_stamp"]
-                             if flag and source == "tushare"}
+                             if flag and source in ("tushare", "tushare+baostock")}
+                result["suspension_stamp"] = conn.execute(
+                    "SELECT ts_code,trade_date,'official' AS source,max(verified_at) "
+                    "FROM market.suspension_evidence "
+                    "WHERE ts_code=ANY(%s) AND trade_date=ANY(%s::date[]) "
+                    "AND scope='full_day' GROUP BY ts_code,trade_date "
+                    "UNION ALL "
+                    "SELECT ts_code,trade_date,source,verified_at "
+                    "FROM market.suspension_source_daily "
+                    "WHERE ts_code=ANY(%s) AND trade_date=ANY(%s::date[]) "
+                    "AND scope='full_day' AND source='tushare_suspend_d' "
+                    "ORDER BY ts_code,trade_date,source",
+                    (codes, list(dates), codes, list(dates)),
+                ).fetchall()
+                suspended.update((code, day) for code, day, _, _ in result["suspension_stamp"])
         for day in dates:
             for code, metadata in catalog.items():
                 if units is not None and (code, day) not in units:
@@ -480,10 +497,17 @@ class RefreshRepository:
         lifecycle_filter = ""
         if resource == Resource.CN_STOCK_DAILY:
             history_query += (
-                " UNION SELECT ts_code AS code, trade_date FROM market.trade_status_daily "
-                "WHERE ts_code = ANY(%s) AND trade_date = ANY(%s) AND is_suspended AND source = 'tushare'"
+                " UNION SELECT ts_code AS code, trade_date FROM market.trade_status_effective "
+                "WHERE ts_code = ANY(%s) AND trade_date = ANY(%s) "
+                "AND is_suspended AND suspension_scope='full_day' "
+                "AND source IN ('tushare','tushare+baostock')"
+                " UNION SELECT ts_code AS code, trade_date FROM market.suspension_evidence "
+                "WHERE ts_code = ANY(%s) AND trade_date = ANY(%s) AND scope='full_day'"
+                " UNION SELECT ts_code AS code, trade_date FROM market.suspension_source_daily "
+                "WHERE ts_code = ANY(%s) AND trade_date = ANY(%s) "
+                "AND scope='full_day' AND source='tushare_suspend_d'"
             )
-            params += [list(catalog), list(history_dates)]
+            params += [list(catalog), list(history_dates)] * 3
             lifecycle_filter = (
                 " JOIN market.instrument i ON i.ts_code = h.code "
                 "WHERE i.list_date <= h.trade_date AND (i.delist_date IS NULL OR h.trade_date < i.delist_date)"

@@ -25,9 +25,10 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from AI.dataflows.providers.base_provider import (
@@ -298,12 +299,13 @@ def _existing_trade_dates(conn, instrument_types: list[str] = None) -> set:
 def run_backfill(conn, start: str, end: str, retry_missing: bool = False,
                  skip_concepts: bool = False, provider_factory=None,
                  fallback_provider_factory=None, skip_index: bool = False,
-                 skip_daily: bool = False) -> dict:
+                 skip_daily: bool = False, force_existing_days: bool = False) -> dict:
     """历史回填主流程（conn 由调用方托管生命周期，与 collect_incremental 同规则）。
 
     fallback_provider_factory：指数分项双源兜底（CR BLOCKER 2——生产入口
     经公共装配传入）；skip_index/skip_daily 供 market_ingest wrapper 的
-    --skip-bars 映射（内部参数，不暴露 CLI）。返回汇总 dict。
+    --skip-bars 映射（内部参数，不暴露 CLI）。force_existing_days 用于定向修复
+    已有日线但缺少复权因子的历史日期。返回汇总 dict。
     """
     summary = {"index": {}, "days_done": 0, "failed_days": [],
                "retry_ok": 0, "retry_failed": 0}
@@ -405,7 +407,8 @@ def run_backfill(conn, start: str, end: str, retry_missing: bool = False,
         pd.to_datetime(cal["trade_date"]).dt.strftime("%Y%m%d").unique().tolist())
 
     # ---- 断点续跑：按库内已入库交易日集合跳过（存在即完整） ----
-    existing = _existing_trade_dates(conn, instrument_types=["stock", "fund"])
+    existing = (set() if force_existing_days else
+                _existing_trade_dates(conn, instrument_types=["stock", "fund"]))
     skipped = [d for d in trade_days if d in existing]
     trade_days = [d for d in trade_days if d not in existing]
     if skipped:
@@ -464,30 +467,36 @@ REQUIRED_BFQ = [
 ]
 
 
-def _stock_factor_codes(conn) -> list[tuple[str, str | None]]:
-    """全量上市股票（代码, list_date）清单（策略扫描同口径：stock + list_status='L'）。"""
+def _stock_factor_codes(conn, start: str, end: str) -> list[tuple[str, str | None]]:
+    """Stocks listed during the requested window, including later delistings."""
     rows = conn.execute(
         "SELECT ts_code, list_date FROM market.instrument "
-        "WHERE instrument_type = 'stock' AND list_status = 'L' ORDER BY ts_code"
+        "WHERE instrument_type = 'stock' AND list_date <= %s::date "
+        "AND (list_status = 'L' OR (list_status = 'D' AND delist_date >= %s::date)) "
+        "ORDER BY ts_code", (end, start)
     ).fetchall()
     return [(r[0], str(r[1]) if r[1] else None) for r in rows]
 
 
 def _factor_cover_snapshot(conn, start: str, end: str) -> dict[str, int | None]:
-    """返回每只上市股票在本地日线窗口内缺失的因子日期数。
+    """返回含退市股票在本地日线窗口内缺失的必需因子日期数。
 
     instrument_daily 是策略执行实际消费的交易日序列；按 (ts_code, trade_date)
-    精确反连接 factor_daily，既支持新股（从 max(start, list_date) 起算），也能识别
+    精确反连接 factor_daily 并检查全部必需QFQ列，既支持新股（从 max(start, list_date) 起算），也能识别
     min/max 看不出的区间内部缺洞。无本地日线时返回 None，不能误判成 0（完整）；
     主循环仍会尝试上游，满足“全量上市股票”口径。
     """
+    missing_fields = " OR ".join(f"f.{column} IS NULL" for column in REQUIRED_QFQ)
     rows = conn.execute(
         "WITH target AS ("
         " SELECT ts_code, greatest(%s::date, coalesce(list_date, %s::date)) AS lower_bound "
-        " FROM market.instrument WHERE instrument_type = 'stock' AND list_status = 'L'"
+        " FROM market.instrument WHERE instrument_type = 'stock' "
+        " AND list_date <= %s::date "
+        " AND (list_status = 'L' OR (list_status = 'D' "
+        " AND delist_date >= %s::date))"
         ") "
         "SELECT t.ts_code, CASE WHEN count(d.trade_date) = 0 THEN NULL ELSE count(*) FILTER ("
-        " WHERE d.trade_date IS NOT NULL AND f.ts_code IS NULL"
+        f" WHERE d.trade_date IS NOT NULL AND (f.ts_code IS NULL OR {missing_fields})"
         ") END AS missing_rows "
         "FROM target t "
         "LEFT JOIN market.instrument_daily d ON d.ts_code = t.ts_code "
@@ -495,7 +504,7 @@ def _factor_cover_snapshot(conn, start: str, end: str) -> dict[str, int | None]:
         "LEFT JOIN market.factor_daily f ON f.ts_code = d.ts_code "
         " AND f.trade_date = d.trade_date "
         "GROUP BY t.ts_code",
-        (start, start, end),
+        (start, start, end, start, end),
     ).fetchall()
     return {r[0]: (int(r[1]) if r[1] is not None else None) for r in rows}
 
@@ -505,8 +514,39 @@ def _snapshot_covers(missing_rows: int | None) -> bool:
     return missing_rows == 0
 
 
-def _backfill_one_stock(conn, provider, ts_code: str, start: str, end: str) -> bool:
-    """单票拉取入库（带重试）：bfq+qfq 同帧落库；失败返回 False（记失败清单）。"""
+def _verified_stock_factor_warmup(
+    conn, ts_code: str, list_date: str | None, start: str, end: str, frame: pd.DataFrame,
+) -> bool:
+    """仅当上市以来全部交易日的本地/上游日线齐全且ATR尚未出现时豁免。"""
+    if not list_date or list_date < start or list_date > end:
+        return False
+    import exchange_calendars as xc
+
+    end_day = date.fromisoformat(end)
+    sessions = xc.get_calendar(
+        "XSHG", start=list_date, end=(end_day + timedelta(days=1)).isoformat(),
+    ).sessions
+    expected = {day.date() for day in sessions if day.date() <= end_day}
+    # stk_factor_pro 样本在第21根才首次给ATR20（前收盘参与首根TR）。
+    if not expected or len(expected) > 20:
+        return False
+    source_days = pd.to_datetime(frame["trade_date"], errors="coerce")
+    if source_days.isna().any() or len(source_days) != len(expected):
+        return False
+    if set(source_days.dt.date) != expected:
+        return False
+    local_days = conn.execute(
+        "SELECT trade_date FROM market.instrument_daily "
+        "WHERE ts_code = %s AND trade_date BETWEEN %s::date AND %s::date",
+        (ts_code, list_date, end),
+    ).fetchall()
+    return len(local_days) == len(expected) and {row[0] for row in local_days} == expected
+
+
+def _backfill_one_stock(
+    conn, provider, ts_code: str, start: str, end: str, list_date: str | None = None,
+) -> bool | None:
+    """单票因子回填：True=入库、None=可证明暖机、False=失败。"""
     for attempt in range(RETRY_COUNT):
         try:
             df = provider.get_stock_factor_df(ts_code, start, end)
@@ -521,6 +561,21 @@ def _backfill_one_stock(conn, provider, ts_code: str, start: str, end: str) -> b
                 logger.warning("个股 %s 因子列缺失 %s（跳过）", ts_code, missing)
                 return False
             df = df.copy()
+            atr = pd.to_numeric(df["atr_qfq"], errors="coerce")
+            if (df["atr_qfq"].notna() & atr.isna()).any() or (
+                atr.notna().any() and (not np.isfinite(atr.dropna().to_numpy(dtype=float)).all()
+                                         or (atr.dropna() <= 0).any())
+            ):
+                logger.warning("个股 %s ATR 含非法数值（跳过）", ts_code)
+                return False
+            if not atr.notna().any():
+                if _verified_stock_factor_warmup(
+                    conn, ts_code, list_date, start, end, df,
+                ):
+                    logger.info("个股 %s ATR20 暖机：上市后至多20交易日，日线证据完整", ts_code)
+                    return None
+                logger.warning("个股 %s ATR 全空（跳过）", ts_code)
+                return False
             df["ts_code"] = ts_code
             df["updated_at"] = pd.Timestamp.now(tz="UTC")
             bulk_upsert_factor_daily(conn, df, update=True)
@@ -592,7 +647,7 @@ def run_stock_factor_backfill(
         snapshot: dict[str, int | None] = {}
         logger.info("个股因子回填 --retry-failed：失败清单 %d 只", len(codes))
     else:
-        codes = _stock_factor_codes(conn)
+        codes = _stock_factor_codes(conn, start, end)
         snapshot = _factor_cover_snapshot(conn, start, end)
         conn.commit()  # 释放覆盖扫描的读事务，避免首个长网络请求期间持有旧快照
         logger.info(
@@ -600,11 +655,17 @@ def run_stock_factor_backfill(
             len(codes), start, end, sum(v or 0 for v in snapshot.values()), sleep_seconds,
         )
     if limit is not None:
+        # A bounded run must advance to the next deficient codes. Slicing the
+        # full sorted universe first replays the same covered prefix forever.
+        if not retry_failed:
+            codes = [entry for entry in codes
+                     if not _snapshot_covers(snapshot.get(entry[0]))]
         codes = codes[:limit]
 
     failed: list[str] = []
     done = 0
     skipped = 0
+    warmup = 0
     consecutive_failures = 0
     for i, entry in enumerate(codes, 1):
         # 常规模式 = (code, list_date) 元组；retry_failed 模式 = 裸 code 字符串
@@ -614,10 +675,16 @@ def run_stock_factor_backfill(
             continue
         if sleep_seconds > 0:
             time.sleep(sleep_seconds)
-        if _backfill_one_stock(conn, provider, code, start, end):
+        outcome = _backfill_one_stock(conn, provider, code, start, end, _list_date)
+        if outcome is True:
             done += 1
             consecutive_failures = 0
+        elif outcome is None:
+            conn.commit()  # 暖机证据的只读查询也要结束事务，后续网络请求不持旧快照
+            warmup += 1
+            consecutive_failures = 0
         else:
+            conn.rollback()  # 校验失败可能已查询本地日期，重试前恢复干净连接
             failed.append(code)
             consecutive_failures += 1
             if consecutive_failures >= STOCK_FACTOR_MAX_CONSECUTIVE_FAILURES:
@@ -641,7 +708,7 @@ def run_stock_factor_backfill(
     }
     outstanding_failed = sorted((previous_failed - processed_codes) | set(failed))
     _write_failed_stock_codes(outstanding_failed)
-    return {"total": len(codes), "done": done, "skipped": skipped,
+    return {"total": len(codes), "done": done, "skipped": skipped, "warmup": warmup,
             "failed": len(outstanding_failed), "failed_codes": outstanding_failed}
 
 
@@ -721,14 +788,16 @@ def main():
                 limit=args.limit,
                 guard=guard,
             )
-        logger.info("个股因子回填结束: 总数 %d / 完成 %d / 跳过 %d / 失败 %d",
-                    summary["total"], summary["done"], summary["skipped"], summary["failed"])
+        logger.info("个股因子回填结束: 总数 %d / 完成 %d / 跳过 %d / 暖机 %d / 失败 %d",
+                    summary["total"], summary["done"], summary["skipped"],
+                    summary["warmup"], summary["failed"])
         if summary["failed_codes"]:
             logger.warning(
                 "存在失败代码，可稍后用相同窗口执行 "
                 "`python -m db.instrument.ingest.backfill --stock-factors --retry-failed "
                 "--start %s --end %s` 补拉", start, args.end,
             )
+            raise SystemExit(1)
         return
 
     if args.retry_failed or args.limit is not None or args.sleep != 0.5:

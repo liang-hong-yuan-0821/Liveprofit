@@ -1,0 +1,25 @@
+{
+  "daily": [
+    {
+      "ts_code": "688607.SH",
+      "trade_date": "20210201",
+      "open": 44.95,
+      "high": 85.22,
+      "low": 44.39,
+      "close": 85.0,
+      "pre_close": 23.21,
+      "change": 61.79,
+      "pct_chg": 266.2215,
+      "vol": 157386.23,
+      "amount": 1006712.423
+    }
+  ],
+  "suspend_d": [
+    {
+      "ts_code": "688607.SH",
+      "trade_date": "20210201",
+      "suspend_timing": "09:33-09:43,11:10-11:10",
+      "suspend_type": "S"
+    }
+  ]
+}

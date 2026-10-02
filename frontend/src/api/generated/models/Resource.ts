@@ -2,6 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+/**
+ * Stable public enum; internal refresh resources must not enter OpenAPI.
+ */
 export enum Resource {
     CN_INDEX_BARS = 'CN_INDEX_BARS',
     CN_INDEX_FACTORS = 'CN_INDEX_FACTORS',

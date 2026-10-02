@@ -225,10 +225,16 @@ def _missing_units(conn, spec: RefreshSpec, *, forced_attempted=()) -> set:
     complete = {(str(c), _day(d)) for c, d in rows}
     if spec.resource == "CN_STOCK_DAILY":
         rows = conn.execute(
-            "SELECT ts_code, trade_date FROM market.trade_status_daily "
-            "WHERE ts_code = ANY(%s) AND trade_date = ANY(%s::date[]) "
-            "AND is_suspended = TRUE AND source = 'tushare'",
-            (list(spec.codes), list(spec.dates)),
+            "SELECT ts_code,trade_date FROM market.trade_status_effective "
+            "WHERE ts_code=ANY(%s) AND trade_date=ANY(%s::date[]) "
+            "AND is_suspended=TRUE AND suspension_scope='full_day' "
+            "AND source IN ('tushare','tushare+baostock') "
+            "UNION SELECT ts_code,trade_date FROM market.suspension_evidence "
+            "WHERE ts_code=ANY(%s) AND trade_date=ANY(%s::date[]) AND scope='full_day' "
+            "UNION SELECT ts_code,trade_date FROM market.suspension_source_daily "
+            "WHERE ts_code=ANY(%s) AND trade_date=ANY(%s::date[]) "
+            "AND scope='full_day' AND source='tushare_suspend_d'",
+            (list(spec.codes), list(spec.dates)) * 3,
         ).fetchall()
         complete.update((str(c), _day(d)) for c, d in rows)
     return set(spec.units) - complete

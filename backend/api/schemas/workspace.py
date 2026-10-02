@@ -99,6 +99,7 @@ class PortfolioDTO(BaseModel):
     peak_net_asset_value: float | None
     day_start_net_asset_value: float | None
     risk_facts_as_of: date | None
+    risk_profile: Literal["CONSERVATIVE", "BALANCED", "AGGRESSIVE"] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -126,6 +127,7 @@ class PortfolioCreateRequest(BaseModel):
     peak_net_asset_value: float | None = Field(default=None, gt=0)
     day_start_net_asset_value: float | None = Field(default=None, gt=0)
     risk_facts_as_of: date | None = None
+    risk_profile: Literal["CONSERVATIVE", "BALANCED", "AGGRESSIVE"] | None = None
 
 
 class PortfolioUpdateRequest(BaseModel):
@@ -148,6 +150,7 @@ class PortfolioUpdateRequest(BaseModel):
     peak_net_asset_value: float | None = Field(default=None, gt=0)
     day_start_net_asset_value: float | None = Field(default=None, gt=0)
     risk_facts_as_of: date | None = None
+    risk_profile: Literal["CONSERVATIVE", "BALANCED", "AGGRESSIVE"] | None = None
     expected_version: int = Field(ge=1)
 
 

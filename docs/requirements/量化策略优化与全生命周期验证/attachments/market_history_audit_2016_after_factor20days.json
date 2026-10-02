@@ -1,0 +1,132 @@
+{
+  "generated_at": "2026-09-25T16:54:45.154582+00:00",
+  "through": "2016-12-31",
+  "calendar_source": "Tushare trade_cal(exchange=SSE,is_open=1), yearly request",
+  "scope": "listed stock and broad fund symbol-days; factor gaps include warmup; fund is not ETF classification",
+  "inventory": {
+    "fund": {
+      "count": 2955,
+      "unknown_list_date": 152,
+      "has_delist_date": 626
+    },
+    "stock": {
+      "count": 5907,
+      "unknown_list_date": 0,
+      "has_delist_date": 339
+    }
+  },
+  "etf_catalog": {
+    "observations": 1829,
+    "first": "2026-09-25",
+    "last": "2026-09-25"
+  },
+  "years": [
+    {
+      "year": 2016,
+      "calendar_days": 244,
+      "calendar_sha256": "1eb6874f3b807aa87e20a021433d876405c6e9aa7cb3e66fea0181e2203b91df",
+      "expected": 704145,
+      "trusted_suspension": 0,
+      "unexplained_bar": 62599,
+      "invalid_bar": 0,
+      "adj_gap": 0,
+      "factor_gap_including_warmup": 587682,
+      "status_gap": 704145,
+      "factor_row_absent": 316232,
+      "factor_atr_missing": 271159,
+      "status_row_absent": 704145,
+      "excluded_bj_before_open": 0,
+      "unexplained_bar_examples": [
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000002.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000007.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000023.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000028.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000033.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000034.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000035.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000038.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000058.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000065.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000066.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000153.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000426.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000430.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000534.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000553.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000585.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000586.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000599.SZ"
+        },
+        {
+          "trade_date": "2016-01-04",
+          "ts_code": "000626.SZ"
+        }
+      ],
+      "suspension_bar_spikes": [],
+      "suspension_scope_conflicts": [],
+      "official_evidence_conflicts": [],
+      "broad_fund": {
+        "listed_fund_days": 148282,
+        "daily_gap": 10570,
+        "adj_gap": 855,
+        "factor_gap_including_warmup": 137712
+      }
+    }
+  ]
+}

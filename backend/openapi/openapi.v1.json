@@ -9128,6 +9128,22 @@
               }
             ],
             "title": "Risk Facts As Of"
+          },
+          "risk_profile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CONSERVATIVE",
+                  "BALANCED",
+                  "AGGRESSIVE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Profile"
           }
         },
         "type": "object",
@@ -9247,6 +9263,22 @@
               }
             ],
             "title": "Risk Facts As Of"
+          },
+          "risk_profile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CONSERVATIVE",
+                  "BALANCED",
+                  "AGGRESSIVE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Profile"
           },
           "created_at": {
             "type": "string",
@@ -9438,6 +9470,17 @@
             "type": "object",
             "title": "Risk"
           },
+          "risk_profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Profile"
+          },
           "snapshot_at": {
             "anyOf": [
               {
@@ -9585,6 +9628,22 @@
               }
             ],
             "title": "Risk Facts As Of"
+          },
+          "risk_profile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CONSERVATIVE",
+                  "BALANCED",
+                  "AGGRESSIVE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Profile"
           },
           "expected_version": {
             "type": "integer",
@@ -10325,6 +10384,18 @@
       },
       "QuantExecutionDTO": {
         "properties": {
+          "admission": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admission"
+          },
           "strategy": {
             "$ref": "#/components/schemas/StrategyAuditDTO"
           },
@@ -12270,7 +12341,8 @@
           "CN_STOCK_DAILY",
           "CN_SECTOR_DAILY"
         ],
-        "title": "Resource"
+        "title": "Resource",
+        "description": "Stable public enum; internal refresh resources must not enter OpenAPI."
       },
       "ReviewBatchData": {
         "properties": {

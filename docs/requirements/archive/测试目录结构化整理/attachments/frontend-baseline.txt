@@ -1,0 +1,599 @@
+
+ RUN  v3.2.7 D:/code/workspace/python/Liveprofit
+
+ ❯ frontend/src/modules/analysis/pages/task-detail/QuantExecutionPanel.test.tsx (4 tests | 1 failed) 1261ms
+   ✓ QuantExecutionPanel > 渲染扫描统计与告警 91ms
+   ✓ QuantExecutionPanel > 买点列表展示全部 BUY（含被风控拒绝的），拒绝码可见 24ms
+   × QuantExecutionPanel > 买点以 K 线卡片网格展示：每卡按信号日窗口请求个股日线并渲染图表 1040ms
+     → expected "spy" to be called with arguments: [ '000001.SZ', 'CN', '1d', …(2) ]
+
+Received: 
+
+  1st spy call:
+
+@@ -2,6 +2,7 @@
+    "000001.SZ",
+    "CN",
+    "1d",
+    "2026-03-20",
+    "2026-09-16",
++   "cache_only",
+  ]
+
+
+Number of calls: 1
+
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"量化执行"[39m
+        [33mclass[39m=[32m"glass-card rounded-2xl border bg-[var(--color-surface)] p-5"[39m
+        [33mstyle[39m=[32m"border-color: var(--color-border);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mb-3 flex items-center justify-between gap-2"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-sm font-semibold flex flex-wrap items-center justify-between gap-2"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m全市场量化买点[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-normal"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m双均线[0m
+              [0m v[0m
+              [0m2[0m
+              [0m · 源码 [0m
+              [0mabcdef123456[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-md border p-2 text-xs"[39m
+            [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+          [36m>[39m
+            [0m组合快照 [0m
+            [0m核心仓[0m
+            [0m（v[0m
+            [0m1[0m
+            [0m）· 总资产 [0m
+            [0m100000.00[0m
+            [0m · 可用现金 [0m
+            [0m35000.00[0m
+            [0m · 估值于 2026/9/16 22:00:00[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 gap-2 text-sm sm:grid-cols-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m扫描标的[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m5300[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m数据完备[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m5200[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m命中买点[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m3[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m失败[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m建议买入[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m2[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m建议卖出[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m⚠ [0m
+              [0mAI 风险门控未接入；组合开放风险与熔断已启用[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 button-primary bg-[var(--color-accent)] text-[var(--color-accent-foreground)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m买点[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m持仓信号[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m建议订单[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"买点列表"[39m
+            [33mclass[39m=[32m"flex flex-col gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-1 gap-3 xl:grid-cols-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col gap-2 rounded-md border p-3"[39m
+                [33mstyle[39m=[32m"border-color: var(--color-border);"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-start justify-between gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-medium"[39m
+                    [36m>[39m
+                      [0m000001.SZ[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs"[39m
+                      [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+                    [36m>[39m
+                      [0m评分 [0m
+                      [0m90.00[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs"[39m
+                      [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+                    [36m>[39m
+                      [0m金叉[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium border-transparent bg-green-900/60 text-green-200"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mtitle[39m=[32m"ELIGIBLE"[39m
+                    [36m>[39m
+                      [0m符合下单条件[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-col gap-0.5 text-xs"[39m
+                [36m>[39m
+                  [36m<span>[39m
+                    [0m策略价（[0m
+                    [0m前复权 qfq[0m
+                    [0m）入场 [0m
+                    [0m10.00[0m
+                    [0m · 止损 [0m
+                    [0m9.00[0m
+                    [0m · 止盈 [0m
+                    [0m12.00[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mdata-testid[39m=[32m"candlestick-chart"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mstyle[39m=[32m"position: relative;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mdata-testid[39m=[32m"echarts"[39m
+                    [36m/>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m已显示 [0m
+              [0m1[0m
+              [0m/[0m
+              [0m3[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<span[39m
+        [33mdata-pathname[39m=[32m"/"[39m
+        [33mdata-search[39m=[32m""[39m
+        [33mdata-testid[39m=[32m"location"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+   ✓ QuantExecutionPanel > 建议订单页标注「需人工确认，未下单」，空订单渲染空态 105ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  frontend/src/modules/analysis/pages/task-detail/QuantExecutionPanel.test.tsx > QuantExecutionPanel > 买点以 K 线卡片网格展示：每卡按信号日窗口请求个股日线并渲染图表
+AssertionError: expected "spy" to be called with arguments: [ '000001.SZ', 'CN', '1d', …(2) ]
+
+Received: 
+
+  1st spy call:
+
+@@ -2,6 +2,7 @@
+    "000001.SZ",
+    "CN",
+    "1d",
+    "2026-03-20",
+    "2026-09-16",
++   "cache_only",
+  ]
+
+
+Number of calls: 1
+
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"量化执行"[39m
+        [33mclass[39m=[32m"glass-card rounded-2xl border bg-[var(--color-surface)] p-5"[39m
+        [33mstyle[39m=[32m"border-color: var(--color-border);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mb-3 flex items-center justify-between gap-2"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-sm font-semibold flex flex-wrap items-center justify-between gap-2"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m全市场量化买点[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-normal"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m双均线[0m
+              [0m v[0m
+              [0m2[0m
+              [0m · 源码 [0m
+              [0mabcdef123456[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-md border p-2 text-xs"[39m
+            [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+          [36m>[39m
+            [0m组合快照 [0m
+            [0m核心仓[0m
+            [0m（v[0m
+            [0m1[0m
+            [0m）· 总资产 [0m
+            [0m100000.00[0m
+            [0m · 可用现金 [0m
+            [0m35000.00[0m
+            [0m · 估值于 2026/9/16 22:00:00[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 gap-2 text-sm sm:grid-cols-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m扫描标的[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m5300[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m数据完备[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m5200[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m命中买点[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m3[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m失败[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m建议买入[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m2[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-md border p-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs"[39m
+                [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+              [36m>[39m
+                [0m建议卖出[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-base font-semibold"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m⚠ [0m
+              [0mAI 风险门控未接入；组合开放风险与熔断已启用[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 button-primary bg-[var(--color-accent)] text-[var(--color-accent-foreground)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m买点[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m持仓信号[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-45 border bg-transparent hover:bg-[var(--color-surface)] h-8 rounded-md px-3 text-xs"[39m
+            [36m>[39m
+              [0m建议订单[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"买点列表"[39m
+            [33mclass[39m=[32m"flex flex-col gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-1 gap-3 xl:grid-cols-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col gap-2 rounded-md border p-3"[39m
+                [33mstyle[39m=[32m"border-color: var(--color-border);"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-start justify-between gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-medium"[39m
+                    [36m>[39m
+                      [0m000001.SZ[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs"[39m
+                      [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+                    [36m>[39m
+                      [0m评分 [0m
+                      [0m90.00[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs"[39m
+                      [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+                    [36m>[39m
+                      [0m金叉[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium border-transparent bg-green-900/60 text-green-200"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mtitle[39m=[32m"ELIGIBLE"[39m
+                    [36m>[39m
+                      [0m符合下单条件[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-col gap-0.5 text-xs"[39m
+                [36m>[39m
+                  [36m<span>[39m
+                    [0m策略价（[0m
+                    [0m前复权 qfq[0m
+                    [0m）入场 [0m
+                    [0m10.00[0m
+                    [0m · 止损 [0m
+                    [0m9.00[0m
+                    [0m · 止盈 [0m
+                    [0m12.00[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mdata-testid[39m=[32m"candlestick-chart"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mstyle[39m=[32m"position: relative;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mdata-testid[39m=[32m"echarts"[39m
+                    [36m/>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs"[39m
+              [33mstyle[39m=[32m"color: var(--color-fg-muted);"[39m
+            [36m>[39m
+              [0m已显示 [0m
+              [0m1[0m
+              [0m/[0m
+              [0m3[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<span[39m
+        [33mdata-pathname[39m=[32m"/"[39m
+        [33mdata-search[39m=[32m""[39m
+        [33mdata-testid[39m=[32m"location"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ ❯ frontend/src/modules/analysis/pages/task-detail/QuantExecutionPanel.test.tsx:137:24
+    135|     // 窗口锚定信号日往前 180 天；卡片滚动入场（jsdom 无 IntersectionObserver → 立即请求）
+    136|     await waitFor(() =>
+    137|       expect(barsMock).toHaveBeenCalledWith('000001.SZ', 'CN', '1d', '…
+       |                        ^
+    138|     );
+    139|     expect(await screen.findByTestId('echarts')).toBeInTheDocument();
+ ❯ runWithExpensiveErrorDiagnosticsDisabled frontend/node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback frontend/node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback frontend/node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  21:40:29
+   Duration  5.16s (transform 345ms, setup 338ms, collect 2.51s, tests 1.26s, environment 670ms, prepare 150ms)
+

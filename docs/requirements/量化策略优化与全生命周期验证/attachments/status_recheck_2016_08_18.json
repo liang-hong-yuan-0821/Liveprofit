@@ -1,0 +1,25 @@
+{
+  "start": "2016-08-18",
+  "end": "2016-08-18",
+  "calendar_days": 1,
+  "pending_before": 1,
+  "attempted": [
+    {
+      "trade_date": "20160818",
+      "status": "PARTIAL",
+      "rows": 2896,
+      "ambiguous_codes": [
+        "000033.SZ",
+        "000155.SZ",
+        "000659.SZ",
+        "600710.SH",
+        "600732.SH"
+      ]
+    }
+  ],
+  "pending_after": 1,
+  "next_dates": [
+    "2016-08-18"
+  ],
+  "generated_at": "2026-09-25T17:44:57.926128+00:00"
+}

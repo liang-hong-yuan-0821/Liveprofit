@@ -15,5 +15,6 @@
 - 新增 deadline-bounded readiness 错误时，同步扩展 `_task_readiness_deadline` 中相应任务类型的白名单。
 - 为每个错误码验证 deadline 前可越过最大重试次数、deadline 后不再按 readiness 特例重试；其他普通错误仍遵守原上限。
 - 对到期需要产出 partial 的流程，由 pipeline 在 deadline 分支直接保存报告；不要期待 task lifecycle 的异常重试路径生成业务报告。
+- 独立量化执行没有 `daily_research.wait_until`；其 `execution_snapshot` 的 `QUANT_INPUTS_NOT_READY` 从任务 `created_at` 起最多重试两小时。没有持仓时在补采未认证前停下；有持仓时执行服务必须显式 `protection_only`，即使 PostgreSQL 共同水位暂时可用，也禁止新开仓。
 
 验证：`backend/tests/unit/daily_research/test_readiness_retry.py` 覆盖量化输入未就绪、目标日不一致和股票池变化三个错误码。

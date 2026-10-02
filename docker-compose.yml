@@ -85,6 +85,8 @@ services:
       LIVEPROFIT_REDIS_URL: redis://:liveprofit123@redis:6379/0
     env_file:
       - .env
+    volumes:
+      - liveprofit_research:/app/var/research
     networks:
       - liveprofit-network
     profiles: ["app"]
@@ -121,6 +123,7 @@ services:
     volumes:
       # 产物卷：与 dispatcher 共享，容器重建不丢失（§2.4 var/runs）
       - liveprofit_artifacts:/app/var/runs
+      - liveprofit_research:/app/var/research
     networks:
       - liveprofit-network
     profiles: ["app"]
@@ -152,6 +155,7 @@ services:
     volumes:
       # 产物卷：与 worker 共享，reconciliation 才能看到同一份 artifacts
       - liveprofit_artifacts:/app/var/runs
+      - liveprofit_research:/app/var/research
     networks:
       - liveprofit-network
     profiles: ["app"]
@@ -268,6 +272,9 @@ volumes:
   liveprofit_artifacts:
     driver: local
     name: liveprofit_artifacts
+  liveprofit_research:
+    driver: local
+    name: liveprofit_research
 
 networks:
   liveprofit-network:

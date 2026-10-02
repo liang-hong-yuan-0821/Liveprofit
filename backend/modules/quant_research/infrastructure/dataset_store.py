@@ -54,7 +54,11 @@ class DatasetStore:
                 "as_of": dataset.quality.as_of.isoformat(),
                 "source": source,
                 "quality": dataset.quality.status,
+                "certifiable": dataset.quality.certifiable,
+                "certification_issues": list(dataset.quality.certification_issues),
                 "source_rows": dict(dataset.quality.source_rows),
+                "instrument_types": list(dataset.quality.instrument_types),
+                "coverage": _coverage_manifest(dataset),
                 "tables": entries,
             }
             (staging / "manifest.json").write_text(
@@ -75,10 +79,21 @@ class DatasetStore:
             shutil.rmtree(staging, ignore_errors=True)
             raise
 
-    def read(self, snapshot_id: uuid.UUID) -> tuple[dict, dict[str, pd.DataFrame]]:
+    def manifest_checksum(self, snapshot_id: uuid.UUID) -> str:
+        path = self.root / str(snapshot_id) / "manifest.json"
+        if not path.is_file():
+            raise DatasetIntegrityError("snapshot manifest missing")
+        return _sha256(path)
+
+    def read(
+        self, snapshot_id: uuid.UUID, *, expected_manifest_checksum: str | None = None,
+    ) -> tuple[dict, dict[str, pd.DataFrame]]:
         final = self.root / str(snapshot_id)
         try:
-            manifest = json.loads((final / "manifest.json").read_text(encoding="utf-8"))
+            manifest_path = final / "manifest.json"
+            if expected_manifest_checksum is not None and _sha256(manifest_path) != expected_manifest_checksum:
+                raise DatasetIntegrityError("snapshot manifest checksum mismatch")
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             if manifest["snapshot_id"] != str(snapshot_id) or manifest["quality"] != "READY":
                 raise DatasetIntegrityError("invalid snapshot manifest")
             tables = {}
@@ -95,3 +110,20 @@ class DatasetStore:
             return manifest, tables
         except (FileNotFoundError, KeyError, ValueError, OSError) as exc:
             raise DatasetIntegrityError("snapshot missing or corrupt") from exc
+
+
+def _coverage_manifest(dataset: ResearchDataset) -> dict | None:
+    audit = dataset.quality.coverage
+    if audit is None:
+        return None
+    return {
+        "expected_symbol_days": audit.expected_symbol_days,
+        "missing_counts": dict(audit.missing_counts),
+        "not_applicable_counts": dict(audit.not_applicable_counts),
+        "sample_gaps": [
+            {"component": gap.component, "ts_code": gap.ts_code,
+             "trade_date": gap.trade_date.isoformat()}
+            for gap in audit.sample_gaps
+        ],
+        "sample_truncated": audit.sample_truncated,
+    }

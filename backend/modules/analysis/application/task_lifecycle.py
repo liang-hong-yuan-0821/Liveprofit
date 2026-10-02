@@ -1009,6 +1009,14 @@ def _status_filter_to_statuses(status: str) -> set[str]:
 
 
 def _task_readiness_deadline(task: AnalysisTask, error_code: str | None = None) -> datetime | None:
+    if (
+        error_code in {None, "QUANT_INPUTS_NOT_READY"}
+        and isinstance((task.request_params or {}).get("execution_snapshot"), dict)
+        and (task.request_params or {}).get("execution_snapshot")
+    ):
+        created_at = getattr(task, "created_at", None)
+        if isinstance(created_at, datetime) and created_at.tzinfo is not None:
+            return created_at + timedelta(hours=2)
     workflow = (task.request_params or {}).get("daily_research")
     if not isinstance(workflow, dict):
         return None

@@ -14,14 +14,16 @@ import time
 import uuid
 from contextlib import AbstractContextManager
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime, time as clock_time
 from typing import Any, Callable, Protocol
+from zoneinfo import ZoneInfo
 
 from backend.modules.analysis.application.contracts import AnalysisArtifact, ClaimedTask
 from backend.modules.analysis.application.errors import (
     CooperativeCancelledError,
     FencingLostError,
     LeaseConflictError,
+    RetryableAnalysisError,
     classify_error,
 )
 from backend.modules.analysis.domain.enums import TaskEventType, TaskStatus
@@ -377,6 +379,40 @@ class AnalysisExecutor:
         forbidden_source_code = (snapshot.get("strategy") or {}).get("source_code")
         control: ExecutionControl | None = None
         try:
+            protection_only = False
+            requested_day = claimed.effective_trade_date
+            target_day = requested_day or datetime.now(ZoneInfo("Asia/Shanghai")).date()
+            if self._quant_preflight is not None:
+                now = datetime.now(ZoneInfo("Asia/Shanghai"))
+                anchor = (now if target_day == now.date() else datetime.combine(
+                    target_day, clock_time(21), tzinfo=ZoneInfo("Asia/Shanghai")))
+                try:
+                    preflight = self._quant_preflight(
+                        at=anchor, mode="auto", trigger="QUANT_EXECUTION",
+                    )
+                except Exception:  # 补采服务异常时仅允许持仓保护
+                    logger.exception("独立量化执行的行情补采提交失败：task=%s", claimed.task_id)
+                    protection_only = True
+                else:
+                    preflight_day = None
+                    if isinstance(preflight, dict) and preflight.get("effective_trade_date"):
+                        try:
+                            preflight_day = date.fromisoformat(str(preflight["effective_trade_date"]))
+                        except ValueError:
+                            pass
+                    if requested_day is None and preflight_day is not None:
+                        target_day = preflight_day
+                    protection_only = (
+                        not isinstance(preflight, dict)
+                        or preflight.get("state") != "ready"
+                        or preflight_day is None
+                        or (requested_day is not None and preflight_day != requested_day)
+                    )
+                if protection_only and not snapshot.get("positions"):
+                    raise RetryableAnalysisError(
+                        "量化输入未就绪，等待补采与覆盖复核",
+                        code="QUANT_INPUTS_NOT_READY",
+                    )
             from db.instrument.db import get_connection
 
             with get_connection(self._market_dsn) as market_conn:
@@ -398,8 +434,9 @@ class AnalysisExecutor:
                         market_conn=market_conn,
                         session=bundle.uow.session,
                         execution_control=control,
-                        effective_trade_date=claimed.effective_trade_date or date.today(),
+                        effective_trade_date=target_day,
                         on_progress=self._on_progress,
+                        protection_only=protection_only,
                     )
                     summary = service.run()
 
@@ -449,6 +486,20 @@ class AnalysisExecutor:
             if control is not None:
                 control.terminate_all()
             self._fail_or_retry(claimed, exc)
+        finally:
+            if snapshot.get("new_risk_mode") == "FAMILY_BATCH":
+                self._complete_family_batch(claimed.task_id)
+
+    def _complete_family_batch(self, task_id) -> None:
+        """Independent post-commit trigger; dispatcher recovers a missed callback."""
+        from backend.modules.quant_strategy.application.batch_completion import BatchCompletionService
+
+        try:
+            with self._bundles.open() as bundle:
+                BatchCompletionService(bundle.uow.session).for_task(task_id)
+                bundle.uow.session.commit()
+        except Exception:
+            logger.exception("家族批次完成触发失败，等待dispatcher恢复：task=%s", task_id)
 
     # ---- 内部流程 ----
 

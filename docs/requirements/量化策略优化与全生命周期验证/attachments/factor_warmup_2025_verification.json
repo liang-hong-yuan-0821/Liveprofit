@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-09-25T17:16:00.600848+00:00",
+  "year": 2025,
+  "calendar": "exchange_calendars XSHG",
+  "calendar_sha256": "21781ba7fd9579953dfe5c55aa3134aa4498d75982cb619c8516b0b14a8b016f",
+  "factor_gap_rows": 6474,
+  "max_listing_session_index": 59,
+  "local_calendar_mismatches": [],
+  "local_calendar_mismatch_count": 0,
+  "factor_absent_after_session20": [],
+  "factor_absent_after_session20_count": 0,
+  "ma60_missing_after_session59": [],
+  "ma60_missing_after_session59_count": 0,
+  "atr_missing_after_session20": [],
+  "atr_missing_after_session20_count": 0
+}

@@ -1,6 +1,6 @@
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { configDefaults, defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -13,13 +13,5 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-  },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/testSetup.ts'],
-    css: false,
-    // E2E 由 Playwright 执行，排除其 spec 文件
-    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });

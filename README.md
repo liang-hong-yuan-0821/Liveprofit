@@ -155,6 +155,8 @@ liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试�
 
 技术栈：React 19 · TypeScript · TanStack Query · Zustand · Tailwind CSS（shadcn 风格组件）· ECharts · Vitest/RTL · Playwright。
 
+正式测试统一位于根 [tests/](tests/README.md)，按领域、业务模块和测试层级组织。使用项目 Python 环境运行 `python -m tests.run --list` 查看模块，`python -m tests.run --module backend.analysis --related --list` 查看相关回归范围；具体运行与隔离门禁见测试说明。前端测试命令保持兼容。
+
 ### 运行方式（已集成到 run.sh）
 
 ```bash

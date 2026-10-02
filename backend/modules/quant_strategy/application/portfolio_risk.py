@@ -36,6 +36,8 @@ class PortfolioRiskState:
     reserved_cash: Decimal
     reserved_sell_quantity: dict[str, Decimal]
     block_code: str | None = None
+    drawdown_pct: Decimal | None = None
+    full_drawdown_exit_required: bool = False
 
     @classmethod
     def build(
@@ -66,6 +68,10 @@ class PortfolioRiskState:
             day_start = _dec(risk.get("day_start_net_asset_value"))
             if min(nav, peak, day_start) <= 0:
                 raise ValueError
+            drawdown_limit = _dec(risk["max_drawdown_pct"])
+            daily_loss_limit = _dec(risk["max_daily_loss_pct"])
+            if drawdown_limit <= 0 or daily_loss_limit <= 0:
+                raise ValueError
             if valuation_date is not None and str(risk["risk_facts_as_of"])[:10] != valuation_date.isoformat():
                 raise ValueError
         except ValueError:
@@ -73,12 +79,13 @@ class PortfolioRiskState:
         drawdown = max(Decimal(0), (peak - nav) / peak)
         daily_loss = max(Decimal(0), (day_start - nav) / day_start)
         block = None
-        if drawdown >= _dec(risk["max_drawdown_pct"]) or daily_loss >= _dec(risk["max_daily_loss_pct"]):
+        if drawdown >= drawdown_limit / 2 or daily_loss >= daily_loss_limit:
             block = PORTFOLIO_CIRCUIT_BREAKER
 
         state = cls(
             assets, portfolio_limit, sector_limit, daily_limit,
             Decimal(0), {}, Decimal(0), Decimal(0), {}, block,
+            drawdown, drawdown >= drawdown_limit,
         )
         for position in positions:
             symbol = position["symbol"]
@@ -95,21 +102,34 @@ class PortfolioRiskState:
 
         for order in pending_orders:
             side = str(order.get("side", "")).upper()
-            symbol = str(order.get("symbol", ""))
-            qty = _dec(order.get("remaining_quantity", 0))
+            symbol = str(order.get("symbol") or "")
+            try:
+                qty = _dec(order.get("remaining_quantity"))
+                if qty <= 0 or not symbol:
+                    raise ValueError
+            except ValueError:
+                state.block_code = RISK_FACTS_UNAVAILABLE
+                continue
             if side == "SELL":
                 state.reserved_sell_quantity[symbol] = state.reserved_sell_quantity.get(symbol, Decimal(0)) + qty
                 continue
             if side != "BUY":
                 state.block_code = RISK_FACTS_UNAVAILABLE
                 continue
-            entry, stop = _dec(order.get("order_entry_price")), _dec(order.get("order_stop_price"))
+            try:
+                entry, stop = _dec(order.get("order_entry_price")), _dec(order.get("order_stop_price"))
+                reserved_cash = _dec(order.get("reserved_cash", entry * qty))
+                if reserved_cash < entry * qty:
+                    raise ValueError
+            except ValueError:
+                state.block_code = RISK_FACTS_UNAVAILABLE
+                continue
             industry = order.get("industry_code")
             if qty <= 0 or not industry or not (Decimal(0) < stop < entry):
                 state.block_code = RISK_FACTS_UNAVAILABLE
                 continue
             risk_amount = (entry - stop) * qty
-            state.reserved_cash += _dec(order.get("reserved_cash", entry * qty))
+            state.reserved_cash += reserved_cash
             state.portfolio_open_risk += risk_amount
             state.daily_new_risk += risk_amount
             code = str(industry)

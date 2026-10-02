@@ -1,57 +1,63 @@
-"""
-pytest 共享 fixtures —— 真实 LLM + 真实 Toolkit + 真实 Memory。
+"""Lightweight collection policy; live services are explicit opt-ins."""
 
-所有 agent 集成测试使用真实依赖，验证提示词 + tool 的实际效果。
-LLM 和 Toolkit 按 module 级别复用，避免每个测试函数重复初始化。
-"""
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载 .env（在 import 真实依赖之前）
-_project_root = Path(__file__).resolve().parent.parent
-_env_file = _project_root / ".env"
-if _env_file.exists():
-    load_dotenv(_env_file, override=False)
+from tests.support.python.paths import PROJECT_ROOT
 
-from langchain_openai import ChatOpenAI
-from AI.default_config import load_config
-from AI.stockAgents import Toolkit
-from AI.stockAgents.utils.memory import FinancialSituationMemory
+load_dotenv(PROJECT_ROOT / '.env', override=False)
+
+LIVE_FIXTURES = frozenset({'real_llm', 'real_toolkit', 'real_memory'})
+DB_FIXTURES = frozenset({'pg_env', 'operation_db', 'predict_db', 'routing_db'})
 
 
-# ============================================================
-# Module 级别 fixtures —— 整个测试文件共享一份实例
-# ============================================================
-
-@pytest.fixture(scope="module")
-def real_llm():
-    """真实 ChatOpenAI LLM（quick_thinking，来自 .env 配置）"""
-    config = load_config()
-    if not config.get("api_key"):
-        pytest.skip("未配置 LIVEPROFIT_API_KEY，跳过集成测试")
-    return ChatOpenAI(
-        model=config["quick_think_llm"],
-        base_url=config["base_url"],
-        api_key=config["api_key"],
-        temperature=config["quick_temperature"],
-        max_tokens=config["max_tokens"],
-        timeout=180,
-    )
+def pytest_addoption(parser):
+    group = parser.getgroup('liveprofit')
+    group.addoption('--allow-live', action='store_true', help='Human-only opt-in to real LLM/toolkit fixtures.')
+    group.addoption('--allow-db', action='store_true', help='Run explicitly isolated database/Redis suites.')
+    group.addoption('--allow-external', action='store_true', help='Human-only opt-in to real external data sources.')
+    group.addoption('--allow-e2e', action='store_true', help='Run Python end-to-end suites.')
 
 
-@pytest.fixture(scope="module")
-def real_toolkit():
-    """真实 Toolkit（Tushare / AKShare，来自 .env 配置）"""
-    config = load_config()
-    return Toolkit(config=config)
+def pytest_collection_modifyitems(config, items):
+    selected, deselected = [], []
+    for item in items:
+        path = Path(str(item.path)).relative_to(PROJECT_ROOT).parts
+        live = bool(LIVE_FIXTURES.intersection(item.fixturenames)) or item.get_closest_marker('real_llm') is not None
+        db = (
+            (path[:2] == ('tests', 'backend') and 'integration' in path)
+            or (path[:2] == ('tests', 'backend') and 'contract' in path and 'api' in path)
+            or (path[:2] == ('tests', 'data') and 'integration' in path)
+            or path[:2] == ('tests', 'e2e')
+            or bool(DB_FIXTURES.intersection(item.fixturenames))
+            or item.get_closest_marker('requires_db') is not None
+        )
+        e2e = path[:2] == ('tests', 'e2e') or item.get_closest_marker('e2e') is not None
+        external = item.get_closest_marker('external_data') is not None
+        if live:
+            item.add_marker(pytest.mark.real_llm)
+        if db:
+            item.add_marker(pytest.mark.requires_db)
+        if e2e:
+            item.add_marker(pytest.mark.e2e)
+        blocked = (
+            (live and not config.getoption('--allow-live'))
+            or (external and not config.getoption('--allow-external'))
+            or (db and not config.getoption('--allow-db'))
+            or (e2e and not config.getoption('--allow-e2e'))
+        )
+        (deselected if blocked else selected).append(item)
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+    items[:] = selected
 
 
-@pytest.fixture(scope="module")
-def real_memory():
-    """真实 FinancialSituationMemory（ChromaDB）"""
-    config = load_config()
-    if not config.get("memory_enabled", True):
-        return None
-    return FinancialSituationMemory("test_memory", config)
+@pytest.hookimpl(tryfirst=True)
+def pytest_fixture_setup(fixturedef, request):
+    # Also protect dynamic request.getfixturevalue(), which collection cannot see.
+    if fixturedef.argname in LIVE_FIXTURES and not request.config.getoption('--allow-live'):
+        pytest.skip('Real LLM/toolkit fixtures require explicit human --allow-live opt-in.')
+    if fixturedef.argname in DB_FIXTURES and not request.config.getoption('--allow-db'):
+        pytest.skip('Isolated database fixtures require explicit --allow-db opt-in.')

@@ -1,8 +1,8 @@
 # 市场数据自动补齐任务清单
 
-> **状态**：Code Review（2026-09-24）
-> **进度**：8/10 任务完成；目标日生产缺口已修复，根因增量回归及二轮 Code Review PASS
-> **下一步**：完成 T9 整栈容器验收与 T10 文档/归档收尾；较早历史缺口按来源可得性另行核验
+> **状态**：已完成（2026-10-02）
+> **进度**：10/10 任务完成；最终全任务 Code Review PASS（无 blocker/major，6 项发现全部修复并经 delta 复核）
+> **下一步**：较早历史缺口（issues V11）按来源可得性另行核验
 > **关联方案**：[plan.md](plan.md)｜[评审记录](attachments/review.md)｜[待验证项](issues.md)
 
 用户于 2026-09-23 确认进入任务分解。清单直接拆自 R2 通过的方案，不另启方案评审。2026-09-23 用户进一步授权按本清单实施，当前按任务逐项开发和验收。测试新文件为计划落点，由对应任务创建，不能将不存在的测试视为已通过。
@@ -21,8 +21,8 @@
 | T6 | 接入 Market Worker 与 Dispatcher | T4、T5 | 已完成 |
 | T7 | 实现更新 API、行情查询语义及客户端契约 | T2、T3、T4、T5 | 已完成 |
 | T8 | 实现前端自动检查、状态展示与缓存刷新 | T7 | 已完成 |
-| T9 | 完成本地及容器启停装配 | T6、T7 | 进行中：镜像与 Worker 心跳通过；整栈联调和 VHDX 压缩待完成 |
-| T10 | 完成联调验收、代码审查及文档收尾 | T8、T9 | 进行中 |
+| T9 | 完成本地及容器启停装配 | T6、T7 | 已完成（2026-10-02） |
+| T10 | 完成联调验收、代码审查及文档收尾 | T8、T9 | 已完成（2026-10-02） |
 
 T1 后，T2→T3→T4 与 T5 可并行；之后 T6 与 T7 可并行，T8 与 T9 可并行，最后汇入 T10。同一文件有多个任务涉及时按依赖顺序整合；并行开发由单一负责人合并，避免互相覆盖。
 
@@ -145,11 +145,11 @@ T1 后，T2→T3→T4 与 T5 可并行；之后 T6 与 T7 可并行，T8 与 T9 
 - **涉及文件**：修改 `backend/cli.py`、`pyproject.toml`、`uv.lock`、`run.sh`、`docker-compose.yml`、`docker/Dockerfile.worker`（依赖需要时）；更新运行说明及测试/验收记录。
 - **依赖**：T6、T7。
 - **验收标准**：
-  - [ ] 隔离环境运行新增 `liveprofit-market-worker` 入口，验证队列和心跳；本地start_platform/stop包含新PID、日志与子进程回收，启动失败不报告成功；start_all不再无条件运行全量增量，手动ingest-market仍可用且受公共锁。
-  - [ ] Windows依赖安装及Linux worker镜像构建/导入通过；`docker compose --profile app config --quiet` 校验服务配置。在隔离容器中验证API/Dispatcher/market-worker实际连同一PG库，状态/Broker同Redis URL/DB，市场连接不回落localhost，不打印密钥。
-  - [ ] 总开关关闭停止准入；仅auto关闭时页面auto/定时均不入队而手动仍受约束可用；离线只保留一份当前任务，不持续增消息。
-  - [ ] 演练部署顺序与回滚：旧采集自然结束后切换；停止新准入/Worker保留已提交行情，无需DDL，定向清理不影响AI队列；stop后无市场采集孤儿进程。
-- **状态**：`进行中`（2026-09-23）。通过 `mirror.gcr.io` 拉取 Python 基础镜像；完整 Linux Worker 镜像构建、导出和导入成功，179 个锁定依赖安装通过，镜像约 8.96 GB；`docker compose --profile app config --quiet` 与 `liveprofit-market-worker --help` 通过。临时 Worker 在空 Redis DB15 启动并监听 `market-data` 队列，观察到专属 Worker key 与 Dramatiq Broker heartbeat 后正常停止，DB15 已清空；现有 PostgreSQL/Redis 容器仍 healthy。两份本任务 8.78 GB 的 BuildKit 安装缓存已清理，镜像与数据卷保留。Docker VHDX 当前 37.47 GB，D 盘实际余量仍为 1.54 GB，因宿主机文件不会随虚拟盘内部删除自动缩小；DiskPart 压缩需要管理员权限，当前执行环境无权提升。API/Dispatcher 与 Worker 的整栈连接验收、Windows 依赖安装复验及本地启停验收仍待完成。
+  - [x] 隔离环境运行新增 `liveprofit-market-worker` 入口，验证队列和心跳；本地start_platform/stop包含新PID、日志与子进程回收，启动失败不报告成功；start_all不再无条件运行全量增量，手动ingest-market仍可用且受公共锁。（2026-10-02 实测：api/market-worker/dispatcher 启停干净、无孤儿、数据保留；AI worker 因存量分析重试消息未启动，其脚本条目以代码核验 + 同一 start_daemon 佐证，证据见 log.md 与 result.md）
+  - [x] Windows依赖安装及Linux worker镜像构建/导入通过；`docker compose --profile app config --quiet` 校验服务配置。在隔离容器中验证API/Dispatcher/market-worker实际连同一PG库，状态/Broker同Redis URL/DB，市场连接不回落localhost，不打印密钥。（2026-10-02 容器内实测：API/Dispatcher/market-worker 以 HEAD 镜像运行，同一 PG/Redis（host=postgres/redis，非 localhost），六组覆盖 FRESH 与宿主一致；旧 9-24 镜像曾产生错误摘要，重建后消除；日志仅掩码占位符）
+  - [x] 总开关关闭停止准入；仅auto关闭时页面auto/定时均不入队而手动仍受约束可用；离线只保留一份当前任务，不持续增消息。（T1 配置单测 + T4 双 eligibility/离线零投递 + T7 契约测试证据）
+  - [x] 演练部署顺序与回滚：旧采集自然结束后切换；停止新准入/Worker保留已提交行情，无需DDL，定向清理不影响AI队列；stop后无市场采集孤儿进程。（运行手册 attachments/deploy-rollback-runbook.md；停止后数据保留、无孤儿、Redis 前缀零重叠已实测）
+- **状态**：`已完成`（2026-10-02）。本地启停验收与容器整栈验收（HEAD 镜像）均通过；验收容器已清理。
 
 ### T10 完成联调验收、代码审查及文档收尾
 
@@ -157,12 +157,12 @@ T1 后，T2→T3→T4 与 T5 可并行；之后 T6 与 T7 可并行，T8 与 T9 
 - **涉及文件**：前述单测/集成/契约/e2e测试及 `attachments/` 验收证据；更新项目 `README.md`、`docs/knowledge/backend/API契约.md`、`docs/knowledge/frontend/前端平台.md`、受影响的维护文档，以及本任务八文件。
 - **依赖**：T8、T9（传递依赖 T1–T7）。
 - **验收标准**：
-  - [ ] 执行方案 §4.6.3 的后端单元/采集/market集成/API契约、前端类型检查/market测试/e2e命令，逐项核对下方12条评审要求的实测证据；隔离fixture执行，不使用真实LLM。
-  - [ ] 隔离库构造“最新9/21、目标9/22”，观察仅必要组入队、逐步显示真实入库数据；多页不重复任务、关页继续、睡眠恢复补缺。受控真实源验收另行记录调用范围/耗时/实际到数，不为演示删除生产数据。
-  - [ ] 按根 AGENTS.md 启动实现后的独立code review，修复发现并完成相关回归；这是代码审查，不重复启动已通过的方案评审。不能将方案PASS替代代码或功能验收。
-  - [ ] 验证本任务无PG建表/字段/迁移，无不相关改动被覆盖；确认issues.md的实施项已有证据或明确剩余限制，日历支持范围和源缓冲不作超出证据的承诺。
-  - [ ] 实现且审查通过后将真实架构变化合入knowledge，纠正旧“08:30兜底已接通”等描述；填写result/retrospective、同步10/10与README已完成，整体移至archive并修相对链接；按AGENTS仅显式暂存本任务路径再提交，不使用git add -A。
-- **状态**：`进行中`（2026-09-24）。T5/T6 根因修复的独立 Code Review PASS；生产目录/板块核验与 T9 整栈验收仍未完成。
+  - [x] 执行方案 §4.6.3 的后端单元/采集/market集成/API契约、前端类型检查/market测试/e2e命令，逐项核对下方12条评审要求的实测证据；隔离fixture执行，不使用真实LLM。（2026-10-02 于 HEAD 经新 tests/ 布局复验，证据见 result.md；12 条 R1 映射见下表与 T1–T8 勾选项）
+  - [x] 隔离库构造“最新9/21、目标9/22”，观察仅必要组入队、逐步显示真实入库数据；多页不重复任务、关页继续、睡眠恢复补缺。受控真实源验收另行记录调用范围/耗时/实际到数，不为演示删除生产数据。（组件证据合成：e2e 2 项覆盖页面 stale→queued→partial→complete/关页继续/选择保持；integration test_refresh_jobs 覆盖隔离库+真实 Broker 的组入队与终态；生产观察见 9-24 目标日 5568/5568 与 2026-10-02 US 10-01 自动补齐 SUCCEEDED）
+  - [x] 按根 AGENTS.md 启动实现后的独立code review，修复发现并完成相关回归；这是代码审查，不重复启动已通过的方案评审。不能将方案PASS替代代码或功能验收。（2026-10-02 全任务独立审查 PASS：无 blocker/major；1 minor + 5 polish 全部修复并经 delta 复核；修复后 unit 88 / integration 53 / contract 35 复验通过）
+  - [x] 验证本任务无PG建表/字段/迁移，无不相关改动被覆盖；确认issues.md的实施项已有证据或明确剩余限制，日历支持范围和源缓冲不作超出证据的承诺。（任务差异 dbfdc3f9..HEAD 中无本任务 DDL/迁移：atr_qfq/atr_bfq 列与迁移 0011–0019 均属并行量化任务；issues V1–V11 均有证据或明确剩余限制）
+  - [x] 实现且审查通过后将真实架构变化合入knowledge，纠正旧“08:30兜底已接通”等描述；填写result/retrospective、同步10/10与README已完成，整体移至archive并修相对链接；按AGENTS仅显式暂存本任务路径再提交，不使用git add -A。（knowledge 的 API 契约与前端平台文档已在实施中同步刷新端点与状态栏事实；根 README 三处过时表述修正；result/retrospective 完成；文件夹已移至 archive 并校正链接）
+- **状态**：`已完成`（2026-10-02）。HEAD 全量回归通过；最终 Code Review PASS；任务已归档。
 
 ## 评审要求与任务映射
 

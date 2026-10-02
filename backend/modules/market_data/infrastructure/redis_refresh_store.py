@@ -132,6 +132,7 @@ class RedisRefreshStore:
     def ensure(self, resource, target_date, spec, mode, now, trigger="PAGE"):
         def mutation(ctx, op):
             state, job = ctx["state"], ctx["job"]
+            cancelled_id = None
             if job and job["status"] in ACTIVE:
                 manual_takeover = (mode == "retry" and not self.config.auto_enabled
                                    and job["mode"] == "auto" and job["status"] != "RUNNING")
@@ -139,9 +140,14 @@ class RedisRefreshStore:
                     return {"resource": resource, "decision": "IN_PROGRESS", "job_id": job["id"], "reason": "JOB_ACTIVE", "next_retry_at": utc_text(job.get("retry_at"))}
                 job.update(status="CANCELLED", finished_at=utc_text(now))
                 op("set", f"job:{job['id']}", _json(job), self.config.terminal_ttl_seconds)
+                cancelled_id = job["id"]
                 ctx["job"] = None
             decision = self.eligibility(ctx, mode, now)
             if not decision["allowed"]:
+                # 取消的 job 不再被准入替代：清掉指向它的状态指针，避免状态
+                # 面板继续显示一个已 CANCELLED 的任务（仅在指针未被他方更新时）。
+                if cancelled_id and state.get("current_job_id") == cancelled_id:
+                    state.pop("current_job_id", None)
                 return {"resource": resource, "decision": "COOLDOWN" if decision["reason"] == "COOLDOWN" else "BLOCKED", "job_id": None, **{k: v for k, v in decision.items() if k != "allowed"}}
             old_target = state.get("target_trade_date")
             if old_target and old_target != target_date:
@@ -200,6 +206,10 @@ class RedisRefreshStore:
             if not eligibility["allowed"]:
                 job.update(status="CANCELLED", error_code=eligibility["reason"], finished_at=utc_text(now))
                 op("set", f"job:{job_id}", _json(job), self.config.terminal_ttl_seconds)
+                # 与 ensure 取消路径同口径：指针仍指向被取消 job 时清掉，
+                # 避免状态面板继续显示该已取消任务。
+                if ctx["state"].get("current_job_id") == job_id:
+                    ctx["state"].pop("current_job_id", None)
                 return None
             token = uuid4().hex
             job.update(status="RUNNING", attempt=job["attempt"]+1, run_token=token, started_at=utc_text(now), heartbeat_at=utc_text(now), processed=0)
@@ -243,8 +253,9 @@ class RedisRefreshStore:
             if job["status"] != "RUNNING" or job.get("run_token") != token:
                 return False
             job.update(status="QUEUED", run_token=None)
+            previous_attempts = job.pop("previous_attempts", {})
             op("set", f"job:{job_id}", _json(job), 0)
-            op("set", f"attempts:{job['resource']}:{job['target_trade_date']}", _json(job.pop("previous_attempts", {})), 0)
+            op("set", f"attempts:{job['resource']}:{job['target_trade_date']}", _json(previous_attempts), 0)
             op("zrem", f"budget:{job['resource']}", job["budget_member"])
             op("del", f"lock:{job['resource']}")
             return True

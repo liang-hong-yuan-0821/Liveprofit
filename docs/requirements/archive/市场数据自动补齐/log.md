@@ -1,5 +1,24 @@
 # 工作日志
 
+## 2026-10-02 收尾归档
+
+- 最终全任务独立 Code Review PASS：无 blocker/major；1 minor + 5 polish 全部修复（contract 清理重试耗尽显式失败、TRUNCATE 补无 FK 四表、release_busy 残留字段、ensure/claim 取消指针清理、T9 文档状态统一、.gitignore 补 node_modules），delta 复核确认无新问题；修复后 unit 88 / integration 53 / contract 35 复验通过。
+- 容器整栈验收完成：HEAD 镜像六组 FRESH 与宿主一致，验收容器 stop+rm，恢复初始 infra 状态。
+- 知识整合：根 README 过时表述修正（已随实施完成）；API 契约与前端平台文档此前已含刷新端点与状态栏事实。经验沉淀 [docker-image-stale.md](../../../experience/pitfalls/workspace/docker-image-stale.md) 并更新经验索引。
+- 复盘完成；任务文件夹整体移入 archive，内部 `../../` 链接上移一层，外部引用（每日投研自动流程、量化前行情就绪编排）链接同步校正；10/10 全部完成，按路径显式暂存提交。
+
+## 2026-10-02 恢复实施：T9 运行验收与 T10 收尾
+
+- 恢复前识别：T1–T8 已完成证据有效；环境变化——D 盘 27 GB 可用（VHDX 阻塞解除）、测试已迁移至根 `tests/`（tests.run 运行器）、HEAD（2871525f）含量化生命周期任务对共享文件的改动（停牌语义升级为 `trade_status_effective` + `suspension_scope='full_day'` + `suspension_evidence`/`suspension_source_daily` 扩展）。
+- 本地启停验收（T9-1）：api / market-worker / dispatcher 三进程启动（AI worker 因 Redis 有 7 条存量分析重试消息、真实 LLM 门禁未启动，脚本中 worker 条目以代码核验佐证）；API live/ready OK；**实时自动补齐验证**：启动后 Dispatcher 检测 US_INDEX_BARS 10-01 缺口 → market-worker 真实采集 → SUCCEEDED 3/3，六组全部 FRESH；日志无密钥（仅 `password=已设置` 掩码）。`stop-platform` 停止干净、无孤儿 liveprofit-* 进程、已提交行情（10-01 四行）保留。start_all 已去除无条件全量增量（代码核验）；ingest-market 手动入口存在且受公共锁（T5 测试证据）。
+- 容器整栈验收（T9-2）：API 镜像按 HEAD 构建（Dockerfile.api 首次构建成功）；worker 类三个服务沿用 9-24 验证镜像 → 容器内发现 **旧镜像与 HEAD 代码不一致**：旧语义（股票∪成分并集）将 expected 5652/CATALOG_INCOMPLETE 摘要写入生产 Redis，当前 API 读出错误状态；已按 HEAD 重建 worker 镜像（verification-head），待重标后整栈复验。容器内 API 自身健康检查 PG/Redis OK，市场查询可达同一 PG（市场连接未回落 localhost）。
+- T9-3 开关/离线行为：T1 配置、T4 准入预算、T7 契约测试已覆盖（自动关闭手动仍可用、Redis 不可用两模式不可准入、离线一小时零消息），运行时以测试证据引用，不重复操作生产开关。
+- T9-4 部署顺序与回滚：停止后数据保留、无孤儿、无 DDL、Redis 前缀定向清理（57 个 `liveprofit:market-refresh:*` 键与 6 个 dramatiq 键零重叠）已实测；部署顺序运行手册写入 attachments。
+- HEAD 全量回归（tests.run 新运行器，隔离库核验后 --allow-db）：backend.market_data unit 88 / integration 53 / contract 35；data.ingest unit 126 / integration 80；data.providers unit 165；backend.platform unit 61；前端 market 13 文件 85 项、typecheck 通过；e2e market-refresh 2 项通过（Edge 通道，mock API）。
+- 修复三处测试资产与代码不一致（HEAD 现状）：① `tests/support/python/contract_env.py` 清理 TRUNCATE 被量化任务新增的防清表/不可变触发器拦截 → 事务内对 public/market 两 schema 全表 DISABLE TRIGGER ALL → TRUNCATE → ENABLE（失败回滚 DDL）；② `test_market_refresh_reads` 停牌播种补 `suspension_scope='full_day'` 对齐新语义；③ e2e spec 对齐当前组件（`行情拉取状态` locator、失败态 `待补齐 0/11`+重试按钮、offline 不渲染重试按钮）。组件语义由 85 项前端测试固化，未反向改组件。
+- 根 README 过时表述修正：start_all 不再自动全量采集、四进程清单补 market-worker、ingest-market 定位为显式完整维护。
+- 最终全任务独立 Code Review 已启动；待容器整栈复验与 review 收敛后收尾归档。
+
 ## 2026-09-24 目标日个股与板块更新恢复
 
 - 按 L/D/P/G/UN × SSE/SZSE/BSE 只读拉取 `stock_basic`，合并结果 5907 条，`001246.SZ`、`301716.SZ`、`920201.BJ` 均不在完整目录。确认 DC 板块成分会提前包含尚未上市的 IPO 代码；修改 `CN_STOCK_DAILY` 目标集合为股票主目录，目录内缺上市状态/日期仍阻断，旧冻结任务中的目录外成分可核验退出。目录同步后目标日从 5571 调整为 5568。

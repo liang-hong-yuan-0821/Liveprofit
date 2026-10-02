@@ -165,23 +165,46 @@ def _clean_platform_state(client):
     for attempt in range(3):
         try:
             with test_engine.begin() as conn:
-                conn.execute(
-                    sql_text(
-                        "TRUNCATE order_fill_events, position_intents, position_daily_facts, "
-                        "position_expectations, position_trailing_stops, suggested_orders, "
-                        "position_lifecycle_states, lifecycle_policy_versions, "
-                        "quant_execution_signals, quant_strategy_versions, quant_strategies, "
-                        "portfolio_positions, portfolios, watchlist_items, watchlists, "
-                        "macro_information, analysis_reports, task_outbox, analysis_tasks, "
-                        "market.instrument, market.instrument_daily, market.factor_daily, "
-                        "market.adj_factor, market.trade_status_daily, market.sector, market.sector_member, "
-                        "market.sector_daily, market.industry, market.industry_member, market.ingest_state, "
-                        "market.fund_info, market.stock_info CASCADE"
+                # 仅在新建的隔离库临时关闭业务防写触发器（market 防清表、量化不可变
+                # 历史等，含 TRUNCATE CASCADE 可能级联命中的表）；事务失败会回滚此 DDL。
+                for toggle in ("DISABLE", "ENABLE"):
+                    conn.execute(
+                        sql_text(
+                            f"""
+                            DO $$ DECLARE r record; BEGIN
+                              FOR r IN SELECT schemaname, tablename FROM pg_tables
+                                       WHERE schemaname IN ('public', 'market') LOOP
+                                EXECUTE format('ALTER TABLE %I.%I {toggle} TRIGGER ALL',
+                                               r.schemaname, r.tablename);
+                              END LOOP;
+                            END $$
+                            """
+                        )
                     )
-                )
+                    if toggle == "DISABLE":
+                        conn.execute(
+                            sql_text(
+                                "TRUNCATE order_fill_events, position_intents, position_daily_facts, "
+                                "position_expectations, position_trailing_stops, suggested_orders, "
+                                "position_lifecycle_states, lifecycle_policy_versions, "
+                                "quant_execution_signals, quant_strategy_versions, quant_strategies, "
+                                "portfolio_positions, portfolios, watchlist_items, watchlists, "
+                                "macro_information, analysis_reports, task_outbox, analysis_tasks, "
+                                "market.instrument, market.instrument_daily, market.factor_daily, "
+                                "market.adj_factor, market.trade_status_daily, market.sector, market.sector_member, "
+                                "market.sector_daily, market.industry, market.industry_member, market.ingest_state, "
+                                "market.fund_info, market.stock_info, market.suspension_evidence, "
+                                "market.stock_st_source_batch, market.stock_st_source_conflict, "
+                                "market.stock_st_adjudication CASCADE"
+                            )
+                        )
             break
         except OperationalError:
             time.sleep(0.2 * (attempt + 1))
+    else:
+        # 清理是契约用例的前提：重试耗尽必须显式失败，不能带着脏表继续执行。
+        test_engine.dispose()
+        raise RuntimeError("contract 隔离库清理 3 次重试后仍失败（TRUNCATE 死锁/冲突）")
     test_engine.dispose()
     client.redis.flushdb()
     client.publisher.job_ids.clear()

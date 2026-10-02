@@ -52,6 +52,7 @@
 | [git-bash-windows.md](pitfalls/workspace/git-bash-windows.md) | Git Bash 下 start /c MSYS 转换坑 |
 | [git-status-porcelain-empty-path.md](pitfalls/workspace/git-status-porcelain-empty-path.md) | git status 对不存在路径静默返回空，核验前先确认路径存在 |
 | [评审循环踩坑.md](pitfalls/workspace/评审循环踩坑.md) | 评审收敛与fixture能力踩坑、辅助实现反复验收及八文件重复收尾（业务单元聚合/受影响范围复验/证据单点） |
+| [docker-image-stale.md](pitfalls/workspace/docker-image-stale.md) | 隔日验证镜像不随代码演进：容器健康但旧语义把错误摘要写进生产 Redis，整栈验收前按 HEAD 重建镜像并用容器内查询核对状态一致 |
 
 ## best-practices/（good：最佳实践）
 

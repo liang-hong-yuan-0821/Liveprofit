@@ -65,7 +65,7 @@ def test_latest_and_exact_history_filter_candidates_and_count_full_members(clien
         conn.execute(text("INSERT INTO market.sector(source,sector_code,name) VALUES ('dc','EMPTY','No data'),('dc','OLD','Old high heat')"))
         conn.execute(text("INSERT INTO market.sector_daily(source,sector_code,trade_date,open,high,low,close,pct_chg) VALUES ('dc','OLD','2026-09-06',1,2,1,2,999)"))
         conn.execute(text("INSERT INTO market.sector_member(source,sector_code,ts_code) VALUES ('dc','BK1754','600001.SH')"))
-        conn.execute(text("INSERT INTO market.trade_status_daily(ts_code,trade_date,is_suspended,source) VALUES ('600000.SH','2026-09-07',true,'tushare'),('300002.SZ','2026-09-07',true,'tushare')"))
+        conn.execute(text("INSERT INTO market.trade_status_daily(ts_code,trade_date,is_suspended,source,suspension_scope) VALUES ('600000.SH','2026-09-07',true,'tushare','full_day'),('300002.SZ','2026-09-07',true,'tushare','full_day')"))
     url = "/api/v1/market-data/concepts/tree?market=CN&interval=1d&limit=3"
     response = client.http.get(url)
     assert response.status_code == 200

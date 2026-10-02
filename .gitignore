@@ -83,3 +83,6 @@ htmlcov/
 # ===== 运行时文件缓存 =====
 # adaptive.py 文件兜底缓存目录（跟踪既有 json 文件不受影响）
 AI/dataflows/cache/data_cache/
+
+# ===== 前端依赖与构建缓存 =====
+node_modules/

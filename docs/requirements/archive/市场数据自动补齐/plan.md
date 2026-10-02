@@ -1,7 +1,7 @@
 # 市场数据自动补齐技术方案
 
 > **状态**：实施中（2026-09-24）；方案 R2 独立评审 PASS
-> **关联文档**：[任务说明](README.md)｜[决策记录](decisions.md)｜[待验证项](issues.md)｜[API 契约](../../knowledge/backend/API契约.md)｜[前端平台](../../knowledge/frontend/前端平台.md)
+> **关联文档**：[任务说明](README.md)｜[决策记录](decisions.md)｜[待验证项](issues.md)｜[API 契约](../../../knowledge/backend/API契约.md)｜[前端平台](../../../knowledge/frontend/前端平台.md)
 
 **实施期事实修订（2026-09-24）**：真实源核验发现 DC 成分中有三个代码尚不在逐状态、逐交易所的完整 `stock_basic` 目录，故 `CN_STOCK_DAILY` 分母改由 `market.instrument` 股票主目录定义，目录内未知生命周期仍 fail-closed，旧冻结任务的目录外成分核验退出。`suspend_d` 必须用 `trade_date` 并校验返回日期及 S/R，只有 S 证明无应有行情；旧 `suspend_date` 请求被代理忽略且截断。`dc_daily` 对 BK0165.DC 单日漏行，定向补采在目标日缺**有效** OHLC 时才调用东财原始 K 线，并校验代码、日期、数值后写既有 `sector_daily`。上述均复用原表、Worker、锁和近三日范围，无新增表或调度系统；真实 API 已验证两组目标日 FRESH。详见 [工作日志](log.md) 与 [待验证项](issues.md)。
 
@@ -212,7 +212,7 @@ Lua 原子操作：① 同资源准入/复用当前 job；② claim：验证 cur
 
 已查 [官方用法](https://github.com/gerrymanoim/exchange_calendars)、[日历注册表](https://github.com/gerrymanoim/exchange_calendars/blob/master/exchange_calendars/calendar_utils.py)，并完成本地隔离实测，证据见 [calendar-poc.md](attachments/calendar-poc.md)、[原始 JSON](attachments/calendar-poc.json)、[可复现脚本](attachments/calendar_poc.py)。版本 4.13.2 可在项目 pandas 3.0.5/numpy 2.5.1 上运行，纽约 DST/提前收盘抽样通过，CN 当前年与缓存集合一致；XSHG 2027 不支持，已按 4.1.1 定义为维护边界。额外依赖只安装在 var 隔离目录，未修改项目 .venv/uv.lock；正式实现时再锁项目依赖。
 
-代理端点的返回窗口、升序归一、单日截断和指标来源遵循 [现有端点实测](../../experience/pitfalls/ai/tushare-endpoints.md)。发布缓冲是本项目调度策略，不以官方市场收盘时间冒充代理发布保证。
+代理端点的返回窗口、升序归一、单日截断和指标来源遵循 [现有端点实测](../../../experience/pitfalls/ai/tushare-endpoints.md)。发布缓冲是本项目调度策略，不以官方市场收盘时间冒充代理发布保证。
 
 Tushare [stock_basic 文档](https://tushare.pro/document/2?doc_id=25) 明确说明 `list_status` 支持 `L/D/P/G/UN`、缺省为 `L`，并声明单次最多 6000 行；端点也支持 `exchange` 分区。实现逐状态、逐 SSE/SZSE/BSE 调用，并校验响应保留请求的状态/交易所筛选及行数上限。每次维护共最多 15 次顺序只读请求（低于文档 50 次/分钟限制）；官方文档不证明自建代理完全同构，所以代理若拒绝某筛选会整体失败并继续保留已有目录，不把部分结果提交为成功。
 
@@ -339,7 +339,7 @@ GET 每个 group 字段固定：`resource/market/market_date/calendar_status/sup
 
 #### 4.4.2 三方依赖能力评估
 
-复用 FastAPI/Pydantic、已有线程池 `analysis_services.run` 执行短 SQL；禁止在 async 路由直接阻塞。先导出 OpenAPI 再生成 TypeScript Service，见 [codegen 约定](../../experience/pitfalls/frontend/pnpm-openapi-codegen.md)。
+复用 FastAPI/Pydantic、已有线程池 `analysis_services.run` 执行短 SQL；禁止在 async 路由直接阻塞。先导出 OpenAPI 再生成 TypeScript Service，见 [codegen 约定](../../../experience/pitfalls/frontend/pnpm-openapi-codegen.md)。
 
 #### 4.4.3 风险与验证方式
 

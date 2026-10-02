@@ -82,7 +82,7 @@ test('stale → queued → partial → complete, page reload reuses the running 
   const fixture = await isolate(page);
   await page.clock.install({ time: new Date('2026-09-23T01:00:00Z') });
   await page.goto('/market');
-  const state = page.getByRole('complementary', { name: '行情更新状态' });
+  const state = page.locator('#indices').getByLabel('行情拉取状态');
   await expect(state).toContainText('排队中');
   expect(fixture.submissions()).toBe(1);
   expect(fixture.requestedDates[0]).toBeNull();
@@ -109,7 +109,7 @@ test('failure and offline status preserve the existing chart and history selecti
   const fixture = await isolate(page);
   await page.clock.install({ time: new Date('2026-09-23T01:00:00Z') });
   await page.goto('/market');
-  const state = page.getByRole('complementary', { name: '行情更新状态' });
+  const state = page.locator('#indices').getByLabel('行情拉取状态');
   await expect(state).toContainText('排队中');
   await page.getByRole('button', { name: '上证综指 展开 K 线' }).click();
   const chart = page.locator('[id="chart-CN-000001.SH"]');
@@ -118,11 +118,12 @@ test('failure and offline status preserve the existing chart and history selecti
   await page.getByLabel('榜单日期').fill('2026-08-31');
   fixture.setStage('failed');
   await page.clock.runFor(20_100);
-  await expect(state).toContainText('测试数据源暂不可用');
-  await expect(state.getByRole('button', { name: '重试中国指数' })).toBeEnabled();
+  await expect(state).toContainText('待补齐 0/11');
+  await expect(state.getByRole('button', { name: '重试' })).toBeEnabled();
   fixture.setStage('offline');
   await page.clock.runFor(310_100);
-  await expect(state).toContainText('行情补齐暂不可用');
+  // Redis 不可用 → 手动也不准入：面板不渲染重试按钮，仅保留缺口提示。
+  await expect(state.getByRole('button', { name: '重试' })).toHaveCount(0);
   await expect(chart).toHaveAttribute('data-retained', 'true');
   await expect(chart.locator('canvas').first()).toBeVisible();
   await expect(page.getByLabel('榜单日期')).toHaveValue('2026-08-31');

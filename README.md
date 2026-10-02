@@ -87,11 +87,12 @@ docker-compose --profile management up -d     # 含管理界面 (Redis Commander
 ### 方式一：一键脚本（推荐）
 
 ```bash
-./run.sh                 # 一键全栈：后端平台 + 大盘数据采集 + 前端 dev server + 打开浏览器（http://localhost:5173）
-                         #   启动完成后前台实时输出 api/worker/dispatcher 日志（Ctrl+C 退出查看，服务保持运行）
+./run.sh                 # 一键全栈：后端平台（API/Worker/Dispatcher/market-worker）+ 前端 dev server + 打开浏览器（http://localhost:5173）
+                         #   启动完成后前台实时输出 api/worker/market-worker/dispatcher 日志（Ctrl+C 退出查看，服务保持运行）
+                         #   市场行情缺口由 market-worker 按到期交易日自动补齐，不在启动时无条件全量采集
 ./run.sh stop            # 停止一键启动的前端与后端进程（不停止 Docker 基础设施）
-./run.sh platform        # 仅启动平台后端（infra + 迁移 + API/Worker/Dispatcher）
-./run.sh ingest-market   # 仅采集 CN 指数日线（大盘数据，幂等；一键启动时自动执行）
+./run.sh platform        # 仅启动平台后端（infra + 迁移 + API/Worker/market-worker/Dispatcher）
+./run.sh ingest-market   # 显式运行完整市场维护（幂等，受公共采集锁）；日常缺口由 market-worker 自动补齐
 ```
 
 ### 方式二：手动分步（本地开发）
@@ -106,10 +107,11 @@ pip install -e ".[platform,test]"
 # 3. 数据库迁移（只新增平台表，不动事件研究既有表）
 alembic upgrade head
 
-# 4. 三个进程（各自终端窗口）
+# 4. 四个进程（各自终端窗口）
 liveprofit-api          # FastAPI：REST + SSE（127.0.0.1:8000）
 liveprofit-worker       # Dramatiq 分析 Worker（单进程单线程运行 AI 图）
-liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试唯一调度者）
+liveprofit-market-worker # Dramatiq 市场 Worker（market-data 队列：行情缺口定向补齐，不占用 AI 线程）
+liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试唯一调度者 + 市场刷新调度）
 ```
 
 ### 方式三：全栈容器（含前端 Nginx）
@@ -160,10 +162,10 @@ liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试�
 ### 运行方式（已集成到 run.sh）
 
 ```bash
-# 一键全栈（推荐）：后端平台 + 大盘数据采集 + 前端 dev server + 自动打开浏览器
+# 一键全栈（推荐）：后端平台 + 前端 dev server + 自动打开浏览器（行情缺口由 market-worker 自动补齐）
 ./run.sh                         # Web 工作台 http://localhost:5173（/api 代理 → 127.0.0.1:8000）
 ./run.sh stop                    # 停止全部
-./run.sh ingest-market           # 单独补采大盘数据（幂等）
+./run.sh ingest-market           # 显式运行完整市场维护（幂等，受公共采集锁）
 
 # 仅前端开发模式（Vite dev server，需后端已运行：./run.sh platform）
 ./run.sh frontend-dev            # 浏览器打开 http://localhost:5173

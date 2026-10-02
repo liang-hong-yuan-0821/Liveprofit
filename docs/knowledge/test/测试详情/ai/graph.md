@@ -247,12 +247,12 @@ entry checkpoint 回溯解析 + rerun_from_node 入口单测（方案 3.2）。
 
 场景声明（6）：
 
-- [TestPlatformLogDirProvided.test_relative_path](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L33) — 相对路径原样返回（调用方负责 mkdir 多级目录）
-- [TestPlatformLogDirProvided.test_absolute_path](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L39) — 绝对路径原样返回
-- [TestFallbackTimestampDir.test_missing_key](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L48) — 无 platform_log_dir → logs/{时间戳}，now 注入时时间戳确定
-- [TestFallbackTimestampDir.test_empty_string](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L52) — 空串按缺失处理 → 时间戳目录
-- [TestFallbackTimestampDir.test_whitespace_only](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L58) — 纯空白字符串 strip 后按缺失处理
-- [TestFallbackTimestampDir.test_unknown_keys_ignored](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L64) — 既有 init_state 的其它 key 不影响目录选择
+- [TestPlatformLogDirProvided.test_relative_path](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L36) — 相对路径原样返回（调用方负责 mkdir 多级目录）
+- [TestPlatformLogDirProvided.test_absolute_path](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L42) — 绝对路径原样返回
+- [TestFallbackTimestampDir.test_missing_key](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L51) — 无 platform_log_dir → var/logs/{时间戳}，now 注入时时间戳确定
+- [TestFallbackTimestampDir.test_empty_string](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L56) — 空串按缺失处理 → 时间戳目录
+- [TestFallbackTimestampDir.test_whitespace_only](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L62) — 纯空白字符串 strip 后按缺失处理
+- [TestFallbackTimestampDir.test_unknown_keys_ignored](../../../../../tests/ai/graph/unit/test_run_log_dir.py#L68) — 既有 init_state 的其它 key 不影响目录选择
 
 ## test_signal_processing.py
 
@@ -297,8 +297,8 @@ entry checkpoint 回溯解析 + rerun_from_node 入口单测（方案 3.2）。
 
 场景声明（2）：
 
-- [test_log_event_list_truncates_and_filters](../../../../../tests/ai/graph/unit/test_state_log_events.py#L39) — ≤5 条截断；非 list / 非 dict 项安全丢弃（日志不得因脏数据失败）。
-- [test_log_state_persists_three_tier_events](../../../../../tests/ai/graph/unit/test_state_log_events.py#L48) — 三键写入 state_log.json，结构可 JSON 序列化且保留路由字段。
+- [test_log_event_list_truncates_and_filters](../../../../../tests/ai/graph/unit/test_state_log_events.py#L40) — ≤5 条截断；非 list / 非 dict 项安全丢弃（日志不得因脏数据失败）。
+- [test_log_state_persists_three_tier_events](../../../../../tests/ai/graph/unit/test_state_log_events.py#L49) — 三键写入 state_log.json，结构可 JSON 序列化且保留路由字段。
 
 ## test_stock_loop.py
 

@@ -13,7 +13,7 @@
 | **A. schtasks 每日触发**（下文） | Windows 任务计划程序 08:30 拉起一次性脚本 | 无常驻服务；进程拉起即退 |
 | **B. 后端常驻自调度**（已实现 2026-08-31，推荐） | 挂 eventStudy FastAPI lifespan 的 APScheduler | API 服务（uvicorn :8100）常驻时 |
 
-日志统一输出到 `logs/event_study_daily.log`。
+日志统一输出到 `var/logs/event_study_daily.log`。
 
 ---
 
@@ -33,9 +33,9 @@
 
 可靠性设计：
 
-- **防重复**：`logs/daily_job.running` 标记文件写入子进程 pid；上一轮未结束时到点跳过。
+- **防重复**：`var/logs/daily_job.running` 标记文件写入子进程 pid；上一轮未结束时到点跳过。
   服务启动时检测陈旧标记（pid 已不存在 → 清理；pid 存活 → 保留）；进程内 threading.Lock 双保险
-- **补跑机制（三层触发）**：完成标记 `logs/daily_job_done.YYYYMMDD`（子进程退出码 0 时
+- **补跑机制（三层触发）**：完成标记 `var/logs/daily_job_done.YYYYMMDD`（子进程退出码 0 时
   原子写入，存在即"今日已完成"）：
   1. cron 08:30 正常触发（misfire_grace_time 30 分钟兜底短时停机）
   2. 服务启动时立即自检：已过触发点且今日未完成 → 立即补跑
@@ -120,7 +120,7 @@ python -m AI.eventStudy.scheduler.daily_job --start-date 2024-01-01 --end-date 2
 ## 失败告警（3.9.3 风险）
 
 任务计划程序默认静默失败。当前以日志文件 + 退出码记录：
-- 各步骤独立 try/except，单步失败不影响后续，错误写入 `logs/event_study_daily.log`
+- 各步骤独立 try/except，单步失败不影响后续，错误写入 `var/logs/event_study_daily.log`
 - 严重失败（schema 初始化失败）以退出码 1 结束；任务计划程序可勾选
   "如果任务失败，重新启动"（间隔 1 小时，最多 3 次）
 - 邮件通知：可在任务属性的"操作"中添加 PowerShell 脚本，

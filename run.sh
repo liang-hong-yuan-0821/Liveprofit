@@ -9,6 +9,7 @@ set -e
 export PYTHONIOENCODING=utf-8
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export PYTHONPYCACHEPREFIX="$SCRIPT_DIR/var/cache/pycache"
 cd "$SCRIPT_DIR"
 
 # ============================================================
@@ -147,7 +148,7 @@ log_info "运行结束"
 # 平台模式（Web 后端：API / Worker / Dispatcher）
 # 详见 README.md「平台模式启动」与 docs/knowledge/backend/API契约.md
 # ============================================================
-PLATFORM_PID_FILE="logs/.platform.pids"
+PLATFORM_PID_FILE="var/logs/.platform.pids"
 
 start_platform() {
     log_info "===== 启动平台后端（loopback local-only）====="
@@ -199,7 +200,7 @@ start_platform() {
     log_info "初始化 market schema ..."
     python -c "from backend.bootstrap.settings import CoreSettings; import db.instrument.db as m; m.PG_CONNECTION_STRING = CoreSettings().resolved_market_dsn() or m.PG_CONNECTION_STRING; raise SystemExit(0 if m.init_schema() else 1)"
 
-    mkdir -p logs
+    mkdir -p var/logs
     touch "$PLATFORM_PID_FILE"
     start_daemon() {  # $1=名称 $2=可执行文件
         local name="$1" cmd="$2"
@@ -207,12 +208,12 @@ start_platform() {
             log_info "$name 已在运行"
             return
         fi
-        log_info "启动 $name（日志：logs/$name.log）..."
-        nohup "$cmd" > "logs/$name.log" 2>&1 &
+        log_info "启动 $name（日志：var/logs/$name.log）..."
+        nohup "$cmd" > "var/logs/$name.log" 2>&1 &
         local pid=$!
         sleep 2
         if ! kill -0 "$pid" 2>/dev/null; then
-            log_error "$name 启动失败，请查看 logs/$name.log"
+            log_error "$name 启动失败，请查看 var/logs/$name.log"
             return 1
         fi
         echo "$name $pid" >> "$PLATFORM_PID_FILE"
@@ -233,7 +234,7 @@ start_platform() {
         sleep 1
     done
     if [ "$api_ready" -ne 1 ]; then
-        log_error "API 在 30 秒内未就绪，请查看 logs/api.log"
+        log_error "API 在 30 秒内未就绪，请查看 var/logs/api.log"
         return 1
     fi
 
@@ -306,10 +307,10 @@ start_all() {
     if curl -sf -o /dev/null "http://127.0.0.1:5173"; then
         log_info "前端 dev server 已在运行"
     else
-        log_info "启动前端 dev server（日志：logs/vite-dev.log）..."
-        mkdir -p logs
-        ( cd "$FRONTEND_DIR" && nohup pnpm dev > "$SCRIPT_DIR/logs/vite-dev.log" 2>&1 &
-          echo $! > "$SCRIPT_DIR/logs/.vite-dev.pid" )
+        log_info "启动前端 dev server（日志：var/logs/vite-dev.log）..."
+        mkdir -p var/logs
+        ( cd "$FRONTEND_DIR" && nohup pnpm dev > "$SCRIPT_DIR/var/logs/vite-dev.log" 2>&1 &
+          echo $! > "$SCRIPT_DIR/var/logs/.vite-dev.pid" )
         for i in $(seq 1 30); do
             if curl -sf -o /dev/null "http://127.0.0.1:5173"; then
                 log_info "前端已就绪（$i 秒）"
@@ -329,21 +330,21 @@ start_all() {
     log_info "    Web 工作台：${front_url}（前端 Vite /api 代理 → 127.0.0.1:${LIVEPROFIT_API_PORT:-8000}）"
     log_info "    API 文档：  http://127.0.0.1:${LIVEPROFIT_API_PORT:-8000}/docs"
     log_info "  停止全部：./run.sh stop"
-    log_info "  日志实时输出：logs/api.log / worker.log / market-worker.log / dispatcher.log（Ctrl+C 退出查看，服务保持运行）"
-    log_info "  前端日志：logs/vite-dev.log；任务内核明细：logs/{ts}/（平台执行日志页）"
+    log_info "  日志实时输出：var/logs/api.log / worker.log / market-worker.log / dispatcher.log（Ctrl+C 退出查看，服务保持运行）"
+    log_info "  前端日志：var/logs/vite-dev.log；任务内核明细：var/logs/tasks/{task_id}/{attempt_no}/（平台执行日志页）"
     log_info "============================================"
     echo ""
 
     # 前台持续展示日志（多文件带文件名头）；退出查看不影响已启动的服务
-    tail -n 30 -f "$SCRIPT_DIR/logs/api.log" "$SCRIPT_DIR/logs/worker.log" "$SCRIPT_DIR/logs/market-worker.log" "$SCRIPT_DIR/logs/dispatcher.log"
+    tail -n 30 -f "$SCRIPT_DIR/var/logs/api.log" "$SCRIPT_DIR/var/logs/worker.log" "$SCRIPT_DIR/var/logs/market-worker.log" "$SCRIPT_DIR/var/logs/dispatcher.log"
 }
 
 stop_all() {
     log_info "停止一键启动的前端与后端..."
     stop_platform
-    if [ -f "$SCRIPT_DIR/logs/.vite-dev.pid" ]; then
-        kill "$(cat "$SCRIPT_DIR/logs/.vite-dev.pid")" 2>/dev/null || true
-        rm -f "$SCRIPT_DIR/logs/.vite-dev.pid"
+    if [ -f "$SCRIPT_DIR/var/logs/.vite-dev.pid" ]; then
+        kill "$(cat "$SCRIPT_DIR/var/logs/.vite-dev.pid")" 2>/dev/null || true
+        rm -f "$SCRIPT_DIR/var/logs/.vite-dev.pid"
         log_info "已停止前端 dev server"
     fi
     # 兜底：清理仍监听 5173 的 node 进程
@@ -410,9 +411,9 @@ frontend_e2e() {
 
     local started_dev=""
     if [ -z "$FRONTEND_BASE_URL" ] && ! curl -sf -o /dev/null "http://127.0.0.1:5173"; then
-        log_info "dev server 未运行，自动拉起（日志：logs/vite-e2e.log）..."
-        ( cd "$FRONTEND_DIR" && nohup pnpm dev > "$SCRIPT_DIR/logs/vite-e2e.log" 2>&1 &
-          echo $! > "$SCRIPT_DIR/logs/.vite-e2e.pid" )
+        log_info "dev server 未运行，自动拉起（日志：var/logs/vite-e2e.log）..."
+        ( cd "$FRONTEND_DIR" && nohup pnpm dev > "$SCRIPT_DIR/var/logs/vite-e2e.log" 2>&1 &
+          echo $! > "$SCRIPT_DIR/var/logs/.vite-e2e.pid" )
         started_dev="1"
         for i in $(seq 1 30); do
             if curl -sf -o /dev/null "http://127.0.0.1:5173"; then
@@ -427,9 +428,9 @@ frontend_e2e() {
     log_info "运行 Playwright E2E（base: $base）..."
     ( cd "$FRONTEND_DIR" && FRONTEND_BASE_URL="$base" pnpm e2e )
 
-    if [ -n "$started_dev" ] && [ -f "$SCRIPT_DIR/logs/.vite-e2e.pid" ]; then
-        kill "$(cat "$SCRIPT_DIR/logs/.vite-e2e.pid")" 2>/dev/null || true
-        rm -f "$SCRIPT_DIR/logs/.vite-e2e.pid"
+    if [ -n "$started_dev" ] && [ -f "$SCRIPT_DIR/var/logs/.vite-e2e.pid" ]; then
+        kill "$(cat "$SCRIPT_DIR/var/logs/.vite-e2e.pid")" 2>/dev/null || true
+        rm -f "$SCRIPT_DIR/var/logs/.vite-e2e.pid"
         log_info "已停止临时 dev server"
     fi
 }

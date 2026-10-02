@@ -243,7 +243,7 @@
         {
           "name": "test_delete_task_cleans_log_dir",
           "line": 182,
-          "description": "删除任务后 logs/tasks/{task_id}/ 整个目录（含各 attempt）被移除。"
+          "description": "删除任务后 var/logs/tasks/{task_id}/ 整个目录（含各 attempt）被移除。"
         },
         {
           "name": "test_content_serves_full_content",
@@ -251,7 +251,7 @@
           "description": "白名单扩展名文件全量返回（truncated=false），路径为相对任务目录。"
         }
       ],
-      "source_sha256": "912d8be8eae79f4b081e6d660452f1c04f418c516ddf0b8490926f0bff16e8e6"
+      "source_sha256": "d8472b0d549ecc23c87926ec9e5be493a9743a6ea70bba1879b43e17dea501dd"
     },
     {
       "path": "tests/backend/analysis/contract/api/test_graph_topology_api.py",
@@ -1251,7 +1251,7 @@
         {
           "name": "TestBuildRealInitialStateInjection.test_no_injection_when_root_is_none",
           "line": 71,
-          "description": "fake/测试路径不传 root → 不注入，内核回退 logs/{时间戳}。"
+          "description": "fake/测试路径不传 root → 不注入，内核回退 var/logs/{时间戳}。"
         },
         {
           "name": "TestBuildRealInitialStateInjection.test_existing_metadata_keys_preserved",
@@ -1304,7 +1304,7 @@
           "description": "失败/取消 attempt 目录（无 complete.json）不参与 resolve（环中态剔除）。"
         }
       ],
-      "source_sha256": "e23c9538e119e5e14902853889772df34e11158a04cee39977c844b21212e789"
+      "source_sha256": "2e491737a9f0e737973bc9c83cf711e3efb9341e7e97e459d6695cddac6b0b60"
     },
     {
       "path": "tests/backend/analysis/unit/test_rerun_service.py",

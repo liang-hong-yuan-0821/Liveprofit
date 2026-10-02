@@ -3233,7 +3233,7 @@ class TushareProvider(BaseStockDataProvider):
 
     # ==================== 市场特征层 — 结构化接口（T5） ====================
     # 契约见 AI/dataflows/market_features.py 模块头部；实现约束来自 T1 POC 实测
-    # （logs/poc_market_features.log）：
+    # （var/logs/poc_market_features.log）：
     # - 无 ts_code 的全市场区间查询被代理端点静默截断（6000 行）→ 只做单日查询；
     # - 单标的区间查询可用（index_daily / index_global / fx_daily / fut_daily /
     #   margin / index_dailybasic）；

@@ -594,7 +594,7 @@
       "environment": [
         "local"
       ],
-      "source_sha256": "7c4389ed4d042bdcaab9588c51d8ae921ff70a38203cb97ddd992b4af59056d2",
+      "source_sha256": "69a05843054e058452a85f7f04f1304e81f299e97fec14da16f2173ffd491065",
       "scenario_count": 6,
       "detail_json": "tests/catalog/ai/graph.json",
       "detail_doc": "docs/knowledge/test/测试详情/ai/graph.md"
@@ -636,7 +636,7 @@
       "environment": [
         "local"
       ],
-      "source_sha256": "885a6399e24dd4e14a2a340481a7f45c41d271c4302d387ece2554a1279275f4",
+      "source_sha256": "be73d83f4eaca91e10a5a88c04d536ef7c861bc28b3a3c0e83492f72d74e1aaa",
       "scenario_count": 2,
       "detail_json": "tests/catalog/ai/graph.json",
       "detail_doc": "docs/knowledge/test/测试详情/ai/graph.md"
@@ -1600,7 +1600,7 @@
         "db",
         "redis"
       ],
-      "source_sha256": "912d8be8eae79f4b081e6d660452f1c04f418c516ddf0b8490926f0bff16e8e6",
+      "source_sha256": "d8472b0d549ecc23c87926ec9e5be493a9743a6ea70bba1879b43e17dea501dd",
       "scenario_count": 9,
       "detail_json": "tests/catalog/backend/analysis.json",
       "detail_doc": "docs/knowledge/test/测试详情/backend/analysis.md"
@@ -2054,7 +2054,7 @@
       "environment": [
         "local"
       ],
-      "source_sha256": "e23c9538e119e5e14902853889772df34e11158a04cee39977c844b21212e789",
+      "source_sha256": "2e491737a9f0e737973bc9c83cf711e3efb9341e7e97e459d6695cddac6b0b60",
       "scenario_count": 12,
       "detail_json": "tests/catalog/backend/analysis.json",
       "detail_doc": "docs/knowledge/test/测试详情/backend/analysis.md"
@@ -3292,7 +3292,7 @@
         "db",
         "redis"
       ],
-      "source_sha256": "ef844629805df9aac1f8bed5042c6eacf238a2cc9334c099f60abfc3d3336246",
+      "source_sha256": "1f7dd23c3cb56f73ef233a0fa9d031cfa48e5e4f305afd87d88db6b21a06782a",
       "scenario_count": 4,
       "detail_json": "tests/catalog/backend/market_data.json",
       "detail_doc": "docs/knowledge/test/测试详情/backend/market_data.md"
@@ -3916,7 +3916,7 @@
         "real_llm",
         "external_data"
       ],
-      "source_sha256": "f1b729924cfd6e4fba891e01247dc22445c69fa64782c111733e919cf9c1144f",
+      "source_sha256": "14a31ed9986ad07d4ab29ff41880a3eaf298c1d2f7c27c2472b9f08e3bc29610",
       "scenario_count": 8,
       "detail_json": "tests/catalog/backend/platform.json",
       "detail_doc": "docs/knowledge/test/测试详情/backend/platform.md"
@@ -8565,7 +8565,7 @@
         "browser",
         "app"
       ],
-      "source_sha256": "5a2451441f4ceab67440e6e4cf7866ee36fc864ef7dc7707a3e0cf094ac50359",
+      "source_sha256": "54ea1d02055492b3ddaf36c0570a3bc465932425f28a7918c866f8cce639125c",
       "scenario_count": 2,
       "detail_json": "tests/catalog/e2e/market_refresh.json",
       "detail_doc": "docs/knowledge/test/测试详情/e2e/market_refresh.md"

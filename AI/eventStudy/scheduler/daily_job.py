@@ -16,6 +16,7 @@ import argparse
 import logging
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from AI.eventStudy.collectors import event_crawler
 from AI.eventStudy.db import market_data_dao
@@ -24,12 +25,17 @@ from AI.eventStudy.processing import event_study, impact_writer, market_context
 from AI.eventStudy.processing import event_vectorizer
 from AI.eventStudy.collectors.config import TARGET_ASSETS, WINDOW_TYPES
 
+# 仓库根（AI/eventStudy/scheduler/ 三级子目录）；FileHandler 为模块级且不自动建目录，
+# 直启（run_daily.bat / 手动 python -m）不经 app_scheduler 的 mkdir，导入期先建 var/logs/
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+(_PROJECT_ROOT / "var" / "logs").mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("logs/event_study_daily.log", encoding="utf-8"),
+        logging.FileHandler(_PROJECT_ROOT / "var" / "logs" / "event_study_daily.log", encoding="utf-8"),
     ],
 )
 logger = logging.getLogger(__name__)

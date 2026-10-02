@@ -86,7 +86,7 @@ test = [
 
 [tool.setuptools.packages.find]
 include = ["AI*", "backend*", "db*"]
-exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*", "var*"]
+exclude = ["tests*", "docs*", "data*", "var*"]
 
 [tool.setuptools.package-data]
 "AI.templates" = ["*.md", "market/*.md", "sector/*.md", "stock/*.md"]
@@ -95,6 +95,8 @@ exclude = ["tests*", "docs*", "data*", "logs*", "results*", "chroma_db*", "var*"
 [tool.pytest.ini_options]
 testpaths = ["tests/backend", "tests/ai", "tests/data", "tests/e2e"]
 addopts = ["--strict-markers"]
+# 缓存重定向到 var/cache/pytest（按 rootpath 解析，与 CWD 无关；根目录不再生成 .pytest_cache）
+cache_dir = "var/cache/pytest"
 markers = [
     "real_llm: real LLM/toolkit/memory; human-only --allow-live opt-in",
     "external_data: real external data source; explicit manual execution",
@@ -104,3 +106,7 @@ markers = [
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+[tool.ruff]
+# 缓存重定向到 var/cache/ruff（相对值按 pyproject 所在目录解析；根目录不再生成 .ruff_cache）
+cache-dir = "var/cache/ruff"

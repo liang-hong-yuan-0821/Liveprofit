@@ -275,7 +275,7 @@
           "description": ""
         }
       ],
-      "source_sha256": "ef844629805df9aac1f8bed5042c6eacf238a2cc9334c099f60abfc3d3336246"
+      "source_sha256": "1f7dd23c3cb56f73ef233a0fa9d031cfa48e5e4f305afd87d88db6b21a06782a"
     },
     {
       "path": "tests/backend/market_data/contract/api/test_refresh_isolation.py",

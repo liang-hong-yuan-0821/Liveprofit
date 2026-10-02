@@ -2,7 +2,7 @@
 板块层热力图生成模块（板块层轮动战术与政策事件流方案 3.2）
 
 生成行业 + 概念近 10 日逐日涨跌幅热力图（plotly 自包含 HTML），
-产物落 logs/{ts}/reports/charts/sector_daily_heatmaps.html。
+产物落 var/logs/{ts}/reports/charts/sector_daily_heatmaps.html。
 
 - 单侧数据不可用时不拖累另一侧（任一可用即写文件）
 - 两侧均不可用 → 返回 None（无图不报错）
@@ -100,7 +100,7 @@ def _subtitle(data: dict, kind: str) -> str:
 
 
 def generate_sector_heatmaps(log_dir: Path | None) -> Path | None:
-    """生成行业 + 概念双热力图 HTML → logs/{ts}/reports/charts/sector_daily_heatmaps.html。
+    """生成行业 + 概念双热力图 HTML → var/logs/{ts}/reports/charts/sector_daily_heatmaps.html。
 
     log_dir 为 None（日志未初始化）→ 返回 None；
     单侧数据不可用 → 仅画另一侧；两侧均不可用/生成失败 → 返回 None（不抛异常）。

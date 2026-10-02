@@ -24,7 +24,7 @@
 - 收益率口径：`close[-1] / close[-N] - 1`（最近 N 个交易日收盘的首尾变化）。
 - 斜率口径：最近 `N` 个收盘价对序号做 OLS，输出“归一化斜率%（/交易日）”。
 
-POC 实测约束（T1，`logs/poc_market_features.log`）：
+POC 实测约束（T1，`var/logs/poc_market_features.log`）：
 - `daily_basic` 无 `ts_code` 的区间查询会被静默截断（6000 行），必须单日查询；
 - `index_dailybasic` 单日 12 个指数代码、`index_daily` 按 `ts_code` 区间可用；
 - `shibor` 必须传 `start_date`/`end_date`；`yc_cb` 无权限、`yield_curve` 接口名

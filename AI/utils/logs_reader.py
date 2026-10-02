@@ -2,7 +2,7 @@
 日志目录读取层（纯函数，无 UI 框架依赖，供平台执行日志/图拓扑与测试共用）
 
 目录约定见 AI/utils/llm_callbacks.py 与 AI/utils/dataprovider_log.py 的模块 docstring：
-  logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/req.md + res.md + meta.json
+  var/logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/req.md + res.md + meta.json
                               └─ {seq:03d}_{接口名}/req.json + res.md|json + meta.json   ← dataprovider 新格式
                               │  └─ tushare/{seq:03d}_{api_name}/req.json + res.json + meta.json  ← tushare 端点子日志
                               └─ tools/{seq:03d}_{tool}/req.json + res.txt
@@ -27,11 +27,11 @@ LAYER_ORDER = ["market", "sector", "stock", "screening"]
 
 
 def logs_root() -> Path:
-    """日志根目录：环境变量 LIVEPROFIT_LOGS_DIR 优先，否则仓库根下 logs/（不依赖启动 CWD）"""
+    """日志根目录：环境变量 LIVEPROFIT_LOGS_DIR 优先，否则仓库根下 var/logs/（不依赖启动 CWD）"""
     env = os.environ.get("LIVEPROFIT_LOGS_DIR")
     if env:
         return Path(env)
-    return Path(__file__).resolve().parents[2] / "logs"
+    return Path(__file__).resolve().parents[2] / "var" / "logs"
 
 
 def list_runs(root: Optional[Path] = None) -> List[Path]:

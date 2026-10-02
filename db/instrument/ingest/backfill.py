@@ -11,7 +11,7 @@
   store 决策 5 的显式例外）；get_index_factor_df → factor_daily DO UPDATE
   （close 按上游覆盖全历史段）；instrument 行自举前置
 - 个股基金日线回填：单日 4 接口全部成功后单日提交；失败重试 3 次（间隔 5s）
-  后跳过记失败清单 logs/stock_backfill_failures.json；DO NOTHING（决策 5）
+  后跳过记失败清单 var/logs/stock_backfill_failures.json；DO NOTHING（决策 5）
 - 断点续跑：按库内已入库交易日集合跳过（"完整日才入库"不变式保证存在即完整）。
   不用 max(trade_date) 截断（库内只有尾部几日时会把全部历史误判为已入库，
   2026-08-30 实测踩坑）
@@ -52,10 +52,13 @@ from db.instrument.ingest.stock_factors import REQUIRED_QFQ, collect_stock_quant
 
 logger = logging.getLogger(__name__)
 
+# 仓库根（db/instrument/ingest/ 三级子目录）；脚本路径按仓库根解析、与 CWD 无关
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
 RETRY_COUNT = 3           # 单日失败重试次数
 RETRY_INTERVAL = 5.0      # 重试间隔（秒）
-FAILURE_LIST_PATH = Path("logs/stock_backfill_failures.json")
-PROGRESS_LOG_PATH = Path("logs/stock_backfill.log")
+FAILURE_LIST_PATH = _PROJECT_ROOT / "var" / "logs" / "stock_backfill_failures.json"
+PROGRESS_LOG_PATH = _PROJECT_ROOT / "var" / "logs" / "stock_backfill.log"
 
 # 指数回填分段（5 年 ≈ 1220 行/段，≪ idx_factor_pro 官方 8000 行上限）
 INDEX_CHUNK_DAYS = 1825
@@ -457,7 +460,7 @@ def _run_retry_missing(conn, provider, summary) -> dict:
 
 BACKFILL_START_DEFAULT = "2016-01-01"
 STOCK_FACTOR_START_DEFAULT = BACKFILL_START_DEFAULT
-STOCK_FACTOR_FAILURE_LIST_PATH = Path("logs/stock_factor_backfill_failures.json")
+STOCK_FACTOR_FAILURE_LIST_PATH = _PROJECT_ROOT / "var" / "logs" / "stock_factor_backfill_failures.json"
 STOCK_FACTOR_PROGRESS_EVERY = 100
 STOCK_FACTOR_MAX_CONSECUTIVE_FAILURES = 5
 REQUIRED_BFQ = [
@@ -754,7 +757,7 @@ def main():
                         help="个股因子回填最多处理前 N 只（小样本验收用；默认全量）")
     args = parser.parse_args()
 
-    Path("logs").mkdir(exist_ok=True)
+    (_PROJECT_ROOT / "var" / "logs").mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",

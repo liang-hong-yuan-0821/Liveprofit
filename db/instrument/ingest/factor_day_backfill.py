@@ -31,7 +31,10 @@ from db.instrument.ingest.notifications import market_changed_notifier_from_env
 from db.instrument.ingest.stock_factors import REQUIRED_QFQ
 
 logger = logging.getLogger(__name__)
-FAILURE_LIST = Path("logs/stock_factor_day_failures.json")
+
+# 仓库根（db/instrument/ingest/ 三级子目录）；脚本路径按仓库根解析、与 CWD 无关
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+FAILURE_LIST = _PROJECT_ROOT / "var" / "logs" / "stock_factor_day_failures.json"
 REQUIRED = (*REQUIRED_QFQ, *REQUIRED_BFQ)
 
 

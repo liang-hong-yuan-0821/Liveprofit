@@ -139,7 +139,7 @@ liveprofit-dispatcher   # Outbox Dispatcher（发布/租约恢复/业务重试�
 - run.sh 默认以 `HF_HUB_OFFLINE=1` 启动（本地已缓存 HuggingFace 模型时跳过联网检查，
   避免国内网络下启动超时重试；可在 `.env` 中显式设 `HF_HUB_OFFLINE=0` 覆盖）。
 - LLM 透传沿用内核变量：`LIVEPROFIT_API_KEY` / `LIVEPROFIT_BASE_URL` / `LIVEPROFIT_QUICK_MODEL` / `LIVEPROFIT_DEEP_MODEL`。
-- 进程日志：`logs/api.log` / `logs/worker.log` / `logs/dispatcher.log`。
+- 进程日志：`var/logs/api.log` / `var/logs/worker.log` / `var/logs/dispatcher.log`。
 
 ## 前端（Web 投研工作台）
 
@@ -200,7 +200,7 @@ OpenAPI 变更后重新生成前端 client：`pnpm --dir frontend generate:api`�
 | `LIVEPROFIT_DATA_SOURCE` | 数据源 (tushare / akshare) | `tushare` |
 | `TUSHARE_TOKEN` | Tushare API Token | - |
 | `LIVEPROFIT_MEMORY_ENABLED` | 启用 ChromaDB 记忆 | `true` |
-| `LIVEPROFIT_MEMORY_PATH` | ChromaDB 存储路径 | `./chroma_db` |
+| `LIVEPROFIT_MEMORY_PATH` | ChromaDB 存储路径 | `./var/data/chroma_db` |
 | `LIVEPROFIT_MAX_DEBATE_ROUNDS` | 最大辩论轮数 | `1` |
 | `LIVEPROFIT_MAX_RISK_ROUNDS` | 最大风险讨论轮数 | `1` |
 | `LIVEPROFIT_LOG_LEVEL` | 日志级别 | `INFO` |
@@ -250,7 +250,7 @@ LiveProfit
  │    ├── 新闻缓存 (TTL: 4h)
  │    └── 基本面缓存 (TTL: 12h)
  │
- ├── ChromaDB (持久化: ./chroma_db/)
+ ├── ChromaDB (持久化: var/data/chroma_db/)
  │    ├── bull_memory / bear_memory
  │    ├── trader_memory / invest_judge / risk_manager
  │    └── 嵌入: text-embedding-3-small (OpenAI)

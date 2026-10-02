@@ -7,9 +7,6 @@ __pycache__
 .pytest_cache
 frontend
 docs
-logs
-results
 var
-chroma_db
 /data
 **/*.log

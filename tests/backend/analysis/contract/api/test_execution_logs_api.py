@@ -47,7 +47,7 @@ def _create_task(client) -> dict:
 
 
 def _point_logs_root(client, monkeypatch, root) -> None:
-    """把 execution_logs_root 指向测试目录（相对路径默认指向仓库根 logs/，不污染）。"""
+    """把 execution_logs_root 指向测试目录（相对路径默认指向仓库根 var/logs/，不污染）。"""
     monkeypatch.setattr(client.http.app.state.settings.core, "execution_logs_root", root)
 
 
@@ -180,7 +180,7 @@ def _mark_terminal(task_id: str) -> None:
 
 
 def test_delete_task_cleans_log_dir(client, monkeypatch, tmp_path):
-    """删除任务后 logs/tasks/{task_id}/ 整个目录（含各 attempt）被移除。"""
+    """删除任务后 var/logs/tasks/{task_id}/ 整个目录（含各 attempt）被移除。"""
     task = _create_task(client)
     _point_logs_root(client, monkeypatch, tmp_path)
     run_dir = _run_dir(tmp_path, task)

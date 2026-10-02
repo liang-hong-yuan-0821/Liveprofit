@@ -51,7 +51,7 @@
 
 ## 回填与增量（入口已迁）
 
-- 回填：`python -m db.instrument.ingest.backfill [--start 2016-01-01] [--end 今天] [--retry-missing] [--skip-concepts]`；普通断点续跑按库内已入库交易日集合跳过，但这只能作性能优化，**不能证明复权与因子完整**；修复已有日线日期使用显式`force_existing_days`。禁止以`max(trade_date)`截断；`--skip-concepts`可在板块数据新鲜时跳过重采；失败清单`logs/stock_backfill_failures.json`原子写入。
+- 回填：`python -m db.instrument.ingest.backfill [--start 2016-01-01] [--end 今天] [--retry-missing] [--skip-concepts]`；普通断点续跑按库内已入库交易日集合跳过，但这只能作性能优化，**不能证明复权与因子完整**；修复已有日线日期使用显式`force_existing_days`。禁止以`max(trade_date)`截断；`--skip-concepts`可在板块数据新鲜时跳过重采；失败清单`var/logs/stock_backfill_failures.json`原子写入。
 - 增量：daily_job 步骤 2（`--skip` 名 `market`，原步骤 2/3 合并），最近 3 交易日重拉；独立最近日历逐证券检查缺日线（仅可信停牌豁免），全库已有股票日线检查复权缺口，另有最多3日定向重试；写后质量缺口或采集失败使任务非零退出。板块体系周一自动周刷（`collect_incremental(refresh_sectors=None/True/False)`）。
 - 实现详见归档方案：docs/requirements/archive/全市场日线本地库方案.md 与 docs/requirements/archive/证券市场数据库统一方案.md
 

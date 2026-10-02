@@ -77,9 +77,10 @@ def main(argv=None):
         parser.error('Browser suites require --allow-e2e; inspect their environment before running.')
     commands = []
     if python_scopes:
-        temporary_root = PROJECT_ROOT / 'var/pytest'
+        temporary_root = PROJECT_ROOT / 'var/tmp/pytest'
         temporary_root.mkdir(parents=True, exist_ok=True)
         command = [sys.executable, '-m', 'pytest', *python_scopes, '-q', '-p', 'no:cacheprovider',
+                   '-W', 'ignore::pytest.PytestConfigWarning',
                    '--basetemp', str(temporary_root / uuid.uuid4().hex)]
         command += [f'--allow-{name}' for name in ('db', 'live', 'external', 'e2e') if getattr(args, f'allow_{name}')]
         commands.append(command)

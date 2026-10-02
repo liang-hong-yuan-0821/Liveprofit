@@ -79,7 +79,7 @@ class CoreSettings(BaseSettings):
 
     # 执行调用日志根目录（任务执行调用日志方案）：worker 写入与 API 读取的确定性基座，
     # 相对路径经 resolve_execution_logs_root 按 PROJECT_ROOT 解析（不得按进程 CWD）
-    execution_logs_root: Path = Path("logs")
+    execution_logs_root: Path = Path("var/logs")
 
     # SSE Stream 保留（§2.4）
     stream_maxlen: int = 1000

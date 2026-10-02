@@ -90,7 +90,7 @@ Agent 提示词管理 REST 契约测试（单Agent重跑与提示词编辑方案
 - [test_content_path_escape_rejected](../../../../../tests/backend/analysis/contract/api/test_execution_logs_api.py#L124) — 路径逃逸：../、绝对路径、反斜杠、非白名单扩展名 → 422 VALIDATION_ERROR。
 - [test_content_over_10mb_422](../../../../../tests/backend/analysis/contract/api/test_execution_logs_api.py#L137) — content 端点单文件上限 10MB：超限 → 422 VALIDATION_ERROR（稀疏文件，不实际写 10MB）。
 - [test_content_missing_file_404](../../../../../tests/backend/analysis/contract/api/test_execution_logs_api.py#L156)
-- [test_delete_task_cleans_log_dir](../../../../../tests/backend/analysis/contract/api/test_execution_logs_api.py#L182) — 删除任务后 logs/tasks/{task_id}/ 整个目录（含各 attempt）被移除。
+- [test_delete_task_cleans_log_dir](../../../../../tests/backend/analysis/contract/api/test_execution_logs_api.py#L182) — 删除任务后 var/logs/tasks/{task_id}/ 整个目录（含各 attempt）被移除。
 - [test_content_serves_full_content](../../../../../tests/backend/analysis/contract/api/test_execution_logs_api.py#L196) — 白名单扩展名文件全量返回（truncated=false），路径为相对任务目录。
 
 ## test_graph_topology_api.py
@@ -531,7 +531,7 @@ build_real_initial_state 平台日志目录注入 + resolve_execution_logs_root 
 场景声明（12）：
 
 - [TestBuildRealInitialStateInjection.test_injects_platform_log_dir_when_root_given](../../../../../tests/backend/analysis/unit/test_real_graph_factory.py#L64)
-- [TestBuildRealInitialStateInjection.test_no_injection_when_root_is_none](../../../../../tests/backend/analysis/unit/test_real_graph_factory.py#L71) — fake/测试路径不传 root → 不注入，内核回退 logs/{时间戳}。
+- [TestBuildRealInitialStateInjection.test_no_injection_when_root_is_none](../../../../../tests/backend/analysis/unit/test_real_graph_factory.py#L71) — fake/测试路径不传 root → 不注入，内核回退 var/logs/{时间戳}。
 - [TestBuildRealInitialStateInjection.test_existing_metadata_keys_preserved](../../../../../tests/backend/analysis/unit/test_real_graph_factory.py#L76) — task_id/attempt_no/selected_layers 等既有 key 与注入并存。
 - [TestResolveExecutionLogsRoot.test_relative_path_resolves_against_project_root](../../../../../tests/backend/analysis/unit/test_real_graph_factory.py#L87) — 相对路径按 PROJECT_ROOT（仓库根）解析，而非进程 CWD。
 - [TestResolveExecutionLogsRoot.test_absolute_path_kept](../../../../../tests/backend/analysis/unit/test_real_graph_factory.py#L92)

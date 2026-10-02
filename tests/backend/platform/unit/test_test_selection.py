@@ -119,7 +119,7 @@ def test_python_launcher_creates_temp_parent_before_starting_pytest(tmp_path, mo
         from pathlib import Path
         temporary_path = Path(command[command.index('--basetemp') + 1])
         assert temporary_path.parent.is_dir()
-        assert temporary_path.parent == tmp_path / 'var/pytest'
+        assert temporary_path.parent == tmp_path / 'var/tmp/pytest'
         assert kwargs['cwd'] == tmp_path
         assert kwargs['env']['LIVEPROFIT_ALLOW_LIVE_E2E'] == '0'
         called.append(command)

@@ -109,7 +109,7 @@ def build_real_initial_state(
     task: ClaimedTask（ticker/effective_trade_date/selected_layers）。
     execution_logs_root: 平台日志根目录；非 None 时注入 platform_log_dir
     （{root}/tasks/{task_id}/{attempt_no}），内核写确定性任务目录。
-    fake/测试路径传 None → 不注入，内核回退 logs/{时间戳}。
+    fake/测试路径传 None → 不注入，内核回退 var/logs/{时间戳}。
     prompt_overrides: 执行开始快照的提示词覆盖（node_id → text），
     注入 init_state 后由内核 propagate 入口 set_overrides。
     rerun_from_node_id: 单Agent重跑起点（claim 时行 attempt_no 已递增为

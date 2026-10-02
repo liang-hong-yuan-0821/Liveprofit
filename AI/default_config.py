@@ -4,6 +4,24 @@ LiveProfit 默认配置
 """
 
 import os
+from pathlib import Path
+
+# 仓库根（AI/default_config.py 位于 AI/ 一级子目录）
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_memory_path() -> Path:
+    """记忆库路径单一出口：env 优先、相对值按 PROJECT_ROOT 解析、与进程 CWD 无关。
+
+    chromadb PersistentClient 按进程 CWD 解析相对路径——从 backend/ 等非根 CWD
+    启动会写错位置。此处统一绝对化：绝对 env 值原样使用；相对 env 值（如
+    .env 的 ./var/data/chroma_db）按仓库根解析；未设置时用仓库根下默认值。
+    """
+    raw = os.getenv("LIVEPROFIT_MEMORY_PATH")
+    if raw:
+        p = Path(raw)
+        return p if p.is_absolute() else (_PROJECT_ROOT / p).resolve()
+    return _PROJECT_ROOT / "var" / "data" / "chroma_db"
 
 
 def load_config():
@@ -35,7 +53,7 @@ def load_config():
 
         # 记忆
         "memory_enabled": os.getenv("LIVEPROFIT_MEMORY_ENABLED", "true").lower() == "true",
-        "memory_path": os.getenv("LIVEPROFIT_MEMORY_PATH", "./chroma_db"),
+        "memory_path": str(resolve_memory_path()),
 
         # 日志
         "log_level": os.getenv("LIVEPROFIT_LOG_LEVEL", "INFO"),

@@ -5,9 +5,9 @@
 daily_job；电脑睡眠/服务停机错过触发点后自动补跑。
 
 补跑机制（三层触发 + 两个标记文件）：
-- 完成标记 logs/daily_job_done.YYYYMMDD：子进程退出码 0 时原子写入
+- 完成标记 var/logs/daily_job_done.YYYYMMDD：子进程退出码 0 时原子写入
   （temp+rename）；存在即"今日已完成"，所有触发层共用此判定
-- 运行锁 logs/daily_job.running（内容=子进程 pid）：防并发重复拉起；
+- 运行锁 var/logs/daily_job.running（内容=子进程 pid）：防并发重复拉起；
   服务启动时按 pid 存活清理陈旧标记
 - 触发层：
   1. cron 08:30 正常触发（misfire_grace_time 30 分钟兜底短时停机）
@@ -20,7 +20,7 @@ daily_job；电脑睡眠/服务停机错过触发点后自动补跑。
   超过上限后停止自动补跑（等次日或手动运行），防止持续故障每 15 分钟空跑
 
 子进程隔离：daily_job 崩溃/卡死（周一 store 概念周刷实测 35min~2h）
-不影响 API 服务；日志沿用 logs/event_study_daily.log。
+不影响 API 服务；日志沿用 var/logs/event_study_daily.log。
 uvicorn 运行约束：单 worker、禁用 --reload（避免调度器重复启动）。
 """
 
@@ -39,13 +39,16 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 logger = logging.getLogger(__name__)
 
+# 仓库根（AI/eventStudy/scheduler/ 三级子目录）；标记/计数落 var/logs/ 下，与进程 CWD 无关
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
 DAILY_TIME = os.getenv("EVENT_STUDY_DAILY_TIME", "08:30")   # HH:MM，本地时区
 LEGACY_DAILY_ENABLED = os.getenv("EVENT_STUDY_LEGACY_DAILY_ENABLED", "false").strip().lower() in {
     "1", "true", "yes", "on",
 }
 MISFIRE_GRACE = 30 * 60                                      # cron 错过补跑窗口（秒）
-LOCK_PATH = Path("logs/daily_job.running")                   # 运行中标记（内容=子进程 pid）
-ATTEMPTS_PATH = Path("logs/daily_job_attempts.json")         # 当日自动尝试计数
+LOCK_PATH = _PROJECT_ROOT / "var" / "logs" / "daily_job.running"    # 运行中标记（内容=子进程 pid）
+ATTEMPTS_PATH = _PROJECT_ROOT / "var" / "logs" / "daily_job_attempts.json"  # 当日自动尝试计数
 
 try:
     CHECK_INTERVAL = max(1, int(os.getenv("EVENT_STUDY_DAILY_CHECK_INTERVAL", "15")))
@@ -65,7 +68,7 @@ def _today_str() -> str:
 
 
 def _marker_path() -> Path:
-    return Path("logs") / f"daily_job_done.{_today_str()}"
+    return _PROJECT_ROOT / "var" / "logs" / f"daily_job_done.{_today_str()}"
 
 
 def _today_done() -> bool:
@@ -182,7 +185,7 @@ def _run_daily_job_locked() -> None:
     try:
         proc.wait()
         if proc.returncode != 0:
-            logger.error("daily_job 子进程退出码 %d（见 logs/event_study_daily.log），"
+            logger.error("daily_job 子进程退出码 %d（见 var/logs/event_study_daily.log），"
                          "今日完成标记不写入", proc.returncode)
         else:
             _write_attempts(0)

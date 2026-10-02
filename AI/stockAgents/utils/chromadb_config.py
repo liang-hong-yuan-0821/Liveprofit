@@ -7,6 +7,8 @@ import platform
 import logging
 from chromadb.config import Settings
 
+from AI.default_config import resolve_memory_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,14 +34,14 @@ def get_win10_chromadb_client():
             anonymized_telemetry=False,
         )
         return chromadb.PersistentClient(
-            path="./chroma_db",
+            path=str(resolve_memory_path()),
             settings=settings,
         )
     except Exception:
         pass
     # 回退
     import chromadb
-    return chromadb.PersistentClient(path="./chroma_db")
+    return chromadb.PersistentClient(path=str(resolve_memory_path()))
 
 
 def get_win11_chromadb_client():
@@ -51,7 +53,7 @@ def get_win11_chromadb_client():
             anonymized_telemetry=False,
         )
         return chromadb.PersistentClient(
-            path="./chroma_db",
+            path=str(resolve_memory_path()),
             settings=settings,
         )
     except Exception as e:
@@ -78,6 +80,6 @@ def get_optimal_chromadb_client():
         )
         logger.info(f"ChromaDB: {platform.system()} 标准配置")
         return chromadb.PersistentClient(
-            path="./chroma_db",
+            path=str(resolve_memory_path()),
             settings=settings,
         )

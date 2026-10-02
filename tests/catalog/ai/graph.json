@@ -584,36 +584,36 @@
       "scenarios": [
         {
           "name": "TestPlatformLogDirProvided.test_relative_path",
-          "line": 33,
+          "line": 36,
           "description": "相对路径原样返回（调用方负责 mkdir 多级目录）"
         },
         {
           "name": "TestPlatformLogDirProvided.test_absolute_path",
-          "line": 39,
+          "line": 42,
           "description": "绝对路径原样返回"
         },
         {
           "name": "TestFallbackTimestampDir.test_missing_key",
-          "line": 48,
-          "description": "无 platform_log_dir → logs/{时间戳}，now 注入时时间戳确定"
+          "line": 51,
+          "description": "无 platform_log_dir → var/logs/{时间戳}，now 注入时时间戳确定"
         },
         {
           "name": "TestFallbackTimestampDir.test_empty_string",
-          "line": 52,
+          "line": 56,
           "description": "空串按缺失处理 → 时间戳目录"
         },
         {
           "name": "TestFallbackTimestampDir.test_whitespace_only",
-          "line": 58,
+          "line": 62,
           "description": "纯空白字符串 strip 后按缺失处理"
         },
         {
           "name": "TestFallbackTimestampDir.test_unknown_keys_ignored",
-          "line": 64,
+          "line": 68,
           "description": "既有 init_state 的其它 key 不影响目录选择"
         }
       ],
-      "source_sha256": "7c4389ed4d042bdcaab9588c51d8ae921ff70a38203cb97ddd992b4af59056d2"
+      "source_sha256": "69a05843054e058452a85f7f04f1304e81f299e97fec14da16f2173ffd491065"
     },
     {
       "path": "tests/ai/graph/unit/test_signal_processing.py",
@@ -702,16 +702,16 @@
       "scenarios": [
         {
           "name": "test_log_event_list_truncates_and_filters",
-          "line": 39,
+          "line": 40,
           "description": "≤5 条截断；非 list / 非 dict 项安全丢弃（日志不得因脏数据失败）。"
         },
         {
           "name": "test_log_state_persists_three_tier_events",
-          "line": 48,
+          "line": 49,
           "description": "三键写入 state_log.json，结构可 JSON 序列化且保留路由字段。"
         }
       ],
-      "source_sha256": "885a6399e24dd4e14a2a340481a7f45c41d271c4302d387ece2554a1279275f4"
+      "source_sha256": "be73d83f4eaca91e10a5a88c04d536ef7c861bc28b3a3c0e83492f72d74e1aaa"
     },
     {
       "path": "tests/ai/graph/unit/test_stock_loop.py",

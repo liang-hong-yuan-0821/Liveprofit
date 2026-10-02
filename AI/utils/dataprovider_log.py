@@ -4,7 +4,7 @@
 
 新格式（每次调用一个目录，序号按所属 Agent 目录独立计数，重复调用不覆盖）：
 
-  logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/{seq:03d}_{接口名}/
+  var/logs/{时间戳}/{layer}/{seq:03d}_{NodeName}/{seq:03d}_{接口名}/
     ├── req.json     ← 绑定后的完整入参
     ├── res.md       ← 结果为 str（多数接口，markdown 契约）
     ├── res.json     ← 结果为非 str（如 get_stock_info 返回 dict，二选一）

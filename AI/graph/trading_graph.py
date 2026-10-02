@@ -43,6 +43,9 @@ from AI.utils import prompts as agent_prompts
 from AI.utils.llm_callbacks import LLMCallbackHandler, ToolCallbackHandler
 from AI.utils.dataprovider_log import track_node
 
+# 仓库根（AI/graph/trading_graph.py 位于 AI/graph/ 两级子目录），运行时路径按仓库根解析、与 CWD 无关
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,14 +69,15 @@ def resolve_run_log_dir(init_state: dict, now: datetime | None = None) -> Path:
     """本次运行的日志目录。
 
     平台任务经 init_state["platform_log_dir"] 注入确定性任务目录
-    （logs/tasks/{task_id}/{attempt_no}/）；CLI/既有测试不含该 key 时
-    维持现状，写 logs/{时间戳}/。now 参数仅供单测固定时间戳。
+    （var/logs/tasks/{task_id}/{attempt_no}/）；CLI/既有测试不含该 key 时
+    回退仓库根下 var/logs/{时间戳}/（绝对路径，不依赖进程 CWD）。
+    now 参数仅供单测固定时间戳。
     """
     platform_dir = str(init_state.get("platform_log_dir") or "").strip()
     if platform_dir:
         return Path(platform_dir)
     run_ts = (now or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
-    return Path(f"logs/{run_ts}")
+    return _PROJECT_ROOT / "var" / "logs" / run_ts
 
 
 class TradingAgentsGraph:
@@ -440,7 +444,7 @@ class TradingAgentsGraph:
 
         # ---- 本次运行的日志目录 ----
         log_dir = resolve_run_log_dir(init_state)
-        log_dir.mkdir(parents=True, exist_ok=True)  # 平台多级目录（logs/tasks/{uuid}/{n}）提前建
+        log_dir.mkdir(parents=True, exist_ok=True)  # 平台多级目录（var/logs/tasks/{uuid}/{n}）提前建
         self.llm_handler.set_log_dir(log_dir)
         self.tool_handler.set_log_dir(log_dir)
         checkpoint.set_checkpoint_run_dir(log_dir)
@@ -653,9 +657,7 @@ class TradingAgentsGraph:
                 "final_decision": final_state.get("final_trade_decision", ""),
             }
 
-            directory = Path(
-                f"results/{self.ticker}/analysis_logs/"
-            )
+            directory = _PROJECT_ROOT / "var" / "results" / self.ticker / "analysis_logs"
             directory.mkdir(parents=True, exist_ok=True)
 
             with open(directory / "state_log.json", "w", encoding="utf-8") as f:

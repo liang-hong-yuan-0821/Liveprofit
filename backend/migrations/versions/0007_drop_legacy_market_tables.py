@@ -3,7 +3,7 @@
 DROP 旧市场三表（market_assets / market_bars_daily / market_index_factors）——
 market schema 由 db/instrument/schema.sql 建，alembic 不再建市场表。
 清理窗口执行（用户 2026-09-13 拍板直接清理；DROP 前已 pg_dump 备份
-logs/backups/pg_backup_20260913_legacy_tables.sql）。
+var/data/backups/pg_backup_20260913_legacy_tables.sql）。
 
 downgrade 重建三表（与 0006 同先例）：0005/0003/0001 的 downgrade 无条件
 drop_index/drop_table，本迁移 downgrade 不重建则降级链到 base 时报

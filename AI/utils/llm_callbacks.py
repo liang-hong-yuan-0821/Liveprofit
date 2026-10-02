@@ -3,7 +3,7 @@ LLM / 工具调用追踪器
 通过 LangChain BaseCallbackHandler 拦截 ChatOpenAI 和工具调用。
 
 文件结构（按 layer → 节点名组织）：
-  logs/{时间戳}/
+  var/logs/{时间戳}/
     ├── market/
     │   ├── 001_International_News_Analyst/
     │   │   ├── req.md

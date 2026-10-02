@@ -13,6 +13,7 @@ import logging
 from typing import List, Dict, Optional
 
 from .chromadb_config import get_optimal_chromadb_client
+from AI.default_config import resolve_memory_path
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class ChromaDBManager:
         except Exception as e:
             logger.warning(f"ChromaDB 标准初始化失败: {e}，尝试回退...")
             try:
-                self._client = chromadb.PersistentClient(path="./chroma_db")
+                self._client = chromadb.PersistentClient(path=str(resolve_memory_path()))
                 logger.info("ChromaDB 回退初始化成功")
             except Exception as be:
                 logger.warning(f"ChromaDB 回退也失败: {be}")

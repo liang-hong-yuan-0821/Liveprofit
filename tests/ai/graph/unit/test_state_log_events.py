@@ -26,6 +26,7 @@
 
 import json
 
+from AI.graph import trading_graph
 from AI.graph.trading_graph import TradingAgentsGraph, _log_event_list
 
 
@@ -47,7 +48,8 @@ def test_log_event_list_truncates_and_filters():
 
 def test_log_state_persists_three_tier_events(monkeypatch, tmp_path):
     """三键写入 state_log.json，结构可 JSON 序列化且保留路由字段。"""
-    monkeypatch.chdir(tmp_path)
+    # 写盘为 _PROJECT_ROOT 绝对路径（不受 chdir 影响），替换模块常量保持 tmp_path 隔离
+    monkeypatch.setattr(trading_graph, "_PROJECT_ROOT", tmp_path)
     graph = _graph()
     final_state = {
         "trade_date": "2026-08-18",
@@ -61,7 +63,7 @@ def test_log_state_persists_three_tier_events(monkeypatch, tmp_path):
     graph._log_state("2026-08-18", final_state)
 
     written = json.loads(
-        (tmp_path / "results" / "000001.SH" / "analysis_logs" / "state_log.json")
+        (tmp_path / "var" / "results" / "000001.SH" / "analysis_logs" / "state_log.json")
         .read_text(encoding="utf-8"))
     entry = written["2026-08-18"]
     assert entry["international_events"] == final_state["international_events"]

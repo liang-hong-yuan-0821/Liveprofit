@@ -5,7 +5,7 @@
 
 设计要点（方案 3.2.1 定稿）：
 - 按序执行 8 步骤、每步每批独立 commit、断点续跑（checkpoint 进度文件
-  logs/migrate_legacy_checkpoint.json——每批完成即落盘；重跑按 checkpoint 跳过
+  var/logs/migrate_legacy_checkpoint.json——每批完成即落盘；重跑按 checkpoint 跳过
   已完成批次；checkpoint 缺失/落后时按幂等写入全量重放兜底）
 - 不用行数比对做断点：instrument_daily/factor_daily 是多源合并表，整表行数
   永不等于单一步骤源行数，"一致则跳过"永不触发
@@ -32,7 +32,9 @@ from db.instrument.db import get_connection
 
 logger = logging.getLogger(__name__)
 
-CHECKPOINT_PATH = Path("logs/migrate_legacy_checkpoint.json")
+# 仓库根（db/instrument/migration/ 三级子目录）；脚本路径按仓库根解析、与 CWD 无关
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+CHECKPOINT_PATH = _PROJECT_ROOT / "var" / "logs" / "migrate_legacy_checkpoint.json"
 
 TS_CODE_BATCH = 5000           # 步骤 1/3 按 ts_code 分批大小（1400 万行单事务不可行）
 MEMBER_BATCH = 500             # 步骤 5 成分按板块代码分批大小
@@ -437,7 +439,7 @@ def _backup_legacy_tables() -> None:
     if shutil.which("pg_dump") is None:
         logger.warning("--drop: 本机无 pg_dump，跳过自动备份（请人工备份后再清理）")
         return
-    backup_dir = Path("logs/backups")
+    backup_dir = _PROJECT_ROOT / "var" / "data" / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
     target = backup_dir / (
         f"pg_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_legacy_tables.sql")

@@ -50,14 +50,11 @@ desktop.ini
 $RECYCLE.BIN/
 
 # ===== LiveProfit 运行时数据 =====
-chroma_db/
-results/
 eval_results/
 data/tushare/
 data/cache/
-logs/
 *.log
-# 平台产物卷（artifacts、临时文件）
+# 平台产物卷（artifacts、日志、数据、缓存、临时文件）
 var/
 
 # ===== 配置（含密钥，勿提交） =====

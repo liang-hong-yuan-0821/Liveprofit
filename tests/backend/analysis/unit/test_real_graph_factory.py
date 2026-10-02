@@ -69,14 +69,14 @@ class TestBuildRealInitialStateInjection:
             root / "tasks" / str(task.task_id) / str(task.attempt_no))
 
     def test_no_injection_when_root_is_none(self):
-        """fake/测试路径不传 root → 不注入，内核回退 logs/{时间戳}。"""
+        """fake/测试路径不传 root → 不注入，内核回退 var/logs/{时间戳}。"""
         state = build_real_initial_state(_task())
         assert "platform_log_dir" not in state
 
     def test_existing_metadata_keys_preserved(self):
         """task_id/attempt_no/selected_layers 等既有 key 与注入并存。"""
         task = _task()
-        state = build_real_initial_state(task, execution_logs_root=Path("logs"))
+        state = build_real_initial_state(task, execution_logs_root=Path("var/logs"))
         assert state["task_id"] == str(task.task_id)
         assert state["attempt_no"] == task.attempt_no
         assert state["selected_layers"] == ["market", "sector", "stock"]
@@ -86,8 +86,8 @@ class TestBuildRealInitialStateInjection:
 class TestResolveExecutionLogsRoot:
     def test_relative_path_resolves_against_project_root(self):
         """相对路径按 PROJECT_ROOT（仓库根）解析，而非进程 CWD。"""
-        core = CoreSettings(execution_logs_root=Path("logs"))
-        assert resolve_execution_logs_root(core) == PROJECT_ROOT / "logs"
+        core = CoreSettings(execution_logs_root=Path("var/logs"))
+        assert resolve_execution_logs_root(core) == PROJECT_ROOT / "var" / "logs"
 
     def test_absolute_path_kept(self):
         abs_dir = Path("D:/data/execution_logs")
@@ -98,7 +98,7 @@ class TestResolveExecutionLogsRoot:
         """worker（写）与 API（读）两进程各自构造 settings，解析结果必须一致。"""
         worker_root = resolve_execution_logs_root(CoreSettings())
         api_root = resolve_execution_logs_root(CoreSettings())
-        assert worker_root == api_root == PROJECT_ROOT / "logs"
+        assert worker_root == api_root == PROJECT_ROOT / "var" / "logs"
 
 
 class TestRerunCheckpointInjection:
